@@ -1,10 +1,10 @@
 # Architecture-as-Code Progress Manifest
-Generated: 2025-08-03T21:45:54.729Z
+Generated: 2025-08-03T21:47:47.609Z
 Purpose: Detailed scaffold tracking for AI-guided development
 
 ## Project Context
 - **Branch**: main
-- **Last Commit**: a32a62f - feat: implement detailed Architecture-as-Code manifest generator (30 minutes ago)
+- **Last Commit**: bba583a - chore: update progress manifest timestamps (24 seconds ago)
 - **Total Files**: 22
 - **Files with Directives**: 2
 
