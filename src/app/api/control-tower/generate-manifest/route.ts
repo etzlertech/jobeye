@@ -4,6 +4,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { readFile } from 'fs/promises';
 import path from 'path';
+import { withDeveloperAuth, createErrorResponse, AuthUser } from '../middleware';
 
 const execAsync = promisify(exec);
 
@@ -16,45 +17,8 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-async function checkDeveloperRole(request: NextRequest): Promise<{ isValid: boolean; userId?: string }> {
-  const authHeader = request.headers.get('authorization');
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { isValid: false };
-  }
-
-  const token = authHeader.substring(7);
-
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      return { isValid: false };
-    }
-
-    const isDeveloper = user.user_metadata?.is_developer === true;
-    
-    if (!isDeveloper) {
-      return { isValid: false };
-    }
-
-    return { isValid: true, userId: user.id };
-  } catch (error) {
-    console.error('Auth check error:', error);
-    return { isValid: false };
-  }
-}
-
 export async function POST(request: NextRequest) {
-  try {
-    const authCheck = await checkDeveloperRole(request);
-    
-    if (!authCheck.isValid) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Developer role required.' },
-        { status: 401 }
-      );
-    }
+  return withDeveloperAuth(request, async (req, user: AuthUser) => {
 
     console.log('Executing report:progress script...');
     
@@ -114,7 +78,7 @@ Please check the report:progress script configuration.`;
       .insert({
         manifest_content: manifestContent,
         file_count: fileCount,
-        generated_by: authCheck.userId,
+        generated_by: user.id,
       })
       .select()
       .single();
@@ -136,26 +100,11 @@ Please check the report:progress script configuration.`;
         createdAt: data.created_at,
       },
     });
-
-  } catch (error: any) {
-    console.error('Unexpected error in generate-manifest:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 }
-    );
-  }
+  });
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    const authCheck = await checkDeveloperRole(request);
-    
-    if (!authCheck.isValid) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Developer role required.' },
-        { status: 401 }
-      );
-    }
+  return withDeveloperAuth(request, async (req, user: AuthUser) => {
 
     const url = new URL(request.url);
     const limit = parseInt(url.searchParams.get('limit') || '10');
@@ -181,12 +130,5 @@ export async function GET(request: NextRequest) {
       limit,
       offset,
     });
-
-  } catch (error: any) {
-    console.error('Unexpected error in get manifests:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  });
 }
