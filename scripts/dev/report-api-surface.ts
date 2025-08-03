@@ -14,6 +14,7 @@ const colors = {
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   cyan: '\x1b[36m',
+  red: '\x1b[31m',
   reset: '\x1b[0m'
 };
 

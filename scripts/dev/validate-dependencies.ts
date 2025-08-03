@@ -5,9 +5,9 @@
  * Generates visual dependency graph
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { glob } from 'glob';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 

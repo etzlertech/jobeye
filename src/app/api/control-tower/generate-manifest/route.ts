@@ -8,17 +8,25 @@ import { withDeveloperAuth, createErrorResponse, AuthUser } from '../middleware'
 
 const execAsync = promisify(exec);
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Only create client if variables are present (for runtime)
+// During build, these might not be available
+const supabase = (supabaseUrl && supabaseServiceKey) 
+  ? createClient(supabaseUrl, supabaseServiceKey)
+  : null;
 
 export async function POST(request: NextRequest) {
   return withDeveloperAuth(request, async (req, user: AuthUser) => {
+    
+    // Check if Supabase client is available
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Supabase configuration missing. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.' },
+        { status: 500 }
+      );
+    }
 
     console.log('Executing report:progress script...');
     
@@ -105,6 +113,14 @@ Please check the report:progress script configuration.`;
 
 export async function GET(request: NextRequest) {
   return withDeveloperAuth(request, async (req, user: AuthUser) => {
+    
+    // Check if Supabase client is available
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Supabase configuration missing. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.' },
+        { status: 500 }
+      );
+    }
 
     const url = new URL(request.url);
     const limit = parseInt(url.searchParams.get('limit') || '10');

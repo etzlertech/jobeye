@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Only create client if variables are present (for runtime)
+// During build, these might not be available
+const supabase = (supabaseUrl && supabaseServiceKey) 
+  ? createClient(supabaseUrl, supabaseServiceKey)
+  : null;
 
 export interface AuthUser {
   id: string;
@@ -17,6 +17,12 @@ export interface AuthUser {
 }
 
 export async function validateDeveloperAccess(request: NextRequest): Promise<AuthUser | null> {
+  // Check if Supabase client is available
+  if (!supabase) {
+    console.error('Supabase client not initialized');
+    return null;
+  }
+  
   const authHeader = request.headers.get('authorization');
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

@@ -4,12 +4,6 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   
-  // Control Tower route group configuration
-  experimental: {
-    // Ensure route groups work properly
-    appDir: true,
-  },
-  
   // Environment variable validation
   env: {
     NEXT_PUBLIC_APP_NAME: 'JobEye Control Tower',
@@ -30,15 +24,9 @@ const nextConfig = {
     ];
   },
   
-  // Redirect root to control tower if developer
+  // Redirects configuration
   async redirects() {
-    return [
-      {
-        source: '/control-tower',
-        destination: '/(control-tower)',
-        permanent: false,
-      },
-    ];
+    return [];
   },
 };
 

@@ -197,7 +197,8 @@ function createSkeletonFile(block: DirectiveBlock, projectRoot: string): { succe
   }
   
   // Check for RLS table reference
-  const rlsTable = shouldGenerateRLSTemplate(block.content);
+  const rlsTableResult = shouldGenerateRLSTemplate(block.content);
+  const rlsTable = rlsTableResult ?? undefined;
   const phaseMatch = block.content.match(/(?:\/\/|--) phase: (\d+)/);
   const phase = phaseMatch ? phaseMatch[1] : '1';
   

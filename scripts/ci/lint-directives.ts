@@ -324,7 +324,7 @@ try {
     console.error(`${colors.red}Error: ${error.message}${colors.reset}`);
     process.exit(1);
   });
-} catch (error) {
+} catch (error: any) {
   if (error.code === 'MODULE_NOT_FOUND') {
     console.log(`${colors.yellow}Note: Missing dependencies for this script.${colors.reset}`);
     console.log(`Run: ${colors.green}npm install -D glob @types/glob js-yaml @types/js-yaml${colors.reset}`);
