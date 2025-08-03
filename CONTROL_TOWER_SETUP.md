@@ -28,7 +28,7 @@ npm run dev
 ### 3. Access Control Tower
 Open your browser and go to:
 - **Homepage:** http://localhost:3000 (or 3001 if 3000 is busy)
-- **Control Tower:** http://localhost:3000/(control-tower)
+- **Control Tower:** http://localhost:3000/control-tower
 
 ## Features Available Locally
 

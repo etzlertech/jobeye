@@ -23,7 +23,7 @@ export default function Home() {
           </p>
           
           <Link 
-            href="/(control-tower)"
+            href="/control-tower"
             className="inline-flex items-center space-x-3 bg-tower-accent hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
           >
             <span>{process.env.NODE_ENV === 'development' ? '🏗️' : '📋'}</span>

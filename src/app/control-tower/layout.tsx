@@ -7,25 +7,25 @@ import { usePathname } from 'next/navigation'
 const navigation = [
   { 
     name: 'Dashboard', 
-    href: '/(control-tower)', 
+    href: '/control-tower', 
     icon: '📊',
     description: 'Project overview and stats'
   },
   { 
     name: 'Manifest Generator', 
-    href: '/(control-tower)/manifest-generator', 
+    href: '/control-tower/manifest-generator', 
     icon: '📋',
     description: 'Generate progress reports'
   },
   { 
     name: 'Architecture Viewer', 
-    href: '/(control-tower)/architecture-viewer', 
+    href: '/control-tower/architecture-viewer', 
     icon: '🏗️',
     description: 'View dependency graphs'
   },
   { 
     name: 'Standards Library', 
-    href: '/(control-tower)/standards-library', 
+    href: '/control-tower/standards-library', 
     icon: '📚',
     description: 'Project standards and docs'
   },
@@ -84,7 +84,7 @@ export default function ControlTowerLayout({
             <nav className="flex-1 px-4 py-6 space-y-2">
               {navigation.map((item) => {
                 const isActive = pathname === item.href || 
-                  (item.href !== '/(control-tower)' && pathname?.startsWith(item.href))
+                  (item.href !== '/control-tower' && pathname?.startsWith(item.href))
                 
                 return (
                   <Link
