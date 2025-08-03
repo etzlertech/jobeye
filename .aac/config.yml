@@ -1,0 +1,72 @@
+# Architecture-as-Code Configuration
+# Controls validation rules and project constraints
+
+# Skeleton freeze date - after this date, new skeletons require special approval
+skeleton_freeze_date: 2025-08-10
+
+# Maximum monthly LLM cost budget (USD)
+max_monthly_llm_cost_usd: 100.00
+
+# File complexity limits
+complexity:
+  max_loc_per_file: 500
+  max_cyclomatic_complexity: 10
+  max_function_length: 50
+
+# Test coverage requirements by phase
+test_coverage:
+  phase_1: 0.90  # Core infrastructure needs high coverage
+  phase_2: 0.85  # Domain models
+  phase_3: 0.85  # Voice pipeline
+  phase_4: 0.80  # Complex workflows
+  phase_5: 0.75  # UI components
+
+# Dependency rules
+dependencies:
+  # Files can only depend on same or earlier phases
+  enforce_phase_order: true
+  # Maximum depth of dependency chain
+  max_dependency_depth: 5
+  # Warn if a file has too many dependencies
+  max_dependencies_per_file: 10
+
+# Voice requirements
+voice:
+  # Percentage of user-facing features that must have voice support
+  required_coverage_percent: 80
+  # List of domains that must have voice support
+  mandatory_domains:
+    - authentication
+    - jobs
+    - customers
+    - equipment
+
+# Offline requirements by domain
+offline:
+  required_domains:
+    - jobs
+    - equipment
+    - voice
+    - offline
+  optional_domains:
+    - customers
+    - properties
+    - materials
+
+# Migration numbering
+migrations:
+  # Format: YYYYMMDD_HHMM_description.sql
+  enforce_timestamp_format: true
+  # Ensure sequential numbering
+  enforce_sequential: true
+
+# Architecture review gates
+review_gates:
+  # Number of reviewers required after skeleton freeze
+  post_freeze_reviewers: 2
+  # Domains that require architect review
+  architect_review_domains:
+    - authentication
+    - voice
+    - billing
+    - verification

@@ -1,0 +1,271 @@
+# Architecture-as-Code File Index
+# Tracks all files that should have directive blocks
+# Generated: 2025-08-03
+
+version: 1.0.0
+last_updated: 2025-08-03
+
+phases:
+  1:
+    name: "Core Infrastructure"
+    domains:
+      authentication:
+        description: "User authentication and authorization"
+        tables: ["users", "auth_tokens", "password_reset_requests"]
+        files:
+          - /src/domains/auth/services/auth-service.ts
+          - /src/domains/auth/services/token-service.ts
+          - /src/domains/auth/services/password-reset-service.ts
+          - /src/domains/auth/repositories/user-repository.ts
+          - /src/domains/auth/repositories/token-repository.ts
+          - /src/domains/auth/controllers/auth-controller.ts
+          - /src/domains/auth/types/auth.types.ts
+          - /src/domains/auth/middleware/auth-middleware.ts
+          - /src/domains/auth/services/__tests__/auth-service.test.ts
+          - /src/domains/auth/services/__tests__/token-service.test.ts
+          - /supabase/migrations/006_create_auth_tables.sql
+          - /supabase/migrations/007_create_auth_rls_policies.sql
+          - /supabase/functions/verify-magic-link/index.ts
+          - /supabase/functions/refresh-token/index.ts
+
+      core-infrastructure:
+        description: "Logging, configuration, database connections"
+        files:
+          - /src/core/logger/logger.ts
+          - /src/core/logger/logger.interface.ts
+          - /src/core/config/environment.ts
+          - /src/core/config/supabase.config.ts
+          - /src/core/database/connection.ts
+          - /src/core/database/migrations.ts
+          - /src/core/errors/base-error.ts
+          - /src/core/errors/error-handler.ts
+          - /src/core/utils/validators.ts
+          - /src/core/utils/crypto.ts
+
+      multi-tenant:
+        description: "Company isolation and tenant management"
+        tables: ["companies", "company_users", "tenant_settings"]
+        files:
+          - /src/domains/tenant/services/company-service.ts
+          - /src/domains/tenant/services/tenant-isolation-service.ts
+          - /src/domains/tenant/repositories/company-repository.ts
+          - /src/domains/tenant/middleware/tenant-middleware.ts
+          - /src/domains/tenant/types/tenant.types.ts
+          - /supabase/migrations/003_create_companies_tables.sql
+          - /supabase/migrations/004_create_tenant_rls_policies.sql
+
+  2:
+    name: "Domain Models"
+    domains:
+      customer-management:
+        description: "Customer and contact information"
+        tables: ["customers", "contacts", "addresses", "customer_tags"]
+        files:
+          - /src/domains/customers/services/customer-service.ts
+          - /src/domains/customers/services/contact-service.ts
+          - /src/domains/customers/repositories/customer-repository.ts
+          - /src/domains/customers/repositories/contact-repository.ts
+          - /src/domains/customers/controllers/customer-controller.ts
+          - /src/domains/customers/types/customer.types.ts
+          - /supabase/migrations/010_create_customer_tables.sql
+          - /supabase/migrations/011_create_customer_rls_policies.sql
+
+      property-management:
+        description: "Properties and service locations"
+        tables: ["properties", "service_locations", "property_zones"]
+        files:
+          - /src/domains/properties/services/property-service.ts
+          - /src/domains/properties/services/zone-service.ts
+          - /src/domains/properties/repositories/property-repository.ts
+          - /src/domains/properties/controllers/property-controller.ts
+          - /src/domains/properties/types/property.types.ts
+          - /supabase/migrations/012_create_property_tables.sql
+
+      equipment-tracking:
+        description: "Equipment inventory and maintenance"
+        tables: ["equipment_types", "equipment_items", "maintenance_logs"]
+        files:
+          - /src/domains/equipment/services/equipment-service.ts
+          - /src/domains/equipment/services/maintenance-service.ts
+          - /src/domains/equipment/repositories/equipment-repository.ts
+          - /src/domains/equipment/controllers/equipment-controller.ts
+          - /src/domains/equipment/types/equipment.types.ts
+          - /supabase/migrations/014_create_equipment_tables.sql
+
+      material-catalog:
+        description: "Materials, inventory, and pricing"
+        tables: ["material_catalog", "inventory_levels", "price_lists"]
+        files:
+          - /src/domains/materials/services/material-service.ts
+          - /src/domains/materials/services/inventory-service.ts
+          - /src/domains/materials/services/pricing-service.ts
+          - /src/domains/materials/repositories/material-repository.ts
+          - /src/domains/materials/controllers/material-controller.ts
+          - /src/domains/materials/types/material.types.ts
+          - /supabase/migrations/016_create_material_tables.sql
+
+  3:
+    name: "Voice Pipeline"
+    domains:
+      voice-core:
+        description: "Voice session and message management"
+        tables: ["conversation_sessions", "messages", "transcripts"]
+        files:
+          - /src/domains/voice/services/conversation-service.ts
+          - /src/domains/voice/services/transcript-service.ts
+          - /src/domains/voice/services/voice-auth-service.ts
+          - /src/domains/voice/repositories/conversation-repository.ts
+          - /src/domains/voice/repositories/message-repository.ts
+          - /src/domains/voice/controllers/voice-controller.ts
+          - /src/domains/voice/types/voice.types.ts
+          - /supabase/migrations/020_create_voice_tables.sql
+          - /supabase/functions/process-voice/index.ts
+
+      intent-recognition:
+        description: "Intent processing and execution"
+        tables: ["intent_registry", "intent_slots", "intent_executions"]
+        files:
+          - /src/domains/intents/services/intent-service.ts
+          - /src/domains/intents/services/slot-extraction-service.ts
+          - /src/domains/intents/services/intent-execution-service.ts
+          - /src/domains/intents/repositories/intent-repository.ts
+          - /src/domains/intents/registry/intent-registry.ts
+          - /src/domains/intents/types/intent.types.ts
+          - /supabase/migrations/022_create_intent_tables.sql
+
+      stt-tts-integration:
+        description: "Speech-to-text and text-to-speech"
+        tables: ["voice_configs", "user_voice_profiles", "tts_cache"]
+        files:
+          - /src/domains/speech/services/stt-service.ts
+          - /src/domains/speech/services/tts-service.ts
+          - /src/domains/speech/services/voice-profile-service.ts
+          - /src/domains/speech/providers/google-speech-provider.ts
+          - /src/domains/speech/providers/web-speech-provider.ts
+          - /src/domains/speech/types/speech.types.ts
+          - /supabase/migrations/024_create_speech_tables.sql
+          - /supabase/functions/generate-speech/index.ts
+
+      offline-support:
+        description: "Offline voice commands and sync"
+        tables: ["voice_command_cache", "sync_queue", "conflict_log"]
+        files:
+          - /src/domains/offline/services/command-cache-service.ts
+          - /src/domains/offline/services/sync-service.ts
+          - /src/domains/offline/services/conflict-resolution-service.ts
+          - /src/domains/offline/repositories/cache-repository.ts
+          - /src/domains/offline/types/offline.types.ts
+          - /supabase/migrations/026_create_offline_tables.sql
+
+  4:
+    name: "Job Execution & Verification"
+    domains:
+      job-templates:
+        description: "Job template management"
+        tables: ["job_templates", "template_tasks", "template_materials", "template_categories"]
+        files:
+          - /src/domains/templates/services/template-service.ts
+          - /src/domains/templates/services/task-template-service.ts
+          - /src/domains/templates/repositories/template-repository.ts
+          - /src/domains/templates/controllers/template-controller.ts
+          - /src/domains/templates/types/template.types.ts
+          - /supabase/migrations/030_create_template_tables.sql
+
+      job-execution:
+        description: "Job workflow and execution"
+        tables: ["jobs", "job_tasks", "job_materials", "job_time_entries", "job_photos"]
+        files:
+          - /src/domains/jobs/services/job-service.ts
+          - /src/domains/jobs/services/task-service.ts
+          - /src/domains/jobs/services/time-tracking-service.ts
+          - /src/domains/jobs/services/photo-service.ts
+          - /src/domains/jobs/repositories/job-repository.ts
+          - /src/domains/jobs/state-machines/job-state-machine.ts
+          - /src/domains/jobs/controllers/job-controller.ts
+          - /src/domains/jobs/types/job.types.ts
+          - /supabase/migrations/032_create_job_tables.sql
+          - /supabase/functions/process-job-photo/index.ts
+
+      ai-verification:
+        description: "AI-powered job verification"
+        tables: ["verification_checklists", "verification_items", "ai_vision_logs", "quality_scores"]
+        files:
+          - /src/domains/verification/services/verification-service.ts
+          - /src/domains/verification/services/vision-service.ts
+          - /src/domains/verification/services/quality-scoring-service.ts
+          - /src/domains/verification/repositories/verification-repository.ts
+          - /src/domains/verification/controllers/verification-controller.ts
+          - /src/domains/verification/types/verification.types.ts
+          - /supabase/migrations/034_create_verification_tables.sql
+          - /supabase/functions/analyze-photo/index.ts
+
+      irrigation-systems:
+        description: "Irrigation system management"
+        tables: ["irrigation_systems", "zones", "valves", "controllers", "schedules"]
+        files:
+          - /src/domains/irrigation/services/system-service.ts
+          - /src/domains/irrigation/services/zone-service.ts
+          - /src/domains/irrigation/services/schedule-service.ts
+          - /src/domains/irrigation/repositories/irrigation-repository.ts
+          - /src/domains/irrigation/controllers/irrigation-controller.ts
+          - /src/domains/irrigation/types/irrigation.types.ts
+          - /supabase/migrations/036_create_irrigation_tables.sql
+
+  5:
+    name: "UI Integration"
+    domains:
+      shared-components:
+        description: "Shared UI components and design system"
+        files:
+          - /src/components/voice/VoiceButton.tsx
+          - /src/components/voice/ChatInterface.tsx
+          - /src/components/voice/TranscriptDisplay.tsx
+          - /src/components/common/Button.tsx
+          - /src/components/common/Card.tsx
+          - /src/components/common/Modal.tsx
+          - /src/components/layout/Navigation.tsx
+          - /src/components/layout/Layout.tsx
+          - /src/hooks/useVoice.ts
+          - /src/hooks/useOffline.ts
+
+      web-app:
+        description: "Next.js web application"
+        files:
+          - /src/pages/index.tsx
+          - /src/pages/login.tsx
+          - /src/pages/dashboard.tsx
+          - /src/pages/jobs/index.tsx
+          - /src/pages/jobs/[id].tsx
+          - /src/pages/customers/index.tsx
+          - /src/pages/customers/[id].tsx
+          - /src/pages/api/auth/[...supabase].ts
+          - /src/styles/globals.css
+          - /public/manifest.json
+          - /public/service-worker.js
+
+      mobile-app:
+        description: "React Native mobile application"
+        files:
+          - /mobile/src/screens/HomeScreen.tsx
+          - /mobile/src/screens/JobListScreen.tsx
+          - /mobile/src/screens/JobDetailScreen.tsx
+          - /mobile/src/screens/CameraScreen.tsx
+          - /mobile/src/navigation/AppNavigator.tsx
+          - /mobile/src/services/offline-sync.ts
+          - /mobile/src/components/VoiceControl.tsx
+
+      admin-portal:
+        description: "Administrative interface"
+        files:
+          - /src/pages/admin/index.tsx
+          - /src/pages/admin/users.tsx
+          - /src/pages/admin/billing.tsx
+          - /src/pages/admin/reports.tsx
+          - /src/pages/admin/settings.tsx
+          - /src/components/admin/UserTable.tsx
+          - /src/components/admin/BillingChart.tsx
+
+# Statistics
+total_files: 180
+total_domains: 17
+average_files_per_domain: 10.6

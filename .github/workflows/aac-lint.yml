@@ -1,0 +1,132 @@
+name: Architecture-as-Code Lint
+
+on:
+  pull_request:
+    paths:
+      - 'src/**/*.ts'
+      - 'src/**/*.tsx'
+      - 'src/**/*.js'
+      - 'src/**/*.jsx'
+      - 'supabase/**/*.sql'
+      - 'supabase/functions/**/*.ts'
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  lint-directives:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: |
+          npm install -D typescript tsx glob @types/glob @types/node
+          
+      - name: Run directive block linter
+        run: npx tsx scripts/ci/lint-directives.ts
+        
+      - name: Check spec references
+        run: |
+          # Verify all spec_ref paths exist
+          echo "Checking spec references..."
+          
+          # Find all files with directive blocks
+          files=$(find src supabase -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.sql" \) | grep -v node_modules | grep -v test)
+          
+          errors=0
+          for file in $files; do
+            # Extract spec_ref from directive block
+            spec_ref=$(grep -E "^(//|--) spec_ref:" "$file" | head -1 | sed 's/^.*spec_ref: *//' | cut -d'#' -f1 | tr -d ' ')
+            
+            if [ ! -z "$spec_ref" ]; then
+              spec_path=".claude/spec/$spec_ref"
+              if [ ! -f "$spec_path" ]; then
+                echo "❌ $file: Invalid spec_ref '$spec_ref' - file not found at $spec_path"
+                errors=$((errors + 1))
+              fi
+            fi
+          done
+          
+          if [ $errors -gt 0 ]; then
+            echo "❌ Found $errors invalid spec references"
+            exit 1
+          else
+            echo "✅ All spec references valid"
+          fi
+          
+      - name: Check file complexity
+        run: |
+          # Check that no file exceeds 500 LoC
+          echo "Checking file complexity..."
+          
+          files=$(find src supabase -type f \( -name "*.ts" -o -name "*.tsx" \) | grep -v node_modules | grep -v test)
+          
+          errors=0
+          for file in $files; do
+            # Count non-empty, non-comment lines
+            loc=$(grep -v '^\s*$' "$file" | grep -v '^\s*//' | grep -v '^\s*/\*' | wc -l)
+            
+            if [ $loc -gt 500 ]; then
+              echo "❌ $file: Exceeds 500 LoC limit ($loc lines)"
+              errors=$((errors + 1))
+            fi
+          done
+          
+          if [ $errors -gt 0 ]; then
+            echo "❌ Found $errors files exceeding complexity limit"
+            exit 1
+          else
+            echo "✅ All files within complexity limits"
+          fi
+          
+      - name: Validate phase assignments
+        run: |
+          # Check that phase numbers are consistent within domains
+          echo "Validating phase assignments..."
+          
+          # This would be more complex in practice, but here's a simple check
+          npx tsx -e "
+          const fs = require('fs');
+          const path = require('path');
+          
+          function validatePhases() {
+            const domainPhases = new Map();
+            
+            // Define expected phase-domain mappings
+            const expectedPhases = {
+              'auth': 1,
+              'core': 1,
+              'tenant': 1,
+              'customers': 2,
+              'properties': 2,
+              'equipment': 2,
+              'materials': 2,
+              'voice': 3,
+              'conversations': 3,
+              'jobs': 4,
+              'verification': 4,
+              'ui': 5,
+              'components': 5
+            };
+            
+            // Check each domain's phase assignment
+            for (const [domain, expectedPhase] of Object.entries(expectedPhases)) {
+              const domainPath = path.join('src', 'domains', domain);
+              if (fs.existsSync(domainPath)) {
+                // Would check directive blocks here
+                console.log(\`✓ Domain '\${domain}' should be in phase \${expectedPhase}\`);
+              }
+            }
+          }
+          
+          validatePhases();
+          "

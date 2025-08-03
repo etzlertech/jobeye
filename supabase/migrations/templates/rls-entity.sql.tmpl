@@ -1,0 +1,92 @@
+-- --- AGENT DIRECTIVE BLOCK ---
+-- file: /supabase/migrations/XXX_${entity}_rls.sql
+-- phase: ${phase}
+-- domain: database
+-- version: 1.0.0
+-- purpose: Row-level security policies for ${entity} table
+-- spec_ref: .claude/spec/v4.0/rls-patterns.md
+-- complexity_budget: 100 LoC
+--
+-- migrations_touched:
+--   - XXX_${entity}_rls.sql
+--
+-- tasks:
+--   1. [ENABLE] Enable RLS on ${entity} table
+--   2. [ISOLATE] Create company isolation policy
+--   3. [USER] Create user-specific policies
+--   4. [ADMIN] Create admin bypass policy
+--   5. [GRANT] Set proper permissions
+--
+-- --- END DIRECTIVE BLOCK ---
+
+-- Enable Row Level Security
+ALTER TABLE public.${entity} ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Company isolation (all operations)
+-- Ensures users can only see/modify records from their company
+CREATE POLICY "${entity}_company_isolation"
+  ON public.${entity}
+  FOR ALL
+  USING (
+    company_id = (auth.jwt() ->> 'company_id')::uuid
+  );
+
+-- Policy: Users can read their own records
+-- Additional restriction beyond company isolation
+CREATE POLICY "${entity}_user_read_own"
+  ON public.${entity}
+  FOR SELECT
+  USING (
+    company_id = (auth.jwt() ->> 'company_id')::uuid
+    AND (
+      user_id = auth.uid()
+      OR created_by = auth.uid()
+    )
+  );
+
+-- Policy: Users can update their own records
+CREATE POLICY "${entity}_user_update_own"
+  ON public.${entity}
+  FOR UPDATE
+  USING (
+    company_id = (auth.jwt() ->> 'company_id')::uuid
+    AND user_id = auth.uid()
+  )
+  WITH CHECK (
+    company_id = (auth.jwt() ->> 'company_id')::uuid
+    AND user_id = auth.uid()
+  );
+
+-- Policy: Admin bypass for support
+-- Allows admins to access all records
+CREATE POLICY "${entity}_admin_bypass"
+  ON public.${entity}
+  FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.users
+      WHERE id = auth.uid()
+      AND role = 'admin'
+      AND is_active = true
+    )
+  );
+
+-- Policy: Service role bypass
+-- Allows backend services full access
+CREATE POLICY "${entity}_service_role"
+  ON public.${entity}
+  FOR ALL
+  USING (auth.role() = 'service_role');
+
+-- Grant permissions to authenticated users
+GRANT ALL ON public.${entity} TO authenticated;
+GRANT ALL ON public.${entity} TO service_role;
+
+-- Create index for RLS performance
+CREATE INDEX IF NOT EXISTS idx_${entity}_company_id ON public.${entity}(company_id);
+CREATE INDEX IF NOT EXISTS idx_${entity}_user_id ON public.${entity}(user_id) WHERE user_id IS NOT NULL;
+
+-- Add RLS check constraint to ensure company_id is always set
+ALTER TABLE public.${entity}
+  ADD CONSTRAINT ${entity}_company_id_required
+  CHECK (company_id IS NOT NULL);
