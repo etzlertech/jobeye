@@ -126,7 +126,7 @@ async function analyzeFile(filePath: string): Promise<FileMetadata> {
     path: filePath,
     relativePath,
     hasDirective: !!directive,
-    directive,
+    directive: directive || undefined,
     fileType,
     status,
     lineCount: lines.length,
