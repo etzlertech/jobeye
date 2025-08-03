@@ -1,0 +1,12 @@
+# Robots.txt for JobEye Control Tower
+# This is a development/admin tool - discourage indexing
+
+User-agent: *
+Disallow: /api/
+Disallow: /(control-tower)/
+
+# Allow access to main pages
+Allow: /
+
+# Sitemap location (if applicable)
+# Sitemap: https://your-domain.com/sitemap.xml
