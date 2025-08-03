@@ -10,7 +10,8 @@ cmds = ["npm ci"]
 cmds = ["npm run build"]
 
 [start]
-cmd = "npm run start"
+cmd = "npm run start:standalone"
 
 [variables]
 NODE_ENV = "production"
+HOSTNAME = "0.0.0.0"
