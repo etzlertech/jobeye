@@ -1,10 +1,10 @@
 # Architecture-as-Code Progress Manifest
-Generated: 2025-08-03T22:51:27.780Z
+Generated: 2025-08-03T22:56:56.160Z
 Purpose: Detailed scaffold tracking for AI-guided development
 
 ## Project Context
 - **Branch**: main
-- **Last Commit**: b32e31f - feat: complete Phase 3 Voice Pipeline Architecture-as-Code scaffolding (7 minutes ago)
+- **Last Commit**: a2c22ca - fix: resolve TypeScript error in detailed manifest generation and restore local dev functionality (5 minutes ago)
 - **Total Files**: 22
 - **Files with Directives**: 2
 
@@ -23,8 +23,8 @@ Purpose: Detailed scaffold tracking for AI-guided development
 
 | File | Status | Purpose | Complexity |
 |------|--------|---------|------------|
-| `scripts/dev/validate-dependencies.ts` | ✅ | — | — |
-| `scripts/dev/report-api-surface.ts` | ✅ | — | — |
+| `scripts\dev\validate-dependencies.ts` | ✅ | — | — |
+| `scripts\dev\report-api-surface.ts` | ✅ | — | — |
 
 
 ---
@@ -37,26 +37,26 @@ Purpose: Detailed scaffold tracking for AI-guided development
 
 | File | Status | Purpose | Complexity |
 |------|--------|---------|------------|
-| `src/app/page.tsx` | ✅ | — | — |
-| `src/app/layout.tsx` | ✅ | — | — |
-| `src/types/supabase.ts` | ✅ | — | — |
-| `src/app/control-tower/page.tsx` | ✅ | — | — |
-| `src/app/control-tower/layout.tsx` | ✅ | — | — |
-| `src/app/api/control-tower/start-standalone.js` | ✅ | — | — |
-| `src/app/api/control-tower/middleware.ts` | ✅ | — | — |
-| `src/app/control-tower/standards-library/page.tsx` | ✅ | — | — |
-| `src/app/control-tower/manifest-generator/page.tsx` | ✅ | — | — |
-| `src/app/control-tower/manifest-generator/client-page.tsx` | ✅ | — | — |
-| `src/app/control-tower/architecture-viewer/page.tsx` | ✅ | — | — |
-| `src/app/api/control-tower/test/route.ts` | ✅ | — | — |
-| `src/app/api/control-tower/generate-manifest/route.ts` | ✅ | — | — |
-| `supabase/migrations/control_tower_complete_setup.sql` | ✅ | — | — |
-| `supabase/migrations/20250803_create_control_tower_tables.sql` | ✅ | — | — |
-| `scripts/dev/skeleton-status.ts` | 🚧 | — | — |
-| `scripts/dev/scaffold-aac.ts` | ✅ | — | — |
-| `scripts/dev/generate-progress-manifest.ts` | 🚧 | — | — |
-| `scripts/dev/generate-detailed-manifest.ts` | 🚧 | — | — |
-| `scripts/ci/lint-directives.ts` | ✅ | — | — |
+| `src\types\supabase.ts` | ✅ | — | — |
+| `src\app\page.tsx` | ✅ | — | — |
+| `src\app\layout.tsx` | ✅ | — | — |
+| `src\app\control-tower\page.tsx` | ✅ | — | — |
+| `src\app\control-tower\layout.tsx` | ✅ | — | — |
+| `src\app\control-tower\standards-library\page.tsx` | ✅ | — | — |
+| `src\app\control-tower\manifest-generator\page.tsx` | ✅ | — | — |
+| `src\app\control-tower\manifest-generator\client-page.tsx` | ✅ | — | — |
+| `src\app\control-tower\architecture-viewer\page.tsx` | ✅ | — | — |
+| `src\app\api\control-tower\start-standalone.js` | ✅ | — | — |
+| `src\app\api\control-tower\middleware.ts` | ✅ | — | — |
+| `src\app\api\control-tower\test\route.ts` | ✅ | — | — |
+| `src\app\api\control-tower\generate-manifest\route.ts` | ✅ | — | — |
+| `supabase\migrations\control_tower_complete_setup.sql` | ✅ | — | — |
+| `supabase\migrations\20250803_create_control_tower_tables.sql` | ✅ | — | — |
+| `scripts\dev\skeleton-status.ts` | 🚧 | — | — |
+| `scripts\dev\scaffold-aac.ts` | ✅ | — | — |
+| `scripts\dev\generate-progress-manifest.ts` | 🚧 | — | — |
+| `scripts\dev\generate-detailed-manifest.ts` | 🚧 | — | — |
+| `scripts\ci\lint-directives.ts` | ✅ | — | — |
 
 
 
@@ -66,82 +66,82 @@ Purpose: Detailed scaffold tracking for AI-guided development
 
 ```yaml
 files:
-  - path: "src/app/page.tsx"
+  - path: "src\types\supabase.ts"
+    status: "complete"
+    type: "other"
+    lines: 30
+    has_directive: false
+  - path: "src\app\page.tsx"
     status: "complete"
     type: "other"
     lines: 45
     has_directive: false
-  - path: "src/app/layout.tsx"
+  - path: "src\app\layout.tsx"
     status: "complete"
     type: "other"
     lines: 21
     has_directive: false
-  - path: "src/types/supabase.ts"
-    status: "complete"
-    type: "type"
-    lines: 30
-    has_directive: false
-  - path: "src/app/control-tower/page.tsx"
+  - path: "src\app\control-tower\page.tsx"
     status: "complete"
     type: "other"
     lines: 170
     has_directive: false
-  - path: "src/app/control-tower/layout.tsx"
+  - path: "src\app\control-tower\layout.tsx"
     status: "complete"
     type: "other"
     lines: 137
     has_directive: false
-  - path: "src/app/api/control-tower/start-standalone.js"
-    status: "complete"
-    type: "api"
-    lines: 44
-    has_directive: false
-  - path: "src/app/api/control-tower/middleware.ts"
-    status: "complete"
-    type: "api"
-    lines: 90
-    has_directive: false
-  - path: "src/app/control-tower/standards-library/page.tsx"
+  - path: "src\app\control-tower\standards-library\page.tsx"
     status: "complete"
     type: "other"
     lines: 32
     has_directive: false
-  - path: "src/app/control-tower/manifest-generator/page.tsx"
+  - path: "src\app\control-tower\manifest-generator\page.tsx"
     status: "complete"
     type: "other"
     lines: 5
     has_directive: false
-  - path: "src/app/control-tower/manifest-generator/client-page.tsx"
+  - path: "src\app\control-tower\manifest-generator\client-page.tsx"
     status: "complete"
     type: "other"
     lines: 226
     has_directive: false
-  - path: "src/app/control-tower/architecture-viewer/page.tsx"
+  - path: "src\app\control-tower\architecture-viewer\page.tsx"
     status: "complete"
     type: "other"
     lines: 31
     has_directive: false
-  - path: "src/app/api/control-tower/test/route.ts"
+  - path: "src\app\api\control-tower\start-standalone.js"
     status: "complete"
-    type: "api"
+    type: "other"
+    lines: 44
+    has_directive: false
+  - path: "src\app\api\control-tower\middleware.ts"
+    status: "complete"
+    type: "other"
+    lines: 90
+    has_directive: false
+  - path: "src\app\api\control-tower\test\route.ts"
+    status: "complete"
+    type: "other"
     lines: 11
     has_directive: false
-  - path: "src/app/api/control-tower/generate-manifest/route.ts"
+  - path: "src\app\api\control-tower\generate-manifest\route.ts"
     status: "complete"
-    type: "api"
+    type: "other"
     lines: 194
     has_directive: false
-  - path: "supabase/migrations/control_tower_complete_setup.sql"
+  - path: "supabase\migrations\control_tower_complete_setup.sql"
     status: "complete"
     type: "migration"
     lines: 324
     has_directive: false
-  - path: "supabase/migrations/20250803_create_control_tower_tables.sql"
+  - path: "supabase\migrations\20250803_create_control_tower_tables.sql"
     status: "complete"
     type: "migration"
     lines: 96
     has_directive: false
-  - path: "scripts/dev/validate-dependencies.ts"
+  - path: "scripts\dev\validate-dependencies.ts"
     status: "complete"
     type: "other"
     lines: 328
@@ -151,17 +151,17 @@ files:
       domain: "string;"
       phase: "number;"
       complexity_budget: "—"
-  - path: "scripts/dev/skeleton-status.ts"
+  - path: "scripts\dev\skeleton-status.ts"
     status: "partial"
     type: "other"
     lines: 221
     has_directive: false
-  - path: "scripts/dev/scaffold-aac.ts"
+  - path: "scripts\dev\scaffold-aac.ts"
     status: "complete"
     type: "other"
     lines: 312
     has_directive: false
-  - path: "scripts/dev/report-api-surface.ts"
+  - path: "scripts\dev\report-api-surface.ts"
     status: "complete"
     type: "other"
     lines: 251
@@ -171,17 +171,17 @@ files:
       domain: "string;"
       phase: "number;"
       complexity_budget: "—"
-  - path: "scripts/dev/generate-progress-manifest.ts"
+  - path: "scripts\dev\generate-progress-manifest.ts"
     status: "partial"
     type: "other"
     lines: 203
     has_directive: false
-  - path: "scripts/dev/generate-detailed-manifest.ts"
+  - path: "scripts\dev\generate-detailed-manifest.ts"
     status: "partial"
     type: "other"
     lines: 351
     has_directive: false
-  - path: "scripts/ci/lint-directives.ts"
+  - path: "scripts\ci\lint-directives.ts"
     status: "complete"
     type: "other"
     lines: 335
@@ -204,9 +204,9 @@ files:
 No scaffolded files requiring implementation
 
 ### 🟡 In Progress (Partial Implementation)
-1. `scripts/dev/skeleton-status.ts` - No purpose defined
-1. `scripts/dev/generate-progress-manifest.ts` - No purpose defined
-1. `scripts/dev/generate-detailed-manifest.ts` - No purpose defined
+1. `scripts\dev\skeleton-status.ts` - No purpose defined
+1. `scripts\dev\generate-progress-manifest.ts` - No purpose defined
+1. `scripts\dev\generate-detailed-manifest.ts` - No purpose defined
 
 ## Directive Block Coverage Analysis
 
