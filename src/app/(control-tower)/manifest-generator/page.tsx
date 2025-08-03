@@ -20,8 +20,39 @@ export default function ManifestGenerator() {
     setError(null)
 
     try {
-      // In a real implementation, this would call the API endpoint
-      // For now, we'll simulate the API call
+      // Check if we're in local development
+      const isDevelopment = process.env.NODE_ENV === 'development'
+      
+      if (isDevelopment) {
+        // Call the real API endpoint
+        const response = await fetch('/api/control-tower/generate-manifest', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // In production, you'd get this from auth context
+            'Authorization': 'Bearer dummy-dev-token'
+          }
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to generate manifest')
+        }
+        
+        const data = await response.json()
+        const manifest: Manifest = {
+          id: data.manifest.id,
+          content: data.manifest.content,
+          fileCount: data.manifest.fileCount,
+          createdAt: data.manifest.createdAt
+        }
+        
+        setCurrentManifest(manifest)
+        setManifestHistory(prev => [manifest, ...prev])
+        return
+      }
+      
+      // Fallback for production/demo mode
       await new Promise(resolve => setTimeout(resolve, 3000))
       
       const mockManifest: Manifest = {

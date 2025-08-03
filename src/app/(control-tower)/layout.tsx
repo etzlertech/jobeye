@@ -54,7 +54,14 @@ export default function ControlTowerLayout({
             </button>
             <div>
               <h1 className="text-xl font-bold text-white">🏗️ Construction Control Tower</h1>
-              <p className="text-sm text-gray-400">Architecture-as-Code Dashboard</p>
+              <p className="text-sm text-gray-400">
+                Architecture-as-Code Dashboard
+                {process.env.NODE_ENV === 'development' && (
+                  <span className="ml-2 px-2 py-1 bg-green-900 text-green-200 text-xs rounded">
+                    LOCAL DEV
+                  </span>
+                )}
+              </p>
             </div>
           </div>
           <div className="flex items-center space-x-4">

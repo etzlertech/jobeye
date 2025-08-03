@@ -31,9 +31,21 @@ export async function POST(request: NextRequest) {
     console.log('Executing report:progress script...');
     
     try {
+      // Check if we're in a development environment with source code access
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const hasSourceAccess = require('fs').existsSync(path.join(process.cwd(), 'src'));
+      
+      if (!isDevelopment || !hasSourceAccess) {
+        return NextResponse.json(
+          { error: 'Manifest generation requires local development environment with source code access' },
+          { status: 400 }
+        );
+      }
+      
       const { stdout, stderr } = await execAsync('npm run report:progress', {
         cwd: process.cwd(),
         timeout: 30000,
+        env: { ...process.env, NODE_ENV: 'development' }
       });
 
       if (stderr && !stderr.includes('warning')) {
