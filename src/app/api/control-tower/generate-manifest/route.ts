@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      const { stdout, stderr } = await execAsync('npm run report:progress', {
+      // Use detailed manifest for proper Architecture-as-Code tracking
+      const { stdout, stderr } = await execAsync('npm run report:detailed', {
         cwd: process.cwd(),
         timeout: 30000,
         env: { ...process.env, NODE_ENV: 'development' }
@@ -63,7 +64,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const manifestPath = path.join(process.cwd(), 'PROGRESS_MANIFEST.md');
+    // Look for detailed manifest first, fall back to simple one
+    let manifestPath = path.join(process.cwd(), 'DETAILED_PROGRESS_MANIFEST.md');
+    const fs = require('fs');
+    if (!fs.existsSync(manifestPath)) {
+      manifestPath = path.join(process.cwd(), 'PROGRESS_MANIFEST.md');
+    }
     let manifestContent: string;
     let fileCount = 0;
 

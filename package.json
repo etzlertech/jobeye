@@ -30,6 +30,7 @@
     "report:api-surface": "tsx scripts/dev/report-api-surface.ts",
     "report:voice-coverage": "grep -rn \"voice_considerations:\" src --include=\"*.ts\" --include=\"*.tsx\" | wc -l",
     "report:progress": "tsx scripts/dev/generate-progress-manifest.ts",
+    "report:detailed": "tsx scripts/dev/generate-detailed-manifest.ts",
     "build:spec": "tsx scripts/dev/build-spec.sh"
   },
   "dependencies": {
