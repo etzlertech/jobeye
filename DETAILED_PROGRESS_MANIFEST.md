@@ -1,10 +1,10 @@
 # Architecture-as-Code Progress Manifest
-Generated: 2025-08-03T23:28:11.836Z
+Generated: 2025-08-03T23:28:24.299Z
 Purpose: Detailed scaffold tracking for AI-guided development
 
 ## Project Context
 - **Branch**: main
-- **Last Commit**: 5f608fb - fix: configure Railway deployment with Next.js standalone build (29 minutes ago)
+- **Last Commit**: a6f3726 - feat: implement Authentication domain with AGENT DIRECTIVE BLOCKS (9 seconds ago)
 - **Total Files**: 36
 - **Files with Directives**: 2
 
