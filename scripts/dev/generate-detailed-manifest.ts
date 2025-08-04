@@ -41,45 +41,69 @@ interface PhaseGroup {
 }
 
 async function extractDirectiveBlock(content: string): Promise<DirectiveBlock | null> {
-  // Look for AGENT DIRECTIVE BLOCK or similar patterns
-  const patterns = [
-    /\/\*[\s\S]*?AGENT DIRECTIVE BLOCK[\s\S]*?\*\//,
-    /\/\*[\s\S]*?purpose:[\s\S]*?\*\//,
-    /\/\/\s*@directive-start[\s\S]*?\/\/\s*@directive-end/
+  // Look for AGENT DIRECTIVE BLOCK pattern - matches the actual format used
+  const agentBlockMatch = content.match(/\/\/\s*---\s*AGENT DIRECTIVE BLOCK\s*---[\s\S]*?(?=\n\n|\nimport|\nexport|\/\*|$)/);
+  
+  if (!agentBlockMatch) {
+    return null;
+  }
+  
+  const block = agentBlockMatch[0];
+  const directive: DirectiveBlock = {};
+  
+  // Extract single-line fields
+  const singleLineFields = [
+    'purpose', 'domain', 'phase', 'complexity_budget', 'spec_ref', 'version'
   ];
   
-  for (const pattern of patterns) {
-    const match = content.match(pattern);
-    if (match) {
-      const block = match[0];
-      const directive: DirectiveBlock = {};
-      
-      // Extract fields from the directive block
-      const fields = [
-        'purpose', 'domain', 'phase', 'complexity_budget',
-        'voice_considerations', 'security_considerations', 
-        'performance_considerations'
-      ];
-      
-      for (const field of fields) {
-        const fieldPattern = new RegExp(`${field}:\\s*(.+?)(?:\\n|\\*\/)`, 'i');
-        const fieldMatch = block.match(fieldPattern);
-        if (fieldMatch) {
-          directive[field] = fieldMatch[1].trim();
-        }
-      }
-      
-      // Extract dependencies if present
-      const depsMatch = block.match(/dependencies:\s*\[([^\]]+)\]/i);
-      if (depsMatch) {
-        directive.dependencies = depsMatch[1].split(',').map(d => d.trim());
-      }
-      
-      return Object.keys(directive).length > 0 ? directive : null;
+  for (const field of singleLineFields) {
+    const fieldPattern = new RegExp(`//\\s*${field}:\\s*(.+?)$`, 'm');
+    const fieldMatch = block.match(fieldPattern);
+    if (fieldMatch) {
+      directive[field] = fieldMatch[1].trim();
     }
   }
   
-  return null;
+  // Extract multi-line fields (voice_considerations, security_considerations, etc.)
+  const multiLineFields = ['voice_considerations', 'security_considerations', 'performance_considerations'];
+  
+  for (const field of multiLineFields) {
+    const fieldPattern = new RegExp(`//\\s*${field}:\\s*>\\s*\\n((?://\\s*.*\\n?)*?)(?=\\n//\\s*\\w+:|$)`, 'm');
+    const fieldMatch = block.match(fieldPattern);
+    if (fieldMatch) {
+      // Clean up the multi-line content
+      const content = fieldMatch[1]
+        .split('\n')
+        .map(line => line.replace(/^\/\/\s*/, '').trim())
+        .filter(line => line.length > 0)
+        .join(' ');
+      directive[field] = content;
+    }
+  }
+  
+  // Extract dependencies - handle both internal and external
+  const depsMatch = block.match(/\/\/\s*dependencies:\s*\n((?:\/\/\s*.*\n?)*?)(?=\n\/\/\s*\w+:|\/\/\s*exports:|$)/m);
+  if (depsMatch) {
+    const depsContent = depsMatch[1];
+    const internalMatch = depsContent.match(/\/\/\s*-\s*internal:\s*\[([^\]]+)\]/);
+    const externalMatch = depsContent.match(/\/\/\s*-\s*external:\s*\[([^\]]+)\]/);
+    
+    const allDeps = [];
+    if (internalMatch) {
+      const internal = internalMatch[1].split(',').map(d => d.trim().replace(/['"]/g, ''));
+      allDeps.push(...internal);
+    }
+    if (externalMatch) {
+      const external = externalMatch[1].split(',').map(d => d.trim().replace(/['"]/g, ''));
+      allDeps.push(...external);
+    }
+    
+    if (allDeps.length > 0) {
+      directive.dependencies = allDeps;
+    }
+  }
+  
+  return Object.keys(directive).length > 0 ? directive : null;
 }
 
 async function analyzeFile(filePath: string): Promise<FileMetadata> {
