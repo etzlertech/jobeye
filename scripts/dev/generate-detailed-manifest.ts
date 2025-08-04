@@ -192,19 +192,28 @@ async function analyzeFile(filePath: string): Promise<FileMetadata> {
 }
 
 async function generateDetailedManifest() {
-  console.log('🔍 Analyzing project architecture in detail...');
+  console.log('🔍 Analyzing FSM application architecture...');
   
-  // Get all source files
+  // Get all source files, excluding Control Tower and development tooling
   const patterns = [
     'src/**/*.{ts,tsx,js,jsx}',
-    'supabase/migrations/*.sql',
-    'scripts/**/*.ts'
+    'supabase/migrations/*.sql'
   ];
   
   const allFiles: string[] = [];
   for (const pattern of patterns) {
     const files = await glob(pattern, { 
-      ignore: ['**/node_modules/**', '**/*.d.ts', '**/dist/**', '**/.next/**']
+      ignore: [
+        '**/node_modules/**', 
+        '**/*.d.ts', 
+        '**/dist/**', 
+        '**/.next/**',
+        // Exclude Control Tower tooling
+        'src/app/control-tower/**',
+        'src/app/api/control-tower/**',
+        // Exclude development scripts (they're tools, not the product)
+        'scripts/**'
+      ]
     });
     allFiles.push(...files);
   }
@@ -281,9 +290,9 @@ async function generateDetailedManifest() {
   } catch {}
   
   // Generate the detailed manifest
-  const manifest = `# Architecture-as-Code Progress Manifest
+  const manifest = `# Voice-First FSM Application Architecture Manifest
 Generated: ${new Date().toISOString()}
-Purpose: Detailed scaffold tracking for AI-guided development
+Purpose: Track implementation progress of the Voice-First Field Service Management application architecture
 
 ## Project Context
 - **Branch**: ${gitInfo.branch}
@@ -414,8 +423,8 @@ ${fileMetadata
 | Tasks Defined | ${fileMetadata.filter(f => f.directive?.tasks).length} | ${Math.round((fileMetadata.filter(f => f.directive?.tasks).length / fileMetadata.length) * 100)}% |
 
 ---
-*This detailed manifest is designed for AI-guided Architecture-as-Code workflows*
-*Use this to track skeleton scaffolding progress and guide implementation priorities*
+*This architecture manifest focuses solely on the Voice-First FSM application*
+*Control Tower tooling and development scripts are excluded to provide clear visibility into product architecture*
 `;
   
   // Write the manifest
