@@ -9,10 +9,14 @@ interface DirectiveBlock {
   domain?: string;
   phase?: string;
   complexity_budget?: string;
+  spec_ref?: string;
+  version?: string;
   voice_considerations?: string;
   security_considerations?: string;
   performance_considerations?: string;
   dependencies?: string[];
+  exports?: string[];
+  tasks?: string[];
   [key: string]: any;
 }
 
@@ -100,6 +104,35 @@ async function extractDirectiveBlock(content: string): Promise<DirectiveBlock | 
     
     if (allDeps.length > 0) {
       directive.dependencies = allDeps;
+    }
+  }
+  
+  // Extract exports
+  const exportsMatch = block.match(/\/\/\s*exports:\s*\n((?:\/\/\s*.*\n?)*?)(?=\n\/\/\s*\w+:|\/\/\s*---\s*END|\n\n|$)/m);
+  if (exportsMatch) {
+    const exportsContent = exportsMatch[1];
+    const exportLines = exportsContent
+      .split('\n')
+      .map(line => line.replace(/^\/\/\s*-?\s*/, '').trim())
+      .filter(line => line.length > 0 && !line.startsWith('//'));
+    
+    if (exportLines.length > 0) {
+      directive.exports = exportLines;
+    }
+  }
+  
+  // Extract tasks
+  const tasksMatch = block.match(/\/\/\s*tasks:\s*\n((?:\/\/\s*.*\n?)*?)(?=\/\/\s*---\s*END|\n\n|$)/m);
+  if (tasksMatch) {
+    const tasksContent = tasksMatch[1];
+    const taskLines = tasksContent
+      .split('\n')
+      .map(line => line.replace(/^\/\/\s*/, '').trim())
+      .filter(line => line.length > 0 && line.match(/^\d+\./))
+      .map(line => line.replace(/^\d+\.\s*/, ''));
+    
+    if (taskLines.length > 0) {
+      directive.tasks = taskLines;
     }
   }
   
@@ -304,7 +337,13 @@ ${fileMetadata.map(f => `  - path: "${f.relativePath}"
       purpose: "${f.directive.purpose || '—'}"
       domain: "${f.directive.domain || '—'}"
       phase: "${f.directive.phase || '—'}"
-      complexity_budget: "${f.directive.complexity_budget || '—'}"` : ''}`).join('\n')}
+      complexity_budget: "${f.directive.complexity_budget || '—'}"${f.directive.dependencies ? `
+      dependencies: [${f.directive.dependencies.map(d => `"${d}"`).join(', ')}]` : ''}${f.directive.exports ? `
+      exports: ${f.directive.exports.length} items` : ''}${f.directive.tasks ? `
+      tasks: ${f.directive.tasks.length} items` : ''}${f.directive.voice_considerations ? `
+      voice_considerations: "${f.directive.voice_considerations.substring(0, 100)}..."` : ''}${f.directive.security_considerations ? `
+      security_considerations: "${f.directive.security_considerations.substring(0, 100)}..."` : ''}${f.directive.performance_considerations ? `
+      performance_considerations: "${f.directive.performance_considerations.substring(0, 100)}..."` : ''}` : ''}`).join('\n')}
 \`\`\`
 
 ## Voice-First Compliance
@@ -312,7 +351,7 @@ ${fileMetadata.map(f => `  - path: "${f.relativePath}"
 ### Files with Voice Considerations
 ${fileMetadata
   .filter(f => f.directive?.voice_considerations)
-  .map(f => `- \`${f.relativePath}\`: ${f.directive!.voice_considerations}`)
+  .map(f => `- **\`${f.relativePath}\`**: ${f.directive!.voice_considerations}`)
   .join('\n') || '- None found'}
 
 ## Security Audit
@@ -320,7 +359,7 @@ ${fileMetadata
 ### Files with Security Considerations
 ${fileMetadata
   .filter(f => f.directive?.security_considerations)
-  .map(f => `- \`${f.relativePath}\`: ${f.directive!.security_considerations}`)
+  .map(f => `- **\`${f.relativePath}\`**: ${f.directive!.security_considerations}`)
   .join('\n') || '- None found'}
 
 ## Next Implementation Priorities
@@ -339,6 +378,26 @@ ${fileMetadata
   .map(f => `1. \`${f.relativePath}\` - ${f.directive?.purpose || 'No purpose defined'}`)
   .join('\n') || 'No partially implemented files'}
 
+## Architecture Details
+
+### Dependencies Analysis
+${fileMetadata
+  .filter(f => f.directive?.dependencies && f.directive.dependencies.length > 0)
+  .map(f => `- **\`${f.relativePath}\`**: ${f.directive!.dependencies!.length} dependencies`)
+  .join('\n') || '- No dependency information found'}
+
+### Exports Analysis  
+${fileMetadata
+  .filter(f => f.directive?.exports && f.directive.exports.length > 0)
+  .map(f => `- **\`${f.relativePath}\`**: ${f.directive!.exports!.length} exports`)
+  .join('\n') || '- No export information found'}
+
+### Implementation Tasks
+${fileMetadata
+  .filter(f => f.directive?.tasks && f.directive.tasks.length > 0)
+  .map(f => `- **\`${f.relativePath}\`**: ${f.directive!.tasks!.length} tasks defined`)
+  .join('\n') || '- No task information found'}
+
 ## Directive Block Coverage Analysis
 
 | Metric | Count | Percentage |
@@ -348,6 +407,11 @@ ${fileMetadata
 | Files with Domain | ${fileMetadata.filter(f => f.directive?.domain).length} | ${Math.round((fileMetadata.filter(f => f.directive?.domain).length / fileMetadata.length) * 100)}% |
 | Files with Phase | ${fileMetadata.filter(f => f.directive?.phase).length} | ${Math.round((fileMetadata.filter(f => f.directive?.phase).length / fileMetadata.length) * 100)}% |
 | Voice Considerations | ${fileMetadata.filter(f => f.directive?.voice_considerations).length} | ${Math.round((fileMetadata.filter(f => f.directive?.voice_considerations).length / fileMetadata.length) * 100)}% |
+| Security Considerations | ${fileMetadata.filter(f => f.directive?.security_considerations).length} | ${Math.round((fileMetadata.filter(f => f.directive?.security_considerations).length / fileMetadata.length) * 100)}% |
+| Performance Considerations | ${fileMetadata.filter(f => f.directive?.performance_considerations).length} | ${Math.round((fileMetadata.filter(f => f.directive?.performance_considerations).length / fileMetadata.length) * 100)}% |
+| Dependencies Documented | ${fileMetadata.filter(f => f.directive?.dependencies).length} | ${Math.round((fileMetadata.filter(f => f.directive?.dependencies).length / fileMetadata.length) * 100)}% |
+| Exports Documented | ${fileMetadata.filter(f => f.directive?.exports).length} | ${Math.round((fileMetadata.filter(f => f.directive?.exports).length / fileMetadata.length) * 100)}% |
+| Tasks Defined | ${fileMetadata.filter(f => f.directive?.tasks).length} | ${Math.round((fileMetadata.filter(f => f.directive?.tasks).length / fileMetadata.length) * 100)}% |
 
 ---
 *This detailed manifest is designed for AI-guided Architecture-as-Code workflows*
