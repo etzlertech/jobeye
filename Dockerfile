@@ -20,8 +20,8 @@ ENV NEXT_PUBLIC_SUPABASE_URL=https://dummy.supabase.co
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy-anon-key-for-build
 ENV SUPABASE_SERVICE_ROLE_KEY=dummy-service-key-for-build
 
-# Build the application
-RUN npm run build
+# Build the application (with verbose logging)
+RUN npm run build || (echo "Build failed. Showing package.json:" && cat package.json && echo "Showing node version:" && node --version && echo "Showing npm version:" && npm --version && exit 1)
 
 # Production stage
 FROM node:20-alpine AS runner

@@ -106,7 +106,7 @@ export default function ControlTowerDashboard() {
         <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <a
-            href="/(control-tower)/manifest-generator"
+            href="/control-tower/manifest-generator"
             className="bg-tower-accent hover:bg-blue-600 text-white p-4 rounded-lg transition-colors text-center"
           >
             <div className="text-2xl mb-2">📋</div>
@@ -115,7 +115,7 @@ export default function ControlTowerDashboard() {
           </a>
 
           <a
-            href="/(control-tower)/architecture-viewer"
+            href="/control-tower/architecture-viewer"
             className="bg-tower-border hover:bg-gray-600 text-white p-4 rounded-lg transition-colors text-center"
           >
             <div className="text-2xl mb-2">🏗️</div>
@@ -124,7 +124,7 @@ export default function ControlTowerDashboard() {
           </a>
 
           <a
-            href="/(control-tower)/standards-library"
+            href="/control-tower/standards-library"
             className="bg-tower-border hover:bg-gray-600 text-white p-4 rounded-lg transition-colors text-center"
           >
             <div className="text-2xl mb-2">📚</div>
