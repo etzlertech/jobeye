@@ -127,7 +127,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
 
     // Handle voice login if voice command provided
     if (body.voice_command) {
-      return await handleVoiceLogin(body as VoiceLoginRequest, clientIP, userAgent);
+      // Create a proper VoiceLoginRequest with required fields
+      const voiceLoginRequest: VoiceLoginRequest = {
+        voice_command: body.voice_command,
+        confidence: 1.0, // Default confidence for manually typed commands
+        parsed_email: body.email,
+        device_info: {
+          device_type: 'voice_assistant',
+          device_name: body.device_info?.device_name
+        }
+      };
+      return await handleVoiceLogin(voiceLoginRequest, clientIP, userAgent);
     }
 
     // Validate login request
