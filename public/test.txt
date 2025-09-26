@@ -1,0 +1,2 @@
+Railway deployment test file
+If you can see this, static files are being served correctly.
