@@ -11,7 +11,7 @@ export default function Home() {
           Version 3.2.1 - Railway Deployment
         </p>
         <p className="text-sm text-gray-500 mb-8">
-          Architecture-as-Code Voice-First FSM System
+          Architecture-as-Code Voice-First FSM System • Build 20250126
         </p>
         
         <div className="bg-tower-gray rounded-lg p-8 border border-tower-border">
