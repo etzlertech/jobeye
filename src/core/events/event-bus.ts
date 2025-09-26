@@ -87,11 +87,11 @@ export class EventBus {
         const result = handler(data);
         if (result instanceof Promise) {
           result.catch(error => {
-            handleError(error, { operation: 'event-handler', event });
+            handleError(error, { operation: 'event-handler', metadata: { event } });
           });
         }
       } catch (error) {
-        handleError(error as Error, { operation: 'event-handler', event });
+        handleError(error as Error, { operation: 'event-handler', metadata: { event } });
       }
     }
   }
