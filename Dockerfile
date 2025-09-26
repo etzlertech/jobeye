@@ -16,8 +16,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Set dummy environment variables for build
-ENV NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
-ENV SUPABASE_SERVICE_ROLE_KEY=dummy-key-for-build
+ENV NEXT_PUBLIC_SUPABASE_URL=https://dummy.supabase.co
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy-anon-key-for-build
+ENV SUPABASE_SERVICE_ROLE_KEY=dummy-service-key-for-build
 
 # Build the application
 RUN npm run build
