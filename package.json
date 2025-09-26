@@ -37,7 +37,7 @@
     "type-check:strict": "tsc --noEmit --strict",
     "pre-commit": "tsx scripts/ci/pre-commit-checks.ts",
     "quick-check": "bash scripts/ci/type-check.sh",
-    "prepare": "husky || true"
+    "prepare": "husky"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
