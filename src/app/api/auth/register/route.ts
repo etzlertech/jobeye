@@ -137,7 +137,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<RegisterR
 
     // Validate registration request
     const validation = validateRegistration(body);
-    if (!validation.success) {
+    if (!validation.success || !validation.data) {
       await logRegistrationFailure(body.email, 'validation_failed', clientIP, validation.errors);
       return NextResponse.json({
         success: false,
