@@ -56,8 +56,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { isSessionExpired, sanitizeAuthError, maskSensitiveData } from '@/domains/auth/utils/auth-helpers';
-import { logger } from '@/core/logger/logger';
+import { createLogger } from '@/core/logger/logger';
 import { supabase } from '@/core/database/connection';
+
+const logger = createLogger('auth-refresh');
 
 // Request/Response Interfaces
 interface RefreshRequest {

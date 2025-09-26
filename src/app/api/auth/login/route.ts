@@ -59,8 +59,10 @@ import { cookies } from 'next/headers';
 import { validateLogin, validateVoiceCommand } from '@/domains/auth/utils/auth-validators';
 import { sanitizeAuthError, generateVoiceGreeting, extractTenantFromEmail } from '@/domains/auth/utils/auth-helpers';
 import { Role, type LoginDto, type UserProfile } from '@/domains/auth/types/auth-types';
-import { logger } from '@/core/logger/logger';
+import { createLogger } from '@/core/logger/logger';
 import { supabase } from '@/core/database/connection';
+
+const logger = createLogger('auth-login');
 
 // Request/Response Interfaces
 interface LoginRequest extends LoginDto {
