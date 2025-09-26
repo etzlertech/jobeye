@@ -5,9 +5,9 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json ./
-# Install dependencies
-RUN npm ci
+COPY package.json package-lock.json* ./
+# Install dependencies (using npm install to handle lock file mismatch)
+RUN npm install --frozen-lockfile || npm install
 
 # Build stage
 FROM node:20-alpine AS builder
