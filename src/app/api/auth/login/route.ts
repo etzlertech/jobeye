@@ -142,7 +142,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
 
     // Validate login request
     const validation = validateLogin(body);
-    if (!validation.success) {
+    if (!validation.success || !validation.data) {
       await logLoginFailure(body.email, 'validation_failed', clientIP, validation.errors);
       return NextResponse.json({
         success: false,
