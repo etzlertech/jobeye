@@ -8,7 +8,7 @@ export default function Home() {
           JobEye - Voice-First Field Service Management System
         </h1>
         <p className="text-lg text-gray-400 mb-8">
-          Version 3.2.1 - Deployment Test {new Date().toISOString().split('T')[0]}
+          Version 3.2.1 - Deployment Test 2025-01-26
         </p>
         
         <div className="bg-tower-gray rounded-lg p-8 border border-tower-border">
