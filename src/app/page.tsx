@@ -7,8 +7,11 @@ export default function Home() {
         <h1 className="text-4xl font-bold mb-4 text-white">
           JobEye - Voice-First Field Service Management System
         </h1>
-        <p className="text-lg text-gray-400 mb-8">
-          Version 3.2.1 - Deployment Test 2025-01-26
+        <p className="text-lg text-gray-400 mb-4">
+          Version 3.2.1 - Railway Deployment
+        </p>
+        <p className="text-sm text-gray-500 mb-8">
+          Architecture-as-Code Voice-First FSM System
         </p>
         
         <div className="bg-tower-gray rounded-lg p-8 border border-tower-border">
