@@ -354,7 +354,13 @@ async function assignTenant(
     if (invitationCode) {
       const { data: invitation } = await supabase()
         .from('user_invitations')
-        .select('tenant_id, role, tenants!inner(name)')
+        .select(`
+          tenant_id,
+          role,
+          tenants:tenant_id (
+            name
+          )
+        `)
         .eq('invitation_code', invitationCode)
         .eq('email', email)
         .gte('expires_at', new Date().toISOString())
@@ -363,7 +369,7 @@ async function assignTenant(
       if (invitation && invitation.tenants) {
         return {
           tenant_id: invitation.tenant_id,
-          tenant_name: Array.isArray(invitation.tenants) ? invitation.tenants[0].name : invitation.tenants.name,
+          tenant_name: (invitation as any).tenants.name,
           role: invitation.role as Role,
           approved: true
         };
