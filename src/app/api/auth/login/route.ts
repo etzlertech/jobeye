@@ -147,7 +147,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
       return NextResponse.json({
         success: false,
         error: 'Invalid login data',
-        voice_error: validation.voiceMessage
+        voice_error: validation.voiceMessage || undefined
       }, { status: 400 });
     }
 
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
       return NextResponse.json({
         success: false,
         error: sanitizedError.message,
-        voice_error: sanitizedError.voiceMessage
+        voice_error: sanitizedError.voiceMessage || undefined
       }, { status: 401 });
     }
 
@@ -300,7 +300,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
     return NextResponse.json({
       success: false,
       error: sanitizedError.message,
-      voice_error: sanitizedError.voiceMessage
+      voice_error: sanitizedError.voiceMessage || undefined
     }, { status: 500 });
   }
 }
