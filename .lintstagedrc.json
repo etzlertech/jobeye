@@ -1,0 +1,12 @@
+{
+  "*.{ts,tsx}": [
+    "bash -c 'tsc --noEmit -p tsconfig.json'",
+    "eslint --fix --max-warnings 0"
+  ],
+  "*.{js,jsx}": [
+    "eslint --fix --max-warnings 0"
+  ],
+  "src/**/*.{ts,tsx}": [
+    "bash -c 'npm run type-check'"
+  ]
+}

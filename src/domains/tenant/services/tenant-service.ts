@@ -60,8 +60,10 @@
 // --- END DIRECTIVE BLOCK ---
 
 import { supabase } from '@/core/database/connection';
-import { logger } from '@/core/logger/logger';
-import { TenantError, ValidationError, NotFoundError, UnauthorizedError } from '@/core/errors/error-types';
+import { createLogger } from '@/core/logger/logger';
+import { ValidationError } from '@/core/errors/error-types';
+
+const logger = createLogger('tenant-service');
 import type { 
   Tenant, 
   CreateTenantData, 
