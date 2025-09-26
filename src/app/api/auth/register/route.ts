@@ -85,6 +85,7 @@ interface VoiceRegistrationRequest extends RegisterRequest {
     speech_rate: number;
     wake_word?: string;
     voice_feedback_enabled: boolean;
+    preferred_tts_provider: 'openai' | 'google' | 'system';
   };
 }
 
