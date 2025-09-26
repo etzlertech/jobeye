@@ -36,6 +36,8 @@
     "build:spec": "tsx scripts/dev/build-spec.sh",
     "type-check": "tsc --noEmit",
     "type-check:strict": "tsc --noEmit --strict",
+    "type-check:next": "next build --debug",
+    "test:railway": "bash scripts/test-like-railway.sh",
     "pre-commit": "tsx scripts/ci/pre-commit-checks.ts",
     "quick-check": "bash scripts/ci/type-check.sh",
     "prepare": "husky"

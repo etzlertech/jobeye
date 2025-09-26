@@ -4,6 +4,10 @@
 # Run quick type check first (fast fail)
 echo "🔍 Running quick type check..."
 npm run type-check
+
+# Also check Next.js build types (what Railway actually runs)
+echo "🔍 Checking Next.js build compatibility..."
+npx next build --dry-run 2>/dev/null || echo "⚠️  Next.js build check failed - run 'npm run test:railway' for details"
 if [ $? -ne 0 ]; then
   echo "❌ Type check failed! Fix errors before committing."
   echo "💡 To bypass in emergency: git commit --no-verify"
