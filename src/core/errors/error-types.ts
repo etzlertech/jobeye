@@ -182,3 +182,56 @@ export class NetworkError extends AppError {
     super(message, code, ErrorSeverity.MEDIUM, 'Network connectivity issue');
   }
 }
+
+/**
+ * Error categories for classification
+ */
+export enum ErrorCategory {
+  VALIDATION = 'validation',
+  BUSINESS_LOGIC = 'business_logic',
+  DATABASE = 'database',
+  NETWORK = 'network',
+  AUTHENTICATION = 'authentication',
+  VOICE = 'voice',
+  SYSTEM = 'system',
+}
+
+/**
+ * Extended error creation options
+ */
+export interface ErrorOptions {
+  code: string;
+  message: string;
+  severity: ErrorSeverity;
+  category: ErrorCategory;
+  userMessage?: string;
+  originalError?: Error;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Factory function to create app errors
+ */
+export function createAppError(options: ErrorOptions): AppError {
+  const error = new AppError(
+    options.message,
+    ErrorCode.UNKNOWN, // Map string code to enum if needed
+    options.severity,
+    options.userMessage
+  );
+  
+  // Add additional properties
+  (error as any).category = options.category;
+  (error as any).userMessage = options.userMessage;
+  (error as any).metadata = options.metadata;
+  (error as any).originalError = options.originalError;
+  
+  return error;
+}
+
+/**
+ * Type guard to check if an error is an AppError
+ */
+export function isAppError(error: any): error is AppError {
+  return error instanceof AppError;
+}

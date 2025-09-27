@@ -7,38 +7,38 @@
 // phase: 1
 // complexity_budget: high
 // offline_capability: REQUIRED
-
+//
 // dependencies:
 //   - src/core/errors/error-types.ts
 //   - src/core/logger/logger.ts
 //   - src/core/logger/voice-logger.ts
 //   - src/core/events/event-bus.ts
-
+//
 // exports:
 //   - ErrorHandler: class - Main error handling service
 //   - handleError(error: Error, context?: ErrorContext): Promise<void> - Global error handler
 //   - RecoveryStrategy: interface - Error recovery strategy definition
 //   - ErrorContext: interface - Error context information
 //   - registerRecoveryStrategy(errorType: string, strategy: RecoveryStrategy): void - Recovery registration
-
+//
 // voice_considerations: |
 //   Critical errors must trigger immediate voice announcements to alert users.
 //   Voice error messages should provide clear recovery instructions.
 //   Support voice commands for "retry operation" and "dismiss error" interactions.
 //   Error notifications should respect voice UI volume and speech rate settings.
-
+//
 // security_considerations: |
 //   Error handling must sanitize all error details before external logging.
 //   Never expose system paths, credentials, or internal state in error messages.
 //   Implement rate limiting for error notifications to prevent spam attacks.
 //   Error recovery strategies must validate user permissions before executing.
-
+//
 // performance_considerations: |
 //   Error handling should be non-blocking with async processing for notifications.
 //   Implement error deduplication to prevent repeated processing of identical errors.
 //   Use error batching for non-critical errors to reduce notification overhead.
 //   Cache recovery strategies to avoid repeated strategy resolution.
-
+//
 // tasks:
 //     1. Create ErrorHandler singleton service with dependency injection
 //     2. Implement global error handling with context information capture
@@ -52,44 +52,368 @@
 //     10. Create graceful degradation handlers for system-wide failures
 // --- END DIRECTIVE BLOCK ---
 
-import { AppError } from './error-types';
+import { 
+  AppError, 
+  ErrorSeverity, 
+  ErrorCategory,
+  isAppError,
+  createAppError
+} from './error-types';
 import { createLogger } from '../logger/logger';
+import { voiceLogger } from '../logger/voice-logger';
+import { EventBus } from '../events/event-bus';
 
 const logger = createLogger('error-handler');
 
 export interface ErrorContext {
   userId?: string;
+  tenantId?: string;
   operation?: string;
   metadata?: Record<string, any>;
+  timestamp?: Date;
+  sessionId?: string;
+  voiceSessionId?: string;
 }
 
 export interface RecoveryStrategy {
-  canRecover(error: Error): boolean;
-  recover(error: Error, context?: ErrorContext): Promise<void>;
+  name: string;
+  canRecover(error: Error, context?: ErrorContext): boolean;
+  recover(error: Error, context?: ErrorContext): Promise<boolean>;
+  description: string;
+  requiresUserConfirmation?: boolean;
+}
+
+interface ErrorNotification {
+  errorId: string;
+  message: string;
+  severity: ErrorSeverity;
+  category: ErrorCategory;
+  context?: ErrorContext;
+  timestamp: Date;
+  isVoiceEnabled: boolean;
+}
+
+interface ErrorDeduplicationEntry {
+  hash: string;
+  count: number;
+  firstSeen: Date;
+  lastSeen: Date;
+  contexts: ErrorContext[];
 }
 
 export class ErrorHandler {
   private static instance: ErrorHandler;
-  private recoveryStrategies: Map<string, RecoveryStrategy> = new Map();
-  
+  private recoveryStrategies: Map<string, RecoveryStrategy[]> = new Map();
+  private errorDeduplication: Map<string, ErrorDeduplicationEntry> = new Map();
+  private errorQueue: ErrorNotification[] = [];
+  private eventBus: EventBus;
+  private isProcessing = false;
+  private deduplicationWindow = 5 * 60 * 1000; // 5 minutes
+  private maxQueueSize = 100;
+
+  private constructor() {
+    this.eventBus = EventBus.getInstance();
+    this.startErrorProcessor();
+    this.setupCleanupInterval();
+  }
+
   static getInstance(): ErrorHandler {
     if (!ErrorHandler.instance) {
       ErrorHandler.instance = new ErrorHandler();
     }
     return ErrorHandler.instance;
   }
-  
+
   async handleError(error: Error, context?: ErrorContext): Promise<void> {
-    logger.error(error.message, { error: error.name, context });
-    
-    // TODO: Implement recovery strategies, voice notifications
+    try {
+      // Enhance context with timestamp
+      const enhancedContext: ErrorContext = {
+        ...context,
+        timestamp: new Date(),
+      };
+
+      // Convert to AppError if needed
+      const appError = isAppError(error) ? error : createAppError({
+        code: 'UNKNOWN_ERROR',
+        message: error.message,
+        severity: ErrorSeverity.MEDIUM,
+        category: ErrorCategory.SYSTEM,
+        originalError: error,
+      });
+
+      // Check for deduplication
+      const errorHash = this.generateErrorHash(appError);
+      if (this.shouldDeduplicate(errorHash, enhancedContext)) {
+        return;
+      }
+
+      // Log the error
+      this.logError(appError, enhancedContext);
+
+      // Queue for notification
+      await this.queueErrorNotification(appError, enhancedContext);
+
+      // Attempt recovery
+      await this.attemptRecovery(appError, enhancedContext);
+
+      // Emit error event
+      this.eventBus.emit('error:handled', {
+        error: appError,
+        context: enhancedContext,
+      });
+
+    } catch (handlingError) {
+      // Last resort logging
+      console.error('Error handler failed:', handlingError);
+      console.error('Original error:', error);
+    }
   }
-  
+
   registerRecoveryStrategy(errorType: string, strategy: RecoveryStrategy): void {
-    this.recoveryStrategies.set(errorType, strategy);
+    if (!this.recoveryStrategies.has(errorType)) {
+      this.recoveryStrategies.set(errorType, []);
+    }
+    this.recoveryStrategies.get(errorType)!.push(strategy);
+    logger.info(`Registered recovery strategy: ${strategy.name} for ${errorType}`);
+  }
+
+  private generateErrorHash(error: AppError): string {
+    return `${error.code}-${error.category}-${error.message}`;
+  }
+
+  private shouldDeduplicate(hash: string, context: ErrorContext): boolean {
+    const existing = this.errorDeduplication.get(hash);
+    
+    if (!existing) {
+      this.errorDeduplication.set(hash, {
+        hash,
+        count: 1,
+        firstSeen: new Date(),
+        lastSeen: new Date(),
+        contexts: [context],
+      });
+      return false;
+    }
+
+    // Update existing entry
+    existing.count++;
+    existing.lastSeen = new Date();
+    existing.contexts.push(context);
+
+    // Deduplicate if seen recently
+    const timeSinceFirst = Date.now() - existing.firstSeen.getTime();
+    return timeSinceFirst < this.deduplicationWindow;
+  }
+
+  private logError(error: AppError, context: ErrorContext): void {
+    const sanitizedError = this.sanitizeError(error);
+    const logLevel = this.getLogLevel(error.severity);
+
+    logger[logLevel](sanitizedError.message, {
+      code: sanitizedError.code,
+      category: sanitizedError.category,
+      severity: sanitizedError.severity,
+      context: this.sanitizeContext(context),
+    });
+  }
+
+  private sanitizeError(error: AppError): AppError {
+    // Remove sensitive information
+    const sanitized = { ...error };
+    
+    // Remove any paths, credentials, or internal details
+    if (sanitized.message) {
+      sanitized.message = sanitized.message
+        .replace(/\/[a-zA-Z0-9/_.-]+/g, '[PATH]')
+        .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL]')
+        .replace(/\b(?:password|token|key|secret)\b[:\s]*[^\s]+/gi, '[REDACTED]');
+    }
+
+    return sanitized;
+  }
+
+  private sanitizeContext(context: ErrorContext): ErrorContext {
+    const sanitized = { ...context };
+    
+    // Remove sensitive metadata
+    if (sanitized.metadata) {
+      const cleanMetadata: Record<string, any> = {};
+      for (const [key, value] of Object.entries(sanitized.metadata)) {
+        if (!key.match(/password|token|key|secret/i)) {
+          cleanMetadata[key] = value;
+        }
+      }
+      sanitized.metadata = cleanMetadata;
+    }
+
+    return sanitized;
+  }
+
+  private getLogLevel(severity: ErrorSeverity): string {
+    switch (severity) {
+      case ErrorSeverity.CRITICAL:
+      case ErrorSeverity.HIGH:
+        return 'error';
+      case ErrorSeverity.MEDIUM:
+        return 'warn';
+      case ErrorSeverity.LOW:
+        return 'info';
+      default:
+        return 'debug';
+    }
+  }
+
+  private async queueErrorNotification(error: AppError, context: ErrorContext): Promise<void> {
+    // Check if voice notification is needed
+    const needsVoiceNotification = 
+      error.severity === ErrorSeverity.CRITICAL ||
+      (error.severity === ErrorSeverity.HIGH && context.voiceSessionId);
+
+    const notification: ErrorNotification = {
+      errorId: `err-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      message: this.formatUserMessage(error),
+      severity: error.severity,
+      category: error.category,
+      context,
+      timestamp: new Date(),
+      isVoiceEnabled: needsVoiceNotification,
+    };
+
+    // Add to queue with size limit
+    if (this.errorQueue.length >= this.maxQueueSize) {
+      this.errorQueue.shift(); // Remove oldest
+    }
+    this.errorQueue.push(notification);
+  }
+
+  private formatUserMessage(error: AppError): string {
+    // Create user-friendly message
+    let message = error.userMessage || error.message;
+    
+    // Add recovery suggestions
+    if (error.metadata?.suggestions) {
+      message += `. ${error.metadata.suggestions.join('. ')}`;
+    }
+
+    return message;
+  }
+
+  private async startErrorProcessor(): Promise<void> {
+    setInterval(async () => {
+      if (this.isProcessing || this.errorQueue.length === 0) {
+        return;
+      }
+
+      this.isProcessing = true;
+      try {
+        await this.processErrorQueue();
+      } finally {
+        this.isProcessing = false;
+      }
+    }, 1000); // Process every second
+  }
+
+  private async processErrorQueue(): Promise<void> {
+    const batch = this.errorQueue.splice(0, 10); // Process up to 10 at a time
+
+    for (const notification of batch) {
+      try {
+        // Send voice notification if needed
+        if (notification.isVoiceEnabled) {
+          await this.sendVoiceNotification(notification);
+        }
+
+        // Emit notification event
+        this.eventBus.emit('error:notification', notification);
+
+      } catch (notifyError) {
+        logger.error('Failed to process error notification', { error: notifyError });
+      }
+    }
+  }
+
+  private async sendVoiceNotification(notification: ErrorNotification): Promise<void> {
+    const voiceMessage = this.createVoiceMessage(notification);
+    
+    await voiceLogger.speakError(voiceMessage, {
+      priority: notification.severity === ErrorSeverity.CRITICAL ? 'high' : 'normal',
+      interruptible: notification.severity !== ErrorSeverity.CRITICAL,
+    });
+  }
+
+  private createVoiceMessage(notification: ErrorNotification): string {
+    const severityText = notification.severity === ErrorSeverity.CRITICAL 
+      ? 'Critical error' 
+      : 'Error occurred';
+
+    let message = `${severityText}: ${notification.message}`;
+
+    // Add context if available
+    if (notification.context?.operation) {
+      message = `${severityText} during ${notification.context.operation}: ${notification.message}`;
+    }
+
+    return message;
+  }
+
+  private async attemptRecovery(error: AppError, context: ErrorContext): Promise<void> {
+    const strategies = this.recoveryStrategies.get(error.code) || [];
+    
+    for (const strategy of strategies) {
+      try {
+        if (strategy.canRecover(error, context)) {
+          logger.info(`Attempting recovery with strategy: ${strategy.name}`);
+          
+          const recovered = await strategy.recover(error, context);
+          
+          if (recovered) {
+            logger.info(`Recovery successful with strategy: ${strategy.name}`);
+            this.eventBus.emit('error:recovered', {
+              error,
+              strategy: strategy.name,
+              context,
+            });
+            return;
+          }
+        }
+      } catch (recoveryError) {
+        logger.error(`Recovery strategy failed: ${strategy.name}`, { error: recoveryError });
+      }
+    }
+  }
+
+  private setupCleanupInterval(): void {
+    // Clean up old deduplication entries
+    setInterval(() => {
+      const cutoff = Date.now() - this.deduplicationWindow;
+      
+      for (const [hash, entry] of this.errorDeduplication.entries()) {
+        if (entry.lastSeen.getTime() < cutoff) {
+          this.errorDeduplication.delete(hash);
+        }
+      }
+    }, 60 * 1000); // Clean up every minute
+  }
+
+  // Public utility methods
+  getErrorStats(): {
+    queueSize: number;
+    deduplicationEntries: number;
+    recentErrors: ErrorDeduplicationEntry[];
+  } {
+    const recentErrors = Array.from(this.errorDeduplication.values())
+      .sort((a, b) => b.lastSeen.getTime() - a.lastSeen.getTime())
+      .slice(0, 10);
+
+    return {
+      queueSize: this.errorQueue.length,
+      deduplicationEntries: this.errorDeduplication.size,
+      recentErrors,
+    };
   }
 }
 
+// Convenience exports
 export const handleError = (error: Error, context?: ErrorContext): Promise<void> => {
   return ErrorHandler.getInstance().handleError(error, context);
 };

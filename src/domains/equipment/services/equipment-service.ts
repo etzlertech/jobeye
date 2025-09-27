@@ -70,7 +70,7 @@ import {
   EquipmentVoiceCommand,
   EquipmentSearchResult,
 } from '../types/equipment-types';
-import { EventBus, DomainEvent } from '@/core/events/event-bus';
+import { EventBus } from '@/core/events/event-bus';
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
 
 /**
@@ -108,11 +108,11 @@ export class EquipmentService {
 
   constructor(
     supabaseClient: SupabaseClient,
-    eventBus: EventBus,
+    eventBus?: EventBus,
     config?: EquipmentServiceConfig
   ) {
     this.repository = new EquipmentRepository(supabaseClient);
-    this.eventBus = eventBus;
+    this.eventBus = eventBus || EventBus.getInstance();
     this.config = {
       enableMaintenanceReminders: config?.enableMaintenanceReminders ?? true,
       defaultMaintenanceIntervalDays: config?.defaultMaintenanceIntervalDays ?? 90,
@@ -161,7 +161,7 @@ export class EquipmentService {
       const equipment = await this.repository.createEquipment(data, tenantId);
 
       // Publish event
-      await this.publishEvent({
+      this.publishEvent({
         type: EquipmentEventType.EQUIPMENT_CREATED,
         aggregateId: equipment.id,
         tenantId,
@@ -246,7 +246,7 @@ export class EquipmentService {
 
       // Publish state change event if state changed
       if (updates.state && updates.state !== currentEquipment.state) {
-        await this.publishEvent({
+        this.publishEvent({
           type: EquipmentEventType.EQUIPMENT_STATE_CHANGED,
           aggregateId: equipmentId,
           tenantId,
@@ -261,7 +261,7 @@ export class EquipmentService {
 
       // Publish location change event if location changed
       if (updates.location && updates.location.id !== currentEquipment.location.id) {
-        await this.publishEvent({
+        this.publishEvent({
           type: EquipmentEventType.EQUIPMENT_MOVED,
           aggregateId: equipmentId,
           tenantId,
@@ -323,7 +323,7 @@ export class EquipmentService {
       }
 
       // Publish event
-      await this.publishEvent({
+      this.publishEvent({
         type: EquipmentEventType.EQUIPMENT_MOVED,
         aggregateId: equipmentId,
         tenantId,
@@ -607,8 +607,15 @@ export class EquipmentService {
   /**
    * Publish domain event
    */
-  private async publishEvent(event: Omit<DomainEvent, 'id' | 'timestamp'>): Promise<void> {
-    await this.eventBus.publish({
+  private publishEvent(event: {
+    type: string;
+    aggregateId: string;
+    tenantId: string;
+    userId: string;
+    payload: any;
+    metadata?: any;
+  }): void {
+    this.eventBus.emit(event.type, {
       ...event,
       id: crypto.randomUUID(),
       timestamp: new Date(),
@@ -621,7 +628,7 @@ export class EquipmentService {
  */
 export function createEquipmentService(
   supabaseClient: SupabaseClient,
-  eventBus: EventBus,
+  eventBus?: EventBus,
   config?: EquipmentServiceConfig
 ): EquipmentService {
   return new EquipmentService(supabaseClient, eventBus, config);

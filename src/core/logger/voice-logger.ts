@@ -102,6 +102,68 @@ export class VoiceLogger extends Logger {
       rate: options.rate
     });
   }
+
+  /**
+   * Speak text to user (voice output)
+   */
+  async speak(message: string, context?: { voiceSessionId?: string }): Promise<void> {
+    this.info(`Speaking: ${message}`, context);
+    // In real implementation, would trigger TTS
+  }
+
+  /**
+   * Speak error message to user
+   */
+  async speakError(message: string, options?: { priority?: 'high' | 'normal' }): Promise<void> {
+    this.error(`Speaking error: ${message}`, { priority: options?.priority });
+    // In real implementation, would trigger TTS with error tone
+  }
+
+  /**
+   * Start voice command session
+   */
+  startCommand(sessionId: string): void {
+    this.info('Voice command session started', { sessionId });
+  }
+
+  /**
+   * End voice command session
+   */
+  endCommand(sessionId: string, success: boolean = true): void {
+    this.info('Voice command session ended', { sessionId, success });
+  }
+
+  /**
+   * Get voice interaction history
+   */
+  async getVoiceHistory(sessionId?: string, limit: number = 50): Promise<any[]> {
+    this.debug('Retrieving voice history', { sessionId, limit });
+    // In real implementation, would query voice logs from database
+    return [];
+  }
+
+  /**
+   * Get voice interaction statistics
+   */
+  async getVoiceStats(sessionId?: string): Promise<{
+    totalCommands: number;
+    successfulCommands: number;
+    failedCommands: number;
+    successRate: number;
+    averageDuration: number;
+    averageConfidence: number;
+  }> {
+    this.debug('Retrieving voice stats', { sessionId });
+    // In real implementation, would calculate from voice logs
+    return {
+      totalCommands: 0,
+      successfulCommands: 0,
+      failedCommands: 0,
+      successRate: 0,
+      averageDuration: 0,
+      averageConfidence: 0,
+    };
+  }
 }
 
 const voiceLogger = new VoiceLogger();

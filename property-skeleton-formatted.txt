@@ -1,0 +1,395 @@
+```typescript
+// --- AGENT DIRECTIVE BLOCK ---
+// file: /src/domains/property/types/property-types.ts
+// phase: 2
+// domain: property-management
+// purpose: Define property domain types with voice metadata and geolocation support
+// spec_ref: phase2/property-management#types
+// version: 2025-08-1
+// complexity_budget: 300 LoC
+// offline_capability: REQUIRED
+//
+// dependencies:
+//   internal:
+//     - /src/domains/customer/types/customer-types
+//   external:
+//     - zod: ^3.23.8
+//
+// exports:
+//   - Property: interface - Core property entity
+//   - PropertyCreate: interface - Property creation payload
+//   - PropertyUpdate: interface - Property update payload
+//   - ServiceLocation: interface - Service-specific location details
+//   - PropertyType: enum - Property classification
+//   - PropertyState: enum - Property lifecycle states
+//   - PropertyVoiceProfile: interface - Voice recognition metadata
+//   - PropertySearchResult: interface - Search result with confidence
+//   - propertySchema: ZodSchema - Validation schema
+//
+// voice_considerations: |
+//   Store phonetic addresses for voice recognition.
+//   Support landmark-based descriptions.
+//   Enable voice-friendly property nicknames.
+//   Track gate codes and access instructions in voice-readable format.
+//
+// test_requirements:
+//   coverage: 95%
+//   test_files:
+//     - src/__tests__/domains/property/types/property-types.test.ts
+//
+// tasks:
+//   1. Define core property interfaces
+//   2. Add geolocation types
+//   3. Create service location types
+//   4. Add voice metadata types
+//   5. Define validation schemas
+//   6. Add state machine types
+// --- END DIRECTIVE BLOCK ---
+```
+
+```typescript
+// --- AGENT DIRECTIVE BLOCK ---
+// file: /src/domains/property/repositories/property-repository.ts
+// phase: 2
+// domain: property-management
+// purpose: Property data access with multi-tenant isolation and geospatial queries
+// spec_ref: phase2/property-management#repository
+// version: 2025-08-1
+// complexity_budget: 400 LoC
+// offline_capability: REQUIRED
+//
+// dependencies:
+//   internal:
+//     - /src/lib/repositories/base.repository
+//     - /src/domains/property/types/property-types
+//   external:
+//     - @supabase/supabase-js: ^2.43.0
+//
+// exports:
+//   - PropertyRepository: class - Property data access
+//   - createProperty: function - Create new property
+//   - updateProperty: function - Update property details
+//   - findPropertiesByCustomer: function - Get customer properties
+//   - findPropertiesNearby: function - Geospatial search
+//   - findPropertyByAddress: function - Address lookup
+//
+// voice_considerations: |
+//   Support fuzzy address matching for voice queries.
+//   Store and retrieve voice-friendly nicknames.
+//   Enable landmark-based property searches.
+//   Track access instructions in natural language format.
+//
+// test_requirements:
+//   coverage: 90%
+//   test_files:
+//     - src/__tests__/domains/property/repositories/property-repository.test.ts
+//
+// tasks:
+//   1. Extend BaseRepository for properties
+//   2. Implement CRUD with tenant isolation
+//   3. Add customer association methods
+//   4. Create geospatial query methods
+//   5. Implement address fuzzy search
+//   6. Add service location management
+// --- END DIRECTIVE BLOCK ---
+```
+
+```typescript
+// --- AGENT DIRECTIVE BLOCK ---
+// file: /src/domains/property/services/property-service.ts
+// phase: 2
+// domain: property-management
+// purpose: Property business logic orchestration with state management
+// spec_ref: phase2/property-management#service
+// version: 2025-08-1
+// complexity_budget: 500 LoC
+// offline_capability: REQUIRED
+//
+// dependencies:
+//   internal:
+//     - /src/domains/property/repositories/property-repository
+//     - /src/domains/property/services/property-search-service
+//     - /src/domains/property/types/property-types
+//     - /src/domains/customer/types/customer-types
+//     - /src/core/events/event-bus
+//   external:
+//     - @supabase/supabase-js: ^2.43.0
+//
+// exports:
+//   - PropertyService: class - Property business logic
+//   - createProperty: function - Create property with validation
+//   - updateProperty: function - Update with state transitions
+//   - associateCustomer: function - Link property to customer
+//   - findPropertiesByVoice: function - Voice-optimized search
+//   - addServiceLocation: function - Add service details
+//   - transitionState: function - Property state management
+//
+// state_machine:
+//   states: [draft, active, inactive, scheduled]
+//   transitions:
+//     - from: draft, to: active, action: activate
+//     - from: active, to: inactive, action: deactivate
+//     - from: inactive, to: active, action: reactivate
+//     - from: active, to: scheduled, action: schedule_service
+//     - from: scheduled, to: active, action: complete_service
+//
+// voice_considerations: |
+//   Orchestrate voice-friendly property searches.
+//   Generate voice confirmations for property operations.
+//   Support natural language state transitions.
+//   Enable voice-based access instruction updates.
+//
+// test_requirements:
+//   coverage: 85%
+//   test_files:
+//     - src/__tests__/domains/property/services/property-service.test.ts
+//
+// tasks:
+//   1. Implement property creation with address validation
+//   2. Add customer association logic
+//   3. Create state transition methods
+//   4. Integrate search service
+//   5. Add service location management
+//   6. Implement event publishing
+// --- END DIRECTIVE BLOCK ---
+```
+
+```typescript
+// --- AGENT DIRECTIVE BLOCK ---
+// file: /src/domains/property/services/property-search-service.ts
+// phase: 2
+// domain: property-management
+// purpose: Voice-optimized property search with geocoding and fuzzy matching
+// spec_ref: phase2/property-management#search
+// version: 2025-08-1
+// complexity_budget: 400 LoC
+// offline_capability: REQUIRED
+//
+// dependencies:
+//   internal:
+//     - /src/domains/property/repositories/property-repository
+//     - /src/domains/property/types/property-types
+//     - /src/core/logger/voice-logger
+//   external:
+//     - @supabase/supabase-js: ^2.43.0
+//     - fuse.js: ^7.0.0
+//
+// exports:
+//   - PropertySearchService: class - Property search engine
+//   - findByVoice: function - Natural language property search
+//   - searchByAddress: function - Fuzzy address matching
+//   - searchNearby: function - Proximity-based search
+//   - searchByLandmark: function - Landmark reference search
+//   - geocodeAddress: function - Address to coordinates
+//   - reverseGeocode: function - Coordinates to address
+//
+// voice_considerations: |
+//   Parse natural language addresses ("the Smith house on Oak Street").
+//   Support landmark references ("near the water tower").
+//   Handle partial addresses with fuzzy matching.
+//   Provide voice-friendly search result summaries.
+//   Enable phonetic address matching.
+//
+// test_requirements:
+//   coverage: 90%
+//   test_files:
+//     - src/__tests__/domains/property/services/property-search-service.test.ts
+//
+// tasks:
+//   1. Implement fuzzy address search
+//   2. Add geocoding integration
+//   3. Create landmark reference parsing
+//   4. Build proximity search
+//   5. Add voice result ranking
+//   6. Implement offline search cache
+// --- END DIRECTIVE BLOCK ---
+```
+
+```typescript
+// --- AGENT DIRECTIVE BLOCK ---
+// file: /src/domains/property/services/property-voice-commands.ts
+// phase: 2
+// domain: property-management
+// purpose: Natural language command processing for property operations
+// spec_ref: phase2/property-management#voice-commands
+// version: 2025-08-1
+// complexity_budget: 300 LoC
+// offline_capability: REQUIRED
+//
+// dependencies:
+//   internal:
+//     - /src/domains/property/types/property-types
+//     - /src/domains/property/services/property-service
+//     - /src/domains/voice/types/voice-types
+//     - /src/core/logger/voice-logger
+//   external:
+//     - @supabase/supabase-js: ^2.43.0
+//
+// exports:
+//   - PropertyVoiceCommandHandler: class - Voice command processor
+//   - parsePropertyCommand: function - Parse voice to command
+//   - executePropertyCommand: function - Execute parsed command
+//   - getPropertySuggestions: function - Context-aware hints
+//
+// voice_considerations: |
+//   Support commands like "add property at 123 Main Street".
+//   Handle "show properties for John Doe" queries.
+//   Parse "update gate code to 1234" commands.
+//   Enable "find properties near downtown" searches.
+//   Support "add service note about broken sprinkler" updates.
+//
+// test_requirements:
+//   coverage: 90%
+//   test_files:
+//     - src/__tests__/domains/property/services/property-voice-commands.test.ts
+//
+// tasks:
+//   1. Define command patterns
+//   2. Implement address parsing
+//   3. Create command execution
+//   4. Add context management
+//   5. Build suggestion engine
+//   6. Handle offline commands
+// --- END DIRECTIVE BLOCK ---
+```
+
+```typescript
+// --- AGENT DIRECTIVE BLOCK ---
+// file: /src/domains/property/repositories/service-location-repository.ts
+// phase: 2
+// domain: property-management
+// purpose: Manage service-specific location details and access instructions
+// spec_ref: phase2/property-management#service-location
+// version: 2025-08-1
+// complexity_budget: 250 LoC
+// offline_capability: REQUIRED
+//
+// dependencies:
+//   internal:
+//     - /src/lib/repositories/base.repository
+//     - /src/domains/property/types/property-types
+//   external:
+//     - @supabase/supabase-js: ^2.43.0
+//
+// exports:
+//   - ServiceLocationRepository: class - Service location data access
+//   - createServiceLocation: function - Add service details
+//   - updateAccessInstructions: function - Update access info
+//   - findByProperty: function - Get service locations
+//   - updateGateCode: function - Update security codes
+//
+// voice_considerations: |
+//   Store gate codes in voice-speakable format.
+//   Track pet warnings and special instructions.
+//   Support natural language access directions.
+//   Enable voice updates to access information.
+//
+// test_requirements:
+//   coverage: 85%
+//   test_files:
+//     - src/__tests__/domains/property/repositories/service-location-repository.test.ts
+//
+// tasks:
+//   1. Extend BaseRepository
+//   2. Implement service location CRUD
+//   3. Add access instruction management
+//   4. Create gate code handling
+//   5. Build special instruction storage
+//   6. Add voice metadata support
+// --- END DIRECTIVE BLOCK ---
+```
+
+```typescript
+// --- AGENT DIRECTIVE BLOCK ---
+// file: /src/domains/property/validators/property-validators.ts
+// phase: 2
+// domain: property-management
+// purpose: Validate property data with address verification and voice support
+// spec_ref: phase2/property-management#validators
+// version: 2025-08-1
+// complexity_budget: 200 LoC
+// offline_capability: REQUIRED
+//
+// dependencies:
+//   internal:
+//     - /src/domains/property/types/property-types
+//     - /src/core/errors/error-types
+//   external:
+//     - zod: ^3.23.8
+//
+// exports:
+//   - validatePropertyCreate: function - Validate new property
+//   - validatePropertyUpdate: function - Validate updates
+//   - validateAddress: function - Address validation
+//   - validateServiceLocation: function - Service detail validation
+//   - normalizeAddress: function - Address standardization
+//   - getVoiceFriendlyError: function - Voice error messages
+//
+// voice_considerations: |
+//   Provide voice-friendly validation errors.
+//   Support flexible address formats from voice input.
+//   Validate gate codes are speakable.
+//   Ensure landmarks are properly formatted.
+//
+// test_requirements:
+//   coverage: 95%
+//   test_files:
+//     - src/__tests__/domains/property/validators/property-validators.test.ts
+//
+// tasks:
+//   1. Create property validation schemas
+//   2. Add address validation logic
+//   3. Implement gate code validation
+//   4. Build voice error formatting
+//   5. Add coordinate validation
+//   6. Create business rule validators
+// --- END DIRECTIVE BLOCK ---
+```
+
+```typescript
+// --- AGENT DIRECTIVE BLOCK ---
+// file: /src/domains/property/services/property-offline-sync.ts
+// phase: 2
+// domain: property-management
+// purpose: Manage offline queue for property operations with conflict resolution
+// spec_ref: phase2/property-management#offline-sync
+// version: 2025-08-1
+// complexity_budget: 300 LoC
+// offline_capability: REQUIRED
+//
+// dependencies:
+//   internal:
+//     - /src/domains/property/types/property-types
+//     - /src/domains/property/services/property-service
+//     - /src/core/offline/queue-manager
+//     - /src/core/logger/voice-logger
+//   external:
+//     - @supabase/supabase-js: ^2.43.0
+//
+// exports:
+//   - PropertyOfflineSync: class - Offline sync manager
+//   - queuePropertyOperation: function - Queue for sync
+//   - syncPropertyOperations: function - Process queue
+//   - resolveAddressConflicts: function - Handle duplicates
+//   - getPropertySyncStatus: function - Check sync state
+//
+// voice_considerations: |
+//   Announce offline property saves via voice.
+//   Report sync conflicts for duplicate addresses.
+//   Support voice-driven conflict resolution.
+//   Provide sync status updates.
+//
+// test_requirements:
+//   coverage: 85%
+//   test_files:
+//     - src/__tests__/domains/property/services/property-offline-sync.test.ts
+//
+// tasks:
+//   1. Implement property operation queue
+//   2. Add sync orchestration
+//   3. Create address conflict detection
+//   4. Build voice sync feedback
+//   5. Add retry logic
+//   6. Implement cache management
+// --- END DIRECTIVE BLOCK ---
+```

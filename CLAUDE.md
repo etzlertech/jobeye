@@ -221,4 +221,39 @@ The project uses:
 
 ## Critical Reminders
 
-- Always run npm run check:db-actual before making any database-related decisions
+- Always run `npm run check:db-actual` before making any database-related decisions
+- Never assume database state from migration files
+- Follow directive block contract for all new files
+- Respect complexity budgets to maintain codebase quality
+- Include voice considerations in all user-facing features
+- Use repository pattern for all database operations
+
+## Backend & Testing Guidelines
+
+1. **Tests are Truth, Not Obstacles.** *Never* alter or "patch" a test simply to make it pass. Failing tests indicate a mismatch between the implementation and the expected behaviour. Always fix the underlying code or revisit the business requirements; do not rewrite the test unless the specification itself has changed.
+
+2. **Schema and Migration Integrity.** Before writing or modifying application code, run all migrations against a test Supabase instance. Use existing scripts (e.g. `check-db-status.ts`) to verify that every table, index, trigger, function and RLS policy defined in the blueprint exists and compiles. Any new migrations must be additive and must not conflict with previous ones.
+
+3. **Multi‑Tenant Security.** RLS policies must be enforced and tested. Create integration tests that attempt to read and write across tenant boundaries and assert that unauthorized operations fail. Ensure that no queries bypass RLS by accident.
+
+4. **Comprehensive CRUD + Offline Coverage.** Each repository (e.g. jobs, media_assets, voice_transcripts) must have unit tests covering:
+
+   * `findById`, `findAll` (with filters/pagination)
+   * `create`, `update`, `delete`, `createMany`
+   * Offline scenarios: if `navigator.onLine` is false, operations should be queued locally and replayed successfully once back online.
+
+5. **Resilience & Error Handling.** Tests should include edge cases and error paths—failed inserts/updates, invalid payloads, and unexpected Supabase errors—to ensure the code surfaces meaningful errors rather than swallowing them.
+
+6. **Environment Respect.** Don't hard‑code keys or alter environment variables within tests just to force a connection. Either load them from `.env.local` via a setup script or skip integration tests when credentials are unavailable. Never commit secrets or test data to the repository.
+
+7. **Pre‑Commit & Coverage Requirements.** All code must pass the pre-commit suite (TypeScript compile, linting, directive validation, dependency analysis, and build test) and maintain the project's ≥80 % coverage threshold. Use the coverage report to identify untested branches.
+
+8. **Gate UI and LLM Work on Backend Readiness.** Only proceed to UI and LLM integration when:
+
+   * All migrations run cleanly.
+   * The RLS isolation tests pass.
+   * CRUD + offline tests are comprehensive and green.
+   * Critical Supabase functions (e.g. `process_voice_command`, `control_irrigation_zone_voice`) have been smoke‑tested with dummy inputs.
+   * The pre‑commit checks and coverage targets are satisfied.
+
+By adhering to these principles, we ensure the Supabase backend is a solid, secure foundation on which the UI and AI features can be confidently built.

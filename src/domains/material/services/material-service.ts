@@ -60,7 +60,7 @@ import {
   MaterialVoiceCommand,
   MaterialSearchResult,
 } from '../types/material-types';
-import { EventBus, DomainEvent } from '@/core/events/event-bus';
+import { EventBus } from '@/core/events/event-bus';
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
 
 /**
@@ -98,11 +98,11 @@ export class MaterialService {
 
   constructor(
     supabaseClient: SupabaseClient,
-    eventBus: EventBus,
+    eventBus?: EventBus,
     config?: MaterialServiceConfig
   ) {
     this.repository = new MaterialRepository(supabaseClient);
-    this.eventBus = eventBus;
+    this.eventBus = eventBus || EventBus.getInstance();
     this.config = {
       enableInventoryTracking: config?.enableInventoryTracking ?? true,
       enableReorderAlerts: config?.enableReorderAlerts ?? true,
@@ -139,7 +139,7 @@ export class MaterialService {
       const material = await this.repository.createMaterial(data, tenantId);
 
       // Publish event
-      await this.publishEvent({
+      this.publishEvent({
         type: MaterialEventType.MATERIAL_CREATED,
         aggregateId: material.id,
         tenantId,
@@ -204,7 +204,7 @@ export class MaterialService {
       }
 
       // Publish event
-      await this.publishEvent({
+      this.publishEvent({
         type: MaterialEventType.MATERIAL_UPDATED,
         aggregateId: materialId,
         tenantId,
@@ -280,7 +280,7 @@ export class MaterialService {
       // Check for low stock alerts
       const updatedInventory = updatedMaterial.inventory.find(inv => inv.locationId === locationId);
       if (updatedInventory && updatedInventory.currentStock <= updatedInventory.reorderLevel) {
-        await this.publishEvent({
+        this.publishEvent({
           type: MaterialEventType.LOW_STOCK_ALERT,
           aggregateId: materialId,
           tenantId,
@@ -297,7 +297,7 @@ export class MaterialService {
       }
 
       // Publish inventory update event
-      await this.publishEvent({
+      this.publishEvent({
         type: MaterialEventType.INVENTORY_UPDATED,
         aggregateId: materialId,
         tenantId,
@@ -351,7 +351,7 @@ export class MaterialService {
       );
 
       // Publish usage event
-      await this.publishEvent({
+      this.publishEvent({
         type: MaterialEventType.MATERIAL_USED,
         aggregateId: materialId,
         tenantId,
@@ -400,7 +400,7 @@ export class MaterialService {
         );
 
         for (const location of lowStockLocations) {
-          await this.publishEvent({
+          this.publishEvent({
             type: MaterialEventType.REORDER_REQUIRED,
             aggregateId: material.id,
             tenantId,
@@ -442,7 +442,7 @@ export class MaterialService {
       await this.repository.delete(materialId, tenantId);
 
       // Publish event
-      await this.publishEvent({
+      this.publishEvent({
         type: MaterialEventType.MATERIAL_DELETED,
         aggregateId: materialId,
         tenantId,
@@ -651,8 +651,15 @@ export class MaterialService {
   /**
    * Publish domain event
    */
-  private async publishEvent(event: Omit<DomainEvent, 'id' | 'timestamp'>): Promise<void> {
-    await this.eventBus.publish({
+  private publishEvent(event: {
+    type: string;
+    aggregateId: string;
+    tenantId: string;
+    userId: string;
+    payload: any;
+    metadata?: any;
+  }): void {
+    this.eventBus.emit(event.type, {
       ...event,
       id: crypto.randomUUID(),
       timestamp: new Date(),
@@ -665,7 +672,7 @@ export class MaterialService {
  */
 export function createMaterialService(
   supabaseClient: SupabaseClient,
-  eventBus: EventBus,
+  eventBus?: EventBus,
   config?: MaterialServiceConfig
 ): MaterialService {
   return new MaterialService(supabaseClient, eventBus, config);

@@ -152,6 +152,7 @@ export class Logger {
    */
   private sanitizeMessage(message: string): string {
     // Remove potential passwords, tokens, keys
+    if (!message) return '';
     return message
       .replace(/password[:\s]*[^\s]+/gi, 'password: [REDACTED]')
       .replace(/token[:\s]*[^\s]+/gi, 'token: [REDACTED]')
