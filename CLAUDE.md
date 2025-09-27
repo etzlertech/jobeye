@@ -41,7 +41,26 @@ npm run report:detailed             # Generate detailed manifest
 npm run generate:types   # Generate TypeScript types from Supabase schema
 npm run db:migrate      # Run Supabase migrations
 npm run db:reset        # Reset database to clean state
+npm run check:db-actual # Check ACTUAL database schema (ALWAYS run before migrations!)
 ```
+
+#### CRITICAL: Database Schema Inspection
+**ALWAYS check the actual database state before writing migrations or assuming tables exist!**
+
+Use this command to see what tables actually exist in Supabase:
+```bash
+npx tsx scripts/check-actual-db.ts
+```
+
+This script will:
+- Connect to Supabase using the service role key
+- List ALL actual tables (not assumptions from migration files)
+- Show row counts for each table
+- Display column schemas
+
+**WARNING**: Migration files in the codebase may NOT reflect the actual database state. Tables you expect may not exist, and tables that exist may be completely different than expected.
+
+See `supabase_direct_access_instructions.md` for detailed connection methods and troubleshooting.
 
 ### Edge Functions
 ```bash
@@ -199,3 +218,7 @@ The project uses:
 - Railway.app configuration included
 - Docker support with multi-stage builds
 - Nixpacks configuration for alternative deployment
+
+## Critical Reminders
+
+- Always run npm run check:db-actual before making any database-related decisions
