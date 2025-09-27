@@ -57,6 +57,7 @@ describe('JobRepository', () => {
       or: jest.fn().mockReturnThis(),
       gte: jest.fn().mockReturnThis(),
       lte: jest.fn().mockReturnThis(),
+      lt: jest.fn().mockReturnThis(),
       limit: jest.fn().mockReturnThis(),
       order: jest.fn().mockReturnThis(),
       range: jest.fn().mockReturnThis(),
@@ -87,7 +88,7 @@ describe('JobRepository', () => {
         propertyName: 'Main Office',
       },
       schedule: {
-        scheduledDate: new Date('2024-06-15'),
+        scheduledDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
         estimatedDuration: 120,
       },
       recurrence: JobRecurrence.NONE,
@@ -98,6 +99,33 @@ describe('JobRepository', () => {
     };
 
     it('should create job successfully', async () => {
+      // Mock the select for count query that happens during job number generation
+      const originalSelect = mockSupabaseClient.select;
+      let selectCallCount = 0;
+      
+      mockSupabaseClient.select.mockImplementation((query, options) => {
+        selectCallCount++;
+        
+        // First call is for count query
+        if (selectCallCount === 1 && options && options.count === 'exact' && options.head === true) {
+          // Reset the chain and return count result
+          const countMock = {
+            eq: jest.fn().mockReturnThis(),
+            gte: jest.fn().mockReturnThis(),
+            lt: jest.fn().mockResolvedValue({ count: 0, error: null }),
+          };
+          // Restore chain methods
+          Object.assign(countMock, {
+            from: jest.fn().mockReturnValue(countMock),
+            select: jest.fn().mockReturnValue(countMock),
+          });
+          return countMock;
+        }
+        
+        // Regular select for insert
+        return originalSelect.call(mockSupabaseClient, query, options);
+      });
+
       const mockCreatedJob = {
         id: 'job-123',
         job_number: 'JOB-240615-001',
@@ -110,7 +138,7 @@ describe('JobRepository', () => {
         customer_id: 'customer-123',
         location: validJobData.location,
         schedule: {
-          scheduledDate: '2024-06-15T00:00:00.000Z',
+          scheduledDate: new Date(validJobData.schedule.scheduledDate).toISOString(),
           estimatedDuration: 120,
         },
         assignment: {

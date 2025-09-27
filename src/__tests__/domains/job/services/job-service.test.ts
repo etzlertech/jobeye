@@ -79,7 +79,7 @@ describe('JobService', () => {
         propertyName: 'Main Office',
       },
       schedule: {
-        scheduledDate: new Date('2024-06-15'),
+        scheduledDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
         estimatedDuration: 120,
       },
       recurrence: JobRecurrence.NONE,
@@ -249,7 +249,7 @@ describe('JobService', () => {
     const mockJob = {
       id: 'job-123',
       job_number: 'JOB-240615-001',
-      status: JobStatus.SCHEDULED,
+      status: JobStatus.ASSIGNED,
     };
 
     it('should transition status successfully', async () => {
@@ -279,7 +279,7 @@ describe('JobService', () => {
         'job.status_changed',
         expect.objectContaining({
           payload: expect.objectContaining({
-            fromStatus: JobStatus.SCHEDULED,
+            fromStatus: JobStatus.ASSIGNED,
             toStatus: JobStatus.IN_PROGRESS,
             reason: 'Starting job',
           }),

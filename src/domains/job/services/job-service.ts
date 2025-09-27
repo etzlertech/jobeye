@@ -130,6 +130,11 @@ export class JobService {
 
       return job;
     } catch (error) {
+      // Re-throw validation errors as-is
+      if (error instanceof Error && error.message.includes('Cannot schedule job in the past')) {
+        throw error;
+      }
+      
       throw createAppError({
         code: 'JOB_CREATE_FAILED',
         message: 'Failed to create job',
@@ -186,6 +191,11 @@ export class JobService {
 
       return updatedJob;
     } catch (error) {
+      // Re-throw specific validation errors as-is
+      if (error instanceof Error && error.message === 'Job not found') {
+        throw error;
+      }
+      
       throw createAppError({
         code: 'JOB_UPDATE_FAILED',
         message: 'Failed to update job',
@@ -253,6 +263,14 @@ export class JobService {
 
       return updatedJob;
     } catch (error) {
+      // Re-throw specific validation errors as-is
+      if (error instanceof Error && 
+          (error.message.includes('Invalid status transition') ||
+           error.message === 'Job not found' ||
+           error.message === 'Failed to update job status')) {
+        throw error;
+      }
+      
       throw createAppError({
         code: 'JOB_STATUS_TRANSITION_FAILED',
         message: 'Failed to transition job status',

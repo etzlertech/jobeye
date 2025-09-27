@@ -231,6 +231,11 @@ export class JobRepository extends BaseRepository<'jobs'> {
 
       return this.mapToJob(updated);
     } catch (error) {
+      // Re-throw validation errors as-is
+      if (error instanceof Error && error.message.includes('Invalid status transition')) {
+        throw error;
+      }
+      
       throw createAppError({
         code: 'JOB_UPDATE_FAILED',
         message: 'Failed to update job',
