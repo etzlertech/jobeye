@@ -53,7 +53,12 @@
     "test:railway": "bash scripts/test-like-railway.sh",
     "pre-commit": "tsx scripts/ci/pre-commit-checks.ts",
     "quick-check": "bash scripts/ci/type-check.sh",
-    "prepare": "husky"
+    "prepare": "husky",
+    "rls:seed": "tsx supabase/.temp/seed_only.mjs",
+    "rls:verify": "tsx supabase/.temp/verify_rls.mjs",
+    "rls:cleanup": "tsx supabase/.temp/cleanup_rls.mjs",
+    "rls:lint": "tsx scripts/ci/rls-lint.ts",
+    "rls:full": "npm run rls:seed && npm run rls:verify && npm run rls:cleanup && npm run test:rls -- company_settings && npm run rls:lint"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
