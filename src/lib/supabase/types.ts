@@ -130,6 +130,39 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['jobs']['Insert']>;
       };
       
+      company_settings: {
+        Row: {
+          id: string;
+          company_id: string;
+          vision_thresholds: Record<string, any>;
+          voice_preferences: Record<string, any>;
+          budget_limits: Record<string, any>;
+          features: Record<string, any>;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          vision_thresholds?: Record<string, any>;
+          voice_preferences?: Record<string, any>;
+          budget_limits?: Record<string, any>;
+          features?: Record<string, any>;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          vision_thresholds?: Record<string, any>;
+          voice_preferences?: Record<string, any>;
+          budget_limits?: Record<string, any>;
+          features?: Record<string, any>;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
       voice_transcripts: {
         Row: {
           id: string;
