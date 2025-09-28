@@ -84,6 +84,11 @@ export interface Config {
     version: string;
     port: number;
   };
+
+  storage: {
+    inventoryBucket: string;
+    inventoryThumbnailPrefix: string;
+  };
 }
 
 /**
@@ -115,12 +120,17 @@ function loadConfig(): Config {
       },
     },
     
-    app: {
-      name: process.env.NEXT_PUBLIC_APP_NAME || 'JobEye Control Tower',
-      version: process.env.NEXT_PUBLIC_APP_VERSION || '3.2.1',
-      port: parseInt(process.env.PORT || '3000', 10),
-    },
-  };
+  app: {
+    name: process.env.NEXT_PUBLIC_APP_NAME || 'JobEye Control Tower',
+    version: process.env.NEXT_PUBLIC_APP_VERSION || '3.2.1',
+    port: parseInt(process.env.PORT || '3000', 10),
+  },
+
+  storage: {
+    inventoryBucket: process.env.NEXT_PUBLIC_SUPABASE_INVENTORY_BUCKET || 'inventory-images',
+    inventoryThumbnailPrefix: process.env.NEXT_PUBLIC_SUPABASE_INVENTORY_THUMBNAIL_PREFIX || 'thumbnails',
+  },
+};
   
   return config;
 }
