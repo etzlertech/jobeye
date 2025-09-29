@@ -5,7 +5,7 @@
 -- Create notification queue table if not exists
 CREATE TABLE IF NOT EXISTS public.notification_queue (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   recipient_id UUID NOT NULL,
   type TEXT NOT NULL,
   priority TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
@@ -103,7 +103,7 @@ CREATE TRIGGER kit_override_notify_supervisor
 CREATE OR REPLACE FUNCTION check_break_compliance(p_day_plan_id UUID)
 RETURNS JSONB AS $$
 DECLARE
-  v_company_id UUID;
+  v_company_id TEXT;
   v_user_id UUID;
   v_work_start TIMESTAMPTZ;
   v_last_break TIMESTAMPTZ;

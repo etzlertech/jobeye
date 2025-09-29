@@ -5,7 +5,7 @@
 -- Day Plans: Represents a technician's daily work plan
 CREATE TABLE IF NOT EXISTS public.day_plans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   user_id UUID NOT NULL,
   plan_date DATE NOT NULL,
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'in_progress', 'completed', 'cancelled')),
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS public.day_plans (
 -- Schedule Events: Individual events within a day plan
 CREATE TABLE IF NOT EXISTS public.schedule_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   day_plan_id UUID NOT NULL REFERENCES public.day_plans(id) ON DELETE CASCADE,
   event_type TEXT NOT NULL CHECK (event_type IN ('job', 'break', 'travel', 'maintenance', 'meeting')),
   job_id TEXT, -- External reference
@@ -41,15 +41,13 @@ CREATE TABLE IF NOT EXISTS public.schedule_events (
   voice_notes TEXT,
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  -- Ensure company_id matches parent day_plan
-  CONSTRAINT fk_schedule_events_company CHECK (company_id = (SELECT company_id FROM day_plans WHERE id = day_plan_id))
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Crew Assignments: Track which team members are assigned to schedule events
 CREATE TABLE IF NOT EXISTS public.crew_assignments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   schedule_event_id UUID NOT NULL REFERENCES public.schedule_events(id) ON DELETE CASCADE,
   user_id UUID NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('lead', 'helper', 'trainee')),
@@ -60,15 +58,13 @@ CREATE TABLE IF NOT EXISTS public.crew_assignments (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (schedule_event_id, user_id),
-  -- Ensure company_id matches parent schedule_event
-  CONSTRAINT fk_crew_assignments_company CHECK (company_id = (SELECT company_id FROM schedule_events WHERE id = schedule_event_id))
+  UNIQUE (schedule_event_id, user_id)
 );
 
 -- Job Kits: Links kits to specific jobs (replacing kit_assignments)
 CREATE TABLE IF NOT EXISTS public.job_kits (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   job_id TEXT NOT NULL,
   kit_id UUID NOT NULL REFERENCES public.kits(id) ON DELETE CASCADE,
   variant_id UUID REFERENCES public.kit_variants(id) ON DELETE SET NULL,
@@ -89,7 +85,7 @@ ALTER TABLE public.kit_override_logs
   DROP COLUMN IF EXISTS assignment_id CASCADE,
   DROP COLUMN IF EXISTS delta CASCADE,
   ADD COLUMN IF NOT EXISTS job_id TEXT NOT NULL DEFAULT '',
-  ADD COLUMN IF NOT EXISTS kit_id UUID REFERENCES public.kits(id) ON DELETE CASCADE,
+  ADD COLUMN IF NOT EXISTS kit_id UUID,
   ADD COLUMN IF NOT EXISTS item_id TEXT,
   ADD COLUMN IF NOT EXISTS technician_id UUID NOT NULL,
   ADD COLUMN IF NOT EXISTS override_reason TEXT NOT NULL,

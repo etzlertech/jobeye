@@ -2,7 +2,7 @@
 -- Minimal viable feature schema for Scheduling Kits domain
 
 -- Ensure updated_at trigger helper exists
-DO 20992
+DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1
@@ -14,20 +14,20 @@ BEGIN
     CREATE FUNCTION public.set_updated_at()
     RETURNS trigger
     LANGUAGE plpgsql
-    AS 20992
+    AS $$
     BEGIN
       NEW.updated_at = NOW();
       RETURN NEW;
     END;
-    20992;
+    $$;
   END IF;
 END;
-20992;
+$$;
 
 -- Kits master table
 CREATE TABLE IF NOT EXISTS public.kits (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   kit_code VARCHAR(50) NOT NULL,
   name VARCHAR(255) NOT NULL,
   description TEXT,
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS public.kits (
 -- Items that belong to kits
 CREATE TABLE IF NOT EXISTS public.kit_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   kit_id UUID NOT NULL REFERENCES public.kits(id) ON DELETE CASCADE,
   item_type TEXT NOT NULL CHECK (item_type IN ('equipment', 'material', 'tool')),
   quantity NUMERIC(12,2) NOT NULL DEFAULT 1,
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS public.kit_items (
 -- Optional kit variants (seasonal, etc.)
 CREATE TABLE IF NOT EXISTS public.kit_variants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   kit_id UUID NOT NULL REFERENCES public.kits(id) ON DELETE CASCADE,
   variant_code VARCHAR(50) NOT NULL,
   name VARCHAR(255) NOT NULL,
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS public.kit_variants (
 -- Kit assignments (placeholder link via external_ref)
 CREATE TABLE IF NOT EXISTS public.kit_assignments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   kit_id UUID NOT NULL REFERENCES public.kits(id) ON DELETE CASCADE,
   variant_id UUID REFERENCES public.kit_variants(id) ON DELETE SET NULL,
   external_ref TEXT NOT NULL,
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS public.kit_assignments (
 -- Technician overrides when kit items are missing
 CREATE TABLE IF NOT EXISTS public.kit_override_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   assignment_id UUID NOT NULL REFERENCES public.kit_assignments(id) ON DELETE CASCADE,
   item_id UUID REFERENCES public.kit_items(id) ON DELETE SET NULL,
   reason TEXT NOT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS public.kit_override_logs (
 );
 
 -- Update triggers
-DO 20992
+DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'kits_set_updated_at') THEN
     CREATE TRIGGER kits_set_updated_at
@@ -117,7 +117,7 @@ BEGIN
     FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
   END IF;
 END;
-20992;
+$$;
 
 -- Useful indexes
 CREATE INDEX IF NOT EXISTS kits_company_name_idx ON public.kits(company_id, name);
