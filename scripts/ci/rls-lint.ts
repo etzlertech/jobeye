@@ -1,6 +1,6 @@
 import { Client } from 'pg';
 
-const TABLES = ['companies', 'customers', 'media_assets', 'voice_sessions'];
+const TABLES = ['companies', 'customers', 'media_assets', 'voice_sessions', 'vendors', 'vendor_aliases', 'vendor_locations', 'inventory_images', 'ocr_jobs', 'ocr_documents', 'ocr_line_items', 'ocr_note_entities'];
 
 const dbUrl = process.env.SUPABASE_DB_URL;
 if (!dbUrl) {

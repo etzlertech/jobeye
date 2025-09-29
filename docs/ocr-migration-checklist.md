@@ -1,4 +1,4 @@
-# OCR Migration Preflight Checklist
+﻿# OCR Migration Preflight Checklist
 
 This checklist must be completed before authoring any OCR-related database migration. It captures the required verification steps and documents the output produced by the automated preflight tool.
 
@@ -29,3 +29,17 @@ This checklist must be completed before authoring any OCR-related database migra
 
 ## Escalation
 If the preflight script exits with an error, resolve the underlying database issue or contact the data operations owner before attempting any migrations.
+
+## Maintenance Notes
+- Generate or overwrite migrations in an editor instead of piecemeal PowerShell `-replace`; dangling `DO $$` / `END $$;` delimiters cause `supabase db push` failures.
+- Use the pooled connection string (`SUPABASE_DB_URL`, e.g. `postgres.rtwigjwqufozqfwozpvo@aws-0-us-east-1.pooler.supabase.com:6543`) for scripts and checks—never derive `db.<ref>.supabase.co`.
+- When running Supabase client scripts under PowerShell, write a temp file (e.g. `tmp-seed-ocr.js`) rather than multi-line `node -e` strings to avoid quoting issues.
+
+> **Scope Switch Reminder**
+> When moving from Implementation 001 to Implementation 002 (OCR), paste the directive `SWITCH TO IMPLEMENTATION 002 (OCR)` into Codex so the agent resets scope and avoids touching harness scripts.
+> Repeat this pattern when stepping into future implementation scopes (e.g., Impl-003) to keep edits focused.
+
+## Seed Contract
+- Seed script: `npm run ocr:seed` (runs `scripts/ocr-seed.mjs`).
+- Inserts one row per OCR table for `company_id = 'test-org-a'` (vendor, alias, location, inventory image, job, document, line item, note entity).
+- IDs are deterministic (UUIDs ending in repeating digits) so re-running the seed is idempotent via `upsert` on `id`.
