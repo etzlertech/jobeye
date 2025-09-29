@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { featureFlags } from '@/core/config/feature-flags'
 
-const navigation = [
+const baseNavigation = [
   { 
     name: 'Dashboard', 
     href: '/control-tower', 
@@ -38,6 +39,21 @@ export default function ControlTowerLayout({
 }) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const navigation = useMemo(() => {
+    if (!featureFlags.schedulingKitsPreview) {
+      return baseNavigation
+    }
+
+    return [
+      ...baseNavigation,
+      {
+        name: 'Scheduling Kits Preview',
+        href: '/control-tower/scheduling-kits-preview',
+        icon: '🧰',
+        description: 'Early preview for scheduling kits MVF',
+      },
+    ]
+  }, [])
 
   return (
     <div className="min-h-screen bg-tower-dark control-tower">

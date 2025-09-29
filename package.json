@@ -65,7 +65,11 @@
     "ocr:types": "npx supabase gen types typescript --linked --schema public > src/types/supabase.ts",
     "ocr:seed": "node scripts/ocr-seed.mjs",
     "ocr:full": "npm run ocr:migrate && npm run ocr:types && npm run ocr:seed && npm run ocr:preflight && npm run rls:full",
-    "lint:migrations": "tsx scripts/ci/check-migrations.ts"
+    "lint:migrations": "tsx scripts/ci/check-migrations.ts",
+    "003:seed": "dotenv -e .env.local -- node scripts/seed-003.mjs",
+    "003:preflight": "dotenv -e .env.local -- tsx scripts/preflight-003.ts",
+    "003:full": "dotenv -e .env.local -- sh -c \"npm run 003:seed && npm run 003:preflight && jest --runTestsByPath tests/integration/scheduling-kits/kitRepo.int.test.ts tests/integration/scheduling-kits/kitService.int.test.ts tests/api/scheduling-kits.api.test.ts\"",
+    "003:rls": "dotenv -e .env.local -- tsx scripts/ci/rls-lint.ts"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
@@ -100,6 +104,7 @@
     "autoprefixer": "^10.4.21",
     "babel-jest": "^30.1.2",
     "dotenv": "^17.2.2",
+    "dotenv-cli": "^10.0.0",
     "dotenv-expand": "^12.0.3",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.0",

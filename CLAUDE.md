@@ -47,8 +47,15 @@ npm run check:db-actual # Check ACTUAL database schema (ALWAYS run before migrat
 #### CRITICAL: Database Schema Inspection
 **ALWAYS check the actual database state before writing migrations or assuming tables exist!**
 
+**Before ANY database operations:**
+1. **Set proper SUPABASE_DB_URL** (with PGBouncer) before running any migrations or seed scripts
+2. **Read the actual schema** from information_schema to decide when to insert records (e.g., company records)
+3. **Apply migration statements one by one** instead of relying on multi-statement DO $$ blocks
+
 Use this command to see what tables actually exist in Supabase:
 ```bash
+# Ensure SUPABASE_DB_URL is set with PGBouncer connection string
+export SUPABASE_DB_URL="postgresql://postgres.xxx:password@aws-0-xxx.pooler.supabase.com:6543/postgres"
 npx tsx scripts/check-actual-db.ts
 ```
 
@@ -56,9 +63,15 @@ This script will:
 - Connect to Supabase using the service role key
 - List ALL actual tables (not assumptions from migration files)
 - Show row counts for each table
-- Display column schemas
+- Display column schemas from information_schema
 
 **WARNING**: Migration files in the codebase may NOT reflect the actual database state. Tables you expect may not exist, and tables that exist may be completely different than expected.
+
+**BEST PRACTICES**:
+- Always query information_schema.tables and information_schema.columns for actual state
+- Apply each CREATE TABLE, CREATE INDEX, etc. as separate statements
+- Avoid DO $$ blocks that can fail partially and leave inconsistent state
+- Use IF NOT EXISTS clauses for idempotent operations
 
 See `supabase_direct_access_instructions.md` for detailed connection methods and troubleshooting.
 

@@ -13,6 +13,7 @@ const customJestConfig = {
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.test.{js,jsx,ts,tsx}',
     '<rootDir>/src/**/__tests__/**/*.spec.{js,jsx,ts,tsx}',
+    '<rootDir>/tests/**/*.test.{js,jsx,ts,tsx}',
   ],
   moduleNameMapper: {
     // Handle module aliases

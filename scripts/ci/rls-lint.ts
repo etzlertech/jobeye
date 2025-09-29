@@ -1,6 +1,33 @@
 import { Client } from 'pg';
 
-const TABLES = ['companies', 'customers', 'media_assets', 'voice_sessions', 'vendors', 'vendor_aliases', 'vendor_locations', 'inventory_images', 'ocr_jobs', 'ocr_documents', 'ocr_line_items', 'ocr_note_entities'];
+type PolicyRow = {
+  table_name: string;
+  polname: string;
+  polcmd: string;
+  rolname: string | null;
+  using_expr: string | null;
+  check_expr: string | null;
+};
+
+const TABLES = [
+  'companies',
+  'customers',
+  'media_assets',
+  'voice_sessions',
+  'vendors',
+  'vendor_aliases',
+  'vendor_locations',
+  'inventory_images',
+  'ocr_jobs',
+  'ocr_documents',
+  'ocr_line_items',
+  'ocr_note_entities',
+  'kits',
+  'kit_items',
+  'kit_variants',
+  'kit_assignments',
+  'kit_override_logs'
+];
 
 const dbUrl = process.env.SUPABASE_DB_URL;
 if (!dbUrl) {
@@ -8,16 +35,30 @@ if (!dbUrl) {
   process.exit(1);
 }
 
-const client = new Client({ connectionString: dbUrl });
+const client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+
+const tenantMatch = (expr: string | null) => {
+  if (!expr) return false;
+  return expr.includes('request.jwt.claims') && expr.includes('company_id');
+};
+
+const serviceRoleMatch = (row: PolicyRow) => {
+  if (row.rolname === 'service_role') {
+    return true;
+  }
+  return (row.using_expr && row.using_expr.includes("auth.role()") && row.using_expr.includes("service_role")) ||
+    (row.check_expr && row.check_expr.includes("auth.role()") && row.check_expr.includes("service_role"));
+};
 
 (async () => {
   await client.connect();
 
-  const tableStatusRes = await client.query(
+  const tableStatusRes = await client.query<{ table_name: string; relrowsecurity: boolean; relforcerowsecurity: boolean }>(
     `SELECT relname AS table_name, relrowsecurity, relforcerowsecurity
      FROM pg_class
-     WHERE relname = ANY($1::text[])`
-  , [TABLES]);
+     WHERE relname = ANY($1::text[])`,
+    [TABLES]
+  );
 
   const statusMap = new Map<string, { row: boolean; force: boolean }>();
   for (const row of tableStatusRes.rows) {
@@ -30,30 +71,35 @@ const client = new Client({ connectionString: dbUrl });
   const missingRls = TABLES.filter((table) => !statusMap.get(table)?.row);
   const missingForce = TABLES.filter((table) => !statusMap.get(table)?.force);
 
-  const policiesRes = await client.query(
+  const policiesRes = await client.query<PolicyRow>(
     `SELECT rel.relname AS table_name,
             pol.polname,
-            rol.rolname,
             pol.polcmd,
+            rol.rolname,
             pg_get_expr(pol.polqual, pol.polrelid) AS using_expr,
             pg_get_expr(pol.polwithcheck, pol.polrelid) AS check_expr
      FROM pg_policy pol
      JOIN pg_class rel ON rel.oid = pol.polrelid
-     JOIN pg_roles rol ON rol.oid = ANY(pol.polroles)
-     WHERE rel.relname = ANY($1::text[])`
-  , [TABLES]);
+     LEFT JOIN pg_roles rol ON rol.oid = ANY(pol.polroles)
+     WHERE rel.relname = ANY($1::text[])`,
+    [TABLES]
+  );
 
-  const policiesByTable = new Map<string, { authenticated: boolean; service: boolean; policies: any[] }>();
+  const policiesByTable = new Map<string, { tenant: boolean; service: boolean; policies: PolicyRow[] }>();
   for (const table of TABLES) {
-    policiesByTable.set(table, { authenticated: false, service: false, policies: [] });
+    policiesByTable.set(table, { tenant: false, service: false, policies: [] });
   }
 
   for (const row of policiesRes.rows) {
     const entry = policiesByTable.get(row.table_name);
     if (!entry) continue;
     entry.policies.push(row);
-    if (row.rolname === 'authenticated') entry.authenticated = true;
-    if (row.rolname === 'service_role') entry.service = true;
+    if (!entry.tenant && (tenantMatch(row.using_expr) || tenantMatch(row.check_expr) || row.rolname === 'authenticated')) {
+      entry.tenant = true;
+    }
+    if (!entry.service && serviceRoleMatch(row)) {
+      entry.service = true;
+    }
   }
 
   const failures: string[] = [];
@@ -67,11 +113,11 @@ const client = new Client({ connectionString: dbUrl });
   for (const table of TABLES) {
     const entry = policiesByTable.get(table);
     if (!entry) continue;
-    if (!entry.authenticated) {
-      failures.push(`${table}: missing authenticated policy`);
+    if (!entry.tenant) {
+      failures.push(`${table}: missing tenant company_id policy`);
     }
     if (!entry.service) {
-      failures.push(`${table}: missing service_role policy`);
+      failures.push(`${table}: missing service_role bypass`);
     }
   }
 
@@ -82,7 +128,10 @@ const client = new Client({ connectionString: dbUrl });
     const entry = policiesByTable.get(table);
     console.log(`${table} -> RLS=${status?.row ? 'on' : 'off'}, FORCE=${status?.force ? 'on' : 'off'}`);
     entry?.policies.forEach((row) => {
-      console.log(`  policy ${row.polname} [${row.rolname}] cmd=${row.polcmd}`);
+      const usingExpr = row.using_expr ?? '<none>';
+      const checkExpr = row.check_expr ?? '<none>';
+      const roleLabel = row.rolname ?? 'public';
+      console.log(`  policy ${row.polname} role=${roleLabel} cmd=${row.polcmd} using=${usingExpr} check=${checkExpr}`);
     });
   }
 
