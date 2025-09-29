@@ -36,7 +36,9 @@
 
 import { compareAsc, compareDesc, isAfter } from 'date-fns';
 import { SchedulingOfflineDB, OfflineDayPlan, OfflineScheduleEvent } from '@/scheduling/offline/scheduling-cache';
-import { logger } from '@/core/logger/voice-logger';
+import { createLogger } from '@/core/logger/logger';
+
+const logger = createLogger('ConflictResolver');
 
 export enum ConflictType {
   SCHEDULE_UPDATE = 'schedule_update',

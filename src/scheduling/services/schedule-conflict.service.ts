@@ -39,7 +39,10 @@
 import { addMinutes, areIntervalsOverlapping, isAfter, isBefore } from 'date-fns';
 import { ScheduleEventRepository } from '@/scheduling/repositories/schedule-event.repository';
 import { DayPlanRepository } from '@/scheduling/repositories/day-plan.repository';
-import { logger } from '@/core/logger/voice-logger';
+import { createLogger } from '@/core/logger/logger';
+import { ScheduleEvent } from '../types/schedule-event.types';
+
+const logger = createLogger('ScheduleConflictService');
 
 export enum ConflictType {
   TIME_OVERLAP = 'time_overlap',
@@ -74,8 +77,8 @@ export interface ConflictCheckOptions {
 
 export class ScheduleConflictService {
   constructor(
-    private scheduleEventRepo: ScheduleEventRepository,
-    private dayPlanRepo: DayPlanRepository
+    private scheduleEventRepo?: ScheduleEventRepository,
+    private dayPlanRepo?: DayPlanRepository
   ) {}
 
   async checkForConflicts(
@@ -331,5 +334,207 @@ export class ScheduleConflictService {
       logger.error('Error resolving conflict', { error, conflictId });
       return false;
     }
+  }
+
+  /**
+   * Check conflicts for a single event against existing events
+   * Used by tests
+   */
+  checkConflicts(newEvent: ScheduleEvent, existingEvents: ScheduleEvent[]): Conflict[] {
+    const conflicts: Conflict[] = [];
+    const allEvents = [...existingEvents, newEvent].sort((a, b) => 
+      new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime()
+    );
+
+    // Check time overlaps
+    for (let i = 0; i < allEvents.length - 1; i++) {
+      const event1 = allEvents[i];
+      const event2 = allEvents[i + 1];
+      
+      const end1 = addMinutes(new Date(event1.scheduled_start), event1.scheduled_duration_minutes);
+      const start2 = new Date(event2.scheduled_start);
+
+      if (isAfter(end1, start2)) {
+        if (event1.id === newEvent.id || event2.id === newEvent.id) {
+          conflicts.push({
+            id: `overlap_${event1.id}_${event2.id}`,
+            type: ConflictType.TIME_OVERLAP,
+            severity: 'high',
+            description: 'Events overlap',
+            voiceDescription: 'Schedule conflict detected',
+            affectedEventIds: [event1.id, event2.id],
+            suggestedResolutions: [],
+            conflicting_event_id: event1.id === newEvent.id ? event2.id : event1.id
+          } as any);
+        }
+      }
+
+      // Check travel time
+      const gapMinutes = Math.floor((start2.getTime() - end1.getTime()) / 60000);
+      if (gapMinutes >= 0 && gapMinutes < 15) { // Need at least 15 minutes
+        // Calculate rough travel time based on distance
+        const distance = this.calculateDistance(event1.location_data, event2.location_data);
+        const requiredMinutes = Math.ceil(distance * 3); // 3 minutes per mile estimate
+
+        if (gapMinutes < requiredMinutes) {
+          if (event1.id === newEvent.id || event2.id === newEvent.id) {
+            conflicts.push({
+              id: `travel_${event1.id}_${event2.id}`,
+              type: ConflictType.TRAVEL_TIME,
+              severity: 'medium',
+              description: `Need ${requiredMinutes} minutes travel time, only ${gapMinutes} available`,
+              voiceDescription: 'Not enough travel time',
+              affectedEventIds: [event1.id, event2.id],
+              suggestedResolutions: [],
+              conflicting_event_id: event1.id === newEvent.id ? event2.id : event1.id,
+              details: {
+                required_minutes: requiredMinutes,
+                available_minutes: gapMinutes
+              }
+            } as any);
+          }
+        }
+      }
+    }
+
+    // Check for break violations
+    const workEvents = allEvents.filter(e => e.event_type !== 'break');
+    let continuousWork = 0;
+    let lastBreak = null;
+
+    for (const event of allEvents) {
+      if (event.event_type === 'break') {
+        continuousWork = 0;
+        lastBreak = event;
+      } else {
+        continuousWork += event.scheduled_duration_minutes;
+        
+        if (continuousWork > 240 && event.id === newEvent.id) { // 4 hours
+          conflicts.push({
+            id: `break_${event.id}`,
+            type: ConflictType.BREAK_VIOLATION,
+            severity: 'medium',
+            description: 'More than 4 hours without a break',
+            voiceDescription: 'Break required',
+            affectedEventIds: [event.id],
+            suggestedResolutions: [],
+            details: {
+              message: 'A break is required after 4 hours of continuous work'
+            }
+          } as any);
+        }
+      }
+    }
+
+    // Check day boundary
+    for (const event of [newEvent]) {
+      const end = addMinutes(new Date(event.scheduled_start), event.scheduled_duration_minutes);
+      const startDay = new Date(event.scheduled_start).getDate();
+      const endDay = end.getDate();
+
+      if (startDay !== endDay) {
+        conflicts.push({
+          id: `boundary_${event.id}`,
+          type: 'day_boundary' as any,
+          severity: 'high',
+          description: 'Event spans multiple days',
+          voiceDescription: 'Event goes past midnight',
+          affectedEventIds: [event.id],
+          suggestedResolutions: []
+        });
+      }
+    }
+
+    return conflicts;
+  }
+
+  /**
+   * Find an optimal time slot for a new event
+   * Used by tests
+   */
+  findOptimalSlot(
+    durationMinutes: number,
+    existingEvents: ScheduleEvent[],
+    dayStart: Date,
+    dayEnd: Date,
+    location?: { lat: number; lng: number }
+  ): Date | null {
+    const sortedEvents = existingEvents
+      .filter(e => e.scheduled_start)
+      .sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime());
+
+    // Try to find a slot
+    let currentTime = new Date(dayStart);
+
+    // Check if we can fit at the beginning
+    if (sortedEvents.length === 0 || 
+        addMinutes(currentTime, durationMinutes) <= new Date(sortedEvents[0].scheduled_start)) {
+      return currentTime;
+    }
+
+    // Check gaps between events
+    for (let i = 0; i < sortedEvents.length; i++) {
+      const event = sortedEvents[i];
+      const eventEnd = addMinutes(new Date(event.scheduled_start), event.scheduled_duration_minutes);
+      
+      // Add travel time if location provided
+      let bufferMinutes = 0;
+      if (location && event.location_data) {
+        const distance = this.calculateDistance(location, event.location_data);
+        bufferMinutes = Math.ceil(distance * 3); // 3 minutes per mile
+      }
+
+      currentTime = addMinutes(eventEnd, bufferMinutes);
+
+      // Check if there's enough time before the next event or day end
+      const nextEventStart = i < sortedEvents.length - 1 
+        ? new Date(sortedEvents[i + 1].scheduled_start)
+        : dayEnd;
+
+      // Add buffer for travel to next event if needed
+      if (i < sortedEvents.length - 1 && location && sortedEvents[i + 1].location_data) {
+        const distance = this.calculateDistance(location, sortedEvents[i + 1].location_data);
+        const travelBuffer = Math.ceil(distance * 3);
+        if (addMinutes(currentTime, durationMinutes + travelBuffer) <= nextEventStart) {
+          return currentTime;
+        }
+      } else if (addMinutes(currentTime, durationMinutes) <= nextEventStart) {
+        return currentTime;
+      }
+    }
+
+    // Check if we can fit after all events
+    if (sortedEvents.length > 0) {
+      const lastEvent = sortedEvents[sortedEvents.length - 1];
+      const lastEventEnd = addMinutes(
+        new Date(lastEvent.scheduled_start), 
+        lastEvent.scheduled_duration_minutes
+      );
+      
+      let bufferMinutes = 0;
+      if (location && lastEvent.location_data) {
+        const distance = this.calculateDistance(location, lastEvent.location_data);
+        bufferMinutes = Math.ceil(distance * 3);
+      }
+
+      currentTime = addMinutes(lastEventEnd, bufferMinutes);
+      
+      if (addMinutes(currentTime, durationMinutes) <= dayEnd) {
+        return currentTime;
+      }
+    }
+
+    return null;
+  }
+
+  private calculateDistance(loc1: any, loc2: any): number {
+    if (!loc1 || !loc2) return 0;
+    
+    // Simple Manhattan distance for testing
+    const latDiff = Math.abs(loc1.lat - loc2.lat);
+    const lngDiff = Math.abs(loc1.lng - loc2.lng);
+    
+    // Rough approximation: 69 miles per degree latitude, 54.6 miles per degree longitude (at 40° latitude)
+    return (latDiff * 69) + (lngDiff * 54.6);
   }
 }

@@ -89,6 +89,9 @@ export interface Config {
     inventoryBucket: string;
     inventoryThumbnailPrefix: string;
   };
+
+  // Scheduling features
+  MAPBOX_ACCESS_TOKEN?: string;
 }
 
 /**
@@ -130,6 +133,8 @@ function loadConfig(): Config {
     inventoryBucket: process.env.NEXT_PUBLIC_SUPABASE_INVENTORY_BUCKET || 'inventory-images',
     inventoryThumbnailPrefix: process.env.NEXT_PUBLIC_SUPABASE_INVENTORY_THUMBNAIL_PREFIX || 'thumbnails',
   },
+
+  MAPBOX_ACCESS_TOKEN: process.env.MAPBOX_ACCESS_TOKEN,
 };
   
   return config;

@@ -40,10 +40,15 @@
 
 import MapboxClient from '@mapbox/mapbox-sdk';
 import OptimizationService from '@mapbox/mapbox-sdk/services/optimization';
+import DirectionsService from '@mapbox/mapbox-sdk/services/directions';
 import { addMinutes, format } from 'date-fns';
 import { ScheduleEventRepository } from '@/scheduling/repositories/schedule-event.repository';
 import { DayPlanRepository } from '@/scheduling/repositories/day-plan.repository';
-import { logger } from '@/core/logger/voice-logger';
+import { createLogger } from '@/core/logger/logger';
+import { config } from '@/core/config/environment';
+import { RouteStop } from '../types/route.types';
+
+const logger = createLogger('RouteOptimizationService');
 
 export interface OptimizationOptions {
   dayPlanId: string;
@@ -426,5 +431,139 @@ export class RouteOptimizationService {
     }
 
     return parts.join(' and ') + ' with optimized route';
+  }
+
+  /**
+   * Optimize a route given an array of RouteStop objects
+   */
+  async optimizeRoute(
+    stops: RouteStop[], 
+    options?: { respectTimeWindows?: boolean }
+  ): Promise<{
+    optimizedStops: RouteStop[];
+    totalDistance: number;
+    totalDuration: number;
+    routeGeometry: string;
+  }> {
+    try {
+      if (!config.MAPBOX_ACCESS_TOKEN) {
+        throw new Error('Mapbox access token not configured');
+      }
+
+      const mapboxClient = MapboxClient({ accessToken: config.MAPBOX_ACCESS_TOKEN });
+      const optimizationService = OptimizationService(mapboxClient);
+
+      // Convert RouteStop locations to Mapbox waypoints
+      const waypoints = stops.map(stop => ({
+        coordinates: [stop.location_data.lng, stop.location_data.lat],
+        name: stop.id
+      }));
+
+      const optimizationRequest = await optimizationService.getOptimization({
+        profile: 'driving',
+        waypoints,
+        roundtrip: false,
+        source: 'first',
+        destination: 'last',
+        geometries: 'geojson',
+        steps: true
+      }).send();
+
+      // Log the response for debugging
+      logger.info('Mapbox optimization response', { 
+        status: optimizationRequest.status,
+        hasBody: !!optimizationRequest.body,
+        hasTrips: !!(optimizationRequest.body && optimizationRequest.body.trips),
+        tripCount: optimizationRequest.body?.trips?.length || 0
+      });
+
+      // Check if we got a valid response
+      if (!optimizationRequest.body || !optimizationRequest.body.trips || optimizationRequest.body.trips.length === 0) {
+        logger.error('Invalid optimization response', { body: optimizationRequest.body });
+        throw new Error('Invalid optimization response from Mapbox');
+      }
+
+      const trip = optimizationRequest.body.trips[0];
+      const optimizedOrder = trip.waypoints ? 
+        trip.waypoints.map((wp: any) => wp.waypoint_index) :
+        stops.map((_, index) => index); // Fallback to original order
+
+      // Reorder stops according to optimization
+      const optimizedStops: RouteStop[] = optimizedOrder.map((index: number, newSeq: number) => {
+        const stop = { ...stops[index] };
+        stop.sequence = newSeq + 1;
+        
+        // Calculate travel time and distance from previous
+        if (newSeq > 0) {
+          const legIndex = newSeq - 1;
+          const leg = trip.legs[legIndex];
+          stop.travel_time_from_previous = Math.round(leg.duration / 60); // seconds to minutes
+          stop.distance_from_previous = leg.distance * 0.000621371; // meters to miles
+        } else {
+          stop.travel_time_from_previous = null;
+          stop.distance_from_previous = null;
+        }
+
+        return stop;
+      });
+
+      return {
+        optimizedStops,
+        totalDistance: trip.distance * 0.000621371, // meters to miles
+        totalDuration: Math.round(trip.duration / 60), // seconds to minutes
+        routeGeometry: JSON.stringify(trip.geometry)
+      };
+    } catch (error) {
+      logger.error('Error optimizing route', { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get turn-by-turn directions between two points
+   */
+  async getDirections(
+    from: { lat: number; lng: number },
+    to: { lat: number; lng: number }
+  ): Promise<{
+    distance: number;
+    duration: number;
+    geometry: string;
+    instructions: Array<{
+      text: string;
+      distance: number;
+      duration: number;
+    }>;
+  }> {
+    try {
+      const mapboxClient = MapboxClient({ accessToken: config.MAPBOX_ACCESS_TOKEN });
+      const directionsService = DirectionsService(mapboxClient);
+
+      const response = await directionsService.getDirections({
+        profile: 'driving',
+        waypoints: [
+          { coordinates: [from.lng, from.lat] },
+          { coordinates: [to.lng, to.lat] }
+        ],
+        steps: true,
+        geometries: 'geojson'
+      }).send();
+
+      const route = response.body.routes[0];
+
+      return {
+        distance: route.distance * 0.000621371, // meters to miles
+        duration: route.duration / 60, // seconds to minutes
+        geometry: JSON.stringify(route.geometry),
+        instructions: route.legs[0].steps.map((step: any) => ({
+          text: step.maneuver.instruction,
+          distance: step.distance * 0.000621371,
+          duration: step.duration / 60
+        }))
+      };
+    } catch (error) {
+      logger.error('Error getting directions', { error, from, to });
+      throw new Error('Failed to get directions');
+    }
   }
 }
