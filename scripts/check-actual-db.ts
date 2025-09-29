@@ -1,22 +1,26 @@
-#!/usr/bin/env tsx
 /*
  * Query ACTUAL database tables - no assumptions
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { runOcrPreflightCheck, PreflightCheckError } from './ocr-preflight-check';
 import { Client } from 'pg';
 
 const supabaseUrl = 'https://rtwigjwqufozqfwozpvo.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d2lnandxdWZvenFmd296cHZvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDI1MDMwMCwiZXhwIjoyMDY5ODI2MzAwfQ.e4U3aDv5GDIFiPlY_JcveGwbAT9p-ahiW_0hhoOUoY0';
 
 async function checkActualDatabase() {
+
   console.log('Connecting to check ACTUAL database content...\n');
   
   const supabase = createClient(supabaseUrl, supabaseKey);
-  
+  const pgConnectionString =
+    process.env.SUPABASE_DB_URL ||
+    'postgresql://postgres.rtwigjwqufozqfwozpvo:Duke-neepo-oliver-ttq5@aws-0-us-east-1.pooler.supabase.com:6543/postgres';
+
   // Try to connect with pg client for raw SQL
   const pgConfig = {
-    connectionString: 'postgresql://postgres:Duke-neepo-oliver-ttq5@db.rtwigjwqufozqfwozpvo.supabase.co:5432/postgres',
+    connectionString: pgConnectionString,
     ssl: { rejectUnauthorized: false }
   };
   
@@ -73,7 +77,7 @@ async function checkActualDatabase() {
             .select('*', { count: 'exact', head: true });
           
           if (!error) {
-            console.log(`\n✅ Table: ${tableName}`);
+            console.log(`\nâœ… Table: ${tableName}`);
             console.log(`   Row count: ${count || 0}`);
             
             // Get sample data to see columns
@@ -100,7 +104,7 @@ async function checkActualDatabase() {
             }
           }
         } catch (err: any) {
-          console.log(`❌ Table: ${tableName} - Error: ${err.message}`);
+          console.log(`âŒ Table: ${tableName} - Error: ${err.message}`);
         }
       }
     }
@@ -157,4 +161,27 @@ async function checkActualDatabase() {
   }
 }
 
-checkActualDatabase().catch(console.error);
+
+async function main() {
+  try {
+    await checkActualDatabase();
+    await runOcrPreflightCheck({ includeConsoleSummary: true });
+  } catch (error) {
+    if (error instanceof PreflightCheckError) {
+      console.error(error.message);
+      console.error('See report for details:', error.result.reportPath);
+      process.exit(1);
+      return;
+    }
+
+    console.error(error);
+    process.exit(1);
+  }
+}
+
+main();
+
+
+
+
+

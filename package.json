@@ -58,7 +58,9 @@
     "rls:verify": "tsx supabase/.temp/verify_rls.mjs",
     "rls:cleanup": "tsx supabase/.temp/cleanup_rls.mjs",
     "rls:lint": "tsx scripts/ci/rls-lint.ts",
-    "rls:full": "npm run rls:seed && npm run rls:verify && npm run rls:cleanup && npm run test:rls -- company_settings && npm run rls:lint"
+    "rls:full": "npm run rls:seed && npm run rls:verify && npm run rls:cleanup && npm run test:rls -- company_settings && npm run rls:lint",
+    "db:check:actual": "tsx scripts/check-actual-db.ts",
+    "ocr:preflight": "tsx scripts/ocr-preflight-check.ts"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
