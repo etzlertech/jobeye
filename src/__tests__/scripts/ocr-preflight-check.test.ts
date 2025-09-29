@@ -151,11 +151,11 @@ describe('ocr-preflight-check', () => {
     }
 
     tableState.vendors.columns.push(column('name', 'text'));
-    tableState.inventory_images.columns.push(column('url', 'text'));
+    tableState.inventory_images.columns.push(column('file_path', 'text'));
     tableState.ocr_jobs.columns.push(column('status', 'text'));
-    tableState.ocr_documents.columns.push(column('job_id', 'uuid'));
-    tableState.ocr_line_items.columns.push(column('document_id', 'uuid'));
-    tableState.ocr_note_entities.columns.push(column('document_id', 'uuid'));
+    tableState.ocr_documents.columns.push(column('ocr_job_id', 'uuid'));
+    tableState.ocr_line_items.columns.push(column('ocr_document_id', 'uuid'));
+    tableState.ocr_note_entities.columns.push(column('ocr_document_id', 'uuid'));
     tableState.vendor_aliases.columns.push(column('vendor_id', 'uuid'));
     tableState.vendor_locations.columns.push(column('vendor_id', 'uuid'));
 
@@ -188,10 +188,10 @@ describe('ocr-preflight-check', () => {
     }
 
     tableState.vendors.columns.push(column('name', 'text'));
-    tableState.inventory_images.columns.push(column('url', 'text'));
-    tableState.ocr_documents.columns.push(column('job_id', 'uuid'));
-    tableState.ocr_line_items.columns.push(column('document_id', 'uuid'));
-    tableState.ocr_note_entities.columns.push(column('document_id', 'uuid'));
+    tableState.inventory_images.columns.push(column('file_path', 'text'));
+    tableState.ocr_documents.columns.push(column('ocr_job_id', 'uuid'));
+    tableState.ocr_line_items.columns.push(column('ocr_document_id', 'uuid'));
+    tableState.ocr_note_entities.columns.push(column('ocr_document_id', 'uuid'));
     tableState.vendor_aliases.columns.push(column('vendor_id', 'uuid'));
     tableState.vendor_locations.columns.push(column('vendor_id', 'uuid'));
 

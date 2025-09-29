@@ -82,7 +82,7 @@ const TABLE_EXPECTATIONS: TableExpectation[] = [
     requiredColumns: [
       { name: 'id', description: 'Primary key for inventory image' },
       { name: 'company_id', description: 'Owning company identifier' },
-      { name: 'url', description: 'Image location' }
+      { name: 'file_path', description: 'Image location' }
     ]
   },
   {
@@ -101,7 +101,7 @@ const TABLE_EXPECTATIONS: TableExpectation[] = [
     description: 'Document metadata extracted from OCR jobs',
     requiredColumns: [
       { name: 'id', description: 'Primary key for document' },
-      { name: 'job_id', description: 'Associated OCR job' },
+      { name: 'ocr_job_id', description: 'Associated OCR job' },
       { name: 'company_id', description: 'Tenant scoping for document' }
     ]
   },
@@ -111,7 +111,7 @@ const TABLE_EXPECTATIONS: TableExpectation[] = [
     description: 'Item-level data captured from OCR documents',
     requiredColumns: [
       { name: 'id', description: 'Primary key for line item' },
-      { name: 'document_id', description: 'Owning OCR document' },
+      { name: 'ocr_document_id', description: 'Owning OCR document' },
       { name: 'company_id', description: 'Tenant scoping for line item' }
     ]
   },
@@ -121,7 +121,7 @@ const TABLE_EXPECTATIONS: TableExpectation[] = [
     description: 'Structured note entities extracted from OCR',
     requiredColumns: [
       { name: 'id', description: 'Primary key for note entity' },
-      { name: 'document_id', description: 'Associated OCR document' },
+      { name: 'ocr_document_id', description: 'Associated OCR document' },
       { name: 'company_id', description: 'Tenant scoping for note entity' }
     ]
   },
@@ -374,6 +374,7 @@ export async function runOcrPreflightCheck(options: PreflightOptions = {}): Prom
       }
 
       if (includeConsoleSummary) {
+        console.log('PASS - table available.');
         console.log(`Row count: ${rowCount ?? 'N/A'}`);
         if (missingColumns.length > 0) {
           console.log(`Missing columns: ${missingColumns.map((c) => c.name).join(', ')}`);

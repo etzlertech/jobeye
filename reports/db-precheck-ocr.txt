@@ -1,0 +1,131 @@
+# OCR Migration Preflight Report
+
+Timestamp: 2025-09-29T01:43:01.407Z
+Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
+
+## Issues Detected
+- None (all clear)
+
+## Table Details
+### vendors
+- Category: dependency
+- Exists: Yes
+- Row count: N/A
+- Missing columns: None
+- Columns:
+  - id: uuid, nullable=NO (default: gen_random_uuid())
+  - company_id: text, nullable=NO
+  - name: text, nullable=NO
+  - is_active: boolean, nullable=YES (default: true)
+  - created_at: timestamp with time zone, nullable=YES (default: now())
+  - updated_at: timestamp with time zone, nullable=YES (default: now())
+- Indexes:
+  - vendors_pkey: CREATE UNIQUE INDEX vendors_pkey ON public.vendors USING btree (id)
+
+### inventory_images
+- Category: dependency
+- Exists: Yes
+- Row count: N/A
+- Missing columns: None
+- Columns:
+  - id: uuid, nullable=NO (default: gen_random_uuid())
+  - company_id: text, nullable=NO
+  - media_id: uuid, nullable=YES
+  - file_path: text, nullable=NO
+  - mime_type: text, nullable=YES
+  - size_bytes: integer, nullable=YES
+  - created_at: timestamp with time zone, nullable=YES (default: now())
+- Indexes:
+  - inventory_images_pkey: CREATE UNIQUE INDEX inventory_images_pkey ON public.inventory_images USING btree (id)
+
+### ocr_jobs
+- Category: ocr
+- Exists: Yes
+- Row count: N/A
+- Missing columns: None
+- Columns:
+  - id: uuid, nullable=NO (default: gen_random_uuid())
+  - company_id: text, nullable=NO
+  - vendor_id: uuid, nullable=YES
+  - status: text, nullable=NO
+  - created_at: timestamp with time zone, nullable=YES (default: now())
+  - completed_at: timestamp with time zone, nullable=YES
+- Indexes:
+  - ocr_jobs_pkey: CREATE UNIQUE INDEX ocr_jobs_pkey ON public.ocr_jobs USING btree (id)
+
+### ocr_documents
+- Category: ocr
+- Exists: Yes
+- Row count: N/A
+- Missing columns: None
+- Columns:
+  - id: uuid, nullable=NO (default: gen_random_uuid())
+  - company_id: text, nullable=NO
+  - ocr_job_id: uuid, nullable=YES
+  - file_path: text, nullable=NO
+  - page_count: integer, nullable=YES
+  - created_at: timestamp with time zone, nullable=YES (default: now())
+- Indexes:
+  - ocr_documents_pkey: CREATE UNIQUE INDEX ocr_documents_pkey ON public.ocr_documents USING btree (id)
+
+### ocr_line_items
+- Category: ocr
+- Exists: Yes
+- Row count: N/A
+- Missing columns: None
+- Columns:
+  - id: uuid, nullable=NO (default: gen_random_uuid())
+  - company_id: text, nullable=NO
+  - ocr_document_id: uuid, nullable=YES
+  - line_index: integer, nullable=NO
+  - sku: text, nullable=YES
+  - description: text, nullable=YES
+  - qty: numeric, nullable=YES
+  - unit_price: numeric, nullable=YES
+  - total: numeric, nullable=YES
+- Indexes:
+  - ocr_line_items_pkey: CREATE UNIQUE INDEX ocr_line_items_pkey ON public.ocr_line_items USING btree (id)
+
+### ocr_note_entities
+- Category: ocr
+- Exists: Yes
+- Row count: N/A
+- Missing columns: None
+- Columns:
+  - id: uuid, nullable=NO (default: gen_random_uuid())
+  - company_id: text, nullable=NO
+  - ocr_document_id: uuid, nullable=YES
+  - label: text, nullable=NO
+  - value: text, nullable=YES
+- Indexes:
+  - ocr_note_entities_pkey: CREATE UNIQUE INDEX ocr_note_entities_pkey ON public.ocr_note_entities USING btree (id)
+
+### vendor_aliases
+- Category: ocr
+- Exists: Yes
+- Row count: N/A
+- Missing columns: None
+- Columns:
+  - id: uuid, nullable=NO (default: gen_random_uuid())
+  - company_id: text, nullable=NO
+  - vendor_id: uuid, nullable=NO
+  - alias: text, nullable=NO
+- Indexes:
+  - vendor_aliases_pkey: CREATE UNIQUE INDEX vendor_aliases_pkey ON public.vendor_aliases USING btree (id)
+
+### vendor_locations
+- Category: ocr
+- Exists: Yes
+- Row count: N/A
+- Missing columns: None
+- Columns:
+  - id: uuid, nullable=NO (default: gen_random_uuid())
+  - company_id: text, nullable=NO
+  - vendor_id: uuid, nullable=NO
+  - address: text, nullable=YES
+  - city: text, nullable=YES
+  - state: text, nullable=YES
+  - postal_code: text, nullable=YES
+  - country: text, nullable=YES
+- Indexes:
+  - vendor_locations_pkey: CREATE UNIQUE INDEX vendor_locations_pkey ON public.vendor_locations USING btree (id)
