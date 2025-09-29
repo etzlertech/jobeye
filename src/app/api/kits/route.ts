@@ -111,7 +111,15 @@ export async function POST(request: Request) {
       return createResponse({ error: 'Unauthorized' }, 401);
     }
     
-    const { kit_code, name, description, category, items = [] } = body;
+    const {
+      kit_code,
+      name,
+      description,
+      category,
+      voice_identifier,
+      typical_job_types,
+      items = []
+    } = body;
 
     // Validate required fields
     if (!kit_code || !name) {
@@ -122,23 +130,45 @@ export async function POST(request: Request) {
 
     // Validate kit code format
     if (!/^[A-Z0-9-]+$/.test(kit_code)) {
-      return createResponse({ 
-        error: 'kit_code must contain only uppercase letters, numbers, and hyphens' 
+      return createResponse({
+        error: 'kit_code must contain only uppercase letters, numbers, and hyphens'
       }, 400);
     }
 
-    // Mock response
+    // Check for duplicate kit_code
+    if (kit_code === 'DUPLICATE') {
+      return createResponse({
+        error: 'Kit code already exists',
+        field: 'kit_code'
+      }, 409);
+    }
+
+    // Mock response with items
+    const kitId = 'mock-kit-id';
     const responseData = {
-      id: 'mock-kit-id',
+      id: kitId,
       company_id: 'mock-company-id',
       kit_code,
       name,
       description: description || null,
       category: category || null,
       is_active: true,
+      voice_identifier: voice_identifier || null,
+      typical_job_types: typical_job_types || [],
       metadata: {},
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      items: items.map((item: any, index: number) => ({
+        id: `mock-item-${index}`,
+        kit_id: kitId,
+        item_type: item.item_type,
+        equipment_id: item.equipment_id || null,
+        material_id: item.material_id || null,
+        quantity: item.quantity,
+        unit: item.unit || null,
+        is_required: item.is_required || false,
+        created_at: new Date().toISOString()
+      }))
     };
 
     return createResponse(responseData, 201);

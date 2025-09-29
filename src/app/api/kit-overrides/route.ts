@@ -70,19 +70,23 @@ export async function POST(request: Request) {
       return createResponse({ error: 'Unauthorized' }, 401);
     }
     
-    const { 
+    const {
       job_id,
       kit_id,
+      item_id,
       technician_id,
       missing_items,
       reason,
-      voice_initiated = false
+      override_reason,
+      voice_initiated = false,
+      notification_preferences
     } = body;
 
     // Validate required fields
-    if (!job_id || !kit_id || !technician_id || !reason) {
-      return createResponse({ 
-        error: 'Missing required fields: job_id, kit_id, technician_id, reason' 
+    const reasonText = override_reason || reason;
+    if (!job_id || !kit_id || !technician_id || !reasonText) {
+      return createResponse({
+        error: 'Missing required fields: job_id, kit_id, technician_id, override_reason'
       }, 400);
     }
 
@@ -96,23 +100,29 @@ export async function POST(request: Request) {
     // Check if we met the 30-second SLA
     const slaMet = notificationLatencyMs < 30000;
 
+    // Determine notification method
+    let notificationMethod = 'sms'; // default
+    if (notification_preferences?.methods?.length > 0) {
+      notificationMethod = notification_preferences.methods[0];
+    }
+
     // Mock response
     const responseData = {
       id: 'mock-override-id',
       company_id: 'mock-company-id',
       job_id,
       kit_id,
-      item_id: missing_items?.[0] || null,
+      item_id: item_id || missing_items?.[0] || null,
       technician_id,
-      override_reason: reason,
-      supervisor_id: supervisorId,
+      override_reason: reasonText,
+      supervisor_id: notification_preferences?.supervisor_id || supervisorId,
       supervisor_notified_at: notificationSentAt.toISOString(),
-      notification_method: voice_initiated ? 'voice' : 'api',
+      notification_method: notificationMethod,
       notification_status: 'sent',
       notification_attempts: [
         {
           timestamp: notificationSentAt.toISOString(),
-          method: 'push',
+          method: notificationMethod,
           status: 'success'
         }
       ],
