@@ -60,7 +60,12 @@
     "rls:lint": "tsx scripts/ci/rls-lint.ts",
     "rls:full": "npm run rls:seed && npm run rls:verify && npm run rls:cleanup && npm run test:rls -- company_settings && npm run rls:lint",
     "db:check:actual": "tsx scripts/check-actual-db.ts",
-    "ocr:preflight": "tsx scripts/ocr-preflight-check.ts"
+    "ocr:preflight": "tsx scripts/ocr-preflight-check.ts",
+    "ocr:migrate": "npx supabase db push",
+    "ocr:types": "npx supabase gen types typescript --linked --schema public > src/types/supabase.ts",
+    "ocr:seed": "node scripts/ocr-seed.mjs",
+    "ocr:full": "npm run ocr:migrate && npm run ocr:types && npm run ocr:seed && npm run ocr:preflight && npm run rls:full",
+    "lint:migrations": "tsx scripts/ci/check-migrations.ts"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
