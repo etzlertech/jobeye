@@ -1,5 +1,8 @@
 # CODEX Agent Instructions
 
+## IMPORTANT: Main Branch Only Workflow
+**As a single developer, all work happens directly on the main branch. DO NOT create feature branches.**
+
 ## CRITICAL: Execution Order for All Tasks
 
 1. **ALWAYS START BY READING:**
