@@ -1,6 +1,35 @@
-# Repository Guidelines
+# CODEX Agent Instructions
 
-## Project Structure & Module Organization
+## CRITICAL: Execution Order for All Tasks
+
+1. **ALWAYS START BY READING:**
+   - `.specify/constitution.md` - Project rules and non-negotiables
+   - `.specify/features/[feature-name]/tasks.md` - Task list
+   - `CLAUDE.md` - Development commands and patterns
+
+2. **THEN CREATE TODO LIST:**
+   - Use TodoWrite to parse ALL tasks from the task file
+   - Mark completed tasks as DONE
+   - Identify next tasks to execute
+
+3. **BEFORE ANY DATABASE WORK:**
+   - Run `npm run check:db-actual` (or `npx tsx scripts/check-actual-db.ts`)
+   - Never assume tables exist from migration files
+   - Check actual schema state first
+
+4. **FOR FILE OPERATIONS:**
+   - Use Write tool, not complex shell heredocs
+   - Keep it simple - avoid cross-shell compatibility issues
+
+5. **FOLLOW THE CONSTITUTION:**
+   - 300 LoC complexity budget (500 max with justification)
+   - Every file needs AGENT DIRECTIVE BLOCKS
+   - Tests FIRST (TDD) - they must fail before implementation
+   - Always push after commits
+
+## Repository Guidelines
+
+### Project Structure & Module Organization
 - `src/app` hosts Next.js routes and layout; `src/components` reusable UI; `src/domains` feature modules; `src/core` platform primitives; `src/lib` shared utilities; `src/types` generated Supabase definitions (`npm run generate:types`).
 - Assets sit in `public`; reference material in `docs`; automation lives in `scripts`; database SQL in `supabase/migrations`; cached test output in `test-results`.
 - Jest specs reside in `src/__tests__`; Supabase RLS fixtures stay in `test/rls`.
@@ -33,5 +62,8 @@
 ## Environment & Security Notes
 - Use Node 20+ (`.nvmrc`) and npm 10+; run `npm ci` to stay on the lockfile.
 - Copy `.env.local.example` to `.env.local`; guard Supabase keys per developer.
+- Set proper SUPABASE_DB_URL (with PGBouncer) before running any migrations or seed scripts.
+- Read the actual schema from information_schema to decide when to insert records.
+- Apply migration statements one by one instead of relying on multi-statement DO $$ blocks.
 - Apply schema updates with `npm run db:migrate`; inventory SQL in `supabase/migrations`.
 - Never commit secrets or generated manifests; extend `.gitignore` for new sensitive artifacts.

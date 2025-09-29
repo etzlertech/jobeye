@@ -50,89 +50,34 @@
 
 import { VoiceLogger } from '@/core/logger/voice-logger';
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
-import { Container } from '@/domains/equipment/types/container-types';
-import { Equipment } from '@/domains/equipment/types/equipment-types';
-import { Material } from '@/domains/material/types/material-types';
+import {
+  BoundingBox,
+  DetectedContainer,
+  DetectedItem,
+  JobLoadRequirement,
+  LoadVerificationAnalysis,
+  LoadVerificationStatus,
+  KnownContainer,
+  KnownEquipment,
+  KnownMaterial,
+  SceneAnalysisRequest,
+} from '@/domains/vision/types/load-verification-types';
 
-// Multi-object detection types
-export interface DetectedContainer {
-  containerId?: string; // Matched to known container
-  containerType: string;
-  color?: string;
-  identifier?: string;
+export type LoadVerification = LoadVerificationAnalysis;
+
+export interface YOLODetection {
+  class: string;
   confidence: number;
-  boundingBox?: BoundingBox;
+  boundingBox: BoundingBox;
   attributes?: Record<string, any>;
 }
 
-export interface DetectedItem {
-  itemType: 'equipment' | 'material';
-  itemId?: string; // Matched to inventory
-  itemName: string;
-  confidence: number;
-  boundingBox?: BoundingBox;
-  containerId?: string; // Which container it's in
-  attributes?: Record<string, any>;
-}
-
-export interface BoundingBox {
-  x: number; // 0-1 normalized
-  y: number; // 0-1 normalized
-  width: number; // 0-1 normalized  
-  height: number; // 0-1 normalized
-}
-
-export interface LoadVerification {
-  id: string;
-  jobId: string;
-  timestamp: Date;
-  
-  // Detected elements
-  containers: DetectedContainer[];
-  items: DetectedItem[];
-  
-  // Verification results
-  verifiedItems: Array<{
-    checklistItemId: string;
-    detectedItem: DetectedItem;
-    status: 'verified' | 'wrong_container' | 'low_confidence';
-    confidence: number;
-  }>;
-  
-  missingItems: Array<{
-    checklistItemId: string;
-    itemName: string;
-    expectedContainer?: string;
-  }>;
-  
-  unexpectedItems: DetectedItem[];
-  
-  // Analysis metadata
-  provider: string;
-  modelId: string;
-  processingTimeMs: number;
-  tokensUsed?: number;
-  costUsd?: number;
-}
-
-export interface JobLoadRequirement {
-  checklistItemId: string;
-  itemType: 'equipment' | 'material';
-  itemId: string;
-  itemName: string;
-  quantity: number;
-  containerId?: string;
-  containerName?: string;
-}
-
-export interface SceneAnalysisRequest {
-  imageData: string | Buffer; // Base64 or buffer
-  jobId: string;
-  loadRequirements: JobLoadRequirement[];
-  knownContainers: Container[];
-  knownEquipment?: Equipment[];
-  knownMaterials?: Material[];
-  confidenceThreshold?: number; // Default 0.7
+export interface HybridVisionConfig {
+  useYOLO: boolean;
+  yoloEndpoint?: string;
+  yoloModel?: 'yolov11' | 'yolov26';
+  vlmFallbackThreshold?: number;
+  enableOfflineCache?: boolean;
 }
 
 export class MultiObjectVisionService {
@@ -140,32 +85,121 @@ export class MultiObjectVisionService {
   private openaiApiKey?: string;
   private geminiApiKey?: string;
   private defaultConfidenceThreshold = 0.7;
+  private hybridConfig: HybridVisionConfig;
+  private offlineCache: Map<string, LoadVerification> = new Map();
 
-  constructor(logger?: VoiceLogger) {
+  constructor(
+    supabase?: any,
+    logger?: VoiceLogger, 
+    hybridConfig?: HybridVisionConfig
+  ) {
     this.logger = logger || new VoiceLogger();
     this.openaiApiKey = process.env.OPENAI_API_KEY;
     this.geminiApiKey = process.env.GEMINI_API_KEY;
+    this.hybridConfig = {
+      useYOLO: hybridConfig?.useYOLO ?? true,
+      yoloEndpoint: hybridConfig?.yoloEndpoint ?? process.env.YOLO_ENDPOINT,
+      yoloModel: hybridConfig?.yoloModel ?? 'yolov11',
+      vlmFallbackThreshold: hybridConfig?.vlmFallbackThreshold ?? 0.6,
+      enableOfflineCache: hybridConfig?.enableOfflineCache ?? true
+    };
+    this.loadOfflineCache();
   }
 
   /**
    * Analyze a loading scene with multiple items and containers
    */
-  async analyzeLoadingScene(request: SceneAnalysisRequest): Promise<LoadVerification> {
+  async analyzeLoadingScene(
+    mediaId: string,
+    jobId: string,
+    options?: { expectedItems?: any[] }
+  ): Promise<LoadVerificationAnalysis> {
+    // Convert to internal request format
+    const request: SceneAnalysisRequest = {
+      jobId,
+      imageData: mediaId, // Will be fetched later if needed
+      knownContainers: [],
+      knownEquipment: [],
+      knownMaterials: [],
+      loadRequirements: options?.expectedItems?.map(item => ({
+        checklistItemId: item.id,
+        itemName: item.name,
+        itemType: item.type,
+        quantity: item.quantity || 1,
+        containerId: item.expectedContainer,
+        containerName: ''
+      })) || []
+    };
+
+    return this.analyzeLoadingSceneInternal(request);
+  }
+
+  private async analyzeLoadingSceneInternal(request: SceneAnalysisRequest): Promise<LoadVerification> {
     const startTime = Date.now();
     
     try {
-      // Generate optimized prompt
-      const prompt = this.generateVLMPrompt(request);
-      
-      // Call VLM (prefer Gemini for multi-object)
-      const visionResult = await this.callVisionModel(
-        request.imageData,
-        prompt,
-        this.geminiApiKey ? 'gemini' : 'openai'
-      );
-      
-      // Parse VLM response
-      const { containers, items } = this.parseVisionResponse(visionResult);
+      // Check offline cache first
+      if (this.hybridConfig.enableOfflineCache && !navigator.onLine) {
+        const cached = this.getCachedResult(request.jobId);
+        if (cached) return cached;
+      }
+
+      let containers: DetectedContainer[] = [];
+      let items: DetectedItem[] = [];
+      let provider = 'hybrid';
+      let modelId = '';
+      let tokensUsed = 0;
+      let costUsd = 0;
+
+      if (this.hybridConfig.useYOLO && this.hybridConfig.yoloEndpoint) {
+        // Try YOLO first for fast local detection
+        try {
+          const yoloResult = await this.runYOLODetection(request.imageData);
+          const parsed = this.parseYOLOResults(yoloResult);
+          containers = parsed.containers;
+          items = parsed.items;
+          provider = 'yolo';
+          modelId = this.hybridConfig.yoloModel || 'yolov11';
+
+          // If confidence is low, enhance with VLM
+          const avgConfidence = this.calculateAverageConfidence(items);
+          if (avgConfidence < this.hybridConfig.vlmFallbackThreshold!) {
+            const vlmResult = await this.enhanceWithVLM(request, yoloResult);
+            containers = vlmResult.containers;
+            items = vlmResult.items;
+            provider = 'hybrid-yolo-vlm';
+            modelId = `${this.hybridConfig.yoloModel}-${vlmResult.modelId}`;
+            tokensUsed = vlmResult.tokensUsed || 0;
+            costUsd = vlmResult.costUsd || 0;
+          }
+        } catch (yoloError) {
+          await this.logger.warn('YOLO detection failed, falling back to VLM', {
+            error: (yoloError as Error).message
+          });
+        }
+      }
+
+      // If YOLO not used or failed, use VLM
+      if (containers.length === 0 && items.length === 0) {
+        // Generate optimized prompt
+        const prompt = this.generateVLMPrompt(request);
+        
+        // Call VLM (prefer Gemini for multi-object)
+        const visionResult = await this.callVisionModel(
+          request.imageData,
+          prompt,
+          this.geminiApiKey ? 'gemini' : 'openai'
+        );
+        
+        // Parse VLM response
+        const parsed = this.parseVisionResponse(visionResult);
+        containers = parsed.containers;
+        items = parsed.items;
+        provider = visionResult.provider;
+        modelId = visionResult.modelId;
+        tokensUsed = visionResult.tokensUsed || 0;
+        costUsd = visionResult.costUsd || 0;
+      }
       
       // Match detected containers to known containers
       const matchedContainers = this.matchContainers(containers, request.knownContainers);
@@ -197,12 +231,17 @@ export class MultiObjectVisionService {
         containers: matchedContainers,
         items: itemsWithContainers,
         ...verification,
-        provider: visionResult.provider,
-        modelId: visionResult.modelId,
-        processingTimeMs: Date.now() - startTime,
-        tokensUsed: visionResult.tokensUsed,
-        costUsd: visionResult.costUsd,
+        provider,
+        model: modelId,
+        processingTime: Date.now() - startTime,
+        cost: costUsd,
+        confidenceScores: {}
       };
+      
+      // Cache result for offline use
+      if (this.hybridConfig.enableOfflineCache) {
+        this.cacheResult(request.jobId, result);
+      }
       
       // Log analysis
       await this.logger.info('Load verification completed', {
@@ -211,7 +250,9 @@ export class MultiObjectVisionService {
         itemsDetected: itemsWithContainers.length,
         verifiedCount: verification.verifiedItems.length,
         missingCount: verification.missingItems.length,
-        processingTimeMs: result.processingTimeMs,
+        processingTimeMs: result.processingTime,
+        provider,
+        modelId
       });
       
       return result;
@@ -383,13 +424,13 @@ Return a structured JSON response with this exact format:
    */
   private matchContainers(
     detected: DetectedContainer[],
-    known: Container[]
+    known: KnownContainer[]
   ): DetectedContainer[] {
     return detected.map(det => {
       // Try to match by identifier
       if (det.identifier) {
         const match = known.find(k => 
-          k.identifier.toLowerCase() === det.identifier?.toLowerCase()
+          k.identifier?.toLowerCase() === det.identifier?.toLowerCase()
         );
         if (match) {
           return { ...det, containerId: match.id };
@@ -416,8 +457,8 @@ Return a structured JSON response with this exact format:
    */
   private matchItems(
     detected: DetectedItem[],
-    equipment: Equipment[],
-    materials: Material[]
+    equipment: KnownEquipment[],
+    materials: KnownMaterial[]
   ): DetectedItem[] {
     return detected.map(det => {
       const nameLower = det.itemName.toLowerCase();
@@ -427,9 +468,10 @@ Return a structured JSON response with this exact format:
           nameLower.includes('chainsaw') || nameLower.includes('trimmer')) {
         const match = equipment.find(e => {
           const equipNameLower = e.name.toLowerCase();
+          const modelLower = e.model?.toLowerCase();
           return equipNameLower.includes(nameLower) || 
                  nameLower.includes(equipNameLower) ||
-                 (e.model && nameLower.includes(e.model.toLowerCase()));
+                 (modelLower && nameLower.includes(modelLower));
         });
         
         if (match) {
@@ -558,7 +600,7 @@ Return a structured JSON response with this exact format:
           current.confidence > best.confidence ? current : best
         );
         
-        let status: 'verified' | 'wrong_container' | 'low_confidence' = 'verified';
+        let status: LoadVerificationStatus = 'verified';
         
         // Check confidence
         if (bestMatch.confidence < confidenceThreshold) {
@@ -681,5 +723,224 @@ Return a structured JSON response with this exact format:
       tokensUsed: 0,
       costUsd: 0,
     };
+  }
+
+  /**
+   * Run YOLO detection locally
+   */
+  private async runYOLODetection(imageData: string | Buffer): Promise<YOLODetection[]> {
+    if (!this.hybridConfig.yoloEndpoint) {
+      throw new Error('YOLO endpoint not configured');
+    }
+
+    const base64Image = Buffer.isBuffer(imageData) 
+      ? imageData.toString('base64')
+      : imageData;
+
+    try {
+      const response = await fetch(this.hybridConfig.yoloEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: base64Image,
+          model: this.hybridConfig.yoloModel,
+          conf_threshold: 0.5,
+          iou_threshold: 0.45,
+          max_detections: 100
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`YOLO detection failed: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      await this.logger.error('YOLO detection error', error as Error);
+      throw error;
+    }
+  }
+
+  /**
+   * Parse YOLO detection results
+   */
+  private parseYOLOResults(yoloDetections: YOLODetection[]): {
+    containers: DetectedContainer[];
+    items: DetectedItem[];
+  } {
+    const containers: DetectedContainer[] = [];
+    const items: DetectedItem[] = [];
+
+    for (const detection of yoloDetections) {
+      // Map YOLO classes to our domain
+      if (this.isContainerClass(detection.class)) {
+        containers.push({
+          containerType: this.mapToContainerType(detection.class),
+          confidence: detection.confidence,
+          boundingBox: detection.boundingBox,
+          attributes: detection.attributes
+        });
+      } else if (this.isEquipmentClass(detection.class)) {
+        items.push({
+          itemType: 'equipment',
+          itemName: this.mapToItemName(detection.class),
+          confidence: detection.confidence,
+          boundingBox: detection.boundingBox,
+          attributes: detection.attributes
+        });
+      } else if (this.isMaterialClass(detection.class)) {
+        items.push({
+          itemType: 'material',
+          itemName: this.mapToItemName(detection.class),
+          confidence: detection.confidence,
+          boundingBox: detection.boundingBox,
+          attributes: detection.attributes
+        });
+      }
+    }
+
+    return { containers, items };
+  }
+
+  /**
+   * Enhance YOLO results with VLM for better understanding
+   */
+  private async enhanceWithVLM(
+    request: SceneAnalysisRequest,
+    yoloResults: YOLODetection[]
+  ): Promise<any> {
+    const enhancedPrompt = this.generateEnhancedVLMPrompt(request, yoloResults);
+    
+    const visionResult = await this.callVisionModel(
+      request.imageData,
+      enhancedPrompt,
+      this.geminiApiKey ? 'gemini' : 'openai'
+    );
+
+    return this.parseVisionResponse(visionResult);
+  }
+
+  /**
+   * Generate enhanced prompt using YOLO detections
+   */
+  private generateEnhancedVLMPrompt(
+    request: SceneAnalysisRequest,
+    yoloResults: YOLODetection[]
+  ): string {
+    const detectedObjects = yoloResults
+      .map(d => `- ${d.class} (confidence: ${d.confidence.toFixed(2)})`)
+      .join('\n');
+
+    return `I have already detected these objects using YOLO:
+${detectedObjects}
+
+Please enhance this analysis by:
+1. Identifying which specific equipment/material each detection represents (e.g., "lawn_mower" -> "Honda HRX217 Push Mower")
+2. Determining which container each item is in or near
+3. Identifying any items that YOLO might have missed
+4. Providing color and identifier information for containers
+
+${this.generateVLMPrompt(request)}`;
+  }
+
+  /**
+   * Calculate average confidence of detections
+   */
+  private calculateAverageConfidence(items: DetectedItem[]): number {
+    if (items.length === 0) return 0;
+    const sum = items.reduce((acc, item) => acc + item.confidence, 0);
+    return sum / items.length;
+  }
+
+  /**
+   * YOLO class mapping helpers
+   */
+  private isContainerClass(className: string): boolean {
+    const containerClasses = ['truck', 'van', 'trailer', 'pickup', 'vehicle', 'bin', 'container'];
+    return containerClasses.some(c => className.toLowerCase().includes(c));
+  }
+
+  private isEquipmentClass(className: string): boolean {
+    const equipmentClasses = ['mower', 'chainsaw', 'trimmer', 'blower', 'edger', 'spreader', 'sprayer'];
+    return equipmentClasses.some(c => className.toLowerCase().includes(c));
+  }
+
+  private isMaterialClass(className: string): boolean {
+    const materialClasses = ['can', 'bottle', 'pipe', 'fitting', 'bag', 'box', 'bucket'];
+    return materialClasses.some(c => className.toLowerCase().includes(c));
+  }
+
+  private mapToContainerType(className: string): DetectedContainer['containerType'] {
+    const lower = className.toLowerCase();
+    if (lower.includes('truck') || lower.includes('pickup')) return 'truck';
+    if (lower.includes('van')) return 'van';
+    if (lower.includes('trailer')) return 'trailer';
+    if (lower.includes('bin') || lower.includes('container')) return 'storage_bin';
+    return 'ground';
+  }
+
+  private mapToItemName(className: string): string {
+    // Map YOLO class names to user-friendly names
+    const mappings: Record<string, string> = {
+      'lawn_mower': 'Push Mower',
+      'riding_mower': 'Riding Mower',
+      'chainsaw': 'Chainsaw',
+      'string_trimmer': 'String Trimmer',
+      'leaf_blower': 'Leaf Blower',
+      'gas_can': 'Gas Can',
+      'herbicide_bottle': 'Herbicide',
+      'pvc_pipe': 'PVC Pipe',
+      'tool_box': 'Tool Box'
+    };
+
+    return mappings[className.toLowerCase()] || className;
+  }
+
+  /**
+   * Offline cache management
+   */
+  private loadOfflineCache() {
+    if (typeof localStorage === 'undefined') return;
+
+    try {
+      const cached = localStorage.getItem('vision-offline-cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        Object.entries(parsed).forEach(([key, value]) => {
+          this.offlineCache.set(key, value as LoadVerification);
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load offline cache:', error);
+    }
+  }
+
+  private saveOfflineCache() {
+    if (typeof localStorage === 'undefined') return;
+
+    try {
+      const cacheObj: Record<string, LoadVerification> = {};
+      this.offlineCache.forEach((value, key) => {
+        cacheObj[key] = value;
+      });
+      localStorage.setItem('vision-offline-cache', JSON.stringify(cacheObj));
+    } catch (error) {
+      console.error('Failed to save offline cache:', error);
+    }
+  }
+
+  private getCachedResult(jobId: string): LoadVerification | null {
+    return this.offlineCache.get(jobId) || null;
+  }
+
+  private cacheResult(jobId: string, result: LoadVerification) {
+    // Keep cache size limited
+    if (this.offlineCache.size > 50) {
+      const firstKey = this.offlineCache.keys().next().value;
+      this.offlineCache.delete(firstKey);
+    }
+
+    this.offlineCache.set(jobId, result);
+    this.saveOfflineCache();
   }
 }

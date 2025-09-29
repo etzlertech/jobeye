@@ -1,0 +1,632 @@
+openapi: 3.1.0
+info:
+  title: Kit Management API
+  version: 1.0.0
+  description: API for managing equipment/material kits and assignments
+
+paths:
+  /api/kits:
+    get:
+      summary: List kits
+      operationId: listKits
+      tags: [Kits]
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of kits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Kit'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      summary: Create kit
+      operationId: createKit
+      tags: [Kits]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateKitRequest'
+      responses:
+        '201':
+          description: Kit created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kit'
+
+  /api/kits/{id}:
+    get:
+      summary: Get kit by ID
+      operationId: getKit
+      tags: [Kits]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Kit details with items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitWithItems'
+
+    patch:
+      summary: Update kit
+      operationId: updateKit
+      tags: [Kits]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateKitRequest'
+      responses:
+        '200':
+          description: Kit updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kit'
+
+  /api/kits/{id}/items:
+    post:
+      summary: Add item to kit
+      operationId: addKitItem
+      tags: [KitItems]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateKitItemRequest'
+      responses:
+        '201':
+          description: Item added to kit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitItem'
+
+  /api/kits/{id}/variants:
+    post:
+      summary: Create kit variant
+      operationId: createKitVariant
+      tags: [KitVariants]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateKitVariantRequest'
+      responses:
+        '201':
+          description: Kit variant created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitVariant'
+
+  /api/jobs/{jobId}/kits:
+    post:
+      summary: Assign kit to job
+      operationId: assignKitToJob
+      tags: [JobKits]
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignKitRequest'
+      responses:
+        '201':
+          description: Kit assigned to job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobKit'
+
+  /api/jobs/{jobId}/kits/{kitId}/verify:
+    post:
+      summary: Verify kit loading
+      operationId: verifyKitLoading
+      tags: [JobKits]
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: kitId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyKitRequest'
+      responses:
+        '200':
+          description: Kit verification recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitVerificationResult'
+
+  /api/kit-overrides:
+    post:
+      summary: Log kit item override
+      operationId: logKitOverride
+      tags: [KitOverrides]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateKitOverrideRequest'
+      responses:
+        '201':
+          description: Override logged and supervisor notified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitOverrideLog'
+
+components:
+  schemas:
+    ItemType:
+      type: string
+      enum: [equipment, material, tool]
+
+    VariantType:
+      type: string
+      enum: [seasonal, weather, customer_type]
+
+    Kit:
+      type: object
+      required: [id, company_id, kit_code, name, is_active, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        company_id:
+          type: string
+          format: uuid
+        kit_code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        is_active:
+          type: boolean
+        default_container_id:
+          type: string
+          format: uuid
+        voice_identifier:
+          type: string
+        typical_job_types:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    KitWithItems:
+      allOf:
+        - $ref: '#/components/schemas/Kit'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/KitItemWithDetails'
+            variants:
+              type: array
+              items:
+                $ref: '#/components/schemas/KitVariant'
+
+    KitItem:
+      type: object
+      required: [id, kit_id, item_type, quantity, is_required]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kit_id:
+          type: string
+          format: uuid
+        item_type:
+          $ref: '#/components/schemas/ItemType'
+        equipment_id:
+          type: string
+          format: uuid
+        material_id:
+          type: string
+          format: uuid
+        quantity:
+          type: number
+        unit:
+          type: string
+        is_required:
+          type: boolean
+        alternate_items:
+          type: array
+          items:
+            type: string
+            format: uuid
+        notes:
+          type: string
+        metadata:
+          type: object
+
+    KitItemWithDetails:
+      allOf:
+        - $ref: '#/components/schemas/KitItem'
+        - type: object
+          properties:
+            equipment:
+              type: object
+              properties:
+                name:
+                  type: string
+                equipment_number:
+                  type: string
+            material:
+              type: object
+              properties:
+                name:
+                  type: string
+                sku:
+                  type: string
+
+    KitVariant:
+      type: object
+      required: [id, kit_id, variant_code, variant_type, conditions, item_modifications, is_active]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kit_id:
+          type: string
+          format: uuid
+        variant_code:
+          type: string
+        variant_type:
+          $ref: '#/components/schemas/VariantType'
+        conditions:
+          type: object
+        item_modifications:
+          type: object
+          properties:
+            add:
+              type: array
+              items:
+                $ref: '#/components/schemas/KitItem'
+            remove:
+              type: array
+              items:
+                type: string
+                format: uuid
+            modify:
+              type: array
+              items:
+                type: object
+        is_active:
+          type: boolean
+        valid_from:
+          type: string
+          format: date
+        valid_until:
+          type: string
+          format: date
+        metadata:
+          type: object
+
+    JobKit:
+      type: object
+      required: [id, company_id, job_id, kit_id, assigned_at, assigned_by]
+      properties:
+        id:
+          type: string
+          format: uuid
+        company_id:
+          type: string
+          format: uuid
+        job_id:
+          type: string
+          format: uuid
+        kit_id:
+          type: string
+          format: uuid
+        variant_id:
+          type: string
+          format: uuid
+        assigned_at:
+          type: string
+          format: date-time
+        assigned_by:
+          type: string
+          format: uuid
+        verified_at:
+          type: string
+          format: date-time
+        verified_by:
+          type: string
+          format: uuid
+        vision_verification_id:
+          type: string
+          format: uuid
+        modifications:
+          type: object
+        metadata:
+          type: object
+
+    KitOverrideLog:
+      type: object
+      required: [id, company_id, job_id, kit_id, item_id, technician_id, override_reason, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        company_id:
+          type: string
+          format: uuid
+        job_id:
+          type: string
+          format: uuid
+        kit_id:
+          type: string
+          format: uuid
+        item_id:
+          type: string
+          format: uuid
+        technician_id:
+          type: string
+          format: uuid
+        override_reason:
+          type: string
+        supervisor_notified_at:
+          type: string
+          format: date-time
+        notification_method:
+          type: string
+          enum: [sms, push, call]
+        notification_status:
+          type: string
+        supervisor_response:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    CreateKitRequest:
+      type: object
+      required: [kit_code, name]
+      properties:
+        kit_code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        default_container_id:
+          type: string
+          format: uuid
+        voice_identifier:
+          type: string
+        typical_job_types:
+          type: array
+          items:
+            type: string
+
+    UpdateKitRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        is_active:
+          type: boolean
+        default_container_id:
+          type: string
+          format: uuid
+        voice_identifier:
+          type: string
+        typical_job_types:
+          type: array
+          items:
+            type: string
+
+    CreateKitItemRequest:
+      type: object
+      required: [item_type, quantity]
+      properties:
+        item_type:
+          $ref: '#/components/schemas/ItemType'
+        equipment_id:
+          type: string
+          format: uuid
+        material_id:
+          type: string
+          format: uuid
+        quantity:
+          type: number
+        unit:
+          type: string
+        is_required:
+          type: boolean
+          default: true
+        alternate_items:
+          type: array
+          items:
+            type: string
+            format: uuid
+        notes:
+          type: string
+
+    CreateKitVariantRequest:
+      type: object
+      required: [variant_code, variant_type, conditions, item_modifications]
+      properties:
+        variant_code:
+          type: string
+        variant_type:
+          $ref: '#/components/schemas/VariantType'
+        conditions:
+          type: object
+        item_modifications:
+          type: object
+        valid_from:
+          type: string
+          format: date
+        valid_until:
+          type: string
+          format: date
+
+    AssignKitRequest:
+      type: object
+      required: [kit_id]
+      properties:
+        kit_id:
+          type: string
+          format: uuid
+        variant_id:
+          type: string
+          format: uuid
+        modifications:
+          type: object
+
+    VerifyKitRequest:
+      type: object
+      properties:
+        vision_verification_id:
+          type: string
+          format: uuid
+        checklist_confirmations:
+          type: array
+          items:
+            type: object
+            properties:
+              item_id:
+                type: string
+                format: uuid
+              is_present:
+                type: boolean
+              notes:
+                type: string
+
+    CreateKitOverrideRequest:
+      type: object
+      required: [job_id, kit_id, item_id, override_reason]
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        kit_id:
+          type: string
+          format: uuid
+        item_id:
+          type: string
+          format: uuid
+        override_reason:
+          type: string
+          minLength: 10
+
+    KitVerificationResult:
+      type: object
+      properties:
+        verification_complete:
+          type: boolean
+        missing_items:
+          type: array
+          items:
+            type: object
+        verified_at:
+          type: string
+          format: date-time
+        verified_by:
+          type: string
+          format: uuid
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        hasMore:
+          type: boolean

@@ -45,9 +45,9 @@ ON CONFLICT (id) DO UPDATE SET
   updated_at = NOW();
 
 -- Create test media assets for isolation testing
-INSERT INTO media_assets (id, company_id, customer_id, asset_type, file_path, file_size, mime_type, is_active, created_at, updated_at) VALUES
-  ('test-media-a1', 'test-org-a', 'test-cust-a1', 'voice_recording', '/test/media/org-a-recording1.wav', 1024000, 'audio/wav', true, NOW(), NOW()),
-  ('test-media-b1', 'test-org-b', 'test-cust-b1', 'voice_recording', '/test/media/org-b-recording1.wav', 1024000, 'audio/wav', true, NOW(), NOW())
+INSERT INTO media_assets (id, company_id, customer_id, asset_type, file_path, file_size, mime_type, is_active, storage_path, created_at, updated_at) VALUES
+  (to_uuid('test-media-a1'), 'test-org-a', 'test-cust-a1', 'voice_recording', '/test/media/org-a-recording1.wav', 1024000, 'audio/wav', true, '/test/media/org-a-recording1.wav', NOW(), NOW()),
+  (to_uuid('test-media-b1'), 'test-org-b', 'test-cust-b1', 'voice_recording', '/test/media/org-b-recording1.wav', 1024000, 'audio/wav', true, '/test/media/org-b-recording1.wav', NOW(), NOW())
 ON CONFLICT (id) DO UPDATE SET
   file_path = EXCLUDED.file_path,
   updated_at = NOW();
