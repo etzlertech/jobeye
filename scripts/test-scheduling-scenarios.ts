@@ -160,23 +160,26 @@ async function setupTestCompanies() {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 
-  // Create or update test companies
-  await adminClient.from('companies').upsert([
+  // Create or update test companies (match actual schema - no slug or status)
+  const { error: upsertError } = await adminClient.from('companies').upsert([
     {
       id: TEST_COMPANY_A,
       tenant_id: TEST_COMPANY_A,
       name: 'Test Company A',
-      slug: 'test-a',
-      status: 'active',
     },
     {
       id: TEST_COMPANY_B,
       tenant_id: TEST_COMPANY_B,
       name: 'Test Company B',
-      slug: 'test-b',
-      status: 'active',
     },
   ]);
+
+  if (upsertError) {
+    console.error('❌ Failed to setup test companies:', upsertError);
+    throw upsertError;
+  }
+
+  console.log('✅ Test companies ready');
 }
 
 // =============================================================================
@@ -701,6 +704,14 @@ async function scenario5() {
         if (status !== 201) throw new Error(`User B plan ${i} failed: ${status}`);
         userBPlanIds.push(data.id);
       }
+
+      // Debug: Check what was actually created
+      const adminClient = createClient<Database>(supabaseUrl, supabaseServiceKey);
+      const { data: adminCheck } = await adminClient
+        .from('day_plans')
+        .select('*')
+        .eq('company_id', TEST_COMPANY_B);
+      log(`      Debug: Admin sees ${adminCheck?.length || 0} plans for Company B`, 'gray');
     });
 
     await step('User A queries plans (should see only their 2)', async () => {
@@ -719,6 +730,10 @@ async function scenario5() {
     });
 
     await step('User B queries plans (should see only their 2)', async () => {
+      // Debug: Decode JWT to see what's in it
+      const jwtPayload = JSON.parse(Buffer.from(userB.token.split('.')[1], 'base64').toString());
+      log(`      Debug: User B JWT app_metadata: ${JSON.stringify(jwtPayload.app_metadata)}`, 'gray');
+
       const { data, status } = await apiRequest(
         `/api/scheduling/day-plans?user_id=${userB.userId}`,
         { token: userB.token }
@@ -727,6 +742,8 @@ async function scenario5() {
       if (!Array.isArray(data)) throw new Error('Expected array');
 
       const companyBPlans = data.filter(p => p.company_id === TEST_COMPANY_B);
+      log(`      Debug: API returned ${data.length} total plans, ${companyBPlans.length} for Company B`, 'gray');
+
       if (companyBPlans.length !== 2) {
         throw new Error(`User B should see 2 plans, saw ${companyBPlans.length}`);
       }
@@ -1189,7 +1206,9 @@ async function scenario9() {
   await cleanupTestData(TEST_COMPANY_A);
 
   const adminClient = createClient<Database>(supabaseUrl, supabaseServiceKey);
-  const voiceSessionId = `voice-session-${Date.now()}`;
+  // Generate a proper UUID for voice_session_id
+  const crypto = await import('crypto');
+  const voiceSessionId = crypto.randomUUID();
   let planId: string;
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1220,10 +1239,10 @@ async function scenario9() {
             company_id: TEST_COMPANY_A,
             day_plan_id: planId,
             event_type: 'job',
-            location_address: `Voice Job ${i}`,
+            address: { label: `Voice Job ${i}` }, // Use address (JSONB) instead of location_address
             location_data: `POINT(-74.0${i} 40.7${i})`,
-            estimated_duration_minutes: 60,
-            sequence_number: i,
+            scheduled_duration_minutes: 60, // Use scheduled_duration_minutes instead of estimated_duration_minutes
+            sequence_order: i, // Use sequence_order instead of sequence_number
             status: 'pending',
             metadata: {
               created_via: 'voice',

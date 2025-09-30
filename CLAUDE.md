@@ -44,36 +44,69 @@ npm run db:reset        # Reset database to clean state
 npm run check:db-actual # Check ACTUAL database schema (ALWAYS run before migrations!)
 ```
 
-#### CRITICAL: Database Schema Inspection
-**ALWAYS check the actual database state before writing migrations or assuming tables exist!**
+#### CRITICAL: Direct Database Modifications via Supabase
+**The ONLY reliable method to execute SQL migrations and schema changes on hosted Supabase is through the Supabase JavaScript client using `client.rpc('exec_sql', { sql: '...' })`**
 
-**Before ANY database operations:**
-1. **Set proper SUPABASE_DB_URL** (with PGBouncer) before running any migrations or seed scripts
-2. **Read the actual schema** from information_schema to decide when to insert records (e.g., company records)
-3. **Apply migration statements one by one** instead of relying on multi-statement DO $$ blocks
+**Why traditional methods DON'T work:**
+- ❌ `psql` command is not available in most environments
+- ❌ `npx supabase db push` fails with connection errors (tries to connect to local postgres)
+- ❌ Direct TCP connections to Postgres are often blocked by firewalls
+- ❌ PGBouncer URLs don't work with standard postgres clients
 
-Use this command to see what tables actually exist in Supabase:
+**✅ WORKING METHOD - Use Supabase Client RPC:**
+
+Create a TypeScript script using this pattern:
+
+```typescript
+#!/usr/bin/env npx tsx
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: '.env.local' });
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+async function applyMigration() {
+  const client = createClient(supabaseUrl, supabaseServiceKey);
+
+  console.log('🔧 Applying migration...\n');
+
+  // Execute SQL directly via RPC
+  const { error } = await client.rpc('exec_sql', {
+    sql: 'DROP POLICY IF EXISTS my_policy ON my_table;'
+  });
+
+  if (error) {
+    console.error('❌ Error:', error);
+    process.exit(1);
+  }
+
+  console.log('✅ Migration applied successfully!');
+}
+
+applyMigration().catch(console.error);
+```
+
+**Real examples that worked:**
+- `scripts/fix-rls-policies.ts` - Fixed RLS policies to use app_metadata
+- `scripts/apply-job-limit-trigger.ts` - Added database trigger for job limit enforcement
+- Both successfully executed complex SQL (DROP POLICY, CREATE POLICY, CREATE TRIGGER) via Supabase RPC
+
+**BEST PRACTICES**:
+1. Always use `.env.local` for credentials (NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+2. Execute SQL statements individually via `client.rpc('exec_sql', { sql })`
+3. Store migration SQL in `supabase/migrations/*.sql` for documentation
+4. Use TypeScript scripts in `scripts/` directory for applying them
+5. Always verify changes by querying the database after application
+
+**When to check actual schema:**
 ```bash
-# Ensure SUPABASE_DB_URL is set with PGBouncer connection string
-export SUPABASE_DB_URL="postgresql://postgres.xxx:password@aws-0-xxx.pooler.supabase.com:6543/postgres"
+# Use Supabase client to query information_schema
 npx tsx scripts/check-actual-db.ts
 ```
 
-This script will:
-- Connect to Supabase using the service role key
-- List ALL actual tables (not assumptions from migration files)
-- Show row counts for each table
-- Display column schemas from information_schema
-
-**WARNING**: Migration files in the codebase may NOT reflect the actual database state. Tables you expect may not exist, and tables that exist may be completely different than expected.
-
-**BEST PRACTICES**:
-- Always query information_schema.tables and information_schema.columns for actual state
-- Apply each CREATE TABLE, CREATE INDEX, etc. as separate statements
-- Avoid DO $$ blocks that can fail partially and leave inconsistent state
-- Use IF NOT EXISTS clauses for idempotent operations
-
-See `supabase_direct_access_instructions.md` for detailed connection methods and troubleshooting.
+**WARNING**: Migration files in the codebase may NOT reflect the actual database state. Always verify by querying the live database using Supabase client, never assume based on migration files.
 
 ### Edge Functions
 ```bash

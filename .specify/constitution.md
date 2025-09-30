@@ -19,16 +19,55 @@ company_id UUID NOT NULL REFERENCES companies(id),
 created_at TIMESTAMPTZ DEFAULT NOW(),
 updated_at TIMESTAMPTZ DEFAULT NOW()
 
--- RLS pattern for all tables:
+-- RLS pattern for all tables (CRITICAL: use app_metadata path):
 ALTER TABLE table_name ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "tenant_isolation" ON table_name
-  FOR ALL USING (company_id = auth.jwt() ->> 'company_id');
+  FOR ALL USING (
+    company_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'company_id')
+  );
 ```
+
+**CRITICAL NOTE ON RLS POLICIES:**
+- RLS policies MUST check `request.jwt.claims -> 'app_metadata' ->> 'company_id'`
+- DO NOT use `auth.jwt() ->> 'company_id'` (that path doesn't exist)
+- User's company_id is stored in JWT's `app_metadata` object by Supabase Auth
+- Set user's company_id via: `auth.admin.createUser({ app_metadata: { company_id: '...' } })`
+
+### Executing Database Changes
+**The ONLY reliable method to apply SQL migrations to hosted Supabase:**
+
+```typescript
+// Create scripts/apply-migration.ts
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: '.env.local' });
+
+const client = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+// Execute SQL via RPC
+const { error } = await client.rpc('exec_sql', {
+  sql: 'DROP POLICY IF EXISTS old_policy ON my_table;'
+});
+```
+
+**Why this method:**
+- ❌ `psql` not available in most environments
+- ❌ `npx supabase db push` fails with connection errors
+- ✅ `client.rpc('exec_sql')` always works via HTTPS
+
+**Examples:**
+- `scripts/fix-rls-policies.ts` - Fixed RLS to use app_metadata
+- `scripts/apply-job-limit-trigger.ts` - Added database trigger
 
 ### Testing Requirements
 - Integration tests must verify cross-tenant access denial
 - Each repository must include RLS isolation tests
 - Admin bypass operations require explicit audit logging
+- Test users must have `app_metadata.company_id` set in their JWT
 
 ## 2. Hybrid Vision Pipeline Architecture
 

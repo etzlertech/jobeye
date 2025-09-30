@@ -147,6 +147,9 @@ Every file must start with an enhanced directive block that includes:
 - `npm run db:reset` - Reset database
 - `npm run generate:types` - Generate TypeScript types from schema
 
+**CRITICAL**: To execute SQL on hosted Supabase, use TypeScript scripts with `client.rpc('exec_sql')`.
+See **[Database Migration Guide](docs/database-migration-guide.md)** for complete instructions and working examples.
+
 ### Quality Checks
 - `npm run check:complexity` - List largest files
 - `npm run validate:dependencies` - Check for circular dependencies
