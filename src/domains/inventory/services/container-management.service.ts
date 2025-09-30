@@ -13,7 +13,7 @@
  * 4. Location-based queries
  */
 
-import * as containersRepo from '../repositories/containers.repository';
+import * as containersRepo from '../adapters/container-repository-adapter';
 import * as containerAssignmentsRepo from '../repositories/container-assignments.repository';
 import * as inventoryItemsRepo from '../repositories/inventory-items.repository';
 import type {
