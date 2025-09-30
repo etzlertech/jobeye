@@ -160,6 +160,11 @@ Every TypeScript/JavaScript file MUST start with an AGENT DIRECTIVE BLOCK contai
    - Intent Recognition
    - STT/TTS Integration
    - Offline Support
+   - **Vision-Based Verification** (Feature 001, MERGED ✓)
+     - Hybrid YOLO + VLM detection pipeline
+     - Offline-first kit verification
+     - Cost-optimized cloud fallback (<$10/day)
+     - Multi-container tracking
 
 4. **Phase 4: Job Execution** (18 tables)
    - Job Templates
@@ -232,6 +237,82 @@ The Control Tower at `/control-tower` provides:
 
 Access locally at: http://localhost:3000/control-tower
 
+## Implemented Features
+
+### Feature 001: Vision-Based Kit Verification ✅ MERGED
+
+**Status**: Merged to main (Commit: 23314d7) | **Docs**: `src/domains/vision/README.md`, `docs/api/vision.md`
+
+Automated equipment detection using hybrid YOLO + VLM pipeline for single-photo load verification.
+
+**Key Components**:
+- **Local Detection**: YOLOv11n ONNX model with <3s inference on mobile
+- **VLM Fallback**: OpenAI GPT-4 Vision for low-confidence cases (<70%)
+- **Offline Queue**: IndexedDB-based queue (50-photo capacity)
+- **Cost Tracking**: $10/day budget cap with real-time monitoring
+- **Multi-Container**: Track items across truck, trailer, storage bins
+
+**Directory**: `src/domains/vision/`
+```
+vision/
+├── lib/                 # YOLO inference, VLM routing, offline queue
+├── services/            # Verification, cost tracking, batch processing
+├── repositories/        # Data access with RLS
+├── components/          # Camera capture, results display, cost dashboard
+└── __tests__/           # Unit, scenario, API tests
+```
+
+**API Endpoints**:
+- `POST /api/vision/verify` - Single photo verification
+- `POST /api/vision/batch-verify` - Multi-photo verification
+- `GET /api/vision/verifications` - History with filters
+- `GET /api/vision/cost/summary` - Budget monitoring
+
+**Database Tables** (Migrations 040-044):
+- `vision_verification_records` - Verification history
+- `detected_items` - Detected equipment per verification
+- `vision_cost_records` - Cost tracking per request
+- `detection_confidence_thresholds` - Company-specific thresholds
+
+**Performance**:
+- YOLO Inference: ~2.5s average
+- FPS Throttle: 1.0 fps stable
+- VLM Usage: ~20% of verifications
+- Average Cost: ~$0.02/verification
+
+**Usage Example**:
+```typescript
+import { VisionVerificationService } from '@/domains/vision/services/vision-verification.service';
+
+const result = await visionService.verifyKit({
+  photo: imageBlob,
+  kitId: 'kit-123',
+  jobId: 'job-456'
+});
+
+console.log(result.verified); // true/false
+console.log(result.detectedItems); // ['mower', 'trimmer', 'blower']
+console.log(result.missingItems); // []
+console.log(result.cost); // 0.00 (used local YOLO)
+```
+
+**Integration with Scheduling (Feature 003)**:
+- Fetches kit definitions from scheduling system
+- Updates kit verification status in job records
+- Triggers supervisor notifications for incomplete kits
+
+**Known Issues**:
+- ⚠️ Test failures: 342 tests failing (ImageData mock now fixed)
+- ⚠️ Test coverage: ~75% (target >80%)
+- ⚠️ Some scenario tests timing out (IndexedDB mock issues)
+
+**Next Steps**:
+- Fix remaining test failures
+- Achieve >80% test coverage
+- Production deployment to staging
+
+---
+
 ## Important Conventions
 
 1. **Import Paths**: Use `@/*` alias for src directory imports
@@ -241,6 +322,7 @@ Access locally at: http://localhost:3000/control-tower
 5. **Error Handling**: Use structured error types from `@/core/errors/error-types`
 6. **Logging**: Use voice-aware logger from `@/core/logger/voice-logger`
 7. **Database Access**: Always use repositories pattern, never direct Supabase calls outside repos
+8. **Vision Integration**: Use `VisionVerificationService` for kit verification, respects budget caps and offline capability
 
 ## Environment Variables
 

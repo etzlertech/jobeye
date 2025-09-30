@@ -1,0 +1,617 @@
+openapi: 3.0.3
+info:
+  title: Inventory Transactions API
+  description: Check-in, check-out, transfer, and other inventory operations
+  version: 1.0.0
+
+paths:
+  /api/inventory/check-out:
+    post:
+      summary: Check out items to container
+      description: |
+        Creates check-out transaction, updates item locations, and optionally
+        validates against job kit requirements.
+      operationId: checkOutItems
+      tags:
+        - Transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - companyId
+                - itemIds
+                - destinationContainerId
+                - performerId
+              properties:
+                companyId:
+                  type: string
+                  format: uuid
+                itemIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+                destinationContainerId:
+                  type: string
+                  format: uuid
+                  description: Target container (truck, trailer, etc.)
+                jobId:
+                  type: string
+                  format: uuid
+                  description: Associated job for kit validation
+                performerId:
+                  type: string
+                  format: uuid
+                verificationMethod:
+                  type: string
+                  enum: [manual, qr_scan, photo_vision, voice]
+                photoEvidenceUrl:
+                  type: string
+                voiceSessionId:
+                  type: string
+                  format: uuid
+                voiceTranscript:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Check-out successful
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - transactionId
+                  - checkedOutItems
+                  - containerAssignments
+                properties:
+                  transactionId:
+                    type: string
+                    format: uuid
+                  checkedOutItems:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CheckedOutItem'
+                  containerAssignments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContainerAssignment'
+                  kitValidation:
+                    $ref: '#/components/schemas/KitValidation'
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                    description: Missing required items or capacity warnings
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Item or container not found
+        '409':
+          description: Item already checked out or container at capacity
+
+  /api/inventory/check-in:
+    post:
+      summary: Check in items from container
+      description: |
+        Creates check-in transaction, updates item locations, and detects
+        discrepancies against check-out records.
+      operationId: checkInItems
+      tags:
+        - Transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - companyId
+                - itemIds
+                - sourceContainerId
+                - performerId
+              properties:
+                companyId:
+                  type: string
+                  format: uuid
+                itemIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                sourceContainerId:
+                  type: string
+                  format: uuid
+                performerId:
+                  type: string
+                  format: uuid
+                verificationMethod:
+                  type: string
+                  enum: [manual, qr_scan, photo_vision, voice]
+                photoEvidenceUrl:
+                  type: string
+                voiceSessionId:
+                  type: string
+                  format: uuid
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Check-in successful
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - transactionId
+                  - checkedInItems
+                  - discrepancies
+                properties:
+                  transactionId:
+                    type: string
+                    format: uuid
+                  checkedInItems:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CheckedInItem'
+                  discrepancies:
+                    $ref: '#/components/schemas/CheckInDiscrepancies'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Item or container not found
+
+  /api/inventory/transfer:
+    post:
+      summary: Transfer items between containers
+      description: Creates transfer transaction moving items from source to destination
+      operationId: transferItems
+      tags:
+        - Transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - companyId
+                - itemIds
+                - sourceContainerId
+                - destinationContainerId
+                - performerId
+              properties:
+                companyId:
+                  type: string
+                  format: uuid
+                itemIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                sourceContainerId:
+                  type: string
+                  format: uuid
+                destinationContainerId:
+                  type: string
+                  format: uuid
+                performerId:
+                  type: string
+                  format: uuid
+                quantity:
+                  type: integer
+                  description: For materials only
+                verificationMethod:
+                  type: string
+                  enum: [manual, photo_vision, voice]
+                photoEvidenceUrl:
+                  type: string
+                voiceTranscript:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Transfer successful
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - transactionId
+                  - transferredItems
+                properties:
+                  transactionId:
+                    type: string
+                    format: uuid
+                  transferredItems:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        itemId:
+                          type: string
+                          format: uuid
+                        oldLocation:
+                          type: string
+                        newLocation:
+                          type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Source or destination container not found
+
+  /api/inventory/material-usage:
+    post:
+      summary: Log material usage
+      description: Records material consumption at job site and updates stock levels
+      operationId: logMaterialUsage
+      tags:
+        - Transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - companyId
+                - itemId
+                - quantityUsed
+                - jobId
+                - performerId
+              properties:
+                companyId:
+                  type: string
+                  format: uuid
+                itemId:
+                  type: string
+                  format: uuid
+                quantityUsed:
+                  type: number
+                  description: Amount consumed
+                wasteAmount:
+                  type: number
+                  description: Amount wasted/spilled
+                jobId:
+                  type: string
+                  format: uuid
+                performerId:
+                  type: string
+                  format: uuid
+                photoEvidenceUrl:
+                  type: string
+                  description: Photo of empty containers
+                voiceTranscript:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Usage logged successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - transactionId
+                  - remainingStock
+                  - costImpact
+                properties:
+                  transactionId:
+                    type: string
+                    format: uuid
+                  remainingStock:
+                    type: number
+                  costImpact:
+                    type: number
+                    description: Cost added to job
+                  reorderNeeded:
+                    type: boolean
+                    description: True if below reorder level
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/inventory/audit:
+    post:
+      summary: Perform inventory audit
+      description: |
+        Compares detected items against expected inventory for a location
+        and generates discrepancy report.
+      operationId: performAudit
+      tags:
+        - Transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - companyId
+                - locationId
+                - detectedItemIds
+                - performerId
+              properties:
+                companyId:
+                  type: string
+                  format: uuid
+                locationId:
+                  type: string
+                  format: uuid
+                  description: Container or location being audited
+                detectedItemIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                photoEvidenceUrl:
+                  type: string
+                performerId:
+                  type: string
+                  format: uuid
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Audit complete
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - auditId
+                  - expectedItems
+                  - detectedItems
+                  - discrepancies
+                properties:
+                  auditId:
+                    type: string
+                    format: uuid
+                  expectedItems:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExpectedItem'
+                  detectedItems:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DetectedAuditItem'
+                  discrepancies:
+                    $ref: '#/components/schemas/AuditDiscrepancies'
+                  accuracyPercentage:
+                    type: number
+                    format: double
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+components:
+  schemas:
+    CheckedOutItem:
+      type: object
+      required:
+        - itemId
+        - name
+        - assignmentId
+      properties:
+        itemId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+        assignmentId:
+          type: string
+          format: uuid
+        checkedOutAt:
+          type: string
+          format: date-time
+
+    CheckedInItem:
+      type: object
+      required:
+        - itemId
+        - name
+        - wasCheckedOut
+      properties:
+        itemId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        wasCheckedOut:
+          type: boolean
+          description: Whether item was previously checked out
+        checkedInAt:
+          type: string
+          format: date-time
+        durationHours:
+          type: number
+          description: Hours between check-out and check-in
+
+    ContainerAssignment:
+      type: object
+      required:
+        - assignmentId
+        - containerId
+        - itemId
+      properties:
+        assignmentId:
+          type: string
+          format: uuid
+        containerId:
+          type: string
+          format: uuid
+        itemId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        status:
+          type: string
+          enum: [active, completed, cancelled]
+
+    KitValidation:
+      type: object
+      required:
+        - kitId
+        - completionStatus
+        - missingItems
+        - extraItems
+      properties:
+        kitId:
+          type: string
+          format: uuid
+        completionStatus:
+          type: string
+          enum: [complete, incomplete, over-packed]
+        completionPercentage:
+          type: number
+          format: double
+        missingItems:
+          type: array
+          items:
+            type: object
+            properties:
+              itemName:
+                type: string
+              required:
+                type: boolean
+        extraItems:
+          type: array
+          items:
+            type: object
+            properties:
+              itemId:
+                type: string
+                format: uuid
+              itemName:
+                type: string
+
+    CheckInDiscrepancies:
+      type: object
+      required:
+        - missingItems
+        - unexpectedItems
+      properties:
+        missingItems:
+          type: array
+          items:
+            type: object
+            properties:
+              itemId:
+                type: string
+                format: uuid
+              itemName:
+                type: string
+              checkedOutAt:
+                type: string
+                format: date-time
+        unexpectedItems:
+          type: array
+          items:
+            type: object
+            properties:
+              itemId:
+                type: string
+                format: uuid
+              itemName:
+                type: string
+              reason:
+                type: string
+                enum: [purchased, borrowed, found, other]
+
+    ExpectedItem:
+      type: object
+      required:
+        - itemId
+        - name
+        - expectedQuantity
+      properties:
+        itemId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        expectedQuantity:
+          type: integer
+        lastSeenAt:
+          type: string
+          format: date-time
+
+    DetectedAuditItem:
+      type: object
+      required:
+        - itemId
+        - name
+        - detectedQuantity
+      properties:
+        itemId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        detectedQuantity:
+          type: integer
+        confidence:
+          type: number
+          format: double
+
+    AuditDiscrepancies:
+      type: object
+      required:
+        - missing
+        - extra
+        - quantityMismatches
+      properties:
+        missing:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExpectedItem'
+        extra:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetectedAuditItem'
+        quantityMismatches:
+          type: array
+          items:
+            type: object
+            properties:
+              itemId:
+                type: string
+                format: uuid
+              itemName:
+                type: string
+              expected:
+                type: integer
+              detected:
+                type: integer
+              difference:
+                type: integer
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              details:
+                type: object
+
+  securitySchemes:
+    SupabaseAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - SupabaseAuth: []

@@ -54,6 +54,13 @@ function calculateImageTiles(width: number, height: number): number {
 }
 
 /**
+ * Estimate cost for a VLM API call (wrapper for service compatibility)
+ */
+export function estimateCost(provider: string, imageData: ImageData): number {
+  return estimateVlmCost(imageData.width, imageData.height);
+}
+
+/**
  * Estimate cost for a VLM API call
  */
 export function estimateVlmCost(

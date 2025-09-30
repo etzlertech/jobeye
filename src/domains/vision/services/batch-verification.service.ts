@@ -210,6 +210,27 @@ export class BatchVerificationService {
   private generateBatchId(): string {
     return `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
+
+  /**
+   * Estimate cost for batch verification
+   * @param photoCount Number of photos to verify
+   * @returns Estimated cost in USD
+   */
+  estimateBatchCost(photoCount: number): number {
+    if (photoCount <= 0) {
+      return 0;
+    }
+
+    // Assume 20% of photos will use VLM (80% use local YOLO)
+    const vlmRate = 0.2;
+    const vlmCount = Math.ceil(photoCount * vlmRate);
+
+    // VLM cost: ~$0.10 per photo
+    const vlmCost = vlmCount * 0.10;
+
+    // Local YOLO cost: $0 (runs on device)
+    return vlmCost;
+  }
 }
 
 /**

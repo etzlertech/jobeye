@@ -48,6 +48,39 @@ export async function findVerificationById(
 }
 
 /**
+ * Alias for findVerificationById (backward compatibility)
+ */
+export async function findById(
+  id: string,
+  companyId: string
+): Promise<{ data: VisionVerification | null; error: Error | null }> {
+  return findVerificationById(id);
+}
+
+/**
+ * Alias for findVerifications (backward compatibility)
+ */
+export async function findAll(
+  filter: VisionVerificationFilter
+): Promise<{ data: VisionVerification[] | null; error: Error | null }> {
+  const result = await findVerifications(filter);
+  return {
+    data: result.data,
+    error: result.error
+  };
+}
+
+/**
+ * Alias for deleteVerification (backward compatibility)
+ */
+export async function deleteById(
+  id: string,
+  companyId: string
+): Promise<{ error: Error | null }> {
+  return deleteVerification(id);
+}
+
+/**
  * Find verifications with filters
  */
 export async function findVerifications(

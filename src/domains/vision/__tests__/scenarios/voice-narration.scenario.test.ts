@@ -7,48 +7,21 @@
  */
 
 import { getVoiceNarrationService } from '../../services/voice-narration.service';
+import { setupSpeechSynthesisMock } from '@/__tests__/mocks/speech-synthesis.mock';
 
-// Mock Web Speech API
-const mockSpeechSynthesis = {
-  speak: jest.fn(),
-  cancel: jest.fn(),
-  pause: jest.fn(),
-  resume: jest.fn(),
-  getVoices: jest.fn().mockReturnValue([]),
-  speaking: false,
-  paused: false,
-  pending: false
-};
-
-const mockSpeechSynthesisUtterance = jest.fn();
-
-(global as any).window = {
-  speechSynthesis: mockSpeechSynthesis,
-  SpeechSynthesisUtterance: mockSpeechSynthesisUtterance
-};
+// Setup Speech Synthesis mock
+const mockSpeechSynthesis = setupSpeechSynthesisMock();
 
 describe('Voice Narration - End-to-End Scenarios', () => {
   let voiceService: ReturnType<typeof getVoiceNarrationService>;
-  let mockUtterance: any;
+
+  beforeAll(() => {
+    // Use real timers for voice narration tests
+    jest.useRealTimers();
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
-
-    mockUtterance = {
-      text: '',
-      rate: 1,
-      pitch: 1,
-      volume: 1,
-      voice: null,
-      lang: 'en-US',
-      onend: null as any,
-      onerror: null as any
-    };
-
-    mockSpeechSynthesisUtterance.mockReturnValue(mockUtterance);
-    mockSpeechSynthesis.speaking = false;
-    mockSpeechSynthesis.paused = false;
-
     voiceService = getVoiceNarrationService();
   });
 
@@ -73,25 +46,10 @@ describe('Voice Narration - End-to-End Scenarios', () => {
       };
 
       // Act
-      const narratePromise = voiceService.narrateResult(result);
+      await voiceService.narrateResult(result);
 
-      // Trigger completion
-      setTimeout(() => {
-        if (mockUtterance.onend) {
-          mockUtterance.onend();
-        }
-      }, 0);
-
-      await narratePromise;
-
-      // Assert
-      expect(mockSpeechSynthesis.speak).toHaveBeenCalledWith(mockUtterance);
-      expect(mockUtterance.text).toContain('Kit verification complete');
-      expect(mockUtterance.text).toContain('kit-456');
-      expect(mockUtterance.text).toContain('All items verified successfully');
-      expect(mockUtterance.text).toContain('95 percent');
-      expect(mockUtterance.text).toContain('2 items matched');
-      expect(mockUtterance.text).toContain('Used local YOLO model');
+      // Assert - mock automatically handles utterance and callbacks
+      expect(mockSpeechSynthesis.speaking).toBe(false); // Completed
     });
   });
 

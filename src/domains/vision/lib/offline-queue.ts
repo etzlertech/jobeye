@@ -66,7 +66,9 @@ export class OfflineVerificationQueue {
         const db = event.target.result;
 
         // Create object store if it doesn't exist
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
+        // Use Array.from for compatibility with both real IndexedDB and mocks
+        const storeNames = Array.from(db.objectStoreNames as any);
+        if (!storeNames.includes(STORE_NAME)) {
           const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
           store.createIndex('status', 'status', { unique: false });
           store.createIndex('queuedAt', 'queuedAt', { unique: false });

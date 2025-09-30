@@ -52,6 +52,31 @@ global.crypto = {
   randomUUID: jest.fn(() => 'test-uuid-' + Math.random().toString(36).substr(2, 9)),
 } as any;
 
+// Mock ImageData for canvas/vision tests
+if (typeof ImageData === 'undefined') {
+  (global as any).ImageData = class ImageData {
+    width: number;
+    height: number;
+    data: Uint8ClampedArray;
+
+    constructor(
+      dataOrWidth: Uint8ClampedArray | number,
+      widthOrHeight: number,
+      height?: number
+    ) {
+      if (dataOrWidth instanceof Uint8ClampedArray) {
+        this.data = dataOrWidth;
+        this.width = widthOrHeight;
+        this.height = height!;
+      } else {
+        this.width = dataOrWidth;
+        this.height = widthOrHeight;
+        this.data = new Uint8ClampedArray(dataOrWidth * widthOrHeight * 4);
+      }
+    }
+  };
+}
+
 // Reset mocks before each test
 beforeEach(() => {
   jest.clearAllMocks();

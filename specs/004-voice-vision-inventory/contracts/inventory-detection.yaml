@@ -1,0 +1,355 @@
+openapi: 3.0.3
+info:
+  title: Inventory Detection API
+  description: Vision-based item detection and selection for inventory operations
+  version: 1.0.0
+
+paths:
+  /api/inventory/detect:
+    post:
+      summary: Detect items in photo
+      description: |
+        Processes photo using YOLO detection, generates 1:1 crops, and returns
+        numbered detection results for user selection. Escalates to VLM if needed.
+      operationId: detectInventoryItems
+      tags:
+        - Detection
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - photo
+                - companyId
+              properties:
+                photo:
+                  type: string
+                  format: binary
+                  description: JPEG image up to 10MB
+                companyId:
+                  type: string
+                  format: uuid
+                context:
+                  type: object
+                  properties:
+                    gpsLat:
+                      type: number
+                      format: double
+                    gpsLng:
+                      type: number
+                      format: double
+                    locationType:
+                      type: string
+                      enum: [headquarters, customer_site, supplier, hardware_store, field]
+                    transactionIntent:
+                      type: string
+                      enum: [check_out, check_in, register, purchase, transfer, audit, maintenance]
+                    expectedItems:
+                      type: array
+                      items:
+                        type: string
+                      description: Expected item names for comparison
+      responses:
+        '200':
+          description: Detection successful
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - detectionId
+                  - detections
+                  - method
+                  - processingTimeMs
+                  - costUsd
+                properties:
+                  detectionId:
+                    type: string
+                    format: uuid
+                    description: Unique ID for this detection session
+                  detections:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DetectedItem'
+                  groupedDetections:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GroupedDetection'
+                    description: Items grouped by similarity (>90%)
+                  method:
+                    type: string
+                    enum: [local_yolo, cloud_vlm]
+                  processingTimeMs:
+                    type: number
+                  costUsd:
+                    type: number
+                    format: double
+                  filteredObjects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FilteredObject'
+                    description: Background objects auto-filtered
+                  confidenceThreshold:
+                    type: number
+                    format: double
+                    description: Applied threshold (default 0.7)
+                  budgetStatus:
+                    $ref: '#/components/schemas/BudgetStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          description: Photo too large (>10MB)
+        '429':
+          description: Daily VLM budget exceeded
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/inventory/confirm-selection:
+    post:
+      summary: Confirm selected items
+      description: |
+        User confirms which detected items to add to inventory.
+        Triggers attribute extraction workflow.
+      operationId: confirmItemSelection
+      tags:
+        - Detection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - detectionId
+                - selectedItemNumbers
+                - companyId
+              properties:
+                detectionId:
+                  type: string
+                  format: uuid
+                selectedItemNumbers:
+                  type: array
+                  items:
+                    type: integer
+                  description: Detection numbers user selected (e.g., [1, 2, 5])
+                  minItems: 1
+                companyId:
+                  type: string
+                  format: uuid
+                corrections:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/DetectionCorrection'
+                voiceTranscript:
+                  type: string
+                  description: Voice command used for selection
+      responses:
+        '200':
+          description: Selection confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - sessionId
+                  - selectedItems
+                  - nextStep
+                properties:
+                  sessionId:
+                    type: string
+                    format: uuid
+                  selectedItems:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        detectionNumber:
+                          type: integer
+                        label:
+                          type: string
+                        cropUrl:
+                          type: string
+                        attributes:
+                          type: object
+                  nextStep:
+                    type: string
+                    enum: [attribute_assignment, transaction_intent_confirmation]
+                  requiresAttributeInput:
+                    type: boolean
+        '404':
+          description: Detection session not found or expired
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+components:
+  schemas:
+    DetectedItem:
+      type: object
+      required:
+        - detectionNumber
+        - label
+        - confidence
+        - cropUrl
+        - boundingBox
+      properties:
+        detectionNumber:
+          type: integer
+          description: 1-indexed number for user reference
+        label:
+          type: string
+          description: Detected item type (e.g., "mower", "trimmer")
+        confidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        cropUrl:
+          type: string
+          description: URL to 1:1 square crop of item
+        boundingBox:
+          $ref: '#/components/schemas/BoundingBox'
+        suggestedCategory:
+          type: string
+          description: Inferred category (equipment/material)
+        estimatedValue:
+          type: number
+          description: Estimated value if detectable
+
+    GroupedDetection:
+      type: object
+      required:
+        - groupId
+        - label
+        - quantity
+        - confidence
+        - detectionNumbers
+        - representativeCropUrl
+      properties:
+        groupId:
+          type: integer
+        label:
+          type: string
+        quantity:
+          type: integer
+          description: Number of similar items detected
+        confidence:
+          type: number
+          format: double
+        detectionNumbers:
+          type: array
+          items:
+            type: integer
+          description: Which detection numbers are in this group
+        representativeCropUrl:
+          type: string
+          description: Single crop representing the group
+
+    FilteredObject:
+      type: object
+      required:
+        - label
+        - confidence
+        - reason
+      properties:
+        label:
+          type: string
+        confidence:
+          type: number
+          format: double
+        reason:
+          type: string
+          enum: [high_confidence_background, user_preference, low_value_item]
+        showInReview:
+          type: boolean
+          description: Whether to show in "Show All" view
+
+    BoundingBox:
+      type: object
+      required:
+        - x
+        - y
+        - width
+        - height
+      properties:
+        x:
+          type: number
+          description: Top-left X coordinate (pixels)
+        y:
+          type: number
+          description: Top-left Y coordinate (pixels)
+        width:
+          type: number
+        height:
+          type: number
+
+    BudgetStatus:
+      type: object
+      required:
+        - dailyBudgetCap
+        - todaySpent
+        - remainingBudget
+        - requestsRemaining
+      properties:
+        dailyBudgetCap:
+          type: number
+          format: double
+        todaySpent:
+          type: number
+          format: double
+        remainingBudget:
+          type: number
+          format: double
+        requestsRemaining:
+          type: integer
+
+    DetectionCorrection:
+      type: object
+      required:
+        - detectionNumber
+        - correctedLabel
+      properties:
+        detectionNumber:
+          type: integer
+        correctedLabel:
+          type: string
+        correctedBoundingBox:
+          $ref: '#/components/schemas/BoundingBox'
+        correctionReason:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              details:
+                type: object
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              errorId:
+                type: string
+                format: uuid
+
+  securitySchemes:
+    SupabaseAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - SupabaseAuth: []
