@@ -69,7 +69,7 @@ export class ContainerRepository extends BaseRepository<Container> {
         .from(this.tableName)
         .select('*')
         .eq('identifier', identifier)
-        .eq('company_id', tenantId)
+        .eq('tenant_id', tenantId)
         .single();
 
       if (error) {
@@ -94,10 +94,10 @@ export class ContainerRepository extends BaseRepository<Container> {
    */
   async getDefault(tenantId: string): Promise<Container | null> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error} = await this.supabaseClient
         .from(this.tableName)
         .select('*')
-        .eq('company_id', tenantId)
+        .eq('tenant_id', tenantId)
         .eq('is_default', true)
         .eq('is_active', true)
         .single();
@@ -132,7 +132,7 @@ export class ContainerRepository extends BaseRepository<Container> {
       let query = this.supabaseClient
         .from(this.tableName)
         .select('*', { count: 'exact' })
-        .eq('company_id', options.tenantId);
+        .eq('tenant_id', options.tenantId);
 
       // Apply filters
       if (options.filters) {
@@ -206,7 +206,7 @@ export class ContainerRepository extends BaseRepository<Container> {
 
       const dbData = this.mapToDb({
         ...validated,
-        company_id: tenantId,
+        tenant_id: tenantId,
       });
 
       const { data: created, error } = await this.supabaseClient
@@ -250,7 +250,7 @@ export class ContainerRepository extends BaseRepository<Container> {
         .from(this.tableName)
         .update(dbData)
         .eq('id', id)
-        .eq('company_id', tenantId)
+        .eq('tenant_id', tenantId)
         .select('*')
         .single();
 
@@ -294,7 +294,7 @@ export class ContainerRepository extends BaseRepository<Container> {
       const { data, error } = await this.supabaseClient
         .from(this.tableName)
         .select('*')
-        .eq('company_id', tenantId)
+        .eq('tenant_id', tenantId)
         .eq('is_active', true)
         .or(`name.ilike.%${searchTerm}%,identifier.ilike.%${searchTerm}%`)
         .limit(10);
@@ -320,7 +320,7 @@ export class ContainerRepository extends BaseRepository<Container> {
     let query = this.supabaseClient
       .from(this.tableName)
       .update({ is_default: false })
-      .eq('company_id', tenantId)
+      .eq('tenant_id', tenantId)
       .eq('is_default', true);
 
     if (exceptId) {
@@ -337,7 +337,7 @@ export class ContainerRepository extends BaseRepository<Container> {
   private mapFromDb(data: any): Container {
     return {
       id: data.id,
-      tenantId: data.company_id,
+      tenantId: data.tenant_id,
       containerType: data.container_type,
       identifier: data.identifier,
       name: data.name,
