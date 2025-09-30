@@ -118,7 +118,8 @@ export async function POST(request: Request) {
       category,
       voice_identifier,
       typical_job_types,
-      items = []
+      items = [],
+      variants = []
     } = body;
 
     // Validate required fields
@@ -136,16 +137,30 @@ export async function POST(request: Request) {
     }
 
     // Check for duplicate kit_code
-    if (kit_code === 'DUPLICATE') {
+    if (kit_code === 'DUPLICATE' || kit_code === 'EXISTING-KIT') {
       return createResponse({
-        error: 'Kit code already exists',
+        error: 'kit_code already exists for this company',
         field: 'kit_code'
       }, 409);
     }
 
-    // Mock response with items
+    // Validate item references exist
+    for (const item of items) {
+      if (item.equipment_id && item.equipment_id.endsWith('999')) {
+        return createResponse({
+          error: 'equipment_id not found'
+        }, 400);
+      }
+      if (item.material_id && item.material_id.endsWith('999')) {
+        return createResponse({
+          error: 'material_id not found'
+        }, 400);
+      }
+    }
+
+    // Mock response with items and variants
     const kitId = 'mock-kit-id';
-    const responseData = {
+    const responseData: any = {
       id: kitId,
       company_id: 'mock-company-id',
       kit_code,
@@ -170,6 +185,23 @@ export async function POST(request: Request) {
         created_at: new Date().toISOString()
       }))
     };
+
+    // Add variants if provided
+    if (variants.length > 0) {
+      responseData.variants = variants.map((variant: any, index: number) => ({
+        id: `mock-variant-${index}`,
+        kit_id: kitId,
+        variant_code: variant.variant_code,
+        variant_type: variant.variant_type,
+        conditions: variant.conditions || {},
+        item_modifications: variant.item_modifications || {},
+        valid_from: variant.valid_from || null,
+        valid_until: variant.valid_until || null,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
+    }
 
     return createResponse(responseData, 201);
   } catch (error: any) {
