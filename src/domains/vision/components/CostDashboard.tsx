@@ -10,6 +10,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import CostTrendChart from './CostTrendChart';
 
 interface CostAlert {
   type: 'warning' | 'critical';
@@ -253,8 +254,11 @@ export default function CostDashboard({
         </div>
       </div>
 
+      {/* Cost Trend Chart */}
+      <CostTrendChart companyId={companyId} days={30} />
+
       {/* Refresh Button */}
-      <div className="text-center">
+      <div className="text-center mt-6">
         <button
           onClick={fetchData}
           className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
