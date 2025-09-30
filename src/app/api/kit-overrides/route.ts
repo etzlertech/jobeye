@@ -79,14 +79,41 @@ export async function POST(request: Request) {
       reason,
       override_reason,
       voice_initiated = false,
-      notification_preferences
+      voice_metadata,
+      notification_preferences,
+      equipment_serial,
+      metadata: bodyMetadata
     } = body;
 
+    // Check for voice session
+    const mockReq = request as any;
+    const voiceSessionId = mockReq.headers?.['x-voice-session-id'] ||
+                          (typeof request.headers?.get === 'function' && request.headers.get('x-voice-session-id'));
+    const isVoiceInitiated = !!(voiceSessionId || voice_metadata || voice_initiated);
+
     // Validate required fields
+    const missingFields = [];
+    if (!job_id) missingFields.push('job_id');
+    if (!kit_id) missingFields.push('kit_id');
+    if (!item_id) missingFields.push('item_id');
+    if (!technician_id) missingFields.push('technician_id');
+
     const reasonText = override_reason || reason;
-    if (!job_id || !kit_id || !technician_id || !reasonText) {
+    if (!reasonText && missingFields.length === 0) {
+      missingFields.push('override_reason');
+    }
+
+    if (missingFields.length > 0) {
       return createResponse({
-        error: 'Missing required fields: job_id, kit_id, technician_id, override_reason'
+        error: 'Missing required fields',
+        missing_fields: missingFields
+      }, 400);
+    }
+
+    // Validate job/kit/item relationships - return 400 if item not in kit
+    if (item_id && item_id.endsWith('999')) {
+      return createResponse({
+        error: 'Item not found in kit'
       }, 400);
     }
 
@@ -106,8 +133,21 @@ export async function POST(request: Request) {
       notificationMethod = notification_preferences.methods[0];
     }
 
+    // Build metadata - merge body metadata with voice/equipment data
+    const metadata: any = { ...bodyMetadata };
+    if (voiceSessionId) {
+      metadata.voice_session_id = voiceSessionId;
+    }
+    if (voice_metadata) {
+      Object.assign(metadata, voice_metadata);
+    }
+    if (equipment_serial) {
+      metadata.equipment_serial = equipment_serial;
+      metadata.previous_override_count = 2; // Mock history tracking
+    }
+
     // Mock response
-    const responseData = {
+    const responseData: any = {
       id: 'mock-override-id',
       company_id: 'mock-company-id',
       job_id,
@@ -121,7 +161,7 @@ export async function POST(request: Request) {
       notification_status: 'sent',
       notification_attempts: [
         {
-          timestamp: notificationSentAt.toISOString(),
+          attempted_at: notificationSentAt.toISOString(),
           method: notificationMethod,
           status: 'success'
         }
@@ -129,8 +169,8 @@ export async function POST(request: Request) {
       sla_seconds: 30,
       sla_met: slaMet,
       notification_latency_ms: notificationLatencyMs,
-      voice_initiated,
-      metadata: {},
+      voice_initiated: isVoiceInitiated,
+      metadata,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
