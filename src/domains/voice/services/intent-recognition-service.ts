@@ -333,7 +333,113 @@ export class IntentRecognitionService {
         entities: ['quantity', 'unit', 'material_name', 'job_id'],
         examples: ['Used 10 pounds of fertilizer', 'Applying seed to lawn', 'Record material usage'],
       },
-      
+
+      // Inventory domain intents (Feature 004)
+      {
+        intent: VoiceIntent.CHECK_OUT_EQUIPMENT,
+        patterns: [
+          /check\s+out/i,
+          /take\s+(?:out\s+)?(?:the\s+)?(.+?)(?:\s+for\s+|\s+from\s+|\s*$)/i,
+          /(?:get|grab|load)\s+(?:the\s+)?(.+?)(?:\s+for\s+job)/i,
+        ],
+        entities: ['item_name', 'job_id', 'location_id'],
+        examples: [
+          'Check out hammer and drill for job 123',
+          'Take out the ladder from warehouse',
+          'Get the mower for job today',
+        ],
+        requiredEntities: ['item_name'],
+      },
+      {
+        intent: VoiceIntent.CHECK_IN_EQUIPMENT,
+        patterns: [
+          /check\s+in/i,
+          /return(?:ing)?/i,
+          /put\s+back/i,
+          /bring\s+(?:back|in)/i,
+        ],
+        entities: ['item_name', 'from_location', 'to_location', 'condition'],
+        examples: [
+          'Check in tools from truck A',
+          'Return the mower to warehouse',
+          'Put back equipment',
+        ],
+        requiredEntities: ['item_name'],
+      },
+      {
+        intent: VoiceIntent.RECORD_MATERIAL_USAGE,
+        patterns: [
+          /(?:used|use)\s+(\d+)/i,
+          /record\s+(?:material\s+)?us(?:age|ed)/i,
+          /consumed?\s+(\d+)/i,
+        ],
+        entities: ['quantity', 'material_name', 'job_id', 'unit'],
+        examples: [
+          'Used 5 bags of cement',
+          'Record material usage 10 pounds fertilizer',
+          'Consumed 3 gallons paint',
+        ],
+        requiredEntities: ['quantity', 'material_name', 'job_id'],
+      },
+      {
+        intent: VoiceIntent.TRANSFER_INVENTORY,
+        patterns: [
+          /transfer/i,
+          /move\s+(.+?)\s+from\s+(.+?)\s+to\s+(.+)/i,
+          /relocate/i,
+        ],
+        entities: ['item_name', 'from_location', 'to_location'],
+        examples: [
+          'Transfer ladder from truck to warehouse',
+          'Move tools from storage to truck A',
+        ],
+        requiredEntities: ['item_name', 'from_location', 'to_location'],
+      },
+      {
+        intent: VoiceIntent.SCAN_INVENTORY,
+        patterns: [
+          /scan/i,
+          /detect\s+(?:items|equipment)/i,
+          /what(?:'s|\s+is)\s+in\s+(?:this\s+)?(?:photo|picture|image)/i,
+          /identify\s+(?:items|tools)/i,
+        ],
+        entities: ['item_name'],
+        examples: [
+          'Scan items in this photo',
+          'Detect equipment in image',
+          'What is in this picture',
+        ],
+      },
+      {
+        intent: VoiceIntent.START_INVENTORY_AUDIT,
+        patterns: [
+          /(?:start|begin)\s+(?:inventory\s+)?audit/i,
+          /count\s+inventory/i,
+          /physical\s+count/i,
+        ],
+        entities: ['location_id'],
+        examples: [
+          'Start inventory audit at warehouse',
+          'Begin audit',
+          'Count inventory at location A',
+        ],
+      },
+      {
+        intent: VoiceIntent.PROCESS_RECEIPT,
+        patterns: [
+          /process\s+receipt/i,
+          /scan\s+receipt/i,
+          /record\s+purchase/i,
+          /add\s+purchase/i,
+        ],
+        entities: ['vendor', 'job_id'],
+        examples: [
+          'Process receipt from Home Depot',
+          'Scan this receipt',
+          'Record purchase for job 123',
+        ],
+      },
+
       // General intents
       {
         intent: VoiceIntent.HELP,

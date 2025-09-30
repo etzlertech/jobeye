@@ -3,7 +3,7 @@ import { CreateKitVariantInput, KitVariant } from '@/domains/lib/scheduling-kits
 
 type KitVariantRow = {
   id: string;
-  company_id: string;
+  tenant_id: string;
   kit_id: string;
   variant_code: string;
   name: string;
@@ -18,7 +18,7 @@ export class KitVariantRepository {
     const { data, error } = await this.supabase
       .from('kit_variants')
       .select('*')
-      .eq('company_id', companyId)
+      .eq('tenant_id', companyId)
       .eq('kit_id', kitId)
       .order('is_default', { ascending: false })
       .order('variant_code', { ascending: true });
@@ -33,7 +33,7 @@ export class KitVariantRepository {
   async createVariant(input: CreateKitVariantInput): Promise<KitVariant> {
     const insertPayload = {
       kit_id: input.kitId,
-      company_id: input.companyId,
+      tenant_id: input.companyId,
       variant_code: input.variantCode,
       name: input.name,
       is_default: input.isDefault ?? false,
@@ -57,7 +57,7 @@ export class KitVariantRepository {
     return {
       id: row.id,
       kitId: row.kit_id,
-      companyId: row.company_id,
+      companyId: row.tenant_id,
       variantCode: row.variant_code,
       name: row.name,
       isDefault: row.is_default,

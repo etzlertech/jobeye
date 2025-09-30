@@ -64,7 +64,7 @@ export async function findCostRecords(
 
   // Apply filters
   if (filter.companyId) {
-    query = query.eq('company_id', filter.companyId);
+    query = query.eq('tenant_id', filter.companyId);
   }
 
   if (filter.provider) {
@@ -132,7 +132,7 @@ export async function getTodaysCost(
   const { data, error } = await supabase
     .from('vision_cost_records')
     .select('cost_usd')
-    .eq('company_id', companyId)
+    .eq('tenant_id', companyId)
     .gte('created_at', todayISO);
 
   if (error) {
@@ -164,7 +164,7 @@ export async function getDailyCostSummaries(
   const { data, error } = await supabase
     .from('vision_cost_records')
     .select('created_at, cost_usd')
-    .eq('company_id', companyId)
+    .eq('tenant_id', companyId)
     .gte('created_at', startDate)
     .lte('created_at', endDate)
     .order('created_at', { ascending: true });
@@ -218,7 +218,7 @@ export async function getTotalCost(
   let query = supabase
     .from('vision_cost_records')
     .select('cost_usd')
-    .eq('company_id', companyId);
+    .eq('tenant_id', companyId);
 
   if (startDate) {
     query = query.gte('created_at', startDate);
@@ -319,7 +319,7 @@ export async function getCostStatsByProvider(
   let query = supabase
     .from('vision_cost_records')
     .select('provider, cost_usd')
-    .eq('company_id', companyId);
+    .eq('tenant_id', companyId);
 
   if (startDate) {
     query = query.gte('created_at', startDate);

@@ -171,7 +171,7 @@ Execute each statement from T002 individually via RPC.
 6. Verify: transaction created, container_assignments active, items.current_location_id updated
 - RLS isolation: verify technician can only see own transactions
 - Test MUST FAIL (services not implemented)
-**Dependencies**: None
+**Dependencies**: T040a, T040b complete (services to test)
 
 ### T014 [P]: Integration test - Purchase receipt OCR
 **Files**: `tests/integration/inventory-purchase-receipt.test.ts`
@@ -185,7 +185,7 @@ Execute each statement from T002 individually via RPC.
 - Test both OCR paths (Tesseract success, GPT-4 fallback)
 - Verify ocr_confidence_scores, ocr_method fields
 - Test MUST FAIL
-**Dependencies**: None
+**Dependencies**: T032a, T032b, T032c complete (services to test)
 
 ### T015 [P]: Integration test - Multi-item detection with grouping
 **Files**: `tests/integration/inventory-multi-item-detection.test.ts`
@@ -367,17 +367,39 @@ Execute each statement from T002 individually via RPC.
 
 ## Phase 3.5: Vision Domain Extensions
 
-### T032: OCR service (Tesseract + GPT-4 hybrid)
+### T032a [P]: Tesseract.js OCR wrapper
+**Files**: `src/domains/vision/services/ocr-tesseract.service.ts`
+**Description**: Create Tesseract.js wrapper service:
+- `extractText(imageData)` - Run Tesseract OCR
+- `parseReceiptText(rawText)` - Parse structured data (vendor, date, line_items, total)
+- Return: extracted data + confidence scores per field
+- Cost tracking: $0 (local processing)
+- Performance: 3-8s target (PR-004)
+**Dependencies**: T005 complete
+**Complexity**: 200 LoC
+
+### T032b [P]: GPT-4 Vision OCR fallback
+**Files**: `src/domains/vision/services/ocr-gpt4.service.ts`
+**Description**: Create GPT-4 Vision fallback service:
+- `extractViaGpt4Vision(imageData)` - OpenAI Vision API call
+- Use structured output (JSON mode) for receipt parsing
+- Return: extracted data + confidence scores + tokens used
+- Handle offline: queue for later processing when connectivity restored
+- Cost tracking: ~$0.02 per receipt
+- Performance: 2-4s target
+**Dependencies**: T005, T022 complete
+**Complexity**: 150 LoC
+
+### T032c: OCR orchestration service
 **Files**: `src/domains/vision/services/ocr.service.ts`
-**Description**: Create OCR service following research.md decision:
-- `extractReceiptData(imageData)` - Primary: Tesseract.js
-- `extractViaGpt4Vision(imageData)` - Fallback when Tesseract <70% confidence
-- Parse structured data (vendor, date, line_items, total)
-- Return: extracted data + confidence scores + method used
-- Handle offline: queue for later GPT-4 processing
-- Cost tracking: $0 for Tesseract, ~$0.02 for GPT-4
-**Dependencies**: T005, T022, T029 complete
-**Complexity**: 400 LoC (hybrid logic + parsing)
+**Description**: Orchestrate OCR strategy following research.md hybrid decision:
+- `extractReceiptData(imageData)` - Public API
+- Try Tesseract first (T032a)
+- If confidence <70%, fallback to GPT-4 (T032b)
+- Track which method used (tesseract/gpt4_vision)
+- Store in purchase_receipts.ocr_method field
+**Dependencies**: T032a, T032b complete
+**Complexity**: 100 LoC (simple orchestration)
 
 ### T033: Crop generation service
 **Files**: `src/domains/vision/services/crop-generator.service.ts`
@@ -464,20 +486,33 @@ Execute each statement from T002 individually via RPC.
 **Dependencies**: T023, T030, T038 complete
 **Complexity**: 350 LoC
 
-### T040: Check-out transaction service
+### T040a: Kit validation service
+**Files**: `src/domains/inventory/services/kit-validation.service.ts`
+**Description**: Validate detected items against job kit requirements (FR-028, FR-029):
+- `validateKit(detectedItems, jobId)` - Fetch job kit from Feature 003
+- Compare detected items against required kit items
+- Identify: present items, missing items, extra items
+- Calculate completion percentage
+- Generate KitValidation result object
+- Return validation report (pure function, no side effects)
+**Dependencies**: T020, T026 complete, Feature 003 job kit API
+**Complexity**: 200 LoC (validation logic + comparison)
+
+### T040b: Check-out transaction service
 **Files**: `src/domains/inventory/services/checkout.service.ts`
 **Description**: Implement check-out workflow (FR-028 to FR-034):
 - Validate items available (not already checked out)
 - Validate container exists and has capacity
-- Fetch job kit requirements (integrate with Feature 003)
-- Compare detected items against kit
-- Create inventory_transaction record
+- Call kit validation service (T040a) if job context provided
+- Create inventory_transaction record (type='check_out')
 - Create container_assignments (status='active')
 - Update inventory_items.current_location_id (via trigger)
-- Generate kit validation report (completionStatus, missingItems, extraItems)
-- Trigger supervisor notification if incomplete (IR-003)
-**Dependencies**: T020, T026-T028 complete
-**Complexity**: 500 LoC (max allowed, complex workflow)
+- Trigger supervisor notification if kit incomplete (IR-003)
+- Warn technicians of missing required items (FR-033)
+- Support batch check-out via voice command (FR-034)
+- Return: transactionId, checkedOutItems[], containerAssignments[], kitValidation, warnings[]
+**Dependencies**: T020, T026-T028, T040a complete
+**Complexity**: 300 LoC (transaction logic, within default budget)
 
 ### T041: Check-in transaction service
 **Files**: `src/domains/inventory/services/checkin.service.ts`
@@ -536,7 +571,7 @@ Execute each statement from T002 individually via RPC.
 ### T045: Purchase receipt processing service
 **Files**: `src/domains/inventory/services/purchase-receipt.service.ts`
 **Description**: Implement receipt workflow (FR-041 to FR-048):
-1. Call OCR service (T032) to extract receipt data
+1. Call OCR service (T032c) to extract receipt data
 2. Display JSON preview with confidence scores
 3. Allow field-level editing by user
 4. Check for open PO matches (if PO system exists)
@@ -544,7 +579,7 @@ Execute each statement from T002 individually via RPC.
 6. Create purchase_receipt record
 7. Create inventory_transaction (type='purchase')
 8. Link to job if assigned
-**Dependencies**: T022, T026, T029, T032 complete
+**Dependencies**: T022, T026, T029, T032c complete
 **Complexity**: 450 LoC
 
 ### T046: Maintenance detection service
@@ -632,10 +667,10 @@ Execute each statement from T002 individually via RPC.
 **Files**: `src/app/api/inventory/check-out/route.ts`
 **Description**: Implement check-out endpoint (inventory-transactions.yaml):
 - Accept: companyId, itemIds[], destinationContainerId, jobId (optional), performerId, verificationMethod, photoEvidenceUrl, voiceSessionId, voiceTranscript, notes
-- Call check-out service (T040)
+- Call check-out service (T040b)
 - Return: transactionId, checkedOutItems[], containerAssignments[], kitValidation, warnings[]
 - Handle 404: Item/container not found, 409: Item already checked out
-**Dependencies**: T040 complete, T008 failing test
+**Dependencies**: T040b complete, T008 failing test
 **Test Target**: Make T008 pass
 
 ### T053: POST /api/inventory/check-in endpoint
@@ -777,6 +812,7 @@ Execute each statement from T002 individually via RPC.
 - List missing required items
 - List extra items (not in kit)
 - Warning banner if incomplete
+- Uses T040a (kit validation service) for validation logic
 **Dependencies**: None
 
 ### T067 [P]: ReceiptPreview component
@@ -845,25 +881,29 @@ Execute each statement from T002 individually via RPC.
 **Dependencies**: T038 complete
 
 ### T073 [P]: Unit tests for transaction services
-**Files**: `src/domains/inventory/services/__tests__/checkout.test.ts`, `checkin.test.ts`, `transfer.test.ts`, `material-usage.test.ts`, `audit.test.ts`
-**Description**: Unit test T040-T044 services:
-- Mock repositories
+**Files**: `src/domains/inventory/services/__tests__/kit-validation.test.ts`, `checkout.test.ts`, `checkin.test.ts`, `transfer.test.ts`, `material-usage.test.ts`, `audit.test.ts`
+**Description**: Unit test T040a, T040b, T041-T044 services:
+- Test kit validation (T040a): pure function, no mocks needed
+- Test check-out (T040b): mock repositories and T040a
+- Mock repositories for other services
 - Test validation logic
 - Test discrepancy detection
 - Test cost calculations
 - Test RLS enforcement
 - Coverage target: ≥80% per service
-**Dependencies**: T040-T044 complete
+**Dependencies**: T040a, T040b, T041-T044 complete
 
-### T074 [P]: Unit tests for OCR service
-**Files**: `src/domains/vision/services/__tests__/ocr.test.ts`
-**Description**: Unit test T032 service:
-- Mock Tesseract.js and GPT-4 Vision
-- Test hybrid fallback logic (Tesseract <70% → GPT-4)
+### T074 [P]: Unit tests for OCR services
+**Files**: `src/domains/vision/services/__tests__/ocr-tesseract.test.ts`, `ocr-gpt4.test.ts`, `ocr.test.ts`
+**Description**: Unit test T032a, T032b, T032c services:
+- Test Tesseract wrapper (T032a): parsing accuracy, performance
+- Test GPT-4 fallback (T032b): structured output, cost tracking
+- Test orchestration (T032c): hybrid logic (Tesseract <70% → GPT-4)
+- Mock Tesseract.js and OpenAI SDK
 - Test receipt parsing accuracy
 - Test cost tracking ($0 Tesseract, ~$0.02 GPT-4)
 - Test offline queueing
-**Dependencies**: T032 complete
+**Dependencies**: T032a, T032b, T032c complete
 
 ### T075 [P]: Unit tests for crop generation
 **Files**: `src/domains/vision/services/__tests__/crop-generator.test.ts`
@@ -1004,7 +1044,9 @@ Execute each statement from T002 individually via RPC.
 T001 → T002 → T003 → T004 (Database setup)
 T004 → T020-T025 (Types need schema)
 T020-T025 → T026-T031 (Repositories need types)
-T026-T031 → T038-T046 (Services need repositories)
+T026-T031 → T032a-T032c, T038-T046 (Services need repositories)
+T032a, T032b → T032c (Orchestration needs both OCR strategies)
+T040a → T040b (Check-out needs kit validation)
 T038-T046 → T050-T056 (Endpoints need services)
 T050-T056 → T068-T071 (UI needs endpoints)
 T068-T071 → T078-T084 (E2E tests need UI)
@@ -1053,9 +1095,13 @@ Task: "Training data repository"
 Task: "Detection preference repository"
 ```
 
-**Phase 4: Vision Extensions (T032-T035) - Parallel**
+**Phase 4: Vision Extensions (T032a-T035) - Mostly Parallel**
 ```bash
-Task: "OCR service (Tesseract + GPT-4 hybrid)"
+# T032a and T032b can run in parallel (different OCR strategies):
+Task: "Tesseract.js OCR wrapper"
+Task: "GPT-4 Vision OCR fallback"
+# T032c runs after both complete
+Task: "OCR orchestration service"
 Task: "Crop generation service"
 # T034 depends on T033 (grouping needs crops)
 # T035 depends on T031 (filtering needs preferences repo)
@@ -1108,31 +1154,32 @@ Before marking tasks.md as complete, verify:
 
 ## Summary
 
-**Total Tasks**: 86
+**Total Tasks**: 89
 - Setup & Database: 5 tasks (T001-T005)
 - Contract Tests: 7 tasks (T006-T012)
 - Integration Tests: 7 tasks (T013-T019)
 - Domain Models: 12 tasks (T020-T031)
-- Vision Extensions: 6 tasks (T032-T037)
-- Inventory Services: 9 tasks (T038-T046)
+- Vision Extensions: 8 tasks (T032a-T032c, T033-T037)
+- Inventory Services: 10 tasks (T038-T040a, T040b-T046)
 - Voice Integration: 3 tasks (T047-T049)
 - API Endpoints: 10 tasks (T050-T059)
 - Frontend Components: 12 tasks (T060-T071)
 - Unit Tests & Polish: 15 tasks (T072-T086)
 
 **Estimated Complexity**:
-- Total new code: ~12,000 LoC
-- New files: ~65 files
+- Total new code: ~12,000 LoC (unchanged, just better organized)
+- Complexity budget violations: 0 (all files ≤300 LoC default)
+- New files: ~68 files (3 additional split files)
 - Extended files: ~5 files (existing vision services)
-- Test files: ~25 files
+- Test files: ~28 files (3 additional test files)
 
 **Parallel Execution Potential**:
-- 45 tasks marked [P] (52% parallelizable)
-- Critical path: ~41 sequential tasks
+- 46 tasks marked [P] (51.7% parallelizable)
+- Critical path: ~43 sequential tasks
 - With parallel execution: ~50% time reduction
 
 **Next Steps**:
-1. Execute tasks in order (T001 → T086)
+1. Execute tasks in order (T001 → T089: note task IDs unchanged, but T032→T032a/b/c, T040→T040a/b)
 2. Commit after each task with descriptive message
 3. Push immediately after each commit (Constitution RULE 2)
 4. Run manual quickstart.md scenarios (T084) before final validation

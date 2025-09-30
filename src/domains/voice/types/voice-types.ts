@@ -39,6 +39,59 @@ export enum IntentType {
   SEARCH_CUSTOMER = 'search_customer'
 }
 
+// Extended intent vocabulary for inventory operations
+export enum VoiceIntent {
+  // Customer domain
+  CREATE_CUSTOMER = 'create_customer',
+  FIND_CUSTOMER = 'find_customer',
+  UPDATE_CUSTOMER = 'update_customer',
+
+  // Job domain
+  CREATE_JOB = 'create_job',
+  UPDATE_JOB_STATUS = 'update_job_status',
+  FIND_JOBS = 'find_jobs',
+
+  // Equipment domain
+  CHECK_EQUIPMENT = 'check_equipment',
+  UPDATE_EQUIPMENT = 'update_equipment',
+
+  // Inventory domain (Feature 004)
+  CHECK_OUT_EQUIPMENT = 'check_out_equipment',
+  CHECK_IN_EQUIPMENT = 'check_in_equipment',
+  CHECK_INVENTORY = 'check_inventory',
+  USE_MATERIAL = 'use_material',
+  RECORD_MATERIAL_USAGE = 'record_material_usage',
+  TRANSFER_INVENTORY = 'transfer_inventory',
+  SCAN_INVENTORY = 'scan_inventory',
+  START_INVENTORY_AUDIT = 'start_inventory_audit',
+  PROCESS_RECEIPT = 'process_receipt',
+
+  // General
+  HELP = 'help',
+  CANCEL = 'cancel',
+  CONFIRM = 'confirm',
+}
+
+// Command entity for extracted information
+export interface CommandEntity {
+  type: string;
+  value: any;
+  confidence: number;
+  startIndex: number;
+  endIndex: number;
+}
+
+// Voice command structure
+export interface VoiceCommand {
+  id: string;
+  sessionId: string;
+  text: string;
+  intent?: VoiceIntent;
+  entities?: CommandEntity[];
+  confidence?: number;
+  timestamp: Date;
+}
+
 export interface VoiceRecording {
   id: string;
   sessionId: string;

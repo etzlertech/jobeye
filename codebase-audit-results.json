@@ -1,0 +1,338 @@
+{
+  "repositories": {
+    "total": 22,
+    "patterns": {
+      "classBase": [
+        "src/domains/property/repositories/property-repository.ts",
+        "src/domains/material/repositories/material-repository.ts",
+        "src/domains/job-templates/repositories/job-template-repository.ts",
+        "src/domains/job/repositories/job-repository.ts",
+        "src/domains/equipment/repositories/equipment-repository.ts",
+        "src/domains/equipment/repositories/container-repository.ts",
+        "src/domains/customer/repositories/contact-repository.ts"
+      ],
+      "functional": [
+        "src/domains/vision/repositories/vision-verification.repository.ts",
+        "src/domains/vision/repositories/detected-item.repository.ts",
+        "src/domains/vision/repositories/cost-record.repository.ts",
+        "src/domains/inventory/repositories/training-data.repository.ts",
+        "src/domains/inventory/repositories/purchase-receipts.repository.ts",
+        "src/domains/inventory/repositories/inventory-transactions.repository.ts",
+        "src/domains/inventory/repositories/inventory-items.repository.ts",
+        "src/domains/inventory/repositories/container-assignments.repository.ts"
+      ],
+      "mixed": [
+        "src/domains/vision/repositories/load-verification-repository.ts",
+        "src/domains/tenant/repositories/tenant-repository.ts",
+        "src/domains/property/repositories/service-location-repository.ts",
+        "src/domains/job/repositories/job-checklist-repository.ts",
+        "src/domains/inventory/repositories/inventory-image-repository.ts",
+        "src/domains/auth/repositories/user-repository.ts",
+        "src/domains/auth/repositories/session-repository.ts"
+      ]
+    },
+    "tenancyUsage": {
+      "useTenantId": [
+        "src/domains/vision/repositories/vision-verification.repository.ts",
+        "src/domains/vision/repositories/cost-record.repository.ts",
+        "src/domains/property/repositories/property-repository.ts",
+        "src/domains/material/repositories/material-repository.ts",
+        "src/domains/job-templates/repositories/job-template-repository.ts",
+        "src/domains/job/repositories/job-repository.ts",
+        "src/domains/inventory/repositories/training-data.repository.ts",
+        "src/domains/inventory/repositories/purchase-receipts.repository.ts",
+        "src/domains/inventory/repositories/inventory-transactions.repository.ts",
+        "src/domains/inventory/repositories/inventory-items.repository.ts",
+        "src/domains/equipment/repositories/equipment-repository.ts",
+        "src/domains/equipment/repositories/container-repository.ts",
+        "src/domains/customer/repositories/contact-repository.ts"
+      ],
+      "useCompanyId": [],
+      "useBoth": [],
+      "useNeither": [
+        "src/domains/vision/repositories/load-verification-repository.ts",
+        "src/domains/vision/repositories/detected-item.repository.ts",
+        "src/domains/tenant/repositories/tenant-repository.ts",
+        "src/domains/property/repositories/service-location-repository.ts",
+        "src/domains/job/repositories/job-checklist-repository.ts",
+        "src/domains/inventory/repositories/inventory-image-repository.ts",
+        "src/domains/inventory/repositories/container-assignments.repository.ts",
+        "src/domains/auth/repositories/user-repository.ts",
+        "src/domains/auth/repositories/session-repository.ts"
+      ]
+    },
+    "clientCreation": {
+      "createPerCall": [
+        "src/domains/vision/repositories/vision-verification.repository.ts",
+        "src/domains/vision/repositories/detected-item.repository.ts",
+        "src/domains/vision/repositories/cost-record.repository.ts",
+        "src/domains/inventory/repositories/training-data.repository.ts",
+        "src/domains/inventory/repositories/purchase-receipts.repository.ts",
+        "src/domains/inventory/repositories/inventory-transactions.repository.ts",
+        "src/domains/inventory/repositories/inventory-items.repository.ts",
+        "src/domains/inventory/repositories/container-assignments.repository.ts"
+      ],
+      "useDI": [
+        "src/domains/property/repositories/property-repository.ts",
+        "src/domains/material/repositories/material-repository.ts",
+        "src/domains/job-templates/repositories/job-template-repository.ts",
+        "src/domains/job/repositories/job-repository.ts",
+        "src/domains/equipment/repositories/equipment-repository.ts",
+        "src/domains/equipment/repositories/container-repository.ts",
+        "src/domains/customer/repositories/contact-repository.ts"
+      ]
+    }
+  },
+  "services": {
+    "total": 54,
+    "voiceSupport": [
+      "src/domains/voice/services/voice-intake-service.ts",
+      "src/domains/voice/services/text-to-speech-service.ts",
+      "src/domains/voice/services/speech-to-text-service.ts",
+      "src/domains/voice/services/intent-recognition-service.ts",
+      "src/domains/vision/services/yolo-inference.service.ts",
+      "src/domains/vision/services/voice-narration.service.ts",
+      "src/domains/vision/services/vlm-fallback.service.ts",
+      "src/domains/vision/services/vision-analysis-service.ts",
+      "src/domains/vision/services/ocr-tesseract.service.ts",
+      "src/domains/vision/services/ocr-orchestrator.service.ts",
+      "src/domains/vision/services/ocr-gpt4.service.ts",
+      "src/domains/vision/services/multi-object-vision-service.ts",
+      "src/domains/vision/services/detection-session.service.ts",
+      "src/domains/vision/services/crop-generator.service.ts",
+      "src/domains/tenant/services/tenant-service.ts",
+      "src/domains/tenant/services/subscription-service.ts",
+      "src/domains/property/services/property-voice-commands.ts",
+      "src/domains/property/services/property-service.ts",
+      "src/domains/property/services/property-search-service.ts",
+      "src/domains/property/services/property-offline-sync.ts",
+      "src/domains/material/services/material-service.ts",
+      "src/domains/job/services/job-service.ts",
+      "src/domains/job/services/job-load-list-service.ts",
+      "src/domains/job/services/job-from-voice-service.ts",
+      "src/domains/job/services/checklist-verification-service.ts",
+      "src/domains/inventory/services/voice-intent-handlers.service.ts",
+      "src/domains/inventory/services/voice-feedback.service.ts",
+      "src/domains/inventory/services/transfer.service.ts",
+      "src/domains/inventory/services/training-data.service.ts",
+      "src/domains/inventory/services/receipt-processing.service.ts",
+      "src/domains/inventory/services/offline-queue.service.ts",
+      "src/domains/inventory/services/material-usage.service.ts",
+      "src/domains/inventory/services/detection-orchestrator.service.ts",
+      "src/domains/inventory/services/container-management.service.ts",
+      "src/domains/inventory/services/check-out.service.ts",
+      "src/domains/inventory/services/check-in.service.ts",
+      "src/domains/inventory/services/audit.service.ts",
+      "src/domains/equipment/services/equipment-service.ts",
+      "src/domains/equipment/services/container-service.ts",
+      "src/domains/customer/services/customer-voice-commands.ts",
+      "src/domains/customer/services/customer-service.ts",
+      "src/domains/customer/services/customer-search-service.ts",
+      "src/domains/customer/services/customer-offline-sync.ts",
+      "src/domains/auth/services/permission-service.ts",
+      "src/domains/auth/services/mfa-service.ts",
+      "src/domains/auth/services/auth-service.ts"
+    ],
+    "offlineSupport": [
+      "src/domains/voice/services/voice-intake-service.ts",
+      "src/domains/voice/services/text-to-speech-service.ts",
+      "src/domains/voice/services/speech-to-text-service.ts",
+      "src/domains/voice/services/intent-recognition-service.ts",
+      "src/domains/vision/services/yolo-inference.service.ts",
+      "src/domains/vision/services/vision-analysis-service.ts",
+      "src/domains/vision/services/ocr-tesseract.service.ts",
+      "src/domains/vision/services/ocr-orchestrator.service.ts",
+      "src/domains/vision/services/multi-object-vision-service.ts",
+      "src/domains/tenant/services/tenant-service.ts",
+      "src/domains/tenant/services/subscription-service.ts",
+      "src/domains/property/services/property-voice-commands.ts",
+      "src/domains/property/services/property-service.ts",
+      "src/domains/property/services/property-search-service.ts",
+      "src/domains/property/services/property-offline-sync.ts",
+      "src/domains/material/services/material-service.ts",
+      "src/domains/job/services/job-service.ts",
+      "src/domains/job/services/job-load-list-service.ts",
+      "src/domains/job/services/job-from-voice-service.ts",
+      "src/domains/job/services/checklist-verification-service.ts",
+      "src/domains/inventory/services/voice-feedback.service.ts",
+      "src/domains/inventory/services/transfer.service.ts",
+      "src/domains/inventory/services/offline-queue.service.ts",
+      "src/domains/inventory/services/material-usage.service.ts",
+      "src/domains/inventory/services/check-out.service.ts",
+      "src/domains/inventory/services/check-in.service.ts",
+      "src/domains/inventory/services/audit.service.ts",
+      "src/domains/equipment/services/equipment-service.ts",
+      "src/domains/equipment/services/container-service.ts",
+      "src/domains/customer/services/customer-voice-commands.ts",
+      "src/domains/customer/services/customer-service.ts",
+      "src/domains/customer/services/customer-search-service.ts",
+      "src/domains/customer/services/customer-offline-sync.ts",
+      "src/domains/auth/services/permission-service.ts",
+      "src/domains/auth/services/mfa-service.ts",
+      "src/domains/auth/services/auth-service.ts"
+    ],
+    "largeFunctions": [
+      {
+        "file": "src/domains/voice/services/text-to-speech-service.ts",
+        "lines": 573
+      },
+      {
+        "file": "src/domains/voice/services/intent-recognition-service.ts",
+        "lines": 762
+      },
+      {
+        "file": "src/domains/vision/services/vision-analysis-service.ts",
+        "lines": 645
+      },
+      {
+        "file": "src/domains/vision/services/multi-object-vision-service.ts",
+        "lines": 947
+      },
+      {
+        "file": "src/domains/tenant/services/tenant-service.ts",
+        "lines": 764
+      },
+      {
+        "file": "src/domains/tenant/services/subscription-service.ts",
+        "lines": 748
+      },
+      {
+        "file": "src/domains/property/services/property-service.ts",
+        "lines": 599
+      },
+      {
+        "file": "src/domains/property/services/property-search-service.ts",
+        "lines": 601
+      },
+      {
+        "file": "src/domains/material/services/material-service.ts",
+        "lines": 679
+      },
+      {
+        "file": "src/domains/job/services/job-service.ts",
+        "lines": 674
+      },
+      {
+        "file": "src/domains/job/services/job-from-voice-service.ts",
+        "lines": 641
+      },
+      {
+        "file": "src/domains/job/services/checklist-verification-service.ts",
+        "lines": 649
+      },
+      {
+        "file": "src/domains/equipment/services/equipment-service.ts",
+        "lines": 635
+      },
+      {
+        "file": "src/domains/customer/services/customer-service.ts",
+        "lines": 666
+      },
+      {
+        "file": "src/domains/customer/services/customer-offline-sync.ts",
+        "lines": 521
+      }
+    ]
+  },
+  "types": {
+    "duplicateDefinitions": {
+      "VoiceRecording": [
+        "src/domains/voice/types/voice-types.ts",
+        "src/domains/voice/types/voice-types.ts"
+      ],
+      "TranscriptionResult": [
+        "src/domains/voice/types/voice-types.ts",
+        "src/domains/voice/types/voice-types.ts"
+      ],
+      "VoiceJobIntent": [
+        "src/domains/voice/types/voice-types.ts",
+        "src/domains/voice/types/voice-types.ts"
+      ],
+      "ChecklistItem": [
+        "src/domains/voice/types/voice-types.ts",
+        "src/domains/voice/types/voice-types.ts"
+      ],
+      "definitions": [
+        "src/domains/voice/types/voice-types.ts",
+        "src/domains/customer/types/customer-types.ts"
+      ],
+      "BoundingBox": [
+        "src/domains/vision/types/vision-types.ts",
+        "src/domains/vision/types/load-verification-types.ts"
+      ],
+      "with": [
+        "src/domains/tenant/types/tenant-types.ts",
+        "src/domains/tenant/types/tenant-types.ts",
+        "src/domains/customer/types/customer-types.ts",
+        "src/domains/customer/types/customer-types.ts",
+        "src/domains/auth/types/auth-types.ts",
+        "src/domains/auth/types/auth-types.ts",
+        "src/domains/auth/types/auth-types.ts",
+        "src/domains/auth/types/auth-types.ts"
+      ],
+      "for": [
+        "src/domains/tenant/types/tenant-types.ts",
+        "src/domains/tenant/types/tenant-types.ts",
+        "src/domains/tenant/types/tenant-types.ts"
+      ],
+      "guards": [
+        "src/domains/tenant/types/tenant-types.ts",
+        "src/domains/equipment/types/container-types.ts",
+        "src/domains/auth/types/auth-types.ts"
+      ],
+      "classifications": [
+        "src/domains/property/types/property-types.ts",
+        "src/domains/job/types/job-types.ts"
+      ],
+      "Address": [
+        "src/domains/property/types/property-types.ts",
+        "src/domains/customer/types/customer-types.ts"
+      ],
+      "InventoryTransaction": [
+        "src/domains/material/types/material-types.ts",
+        "src/domains/inventory/types/inventory-types.ts"
+      ],
+      "Container": [
+        "src/domains/inventory/types/inventory-types.ts",
+        "src/domains/equipment/types/container-types.ts"
+      ],
+      "ContainerCreate": [
+        "src/domains/inventory/types/inventory-types.ts",
+        "src/domains/equipment/types/container-types.ts"
+      ],
+      "ContainerUpdate": [
+        "src/domains/inventory/types/inventory-types.ts",
+        "src/domains/equipment/types/container-types.ts"
+      ],
+      "ContainerAssignment": [
+        "src/domains/inventory/types/inventory-types.ts",
+        "src/domains/equipment/types/container-types.ts"
+      ],
+      "UserProfile": [
+        "src/domains/auth/types/auth-types.ts",
+        "src/domains/auth/types/auth-types.ts"
+      ],
+      "Session": [
+        "src/domains/auth/types/auth-types.ts",
+        "src/domains/auth/types/auth-types.ts"
+      ],
+      "Permission": [
+        "src/domains/auth/types/auth-types.ts",
+        "src/domains/auth/types/auth-types.ts"
+      ],
+      "MFAChallenge": [
+        "src/domains/auth/types/auth-types.ts",
+        "src/domains/auth/types/auth-types.ts"
+      ],
+      "AuthResult": [
+        "src/domains/auth/types/auth-types.ts",
+        "src/domains/auth/types/auth-types.ts"
+      ]
+    },
+    "inconsistentNaming": []
+  },
+  "imports": {
+    "circularDependencies": [],
+    "externalUsage": {}
+  }
+}

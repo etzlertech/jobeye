@@ -1,0 +1,310 @@
+openapi: 3.0.3
+info:
+  title: Routing API
+  version: 1.0.0
+  description: Route optimization and GPS arrival detection for Feature 005
+
+paths:
+  /api/routing/routes:
+    post:
+      summary: Create and optimize route
+      operationId: createRoute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [jobs, assigned_to, route_date]
+              properties:
+                jobs:
+                  type: array
+                  items:
+                    type: object
+                    required: [job_id, location]
+                    properties:
+                      job_id:
+                        type: string
+                        format: uuid
+                      location:
+                        $ref: '#/components/schemas/Location'
+                      scheduled_arrival:
+                        type: string
+                        format: date-time
+                      estimated_duration_min:
+                        type: integer
+                assigned_to:
+                  type: string
+                  format: uuid
+                route_date:
+                  type: string
+                  format: date
+                optimization_params:
+                  $ref: '#/components/schemas/OptimizationParams'
+      responses:
+        '201':
+          description: Route created and optimized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteResponse'
+        '400':
+          description: Invalid request
+        '403':
+          description: Unauthorized
+
+  /api/routing/routes/{id}:
+    get:
+      summary: Get route details
+      operationId: getRoute
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Route details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteDetailResponse'
+        '404':
+          description: Route not found
+
+    patch:
+      summary: Update route waypoints
+      operationId: updateRoute
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                waypoints:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/WaypointUpdate'
+      responses:
+        '200':
+          description: Route updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteResponse'
+
+  /api/routing/routes/{id}/optimize:
+    post:
+      summary: Manually re-optimize route
+      operationId: optimizeRoute
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Route re-optimized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationResult'
+        '429':
+          description: Monthly optimization limit exceeded
+
+  /api/routing/arrival:
+    post:
+      summary: Confirm GPS arrival at waypoint
+      operationId: confirmArrival
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [waypoint_id, location]
+              properties:
+                waypoint_id:
+                  type: string
+                  format: uuid
+                location:
+                  $ref: '#/components/schemas/Location'
+                accuracy:
+                  type: number
+                  format: float
+      responses:
+        '200':
+          description: Arrival confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  confirmed:
+                    type: boolean
+                  time_entry_id:
+                    type: string
+                    format: uuid
+                  message:
+                    type: string
+
+components:
+  schemas:
+    Location:
+      type: object
+      required: [lat, lng]
+      properties:
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        address:
+          type: string
+
+    OptimizationParams:
+      type: object
+      properties:
+        criteria:
+          type: string
+          enum: [time, distance, balanced]
+          default: time
+        include_lunch:
+          type: boolean
+          default: true
+        lunch_time:
+          type: string
+          description: Preferred lunch time (e.g., "12:00")
+
+    RouteResponse:
+      type: object
+      properties:
+        route_id:
+          type: string
+          format: uuid
+        waypoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/Waypoint'
+        total_distance_km:
+          type: number
+          format: float
+        estimated_duration_min:
+          type: integer
+        estimated_finish:
+          type: string
+          format: date-time
+
+    RouteDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/RouteResponse'
+        - type: object
+          properties:
+            events:
+              type: array
+              items:
+                $ref: '#/components/schemas/RouteEvent'
+            optimizations:
+              type: array
+              items:
+                $ref: '#/components/schemas/OptimizationRecord'
+
+    Waypoint:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sequence_order:
+          type: integer
+        waypoint_type:
+          type: string
+          enum: [start, job, break, material_stop, equipment_swap, end]
+        job_id:
+          type: string
+          format: uuid
+        location:
+          $ref: '#/components/schemas/Location'
+        scheduled_arrival:
+          type: string
+          format: date-time
+        actual_arrival:
+          type: string
+          format: date-time
+        estimated_duration_min:
+          type: integer
+        skipped:
+          type: boolean
+
+    WaypointUpdate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sequence_order:
+          type: integer
+        skipped:
+          type: boolean
+        skip_reason:
+          type: string
+
+    RouteEvent:
+      type: object
+      properties:
+        event_type:
+          type: string
+          enum: [start, arrival, departure, re-optimization, delay, completion]
+        event_time:
+          type: string
+          format: date-time
+        location:
+          $ref: '#/components/schemas/Location'
+        metadata:
+          type: object
+
+    OptimizationRecord:
+      type: object
+      properties:
+        optimization_time:
+          type: string
+          format: date-time
+        trigger:
+          type: string
+          enum: [manual, job_added, job_removed, traffic_delay, emergency]
+        distance_saved_km:
+          type: number
+          format: float
+        time_saved_min:
+          type: integer
+
+    OptimizationResult:
+      type: object
+      properties:
+        route_id:
+          type: string
+          format: uuid
+        optimized:
+          type: boolean
+        waypoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/Waypoint'
+        distance_saved_km:
+          type: number
+          format: float
+        time_saved_min:
+          type: integer

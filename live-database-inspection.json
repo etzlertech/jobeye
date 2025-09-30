@@ -1,0 +1,228 @@
+{
+  "tables": [
+    "tenants",
+    "companies",
+    "users_extended",
+    "customers",
+    "properties",
+    "equipment",
+    "containers",
+    "jobs",
+    "job_templates",
+    "job_phases",
+    "job_tasks",
+    "kits",
+    "kit_items",
+    "kit_variants",
+    "inventory_items",
+    "inventory_transactions",
+    "container_assignments",
+    "material_catalog",
+    "purchase_receipts",
+    "training_data",
+    "irrigation_systems",
+    "irrigation_zones",
+    "voice_sessions",
+    "voice_transcripts",
+    "voice_commands",
+    "vision_verifications",
+    "vision_detected_items",
+    "vision_cost_records",
+    "media_assets",
+    "offline_queue"
+  ],
+  "tenancyAnalysis": {
+    "tenants": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "companies": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "users_extended": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "customers": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "properties": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "equipment": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "containers": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "jobs": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "job_templates": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "job_phases": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "job_tasks": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "kits": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "kit_items": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "kit_variants": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "inventory_items": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "inventory_transactions": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "container_assignments": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "material_catalog": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "purchase_receipts": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "training_data": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "irrigation_systems": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "irrigation_zones": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "voice_sessions": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "voice_transcripts": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "voice_commands": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "vision_verifications": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "vision_detected_items": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "vision_cost_records": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "media_assets": {
+      "tenant_id": true,
+      "company_id": true
+    },
+    "offline_queue": {
+      "tenant_id": true,
+      "company_id": true
+    }
+  },
+  "missingTenancy": [],
+  "foreignKeys": {
+    "jobs": [
+      {
+        "column": "tenant_id",
+        "references": "tenants"
+      }
+    ],
+    "containers": [
+      {
+        "column": "tenant_id",
+        "references": "tenants"
+      }
+    ],
+    "kits": [
+      {
+        "column": "tenant_id",
+        "references": "tenants"
+      }
+    ],
+    "vision_verifications": [
+      {
+        "column": "tenant_id",
+        "references": "tenants"
+      }
+    ],
+    "vision_detected_items": [
+      {
+        "column": "verification_id",
+        "references": "vision_verifications"
+      }
+    ],
+    "vision_cost_records": [
+      {
+        "column": "verification_id",
+        "references": "vision_verifications"
+      }
+    ]
+  },
+  "rlsStatus": {},
+  "tableSizes": {
+    "tenants": 22,
+    "companies": 5,
+    "users_extended": 3,
+    "customers": 17,
+    "properties": 11,
+    "equipment": 0,
+    "containers": 0,
+    "jobs": 19,
+    "job_templates": 0,
+    "job_phases": 0,
+    "job_tasks": 0,
+    "kits": 6,
+    "kit_items": 13,
+    "kit_variants": 2,
+    "inventory_items": 0,
+    "inventory_transactions": 0,
+    "container_assignments": 0,
+    "material_catalog": 0,
+    "purchase_receipts": 0,
+    "training_data": 0,
+    "irrigation_systems": 0,
+    "irrigation_zones": 0,
+    "voice_sessions": 0,
+    "voice_transcripts": 0,
+    "voice_commands": 0,
+    "vision_verifications": 0,
+    "vision_detected_items": 0,
+    "vision_cost_records": 0,
+    "media_assets": 0,
+    "offline_queue": 0
+  }
+}

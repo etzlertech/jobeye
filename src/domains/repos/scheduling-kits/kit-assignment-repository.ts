@@ -6,7 +6,7 @@ import {
 
 type KitAssignmentRow = {
   id: string;
-  company_id: string;
+  tenant_id: string;
   kit_id: string;
   variant_id: string | null;
   external_ref: string;
@@ -21,7 +21,7 @@ export class KitAssignmentRepository {
 
   async createAssignment(payload: CreateKitAssignmentInput): Promise<KitAssignment> {
     const insertPayload = {
-      company_id: payload.companyId,
+      tenant_id: payload.companyId,
       kit_id: payload.kitId,
       variant_id: payload.variantId ?? null,
       external_ref: payload.externalRef,
@@ -46,7 +46,7 @@ export class KitAssignmentRepository {
     const { data, error } = await this.supabase
       .from('kit_assignments')
       .select('id, company_id, kit_id, variant_id, external_ref, notes, metadata, created_at, updated_at')
-      .eq('company_id', companyId)
+      .eq('tenant_id', companyId)
       .eq('external_ref', externalRef)
       .maybeSingle();
 
@@ -64,7 +64,7 @@ export class KitAssignmentRepository {
   private mapRow(row: KitAssignmentRow): KitAssignment {
     return {
       id: row.id,
-      companyId: row.company_id,
+      companyId: row.tenant_id,
       kitId: row.kit_id,
       variantId: row.variant_id,
       externalRef: row.external_ref,

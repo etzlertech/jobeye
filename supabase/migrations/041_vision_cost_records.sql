@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS vision_cost_records (
 );
 
 -- Create indexes for cost queries and budget enforcement
-CREATE INDEX IF NOT EXISTS idx_vision_costs_company_date ON vision_cost_records(company_id, DATE(created_at));
+-- Note: Using created_at directly instead of DATE(created_at) to avoid IMMUTABLE function requirement
+CREATE INDEX IF NOT EXISTS idx_vision_costs_company_date ON vision_cost_records(company_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_vision_costs_verification ON vision_cost_records(verification_id);
 CREATE INDEX IF NOT EXISTS idx_vision_costs_provider ON vision_cost_records(provider, created_at);
 

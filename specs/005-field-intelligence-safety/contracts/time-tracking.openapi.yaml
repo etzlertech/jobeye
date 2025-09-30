@@ -1,0 +1,194 @@
+openapi: 3.0.3
+info:
+  title: Time Tracking API
+  version: 1.0.0
+  description: GPS-based time tracking with auto-detection for Feature 005
+
+paths:
+  /api/time/clock-in:
+    post:
+      summary: Clock in with GPS
+      operationId: clockIn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [location]
+              properties:
+                location:
+                  $ref: '#/components/schemas/Location'
+                job_id:
+                  type: string
+                  format: uuid
+                type:
+                  type: string
+                  enum: [job_work, travel, admin]
+                  default: job_work
+      responses:
+        '201':
+          description: Clocked in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeEntryResponse'
+        '409':
+          description: Already clocked in
+
+  /api/time/clock-out:
+    post:
+      summary: Clock out with GPS
+      operationId: clockOut
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [location]
+              properties:
+                location:
+                  $ref: '#/components/schemas/Location'
+                suggested_time:
+                  type: string
+                  format: date-time
+                  description: Used for forgot-to-clock-out scenarios
+      responses:
+        '200':
+          description: Clocked out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeEntryResponse'
+
+  /api/time/break:
+    post:
+      summary: Start or end break
+      operationId: manageBreak
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [start, end]
+      responses:
+        '200':
+          description: Break action completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeEntryResponse'
+
+  /api/time/summary:
+    get:
+      summary: Get daily hours summary
+      operationId: getDailySummary
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: user_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Daily summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailySummary'
+
+components:
+  schemas:
+    Location:
+      type: object
+      required: [lat, lng]
+      properties:
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        accuracy:
+          type: number
+          format: float
+
+    TimeEntryResponse:
+      type: object
+      properties:
+        time_entry_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [job_work, travel, break, admin, equipment_swap]
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        duration_minutes:
+          type: integer
+        start_location:
+          $ref: '#/components/schemas/Location'
+        end_location:
+          $ref: '#/components/schemas/Location'
+        auto_created:
+          type: boolean
+        flagged_for_review:
+          type: boolean
+        flag_reason:
+          type: string
+
+    DailySummary:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        total_hours:
+          type: number
+          format: float
+        breakdown:
+          type: object
+          properties:
+            job_work_hours:
+              type: number
+              format: float
+            travel_hours:
+              type: number
+              format: float
+            break_hours:
+              type: number
+              format: float
+            admin_hours:
+              type: number
+              format: float
+        jobs_worked:
+          type: array
+          items:
+            type: object
+            properties:
+              job_id:
+                type: string
+                format: uuid
+              duration_hours:
+                type: number
+                format: float
+        flagged_entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeEntryResponse'

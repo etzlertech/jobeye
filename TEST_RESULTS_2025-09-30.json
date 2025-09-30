@@ -1,0 +1,149 @@
+{
+  "results": [
+    {
+      "name": "kit_items.tenant_id",
+      "status": "PASS",
+      "message": "Column exists, 1 rows verified"
+    },
+    {
+      "name": "kit_items.company_id removed",
+      "status": "PASS",
+      "message": "Column successfully removed"
+    },
+    {
+      "name": "customers.company_id removed",
+      "status": "PASS",
+      "message": "Column successfully removed"
+    },
+    {
+      "name": "containers.tenant_id",
+      "status": "PASS",
+      "message": "Column accessible"
+    },
+    {
+      "name": "inventory_items.tenant_id",
+      "status": "PASS",
+      "message": "Column accessible"
+    },
+    {
+      "name": "vision_cost_records.tenant_id",
+      "status": "PASS",
+      "message": "Column accessible"
+    },
+    {
+      "name": "kits.tenant_id",
+      "status": "PASS",
+      "message": "Column accessible"
+    },
+    {
+      "name": "vision_detected_items table",
+      "status": "PASS",
+      "message": "Table exists"
+    },
+    {
+      "name": "src/domains/repos/scheduling-kits/kit-repository.ts - No company_id queries",
+      "status": "PASS",
+      "message": "No company_id in queries"
+    },
+    {
+      "name": "src/domains/repos/scheduling-kits/kit-repository.ts - Uses tenant_id",
+      "status": "PASS",
+      "message": "tenant_id found in code"
+    },
+    {
+      "name": "src/domains/repos/scheduling-kits/kit-variant-repository.ts - No company_id queries",
+      "status": "PASS",
+      "message": "No company_id in queries"
+    },
+    {
+      "name": "src/domains/repos/scheduling-kits/kit-variant-repository.ts - Uses tenant_id",
+      "status": "PASS",
+      "message": "tenant_id found in code"
+    },
+    {
+      "name": "src/domains/repos/scheduling-kits/kit-assignment-repository.ts - No company_id queries",
+      "status": "PASS",
+      "message": "No company_id in queries"
+    },
+    {
+      "name": "src/domains/repos/scheduling-kits/kit-assignment-repository.ts - Uses tenant_id",
+      "status": "PASS",
+      "message": "tenant_id found in code"
+    },
+    {
+      "name": "src/domains/repos/scheduling-kits/kit-override-log-repository.ts - No company_id queries",
+      "status": "PASS",
+      "message": "No company_id in queries"
+    },
+    {
+      "name": "src/domains/repos/scheduling-kits/kit-override-log-repository.ts - Uses tenant_id",
+      "status": "PASS",
+      "message": "tenant_id found in code"
+    },
+    {
+      "name": "src/domains/equipment/repositories/container-repository.ts - No company_id queries",
+      "status": "PASS",
+      "message": "No company_id in queries"
+    },
+    {
+      "name": "src/domains/equipment/repositories/container-repository.ts - Uses tenant_id",
+      "status": "PASS",
+      "message": "Uses tenant_id in queries"
+    },
+    {
+      "name": "jobs tenancy",
+      "status": "PASS",
+      "message": "Uses tenant_id only"
+    },
+    {
+      "name": "containers tenancy",
+      "status": "PASS",
+      "message": "Uses tenant_id only"
+    },
+    {
+      "name": "kits tenancy",
+      "status": "PASS",
+      "message": "Uses tenant_id only"
+    },
+    {
+      "name": "kit_items tenancy",
+      "status": "PASS",
+      "message": "Uses tenant_id only"
+    },
+    {
+      "name": "kit_variants tenancy",
+      "status": "PASS",
+      "message": "Uses tenant_id only"
+    },
+    {
+      "name": "inventory_items tenancy",
+      "status": "PASS",
+      "message": "Uses tenant_id only"
+    },
+    {
+      "name": "vision_verifications tenancy",
+      "status": "PASS",
+      "message": "Uses tenant_id only"
+    },
+    {
+      "name": "vision_cost_records tenancy",
+      "status": "PASS",
+      "message": "Uses tenant_id only"
+    },
+    {
+      "name": "properties tenancy",
+      "status": "PASS",
+      "message": "Uses tenant_id only"
+    },
+    {
+      "name": "equipment tenancy",
+      "status": "PASS",
+      "message": "Uses tenant_id only"
+    }
+  ],
+  "summary": {
+    "passed": 28,
+    "failed": 0,
+    "skipped": 0
+  }
+}

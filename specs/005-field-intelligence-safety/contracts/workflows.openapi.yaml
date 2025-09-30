@@ -1,0 +1,269 @@
+openapi: 3.0.3
+info:
+  title: Job Workflows API
+  version: 1.0.0
+  description: Job execution, task management, and completion workflows for Feature 005
+
+paths:
+  /api/workflows/tasks:
+    post:
+      summary: Create task via voice or OCR
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [job_id, created_from]
+              properties:
+                job_id:
+                  type: string
+                  format: uuid
+                created_from:
+                  type: string
+                  enum: [voice, ocr, manual]
+                voice_transcript_id:
+                  type: string
+                  format: uuid
+                ocr_image_id:
+                  type: string
+                  format: uuid
+                task_name:
+                  type: string
+                description:
+                  type: string
+                estimated_duration_min:
+                  type: integer
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+  /api/workflows/tasks/{id}:
+    patch:
+      summary: Update task status (complete/skip)
+      operationId: updateTask
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [in_progress, completed, skipped]
+                completion_method:
+                  type: string
+                  enum: [voice, photo, manual]
+                completion_photo_id:
+                  type: string
+                  format: uuid
+                skip_reason:
+                  type: string
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+  /api/workflows/completion:
+    post:
+      summary: Analyze completion photos with vision AI
+      operationId: analyzeCompletion
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [job_id, after_photos]
+              properties:
+                job_id:
+                  type: string
+                  format: uuid
+                after_photos:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  minItems: 3
+                before_photo_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: Quality analysis complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompletionAnalysis'
+
+  /api/workflows/instructions/{id}:
+    get:
+      summary: Get instruction document
+      operationId: getInstruction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Instruction document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstructionDocument'
+
+  /api/workflows/instructions/{id}/view:
+    post:
+      summary: Track instruction viewing
+      operationId: trackInstructionView
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [duration_seconds]
+              properties:
+                duration_seconds:
+                  type: integer
+                acknowledged:
+                  type: boolean
+      responses:
+        '200':
+          description: Viewing tracked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  viewed:
+                    type: boolean
+                  meets_requirement:
+                    type: boolean
+
+components:
+  schemas:
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        job_id:
+          type: string
+          format: uuid
+        task_name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [pending, in_progress, completed, skipped, blocked]
+        sequence_order:
+          type: integer
+        required:
+          type: boolean
+        depends_on_task_id:
+          type: string
+          format: uuid
+        estimated_duration_min:
+          type: integer
+        actual_duration_min:
+          type: integer
+        completion_method:
+          type: string
+          enum: [voice, photo, manual, auto]
+        created_from:
+          type: string
+          enum: [voice, ocr, template, manual]
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+
+    CompletionAnalysis:
+      type: object
+      properties:
+        quality_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        verified:
+          type: boolean
+        detected_items:
+          type: array
+          items:
+            type: string
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              description:
+                type: string
+              severity:
+                type: string
+                enum: [low, medium, high]
+        suggestions:
+          type: array
+          items:
+            type: string
+        requires_supervisor_review:
+          type: boolean
+        cost_usd:
+          type: number
+          format: float
+
+    InstructionDocument:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        document_type:
+          type: string
+          enum: [pdf, video, reference_image, sop]
+        media_url:
+          type: string
+          format: uri
+        required_viewing:
+          type: boolean
+        category:
+          type: string
+        min_watch_time_seconds:
+          type: integer

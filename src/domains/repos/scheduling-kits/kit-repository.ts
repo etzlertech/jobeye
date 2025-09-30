@@ -20,7 +20,7 @@ type KitItemRow = {
 
 type KitRow = {
   id: string;
-  company_id: string;
+  tenant_id: string;
   kit_code: string;
   name: string;
   is_active: boolean;
@@ -29,7 +29,7 @@ type KitRow = {
 };
 
 const KIT_SELECT =
-  'id, company_id, kit_code, name, is_active, metadata, kit_items ( id, item_type, quantity, unit, is_required, metadata )';
+  'id, tenant_id, kit_code, name, is_active, metadata, kit_items ( id, item_type, quantity, unit, is_required, metadata )';
 
 export class KitRepository {
   constructor(private readonly supabase: SupabaseClient) {}
@@ -38,7 +38,7 @@ export class KitRepository {
     const { data, error } = await this.supabase
       .from('kits')
       .select(KIT_SELECT)
-      .eq('company_id', companyId)
+      .eq('tenant_id', companyId)
       .order('kit_code', { ascending: true });
 
     if (error) {
@@ -52,7 +52,7 @@ export class KitRepository {
     const { data, error } = await this.supabase
       .from('kits')
       .select(KIT_SELECT)
-      .eq('company_id', companyId)
+      .eq('tenant_id', companyId)
       .eq('id', kitId)
       .maybeSingle();
 
@@ -71,7 +71,7 @@ export class KitRepository {
     const { data, error } = await this.supabase
       .from('kits')
       .select(KIT_SELECT)
-      .eq('company_id', companyId)
+      .eq('tenant_id', companyId)
       .eq('kit_code', kitCode)
       .eq('is_active', true)
       .maybeSingle();
@@ -89,7 +89,7 @@ export class KitRepository {
 
   async createKit(input: CreateKitInput, companyId: string): Promise<KitDetail> {
     const kitInsert = {
-      company_id: companyId,
+      tenant_id: companyId,
       kit_code: input.kitCode,
       name: input.name,
       is_active: input.isActive ?? true,
@@ -128,7 +128,7 @@ export class KitRepository {
 
   private buildItemPayloads(items: KitItemInput[], companyId: string, kitId: string) {
     return items.map((item) => ({
-      company_id: companyId,
+      tenant_id: companyId,
       kit_id: kitId,
       item_type: item.itemType,
       quantity: item.quantity,
@@ -141,7 +141,7 @@ export class KitRepository {
   private mapKitRowToDetail(row: KitRow): KitDetail {
     return {
       id: row.id,
-      companyId: row.company_id,
+      companyId: row.tenant_id,
       kitCode: row.kit_code,
       name: row.name,
       isActive: row.is_active,
