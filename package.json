@@ -73,6 +73,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.65.0",
+    "@deepgram/sdk": "^4.11.2",
     "@mapbox/mapbox-sdk": "^0.16.2",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.43.0",
@@ -92,8 +93,10 @@
     "postgres": "^3.4.7",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
+    "speaker": "^0.5.5",
     "twilio": "^5.10.1",
     "typescript": "^5.4.0",
+    "wav": "^1.0.2",
     "workbox-core": "^7.3.0",
     "zod": "^3.23.8"
   },

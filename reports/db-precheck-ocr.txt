@@ -1,6 +1,6 @@
 # OCR Migration Preflight Report
 
-Timestamp: 2025-09-29T20:01:18.236Z
+Timestamp: 2025-09-30T02:02:44.573Z
 Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
 
 ## Issues Detected
