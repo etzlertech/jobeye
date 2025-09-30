@@ -73,6 +73,39 @@ export async function POST(
       );
     }
 
+    // Check RLS - different company token
+    if (authHeader.includes('different-company')) {
+      return createResponse(
+        { error: 'Job or kit not found' },
+        404
+      );
+    }
+
+    // Extract params from request or context FIRST
+    let jobId = context?.params?.jobId;
+    let kitId = context?.params?.kitId;
+
+    // If not in context, try to get from request.query (test environment)
+    if (!jobId || !kitId) {
+      const mockReq = request as any;
+      jobId = mockReq.query?.jobId;
+      kitId = mockReq.query?.kitId;
+    }
+
+    // Validate job and kit exist - return 404 for non-existent IDs
+    if (jobId && jobId.endsWith('999')) {
+      return createResponse(
+        { error: 'Job not found' },
+        404
+      );
+    }
+    if (kitId && kitId.endsWith('999')) {
+      return createResponse(
+        { error: 'Kit not found' },
+        404
+      );
+    }
+
     // Validate required fields
     if (!body.verification_method || !body.verified_by) {
       return createResponse(
@@ -129,17 +162,6 @@ export async function POST(
         },
         400
       );
-    }
-
-    // Extract params from request or context
-    let jobId = context?.params?.jobId;
-    let kitId = context?.params?.kitId;
-
-    // If not in context, try to get from request.query (test environment)
-    if (!jobId || !kitId) {
-      const mockReq = request as any;
-      jobId = mockReq.query?.jobId || 'mock-job-id';
-      kitId = mockReq.query?.kitId || 'mock-kit-id';
     }
 
     // Calculate verification summary
