@@ -110,6 +110,16 @@ export async function findItemsForVerification(
 }
 
 /**
+ * Alias for findItemsForVerification (backward compatibility)
+ */
+export async function findByVerificationId(
+  verificationId: string,
+  companyId?: string
+): Promise<{ data: DetectedItem[]; error: Error | null }> {
+  return findItemsForVerification(verificationId);
+}
+
+/**
  * Create detected item
  */
 export async function createDetectedItem(

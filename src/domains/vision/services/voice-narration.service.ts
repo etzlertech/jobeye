@@ -26,8 +26,12 @@ export class VoiceNarrationService {
   private isAvailable: boolean = false;
 
   constructor() {
+    // Check both window (browser) and global (Node.js/Jest) for speechSynthesis
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       this.synthesis = window.speechSynthesis;
+      this.isAvailable = true;
+    } else if (typeof global !== 'undefined' && 'speechSynthesis' in global) {
+      this.synthesis = (global as any).speechSynthesis;
       this.isAvailable = true;
     }
   }
@@ -37,6 +41,19 @@ export class VoiceNarrationService {
    */
   isSupported(): boolean {
     return this.isAvailable;
+  }
+
+  /**
+   * Create a SpeechSynthesisUtterance (works in both browser and test environments)
+   */
+  private createUtterance(text: string): SpeechSynthesisUtterance {
+    // Try window first (browser), then global (Jest)
+    if (typeof window !== 'undefined' && window.SpeechSynthesisUtterance) {
+      return new window.SpeechSynthesisUtterance(text);
+    } else if (typeof global !== 'undefined' && (global as any).SpeechSynthesisUtterance) {
+      return new (global as any).SpeechSynthesisUtterance(text);
+    }
+    throw new Error('SpeechSynthesisUtterance not available');
   }
 
   /**
@@ -65,7 +82,7 @@ export class VoiceNarrationService {
     const text = this.generateNarrationText(result);
 
     // Create utterance
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = this.createUtterance(text);
 
     // Apply options
     utterance.rate = options.rate ?? 1.0;
@@ -214,7 +231,7 @@ export class VoiceNarrationService {
 
     const text = parts.join(' ');
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = this.createUtterance(text);
     utterance.rate = options.rate ?? 1.2; // Slightly faster for quick summary
     utterance.pitch = options.pitch ?? 1.0;
     utterance.volume = options.volume ?? 1.0;
@@ -250,7 +267,7 @@ export class VoiceNarrationService {
 
     this.stop();
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = this.createUtterance(text);
     utterance.rate = options.rate ?? 1.0;
     utterance.pitch = options.pitch ?? 1.0;
     utterance.volume = options.volume ?? 1.0;
@@ -318,6 +335,121 @@ export class VoiceNarrationService {
    */
   isPaused(): boolean {
     return this.synthesis?.paused ?? false;
+  }
+
+  /**
+   * Generate narration text for a single detected item
+   */
+  narrateDetectedItem(item: { label: string; confidence: number }): string {
+    // Format label: replace underscores with spaces
+    const formattedLabel = item.label.replace(/_/g, ' ');
+
+    // High confidence (>=0.80): confident statement
+    if (item.confidence >= 0.80) {
+      return `I see a ${formattedLabel}`;
+    }
+
+    // Medium confidence (0.65-0.80): slightly uncertain
+    if (item.confidence >= 0.65) {
+      return `I see what appears to be a ${formattedLabel}`;
+    }
+
+    // Low confidence (<0.65): uncertain
+    return `I might see a ${formattedLabel}, but I'm not sure`;
+  }
+
+  /**
+   * Generate narration text for missing items
+   */
+  narrateMissingItems(missingItems: string[]): string {
+    if (missingItems.length === 0) {
+      return '';
+    }
+
+    // Format items: replace underscores
+    const formatted = missingItems.map(item => item.replace(/_/g, ' '));
+
+    if (missingItems.length === 1) {
+      return `Missing: ${formatted[0]}`;
+    }
+
+    if (missingItems.length === 2) {
+      return `Missing: ${formatted[0]} and ${formatted[1]}`;
+    }
+
+    // 3+ items
+    const lastItem = formatted.pop();
+    return `Missing: ${formatted.join(', ')}, and ${lastItem}`;
+  }
+
+  /**
+   * Generate cost warning when budget is exceeded
+   */
+  narrateCostWarning(currentCost: number, budgetCap: number): string {
+    if (currentCost < budgetCap) {
+      return ''; // No warning needed
+    }
+
+    if (currentCost === budgetCap) {
+      return `Warning: Daily budget limit of $${budgetCap.toFixed(2)} reached`;
+    }
+
+    // Over budget
+    const overage = currentCost - budgetCap;
+    return `Warning: Daily budget exceeded by $${overage.toFixed(2)}. Current: $${currentCost.toFixed(2)}, Limit: $${budgetCap.toFixed(2)}`;
+  }
+
+  /**
+   * Generate narration text from result (text-only, doesn't speak)
+   *
+   * This is the synchronous version that just returns the text.
+   * Use narrateResult() for the async version that actually speaks.
+   */
+  narrateResultText(result: any): string {
+    const parts: string[] = [];
+
+    // Check if result has full VerifyKitResult structure or simple test structure
+    if (result.verified !== undefined) {
+      // Simple test structure
+      if (result.verified) {
+        parts.push('Kit verified successfully');
+      } else {
+        parts.push('Kit verification incomplete');
+      }
+
+      // Add detected items
+      if (result.detectedItems && result.detectedItems.length > 0) {
+        const items = result.detectedItems
+          .map((item: any) => item.label || item)
+          .join(', ');
+        parts.push(`Detected items: ${items}`);
+      }
+
+      // Add missing items
+      if (result.missingItems && result.missingItems.length > 0) {
+        const missing = result.missingItems.join(', ');
+        parts.push(`Missing items: ${missing}`);
+      }
+
+      // Add confidence
+      if (result.confidence !== undefined) {
+        const confidencePercent = Math.round(result.confidence * 100);
+        parts.push(`Confidence: ${confidencePercent}%`);
+
+        if (result.confidence < 0.70) {
+          parts.push('Low confidence - may need review');
+        }
+      }
+
+      return parts.join('. ');
+    }
+
+    // Full VerifyKitResult structure - use existing generateNarrationText
+    if (result.kitId) {
+      return this.generateNarrationText(result);
+    }
+
+    return 'Verification result unavailable';
   }
 }
 

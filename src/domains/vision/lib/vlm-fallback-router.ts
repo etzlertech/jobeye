@@ -250,3 +250,144 @@ export function requiresUserApproval(estimatedCostUsd: number, remainingBudget: 
 
   return { required: false };
 }
+
+/**
+ * VLM Fallback Router Class
+ * Determines when to fallback from YOLO to cloud VLM
+ */
+export class VLMFallbackRouter {
+  constructor(private costEstimator: any) {}
+
+  /**
+   * Determine if should fallback to VLM based on detections
+   */
+  shouldFallback(
+    detections: Array<{ label: string; confidence: number; boundingBox: any }>,
+    options: {
+      threshold?: number;
+      maxObjects?: number;
+      expectedItems?: string[];
+      caseInsensitive?: boolean;
+      fuzzyMatch?: boolean;
+      currentSpend?: number;
+      dailyBudget?: number;
+      estimateOnly?: boolean;
+    } = {}
+  ): {
+    shouldFallback: boolean;
+    reason?: string;
+    reasons?: string[];
+    lowConfidenceItems?: string[];
+    missingItems?: string[];
+    objectCount?: number;
+    budgetExceeded?: boolean;
+    estimatedCost?: number;
+  } {
+    const {
+      threshold = 0.70,
+      maxObjects = 20,
+      expectedItems = [],
+      caseInsensitive = false,
+      fuzzyMatch = false,
+      currentSpend = 0,
+      dailyBudget = 10.00,
+      estimateOnly = false
+    } = options;
+
+    const result: any = {
+      shouldFallback: false,
+      reasons: [],
+      budgetExceeded: false // Explicitly track budget status
+    };
+
+    // 1. Check budget first (blocking condition)
+    if (currentSpend >= dailyBudget) {
+      result.budgetExceeded = true;
+      result.shouldFallback = false; // Can't use VLM if over budget
+      return result;
+    }
+
+    // 2. Check confidence threshold
+    const lowConfItems = detections.filter(d => d.confidence < threshold);
+    if (lowConfItems.length > 0) {
+      result.reasons.push('low_confidence');
+      result.lowConfidenceItems = lowConfItems.map(d => d.label);
+      result.shouldFallback = true;
+    }
+
+    // 3. Check object count
+    if (detections.length > maxObjects) {
+      result.reasons.push('too_many_objects');
+      result.objectCount = detections.length;
+      result.shouldFallback = true;
+    }
+
+    // 4. Check expected items
+    if (expectedItems.length > 0) {
+      const detectedLabels = detections.map(d => d.label);
+      const missing: string[] = [];
+
+      for (const expected of expectedItems) {
+        let found = false;
+
+        for (const detected of detectedLabels) {
+          if (this.matchesLabel(detected, expected, { caseInsensitive, fuzzyMatch })) {
+            found = true;
+            break;
+          }
+        }
+
+        if (!found) {
+          missing.push(expected);
+        }
+      }
+
+      if (missing.length > 0) {
+        result.reasons.push('missing_expected');
+        result.missingItems = missing;
+        result.shouldFallback = true;
+      }
+    }
+
+    // 5. Set primary reason (first one)
+    if (result.reasons.length > 0) {
+      result.reason = result.reasons[0];
+    }
+
+    // 6. Estimate cost
+    if (result.shouldFallback || estimateOnly) {
+      result.estimatedCost = this.estimateCost();
+    }
+
+    return result;
+  }
+
+  private matchesLabel(
+    detected: string,
+    expected: string,
+    options: { caseInsensitive?: boolean; fuzzyMatch?: boolean }
+  ): boolean {
+    let d = detected;
+    let e = expected;
+
+    if (options.caseInsensitive) {
+      d = d.toLowerCase();
+      e = e.toLowerCase();
+    }
+
+    // Exact match
+    if (d === e) return true;
+
+    // Fuzzy match (contains)
+    if (options.fuzzyMatch) {
+      return d.includes(e) || e.includes(d);
+    }
+
+    return false;
+  }
+
+  private estimateCost(): number {
+    // OpenAI GPT-4 Vision pricing
+    return 0.10; // $0.10 per image
+  }
+}
