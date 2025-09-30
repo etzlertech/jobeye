@@ -10,7 +10,7 @@ export class KitOverrideLogRepository {
 
   async createOverride(payload: CreateKitOverrideLogInput): Promise<KitOverrideLogRow> {
     const insertPayload = {
-      company_id: payload.companyId,
+      tenant_id: payload.companyId,
       assignment_id: payload.assignmentId,
       item_id: payload.itemId ?? null,
       reason: payload.reason,
