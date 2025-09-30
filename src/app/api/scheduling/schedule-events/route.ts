@@ -104,22 +104,50 @@ export async function POST(request: Request) {
     // Validate event type
     const validEventTypes = ['job', 'break', 'travel', 'maintenance', 'meeting'];
     if (!validEventTypes.includes(event_type)) {
-      return createResponse({ 
-        error: `Invalid event_type. Must be one of: ${validEventTypes.join(', ')}` 
+      return createResponse({
+        error: `Invalid event_type. Must be one of: ${validEventTypes.join(', ')}`
       }, 400);
     }
 
-    // Job events should have job_id in production, but allow null for testing
-    // In production, you would enforce this or create the job first
-    // if (event_type === 'job' && !job_id) {
-    //   return createResponse({
-    //     error: 'job_id is required for job events'
-    //   }, 400);
-    // }
+    // Job events must have job_id
+    if (event_type === 'job' && !job_id) {
+      return createResponse({
+        error: 'job_id is required for job events'
+      }, 400);
+    }
 
     try {
       // Try to use real database
       const supabase = await createClient();
+
+      // Check for event conflicts (overlapping time slots)
+      if (scheduled_start && scheduled_duration_minutes) {
+        const eventStart = new Date(scheduled_start);
+        const eventEnd = new Date(eventStart.getTime() + scheduled_duration_minutes * 60000);
+
+        // Query existing events for this day plan
+        const { data: existingEvents, error: queryError } = await supabase
+          .from('schedule_events')
+          .select('scheduled_start, scheduled_duration_minutes')
+          .eq('day_plan_id', day_plan_id);
+
+        if (queryError) {
+          console.error('Error checking for conflicts:', queryError);
+        } else if (existingEvents && existingEvents.length > 0) {
+          // Check for overlaps
+          for (const existing of existingEvents) {
+            const existingStart = new Date(existing.scheduled_start);
+            const existingEnd = new Date(existingStart.getTime() + (existing.scheduled_duration_minutes || 0) * 60000);
+
+            // Check if intervals overlap
+            if (eventStart < existingEnd && eventEnd > existingStart) {
+              return createResponse({
+                error: 'Event conflict: time slot overlaps with existing event'
+              }, 409);
+            }
+          }
+        }
+      }
 
       // Check 6-job limit for job events
       if (event_type === 'job') {
