@@ -20,6 +20,13 @@
    - Never assume tables exist from migration files
    - Check actual schema state first
 
+   **CRITICAL: To execute SQL migrations on Supabase:**
+   - ❌ `psql` command is NOT available
+   - ❌ `npx supabase db push` will FAIL with connection errors
+   - ✅ USE: Create TypeScript script with `client.rpc('exec_sql', { sql })`
+   - See `scripts/fix-rls-policies.ts` and `scripts/apply-job-limit-trigger.ts` for working examples
+   - This is the ONLY reliable method to modify hosted Supabase databases
+
 4. **FOR FILE OPERATIONS:**
    - Use Write tool, not complex shell heredocs
    - Keep it simple - avoid cross-shell compatibility issues

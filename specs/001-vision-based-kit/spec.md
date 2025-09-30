@@ -5,36 +5,6 @@
 **Status**: Draft
 **Input**: User description: "Vision-based kit verification with hybrid YOLO + VLM pipeline for single-photo load verification, offline-capable detection, and container-aware tracking"
 
-## Execution Flow (main)
-```
-1. Parse user description from Input ✓
-   → Actors: Field technicians, supervisors
-   → Actions: Photo capture, automated detection, verification
-   → Data: Vision results, container contents, kit definitions
-   → Constraints: Offline capability, cost optimization
-2. Extract key concepts from description ✓
-   → Hybrid detection (local + cloud fallback)
-   → Single-photo verification workflow
-   → Container-aware item tracking
-3. For each unclear aspect:
-   → Marked with [NEEDS CLARIFICATION] below
-4. Fill User Scenarios & Testing section ✓
-5. Generate Functional Requirements ✓
-6. Identify Key Entities ✓
-7. Run Review Checklist ✓
-   → WARN: 8 clarifications needed before planning
-8. Return: SUCCESS (spec ready for clarification and planning)
-```
-
----
-
-## ⚡ Quick Guidelines
-- ✅ Focus on WHAT users need and WHY
-- ❌ Avoid HOW to implement (no tech stack, APIs, code structure)
-- 👥 Written for business stakeholders, not developers
-
----
-
 ## Clarifications
 
 ### Session 2025-09-29
@@ -48,7 +18,7 @@
 
 ---
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing
 
 ### Primary User Story
 A field technician preparing for the day's jobs needs to verify they have loaded all required equipment and materials for their assigned kit. Instead of manually checking each item against a paper checklist (which takes 5-10 minutes and is error-prone), they open the mobile app, point their camera at the loaded truck bed, and take a single photo. The system automatically identifies all visible items, compares them against the required kit definition, and confirms whether the load is complete or highlights missing items. This verification happens instantly even without internet connectivity, with results saved for supervisor review.
@@ -75,7 +45,7 @@ A field technician preparing for the day's jobs needs to verify they have loaded
 - When offline detection fails and there's no connectivity for cloud fallback, technician can proceed with warning and system flags for supervisor review
 - How does the system handle items that are partially visible or stacked on top of each other?
 
-## Requirements *(mandatory)*
+## Requirements
 
 ### Functional Requirements
 
@@ -84,7 +54,7 @@ A field technician preparing for the day's jobs needs to verify they have loaded
 - **FR-002**: System MUST automatically detect and identify equipment/materials visible in verification photos
 - **FR-003**: System MUST compare detected items against the assigned kit definition for that job/day
 - **FR-004**: System MUST display clear visual feedback showing which required items are present and which are missing
-- **FR-005**: System MUST complete verification and display results within [NEEDS CLARIFICATION: acceptable time limit - 30 seconds? 1 minute?] of photo capture
+- **FR-005**: System MUST complete verification and display results within 30 seconds of photo capture
 
 #### Offline Operation
 - **FR-006**: System MUST perform item detection locally on the device without requiring internet connectivity
@@ -120,23 +90,23 @@ A field technician preparing for the day's jobs needs to verify they have loaded
 #### Integration
 - **FR-027**: System MUST integrate with existing kit definitions from the scheduling system (Feature 003)
 - **FR-028**: System MUST update kit verification status in job records
-- **FR-029**: System MUST trigger supervisor notifications when kits are verified incomplete [NEEDS CLARIFICATION: notification method and timing not specified]
+- **FR-029**: System MUST trigger supervisor notifications when kits are verified incomplete using existing notification system from Feature 003
 
 ### Performance Requirements
 - **PR-001**: Local detection MUST complete within 3 seconds on target mobile devices
 - **PR-002**: System MUST capture and process verification photos at 1 frame per second, continuing until user intent and all required objects are detected
 - **PR-003**: Offline photo queue MUST support at least 50 photos before requiring sync
-- **PR-004**: Cloud analysis (when needed) MUST complete within [NEEDS CLARIFICATION: timeout threshold - 5 seconds? 10 seconds?]
+- **PR-004**: Cloud analysis (when needed) MUST complete within 10 seconds
 
 ### Data & Privacy Requirements
 - **DR-001**: System MUST encrypt verification photos stored locally on devices
 - **DR-002**: System MUST automatically delete verification photos after 1 year retention period
 - **DR-003**: System MUST support manual deletion of verification data per GDPR/privacy requirements before the 1 year expiration
-- **DR-004**: System MUST restrict access to verification photos based on [NEEDS CLARIFICATION: access control rules not specified]
+- **DR-004**: System MUST restrict access to verification photos based on company-level RLS policies, with supervisors able to view all company photos and technicians able to view only their own
 
-### Key Entities *(include if feature involves data)*
+### Key Entities
 
-- **Vision Verification Record**: Represents a single verification attempt. Contains technician ID, kit ID, timestamp, photo reference, detected items list, confidence scores, verification result (complete/incomplete), and processing method used (local/cloud). Links to job and container records.
+- **Vision Verification Record**: Represents a single verification attempt. Contains technician ID, kit ID, timestamp, photo reference (Supabase Storage), detected items list, confidence scores, verification result (complete/incomplete), and processing method used (local/cloud). Links to job and container records.
 
 - **Detected Item**: Represents an item identified in a verification photo. Contains item type, confidence score, bounding box coordinates, associated container, and match status against expected kit items.
 
@@ -148,54 +118,7 @@ A field technician preparing for the day's jobs needs to verify they have loaded
 
 ---
 
-## Review & Acceptance Checklist
-*GATE: Automated checks run during main() execution*
+## Dependencies
 
-### Content Quality
-- [x] No implementation details (languages, frameworks, APIs)
-- [x] Focused on user value and business needs
-- [x] Written for non-technical stakeholders
-- [x] All mandatory sections completed
-
-### Requirement Completeness
-- [ ] **No [NEEDS CLARIFICATION] markers remain** - 8 clarifications needed
-- [x] Requirements are testable and unambiguous (where specified)
-- [ ] Success criteria are measurable - need performance targets
-- [x] Scope is clearly bounded
-- [x] Dependencies and assumptions identified (Feature 003 integration)
-
----
-
-## Execution Status
-*Updated by main() during processing*
-
-- [x] User description parsed
-- [x] Key concepts extracted
-- [x] Ambiguities marked (8 clarifications needed)
-- [x] User scenarios defined
-- [x] Requirements generated
-- [x] Entities identified
-- [ ] Review checklist passed - **BLOCKED on clarifications**
-
----
-
-## Next Steps
-
-Before proceeding to `/plan`:
-
-1. **Resolve 8 NEEDS CLARIFICATION items**:
-   - Acceptable verification time limit
-   - Confidence threshold for cloud fallback
-   - Budget caps for cloud analysis
-   - Fallback behavior when all detection fails
-   - Notification method for incomplete kits
-   - Local detection time target
-   - Photo capture frame rate
-   - Offline queue capacity
-   - Cloud analysis timeout
-   - Photo retention policy
-   - Access control rules for photos
-
-2. **Run `/clarify`** command to systematically resolve uncertainties
-
-3. **Once clarified**, proceed to `/plan` for technical design
+- **Feature 003 (Scheduling & Kits)**: Provides kit definitions, kit assignments, and notification system
+- **Existing Infrastructure**: PWA foundation, offline sync, RLS policies, Supabase Storage buckets
