@@ -1,0 +1,179 @@
+openapi: 3.0.3
+info:
+  title: Safety Checklists API
+  version: 1.0.0
+  description: Photo-verified safety checklists with vision AI for Feature 005
+
+paths:
+  /api/safety/checklists:
+    get:
+      summary: List applicable safety checklists
+      operationId: listChecklists
+      parameters:
+        - name: job_type
+          in: query
+          schema:
+            type: string
+        - name: equipment_type
+          in: query
+          schema:
+            type: string
+        - name: active_only
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: List of checklists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checklists:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SafetyChecklist'
+
+  /api/safety/checklists/{id}:
+    get:
+      summary: Get checklist with items
+      operationId: getChecklist
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Checklist details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafetyChecklist'
+
+  /api/safety/completions:
+    post:
+      summary: Submit completed safety checklist
+      operationId: submitCompletion
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [checklist_id, items_completed]
+              properties:
+                checklist_id:
+                  type: string
+                  format: uuid
+                job_id:
+                  type: string
+                  format: uuid
+                items_completed:
+                  type: string
+                  description: JSON array of completed items
+                photos:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                location:
+                  type: string
+                  description: JSON object {lat, lng}
+                signature:
+                  type: string
+                  format: binary
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Completion submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompletionResponse'
+
+components:
+  schemas:
+    SafetyChecklist:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        required_for:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [job_type, equipment_type]
+              value:
+                type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChecklistItem'
+        frequency:
+          type: string
+          enum: [per-job, daily, weekly, monthly]
+        active:
+          type: boolean
+
+    ChecklistItem:
+      type: object
+      properties:
+        id:
+          type: string
+        task:
+          type: string
+        type:
+          type: string
+          enum: [binary, photo, numeric, text]
+        photo_required:
+          type: boolean
+        critical:
+          type: boolean
+        sequence:
+          type: integer
+
+    CompletionResponse:
+      type: object
+      properties:
+        completion_id:
+          type: string
+          format: uuid
+        verification_results:
+          type: array
+          items:
+            type: object
+            properties:
+              item_id:
+                type: string
+              verified:
+                type: boolean
+              confidence:
+                type: number
+                format: float
+              method:
+                type: string
+                enum: [yolo, vlm, manual]
+              cost_usd:
+                type: number
+                format: float
+        pdf_url:
+          type: string
+          format: uri
+        passed:
+          type: boolean
+        message:
+          type: string

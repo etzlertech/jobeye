@@ -1,0 +1,221 @@
+openapi: 3.0.3
+info:
+  title: Smart Intake API
+  version: 1.0.0
+  description: OCR and VLM-based customer/vendor/property intake for Feature 005
+
+paths:
+  /api/intake/sessions:
+    post:
+      summary: Create intake session and extract data
+      operationId: createIntakeSession
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [session_type, photo]
+              properties:
+                session_type:
+                  type: string
+                  enum: [business_card, property, vehicle, signage]
+                photo:
+                  type: string
+                  format: binary
+                location:
+                  $ref: '#/components/schemas/Location'
+                context:
+                  type: object
+                  properties:
+                    job_id:
+                      type: string
+                      format: uuid
+                    property_id:
+                      type: string
+                      format: uuid
+      responses:
+        '201':
+          description: Session created, extraction complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntakeSessionResponse'
+        '400':
+          description: Invalid request
+        '413':
+          description: Photo too large
+
+  /api/intake/candidates:
+    get:
+      summary: List pending intake candidates
+      operationId: listCandidates
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, duplicate]
+        - name: candidate_type
+          in: query
+          schema:
+            type: string
+            enum: [customer_contact, vendor_contact, property_owner, property]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: List of candidates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  candidates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Candidate'
+                  total:
+                    type: integer
+
+  /api/intake/candidates/{id}/approve:
+    post:
+      summary: Approve or reject candidate
+      operationId: approveCandidate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [approve, reject]
+                rejection_reason:
+                  type: string
+                edited_data:
+                  type: object
+      responses:
+        '200':
+          description: Candidate processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [approved, rejected]
+                  created_record_id:
+                    type: string
+                    format: uuid
+                  message:
+                    type: string
+
+components:
+  schemas:
+    Location:
+      type: object
+      required: [lat, lng]
+      properties:
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+
+    IntakeSessionResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        extraction:
+          $ref: '#/components/schemas/ExtractionResult'
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Candidate'
+
+    ExtractionResult:
+      type: object
+      properties:
+        extraction_id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          enum: [ocr, vlm, hybrid]
+        raw_text:
+          type: string
+        structured_data:
+          type: object
+        confidence_scores:
+          type: object
+          additionalProperties:
+            type: number
+            format: float
+        cost_usd:
+          type: number
+          format: float
+        processing_time_ms:
+          type: integer
+
+    Candidate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        candidate_type:
+          type: string
+          enum: [customer_contact, vendor_contact, property_owner, property]
+        extracted_data:
+          type: object
+        match_confidence:
+          type: number
+          format: float
+        similar_matches:
+          type: array
+          items:
+            $ref: '#/components/schemas/SimilarMatch'
+        status:
+          type: string
+          enum: [pending, approved, rejected, duplicate]
+        created_at:
+          type: string
+          format: date-time
+
+    SimilarMatch:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [customer, vendor, property]
+        name:
+          type: string
+        confidence:
+          type: number
+          format: float
+        distance_km:
+          type: number
+          format: float
+        last_interaction:
+          type: string
+          format: date-time
