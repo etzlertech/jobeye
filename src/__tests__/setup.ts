@@ -4,10 +4,22 @@
 
 import '@testing-library/jest-dom';
 import { TextEncoder, TextDecoder } from 'util';
+import { Request, Response, Headers } from 'node-fetch';
 
 // Polyfill for Node.js environment
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder as any;
+
+// Polyfill for Next.js web APIs
+if (!global.Request) {
+  global.Request = Request as any;
+}
+if (!global.Response) {
+  global.Response = Response as any;
+}
+if (!global.Headers) {
+  global.Headers = Headers as any;
+}
 
 // Mock environment variables (only if not already set)
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {

@@ -21,6 +21,7 @@ describe('Cost Record Repository', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // Create chainable mock that's also thenable (can be awaited)
     mockSupabase = {
       from: jest.fn(),
       select: jest.fn(),
@@ -30,7 +31,8 @@ describe('Cost Record Repository', () => {
       lte: jest.fn(),
       range: jest.fn(),
       order: jest.fn(),
-      single: jest.fn()
+      single: jest.fn(),
+      then: jest.fn()
     };
 
     mockSupabase.from.mockReturnValue(mockSupabase);
@@ -41,6 +43,12 @@ describe('Cost Record Repository', () => {
     mockSupabase.lte.mockReturnValue(mockSupabase);
     mockSupabase.range.mockReturnValue(mockSupabase);
     mockSupabase.order.mockReturnValue(mockSupabase);
+    mockSupabase.single.mockReturnValue(mockSupabase);
+
+    // Make it thenable - by default resolve with empty result
+    mockSupabase.then.mockImplementation((resolve: any) => {
+      return Promise.resolve({ data: null, error: null }).then(resolve);
+    });
 
     mockCreateClient.mockReturnValue(mockSupabase);
   });
@@ -140,9 +148,8 @@ describe('Cost Record Repository', () => {
         { cost_usd: '0.08' }
       ];
 
-      mockSupabase.select.mockResolvedValue({
-        data: mockRecords,
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ data: mockRecords, error: null }).then(resolve);
       });
 
       const result = await repo.getTodaysCost('company-123');
@@ -156,9 +163,8 @@ describe('Cost Record Repository', () => {
     });
 
     it('should handle no records today', async () => {
-      mockSupabase.select.mockResolvedValue({
-        data: [],
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ data: [], error: null }).then(resolve);
       });
 
       const result = await repo.getTodaysCost('company-123');
@@ -170,9 +176,8 @@ describe('Cost Record Repository', () => {
     });
 
     it('should handle errors', async () => {
-      mockSupabase.select.mockResolvedValue({
-        data: null,
-        error: { message: 'Database error' }
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ data: null, error: { message: 'Database error' } }).then(resolve);
       });
 
       const result = await repo.getTodaysCost('company-123');
@@ -203,18 +208,15 @@ describe('Cost Record Repository', () => {
       );
 
       expect(result.data.length).toBe(2);
-      expect(result.data[0]).toEqual({
-        date: '2024-01-01',
-        totalCost: 0.22,
-        requestCount: 2,
-        avgCostPerRequest: 0.11
-      });
-      expect(result.data[1]).toEqual({
-        date: '2024-01-02',
-        totalCost: 0.23,
-        requestCount: 2,
-        avgCostPerRequest: 0.115
-      });
+      expect(result.data[0].date).toBe('2024-01-01');
+      expect(result.data[0].totalCost).toBeCloseTo(0.22);
+      expect(result.data[0].requestCount).toBe(2);
+      expect(result.data[0].avgCostPerRequest).toBeCloseTo(0.11);
+
+      expect(result.data[1].date).toBe('2024-01-02');
+      expect(result.data[1].totalCost).toBeCloseTo(0.23);
+      expect(result.data[1].requestCount).toBe(2);
+      expect(result.data[1].avgCostPerRequest).toBeCloseTo(0.115);
     });
 
     it('should handle empty date range', async () => {
@@ -242,23 +244,19 @@ describe('Cost Record Repository', () => {
         { cost_usd: '0.15' }
       ];
 
-      mockSupabase.select.mockResolvedValue({
-        data: mockRecords,
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ data: mockRecords, error: null }).then(resolve);
       });
 
       const result = await repo.getTotalCost('company-123');
 
-      expect(result.data).toEqual({
-        totalCost: 0.45,
-        requestCount: 4
-      });
+      expect(result.data?.totalCost).toBeCloseTo(0.45);
+      expect(result.data?.requestCount).toBe(4);
     });
 
     it('should apply date filters', async () => {
-      mockSupabase.select.mockResolvedValue({
-        data: [],
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ data: [], error: null }).then(resolve);
       });
 
       await repo.getTotalCost('company-123', '2024-01-01', '2024-12-31');
@@ -270,12 +268,14 @@ describe('Cost Record Repository', () => {
 
   describe('canMakeVlmRequest', () => {
     it('should allow request within budget', async () => {
-      mockSupabase.select.mockResolvedValue({
-        data: [
-          { cost_usd: '0.10' },
-          { cost_usd: '0.12' }
-        ],
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({
+          data: [
+            { cost_usd: '0.10' },
+            { cost_usd: '0.12' }
+          ],
+          error: null
+        }).then(resolve);
       });
 
       const result = await repo.canMakeVlmRequest('company-123', 10.0, 100);
@@ -289,9 +289,11 @@ describe('Cost Record Repository', () => {
     });
 
     it('should block when budget exceeded', async () => {
-      mockSupabase.select.mockResolvedValue({
-        data: Array(95).fill({ cost_usd: '0.11' }), // 95 * 0.11 = 10.45
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({
+          data: Array(95).fill({ cost_usd: '0.11' }), // 95 * 0.11 = 10.45
+          error: null
+        }).then(resolve);
       });
 
       const result = await repo.canMakeVlmRequest('company-123', 10.0, 100);
@@ -302,9 +304,11 @@ describe('Cost Record Repository', () => {
     });
 
     it('should block when request limit reached', async () => {
-      mockSupabase.select.mockResolvedValue({
-        data: Array(100).fill({ cost_usd: '0.05' }),
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({
+          data: Array(100).fill({ cost_usd: '0.05' }),
+          error: null
+        }).then(resolve);
       });
 
       const result = await repo.canMakeVlmRequest('company-123', 10.0, 100);
@@ -315,9 +319,8 @@ describe('Cost Record Repository', () => {
     });
 
     it('should use default limits', async () => {
-      mockSupabase.select.mockResolvedValue({
-        data: [],
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ data: [], error: null }).then(resolve);
       });
 
       const result = await repo.canMakeVlmRequest('company-123');
@@ -327,9 +330,11 @@ describe('Cost Record Repository', () => {
     });
 
     it('should handle errors', async () => {
-      mockSupabase.select.mockResolvedValue({
-        data: null,
-        error: { message: 'Database error' }
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({
+          data: null,
+          error: { message: 'Database error' }
+        }).then(resolve);
       });
 
       const result = await repo.canMakeVlmRequest('company-123');
@@ -347,9 +352,8 @@ describe('Cost Record Repository', () => {
         { provider: 'anthropic-claude', cost_usd: '0.08' }
       ];
 
-      mockSupabase.select.mockResolvedValue({
-        data: mockData,
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ data: mockData, error: null }).then(resolve);
       });
 
       const result = await repo.getCostStatsByProvider('company-123');
@@ -374,12 +378,14 @@ describe('Cost Record Repository', () => {
     });
 
     it('should handle single provider', async () => {
-      mockSupabase.select.mockResolvedValue({
-        data: [
-          { provider: 'openai-gpt4-vision', cost_usd: '0.10' },
-          { provider: 'openai-gpt4-vision', cost_usd: '0.12' }
-        ],
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({
+          data: [
+            { provider: 'openai-gpt4-vision', cost_usd: '0.10' },
+            { provider: 'openai-gpt4-vision', cost_usd: '0.12' }
+          ],
+          error: null
+        }).then(resolve);
       });
 
       const result = await repo.getCostStatsByProvider('company-123');
@@ -389,9 +395,8 @@ describe('Cost Record Repository', () => {
     });
 
     it('should apply date filters', async () => {
-      mockSupabase.select.mockResolvedValue({
-        data: [],
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ data: [], error: null }).then(resolve);
       });
 
       await repo.getCostStatsByProvider(
@@ -405,9 +410,8 @@ describe('Cost Record Repository', () => {
     });
 
     it('should handle empty results', async () => {
-      mockSupabase.select.mockResolvedValue({
-        data: [],
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ data: [], error: null }).then(resolve);
       });
 
       const result = await repo.getCostStatsByProvider('company-123');

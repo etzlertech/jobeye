@@ -21,6 +21,7 @@ describe('Detected Item Repository', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // Create chainable mock that's also thenable (can be awaited)
     mockSupabase = {
       from: jest.fn(),
       select: jest.fn(),
@@ -31,7 +32,8 @@ describe('Detected Item Repository', () => {
       gte: jest.fn(),
       range: jest.fn(),
       order: jest.fn(),
-      single: jest.fn()
+      single: jest.fn(),
+      then: jest.fn()
     };
 
     mockSupabase.from.mockReturnValue(mockSupabase);
@@ -43,6 +45,12 @@ describe('Detected Item Repository', () => {
     mockSupabase.gte.mockReturnValue(mockSupabase);
     mockSupabase.range.mockReturnValue(mockSupabase);
     mockSupabase.order.mockReturnValue(mockSupabase);
+    mockSupabase.single.mockReturnValue(mockSupabase);
+
+    // Make it thenable - by default resolve with empty result
+    mockSupabase.then.mockImplementation((resolve: any) => {
+      return Promise.resolve({ data: null, error: null }).then(resolve);
+    });
 
     mockCreateClient.mockReturnValue(mockSupabase);
   });
@@ -249,8 +257,8 @@ describe('Detected Item Repository', () => {
 
   describe('deleteDetectedItem', () => {
     it('should delete single item', async () => {
-      mockSupabase.delete.mockResolvedValue({
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ error: null }).then(resolve);
       });
 
       const result = await repo.deleteDetectedItem('item-123');
@@ -262,8 +270,8 @@ describe('Detected Item Repository', () => {
 
   describe('deleteItemsForVerification', () => {
     it('should delete all items for verification', async () => {
-      mockSupabase.delete.mockResolvedValue({
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ error: null }).then(resolve);
       });
 
       const result = await repo.deleteItemsForVerification('verify-123');
@@ -345,9 +353,8 @@ describe('Detected Item Repository', () => {
     });
 
     it('should handle errors from findItemsForVerification', async () => {
-      mockSupabase.order.mockResolvedValue({
-        data: null,
-        error: { message: 'Database error' }
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ data: null, error: { message: 'Database error' } }).then(resolve);
       });
 
       const result = await repo.getItemStatsForVerification('verify-123');

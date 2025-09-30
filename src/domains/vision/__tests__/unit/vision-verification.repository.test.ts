@@ -21,7 +21,7 @@ describe('Vision Verification Repository', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Create chainable mock - must be declared before use
+    // Create chainable mock that's also thenable (can be awaited)
     mockSupabase = {
       from: jest.fn(),
       select: jest.fn(),
@@ -34,7 +34,8 @@ describe('Vision Verification Repository', () => {
       range: jest.fn(),
       order: jest.fn(),
       limit: jest.fn(),
-      single: jest.fn()
+      single: jest.fn(),
+      then: jest.fn()
     };
 
     // Set up return values to return the mock itself for chaining
@@ -49,6 +50,12 @@ describe('Vision Verification Repository', () => {
     mockSupabase.range.mockReturnValue(mockSupabase);
     mockSupabase.order.mockReturnValue(mockSupabase);
     mockSupabase.limit.mockReturnValue(mockSupabase);
+    mockSupabase.single.mockReturnValue(mockSupabase);
+
+    // Make it thenable - by default resolve with empty result
+    mockSupabase.then.mockImplementation((resolve: any) => {
+      return Promise.resolve({ data: null, error: null }).then(resolve);
+    });
 
     mockCreateClient.mockReturnValue(mockSupabase);
   });
@@ -223,8 +230,8 @@ describe('Vision Verification Repository', () => {
 
   describe('deleteVerification', () => {
     it('should delete verification record', async () => {
-      mockSupabase.delete.mockResolvedValue({
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ error: null }).then(resolve);
       });
 
       const result = await repo.deleteVerification('test-id');
@@ -235,8 +242,8 @@ describe('Vision Verification Repository', () => {
     });
 
     it('should handle delete errors', async () => {
-      mockSupabase.delete.mockResolvedValue({
-        error: { message: 'Not found' }
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ error: { message: 'Not found' } }).then(resolve);
       });
 
       const result = await repo.deleteVerification('nonexistent');
@@ -254,9 +261,8 @@ describe('Vision Verification Repository', () => {
         { verification_result: 'failed', processing_method: 'cloud_vlm', confidence_score: 0.50 }
       ];
 
-      mockSupabase.select.mockResolvedValue({
-        data: mockData,
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ data: mockData, error: null }).then(resolve);
       });
 
       const result = await repo.getVerificationStats('company-123');
@@ -273,9 +279,8 @@ describe('Vision Verification Repository', () => {
     });
 
     it('should handle empty results', async () => {
-      mockSupabase.select.mockResolvedValue({
-        data: [],
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ data: [], error: null }).then(resolve);
       });
 
       const result = await repo.getVerificationStats('company-123');
@@ -292,9 +297,8 @@ describe('Vision Verification Repository', () => {
     });
 
     it('should apply date filters', async () => {
-      mockSupabase.select.mockResolvedValue({
-        data: [],
-        error: null
+      mockSupabase.then.mockImplementation((resolve: any) => {
+        return Promise.resolve({ data: [], error: null }).then(resolve);
       });
 
       await repo.getVerificationStats(

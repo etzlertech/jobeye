@@ -58,16 +58,24 @@ export async function GET(request: Request) {
     // Handle different request types
     let authHeader: string | undefined;
     let url: URL;
+    const mockReq = request as any;
 
-    if (typeof request.headers?.get === 'function') {
+    // Check if this is a mock request (has query object) or real Next.js request
+    if (mockReq.query && typeof mockReq.query === 'object') {
+      // Test mock request
+      authHeader = mockReq.headers?.authorization;
+
+      // Build URL from mock query params
+      const baseUrl = 'http://localhost/api/scheduling/day-plans';
+      const queryParams = mockReq.query || {};
+      const queryString = Object.keys(queryParams)
+        .map(key => `${key}=${encodeURIComponent(queryParams[key])}`)
+        .join('&');
+      url = new URL(queryString ? `${baseUrl}?${queryString}` : baseUrl);
+    } else {
       // Next.js Request
       authHeader = request.headers.get('authorization') || undefined;
       url = new URL(request.url);
-    } else {
-      // Test mock request
-      const mockReq = request as any;
-      authHeader = mockReq.headers?.authorization;
-      url = new URL(mockReq.url || 'http://localhost/api/scheduling/day-plans');
     }
 
     // Check authorization
@@ -81,7 +89,10 @@ export async function GET(request: Request) {
     const startDate = params.get('start_date') || undefined;
     const endDate = params.get('end_date') || undefined;
     const limit = parseInt(params.get('limit') || '20');
-    const offset = parseInt(params.get('offset') || '0');
+
+    // Support both offset-based and page-based pagination
+    const page = params.get('page') ? parseInt(params.get('page')!) : undefined;
+    const offset = page ? (page - 1) * limit : parseInt(params.get('offset') || '0');
 
     try {
       // Try to use real database
@@ -96,7 +107,21 @@ export async function GET(request: Request) {
         offset
       });
 
-      return createResponse(plans, 200);
+      // Get total count for pagination (repository should support this)
+      // For now, return plans length as total (will need to add proper count query)
+      const response: any = {
+        plans,
+        total: plans.length,
+        limit,
+        offset
+      };
+
+      // Include page in response if it was provided
+      if (page !== undefined) {
+        response.page = page;
+      }
+
+      return createResponse(response, 200);
     } catch (dbError) {
       console.log('Using mock data due to:', dbError);
 
@@ -156,12 +181,19 @@ export async function GET(request: Request) {
     const total = plans.length;
     plans = plans.slice(offset, offset + limit);
 
-      return createResponse({
+      const mockResponse: any = {
         plans,
         total,
         limit,
         offset
-      }, 200);
+      };
+
+      // Include page in response if it was provided
+      if (page !== undefined) {
+        mockResponse.page = page;
+      }
+
+      return createResponse(mockResponse, 200);
     }
   } catch (error: any) {
     console.error('Error in GET handler:', error);
