@@ -83,86 +83,27 @@ export async function GET(request: Request) {
     const limit = parseInt(params.get('limit') || '20');
     const offset = parseInt(params.get('offset') || '0');
 
-    try {
-      // Try to use real database
-      const supabase = createClient();
-      const repository = new DayPlanRepository(supabase);
+    // Use real database
+    const supabase = await createClient();
+    const repository = new DayPlanRepository(supabase);
 
-      const plans = await repository.findByFilters({
-        user_id: userId,
-        date_from: startDate,
-        date_to: endDate,
-        limit,
-        offset
-      });
+    const plans = await repository.findByFilters({
+      user_id: userId,
+      date_from: startDate,
+      date_to: endDate,
+      limit,
+      offset
+    });
 
-      return createResponse(plans, 200);
-    } catch (dbError) {
-      console.log('Using mock data due to:', dbError);
-
-      // Fallback to mock data for tests
-      let plans = [
-        {
-          id: '550e8400-e29b-41d4-a716-446655440000',
-          company_id: 'mock-company-id',
-          user_id: '123e4567-e89b-12d3-a456-426614174000',
-          plan_date: '2024-01-15',
-          status: 'published',
-          route_data: {
-            stops: [
-              { address: '123 Main St', lat: 40.7128, lng: -74.0060 },
-              { address: '456 Oak Ave', lat: 40.7580, lng: -73.9855 }
-            ]
-          },
-          total_distance_miles: 5.2,
-          estimated_duration_minutes: 45,
-          actual_start_time: null,
-          actual_end_time: null,
-          created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '660e8400-e29b-41d4-a716-446655440001',
-        company_id: 'mock-company-id',
-        user_id: '123e4567-e89b-12d3-a456-426614174000',
-        plan_date: '2024-01-16',
-        status: 'draft',
-        route_data: {},
-        total_distance_miles: 0,
-        estimated_duration_minutes: 0,
-        actual_start_time: null,
-        actual_end_time: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ];
-
-    // Filter by user_id if provided
-    if (userId) {
-      plans = plans.filter(p => p.user_id === userId);
-    }
-
-    // Filter by date range
-    if (startDate || endDate) {
-      plans = plans.filter(p => {
-        const planDate = new Date(p.plan_date);
-        if (startDate && planDate < new Date(startDate)) return false;
-        if (endDate && planDate > new Date(endDate)) return false;
-        return true;
-      });
-    }
-
-    // Apply pagination
+    // Get total count (would need a separate countByFilters method for exact total)
     const total = plans.length;
-    plans = plans.slice(offset, offset + limit);
 
-      return createResponse({
-        plans,
-        total,
-        limit,
-        offset
-      }, 200);
-    }
+    return createResponse({
+      plans,
+      total,
+      limit,
+      offset
+    }, 200);
   } catch (error: any) {
     console.error('Error in GET handler:', error);
     return createResponse({ 
@@ -192,7 +133,12 @@ export async function POST(request: Request) {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return createResponse({ error: 'Unauthorized' }, 401);
     }
-    
+
+    // Extract company_id from token or use test default
+    // In production, this would come from JWT token claims
+    // For now, we'll use a test default UUID
+    const company_id = body.company_id || '00000000-0000-0000-0000-000000000001';
+
     const { user_id, plan_date, schedule_events = [], route_data } = body;
 
     // Validate required fields
@@ -210,56 +156,38 @@ export async function POST(request: Request) {
       }, 400);
     }
 
-    try {
-      // Try to use real database
-      const supabase = createClient();
-      const dayPlanRepo = new DayPlanRepository(supabase);
-      const eventRepo = new ScheduleEventRepository(supabase);
+    // Use real database
+    const supabase = await createClient();
+    const dayPlanRepo = new DayPlanRepository(supabase);
+    const eventRepo = new ScheduleEventRepository(supabase);
 
-      // Create day plan
-      const dayPlan = await dayPlanRepo.create({
-        user_id,
-        plan_date,
-        status: 'draft',
-        route_data: route_data || {},
-        total_distance_miles: route_data ? 5.2 : 0,
-        estimated_duration_minutes: route_data ? 45 : 0
+    // Create day plan
+    const dayPlan = await dayPlanRepo.create({
+      company_id,
+      user_id,
+      plan_date,
+      status: 'draft',
+      route_data: route_data || {},
+      total_distance_miles: route_data?.total_distance_miles || 0,
+      estimated_duration_minutes: route_data?.estimated_duration_minutes || 0
+    });
+
+    // Create associated schedule events
+    const createdEvents = [];
+    for (const event of schedule_events) {
+      const createdEvent = await eventRepo.create({
+        ...event,
+        company_id,
+        day_plan_id: dayPlan.id,
+        status: event.status || 'pending'
       });
-
-      // Create associated schedule events
-      const createdEvents = [];
-      for (const event of schedule_events) {
-        const createdEvent = await eventRepo.create({
-          ...event,
-          day_plan_id: dayPlan.id
-        });
-        createdEvents.push(createdEvent);
-      }
-
-      return createResponse({
-        ...dayPlan,
-        schedule_events: createdEvents
-      }, 201);
-    } catch (dbError) {
-      console.log('Using mock data due to:', dbError);
-
-      // Fallback to mock data for tests
-      const responseData = {
-        id: 'mock-id',
-        company_id: 'mock-company-id',
-        user_id,
-        plan_date,
-        status: 'draft',
-        route_data: route_data || {},
-        total_distance_miles: route_data ? 5.2 : 0,
-        estimated_duration_minutes: route_data ? 45 : 0,
-        schedule_events: [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      return createResponse(responseData, 201);
+      createdEvents.push(createdEvent);
     }
+
+    return createResponse({
+      ...dayPlan,
+      schedule_events: createdEvents
+    }, 201);
   } catch (error: any) {
     console.error('Error in POST handler:', error);
     return createResponse({ 

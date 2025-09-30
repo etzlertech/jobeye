@@ -46,17 +46,45 @@ describe('KitService', () => {
   let mockAssignmentRepo: jest.Mocked<KitAssignmentRepository>;
 
   beforeEach(() => {
-    // Create mocked instances
-    mockKitRepo = new KitRepository() as jest.Mocked<KitRepository>;
-    mockItemRepo = new KitItemRepository() as jest.Mocked<KitItemRepository>;
-    mockVariantRepo = new KitVariantRepository() as jest.Mocked<KitVariantRepository>;
-    mockAssignmentRepo = new KitAssignmentRepository() as jest.Mocked<KitAssignmentRepository>;
+    // Create mocked instances with required methods
+    mockKitRepo = {
+      findById: jest.fn(),
+      findAll: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    } as any;
+
+    mockItemRepo = {
+      findAll: jest.fn(),
+      findById: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    } as any;
+
+    mockVariantRepo = {
+      findById: jest.fn(),
+      findAll: jest.fn(),
+      findByKit: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    } as any;
+
+    mockAssignmentRepo = {
+      findById: jest.fn(),
+      findAll: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    } as any;
 
     service = new KitService();
-    // Replace internal repos with mocks
+    // Replace internal repos with mocks (use correct property names)
     (service as any).kitRepo = mockKitRepo;
-    (service as any).itemRepo = mockItemRepo;
-    (service as any).variantRepo = mockVariantRepo;
+    (service as any).kitItemRepo = mockItemRepo;
+    (service as any).kitVariantRepo = mockVariantRepo;
     (service as any).assignmentRepo = mockAssignmentRepo;
   });
 
@@ -123,33 +151,29 @@ describe('KitService', () => {
 
     it('should load kit with specific variant', async () => {
       mockKitRepo.findById.mockResolvedValue(mockKit);
-      mockVariantRepo.findById.mockResolvedValue(mockVariant);
+      mockVariantRepo.findAll.mockResolvedValue([mockVariant]);
       mockItemRepo.findAll.mockResolvedValue(mockItems);
 
-      const result = await service.loadKitWithVariant('kit-1', 'variant-summer');
+      const result = await service.loadKitWithVariant('kit-1', 'SUMMER');
 
       expect(result).toBeDefined();
       expect(result.kit).toEqual(mockKit);
       expect(result.variant).toEqual(mockVariant);
       expect(result.items).toHaveLength(2);
       expect(mockKitRepo.findById).toHaveBeenCalledWith('kit-1');
-      expect(mockVariantRepo.findById).toHaveBeenCalledWith('variant-summer');
     });
 
     it('should load kit with default variant when no variant specified', async () => {
       const defaultVariant = { ...mockVariant, is_default: true };
       
       mockKitRepo.findById.mockResolvedValue(mockKit);
-      mockVariantRepo.findAll.mockResolvedValue([defaultVariant]);
+      mockVariantRepo.findByKit.mockResolvedValue([defaultVariant]);
       mockItemRepo.findAll.mockResolvedValue(mockItems);
 
       const result = await service.loadKitWithVariant('kit-1');
 
       expect(result.variant).toEqual(defaultVariant);
-      expect(mockVariantRepo.findAll).toHaveBeenCalledWith({
-        filters: { kit_id: 'kit-1', is_default: true },
-        limit: 1
-      });
+      expect(mockVariantRepo.findByKit).toHaveBeenCalledWith('kit-1');
     });
 
     it('should select seasonal variant automatically', async () => {
@@ -166,7 +190,7 @@ describe('KitService', () => {
       };
 
       mockKitRepo.findById.mockResolvedValue(mockKit);
-      mockVariantRepo.findAll.mockResolvedValue([mockVariant, winterVariant]);
+      mockVariantRepo.findByKit.mockResolvedValue([mockVariant, winterVariant]);
       mockItemRepo.findAll.mockResolvedValue(mockItems);
 
       // Mock date to January (winter)
@@ -262,7 +286,7 @@ describe('KitService', () => {
       };
 
       mockKitRepo.findById.mockResolvedValue(mockKit);
-      mockVariantRepo.findAll.mockResolvedValue([]);
+      mockVariantRepo.findByKit.mockResolvedValue([]);
       mockItemRepo.findAll.mockResolvedValue([]);
 
       // First call

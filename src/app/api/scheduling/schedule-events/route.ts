@@ -77,17 +77,21 @@ export async function POST(request: Request) {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return createResponse({ error: 'Unauthorized' }, 401);
     }
-    
-    const { 
-      day_plan_id, 
-      event_type, 
+
+    // Extract company_id from token or use test default
+    // In production, this would come from JWT token claims
+    const company_id = body.company_id || '00000000-0000-0000-0000-000000000001';
+
+    const {
+      day_plan_id,
+      event_type,
       job_id,
       sequence_order,
       scheduled_start,
       scheduled_duration_minutes,
       location_data,
       address,
-      notes 
+      notes
     } = body;
 
     // Validate required fields
@@ -107,69 +111,50 @@ export async function POST(request: Request) {
 
     // Job events require job_id
     if (event_type === 'job' && !job_id) {
-      return createResponse({ 
-        error: 'job_id is required for job events' 
+      return createResponse({
+        error: 'job_id is required for job events'
       }, 400);
     }
 
-    // Mock check for 6-job limit
+    // Use real database
+    const supabase = await createClient();
+    const eventRepo = new ScheduleEventRepository(supabase);
+    const dayPlanRepo = new DayPlanRepository(supabase);
+
+    // Validate day plan exists
+    const dayPlan = await dayPlanRepo.findById(day_plan_id);
+    if (!dayPlan) {
+      return createResponse({
+        error: 'Day plan not found'
+      }, 404);
+    }
+
+    // Check 6-job limit for job events
     if (event_type === 'job') {
-      // In real implementation, this would call SchedulingService.scheduleEvent
-      // which checks the limit
-      const mockJobCount = 5; // Mock current job count
-      if (mockJobCount >= 6) {
-        return createResponse({ 
-          error: 'Cannot add job: maximum of 6 jobs per technician per day' 
+      const jobCount = await eventRepo.countJobEvents(day_plan_id);
+      if (jobCount >= 6) {
+        return createResponse({
+          error: 'Cannot add job: maximum of 6 jobs per technician per day'
         }, 400);
       }
     }
 
-    try {
-      // Try to use real database
-      const supabase = createClient();
-      const repository = new ScheduleEventRepository(supabase);
+    // Create the event
+    const event = await eventRepo.create({
+      company_id,
+      day_plan_id,
+      event_type,
+      job_id,
+      sequence_order: sequence_order || 1,
+      scheduled_start: scheduled_start || new Date().toISOString(),
+      scheduled_duration_minutes: scheduled_duration_minutes || 60,
+      status: 'pending',
+      location_data,
+      address,
+      notes
+    });
 
-      const event = await repository.create({
-        day_plan_id,
-        event_type,
-        job_id,
-        sequence_order: sequence_order || 1,
-        scheduled_start: scheduled_start || new Date().toISOString(),
-        scheduled_duration_minutes: scheduled_duration_minutes || 60,
-        status: 'pending',
-        location_data,
-        address,
-        notes
-      });
-
-      return createResponse(event, 201);
-    } catch (dbError) {
-      console.log('Using mock data due to:', dbError);
-
-      // Fallback to mock data for tests
-      const responseData = {
-        id: 'mock-event-id',
-        company_id: 'mock-company-id',
-        day_plan_id,
-        event_type,
-        job_id,
-        sequence_order: sequence_order || 1,
-        scheduled_start: scheduled_start || new Date().toISOString(),
-        scheduled_duration_minutes: scheduled_duration_minutes || 60,
-        actual_start: null,
-        actual_end: null,
-        status: 'pending',
-        location_data,
-        address,
-        notes,
-        voice_notes: null,
-        metadata: {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      return createResponse(responseData, 201);
-    }
+    return createResponse(event, 201);
   } catch (error: any) {
     console.error('Error in POST handler:', error);
     return createResponse({ 

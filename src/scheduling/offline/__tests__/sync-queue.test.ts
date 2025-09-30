@@ -30,6 +30,11 @@ import { SyncQueueService } from '../sync-queue.service';
 import { IndexedDBService } from '../indexed-db.service';
 import { SyncQueueEntry, OperationType } from '../types/offline.types';
 
+// Polyfill structuredClone for Node.js test environment
+if (typeof globalThis.structuredClone === 'undefined') {
+  globalThis.structuredClone = (obj: any) => JSON.parse(JSON.stringify(obj));
+}
+
 // Mock navigator.onLine
 Object.defineProperty(navigator, 'onLine', {
   writable: true,
@@ -41,20 +46,35 @@ describe('SyncQueueService', () => {
   let dbService: IndexedDBService;
 
   beforeEach(async () => {
-    // Clear IndexedDB
+    // Clear IndexedDB - need to close any existing connections first
     const databases = await indexedDB.databases();
     for (const db of databases) {
       if (db.name) {
-        await indexedDB.deleteDatabase(db.name);
+        const deleteRequest = indexedDB.deleteDatabase(db.name);
+        await new Promise<void>((resolve, reject) => {
+          deleteRequest.onsuccess = () => resolve();
+          deleteRequest.onerror = () => reject(deleteRequest.error);
+          deleteRequest.onblocked = () => {
+            // Wait a bit and resolve anyway
+            setTimeout(() => resolve(), 100);
+          };
+        });
       }
     }
 
+    // Initialize shared database service
     dbService = new IndexedDBService();
     await dbService.init();
-    service = new SyncQueueService();
+
+    // Pass the shared dbService to the sync queue service
+    service = new SyncQueueService(dbService);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    // Close database connections to allow proper cleanup
+    if (dbService) {
+      dbService.close();
+    }
     jest.clearAllMocks();
   });
 

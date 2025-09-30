@@ -4,16 +4,23 @@
  * @coverage_target ≥90%
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
 import { createMocks } from 'node-mocks-http';
 import type { NextRequest } from 'next/server';
+import { setupTestDatabase, cleanupTestDatabase, TEST_IDS } from '@/__tests__/helpers/test-db-setup';
 
-// This will fail with "Cannot find module" - as expected for TDD
 import handler from '@/app/api/scheduling/day-plans/route';
 
 describe('POST /api/scheduling/day-plans', () => {
+  beforeAll(async () => {
+    await setupTestDatabase();
+  });
+
+  afterAll(async () => {
+    await cleanupTestDatabase();
+  });
+
   beforeEach(() => {
-    // Reset any mocks
     jest.clearAllMocks();
   });
 

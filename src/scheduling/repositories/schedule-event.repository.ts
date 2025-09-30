@@ -172,6 +172,18 @@ export class ScheduleEventRepository {
     return count || 0;
   }
 
+  async countByDayPlanAndType(dayPlanId: string, eventType: ScheduleEvent['event_type']): Promise<number> {
+    const { count, error } = await this.supabase
+      .from('schedule_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('day_plan_id', dayPlanId)
+      .eq('event_type', eventType)
+      .neq('status', 'cancelled');
+
+    if (error) throw error;
+    return count || 0;
+  }
+
   async updateStatus(id: string, status: ScheduleEvent['status']): Promise<ScheduleEvent> {
     return this.update(id, { status });
   }

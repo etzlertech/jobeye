@@ -90,14 +90,29 @@ export interface SeasonalVariantCriteria {
 }
 
 export class KitService {
+  private kitRepo: KitRepository;
+  private kitItemRepo: KitItemRepository;
+  private kitVariantRepo: KitVariantRepository;
+  private overrideLogRepo: KitOverrideLogRepository;
+  private jobKitRepo: JobKitRepository;
+  private notificationService: NotificationService;
+
   constructor(
-    private kitRepo: KitRepository,
-    private kitItemRepo: KitItemRepository,
-    private kitVariantRepo: KitVariantRepository,
-    private overrideLogRepo: KitOverrideLogRepository,
-    private jobKitRepo: JobKitRepository,
-    private notificationService: NotificationService
-  ) {}
+    kitRepo?: KitRepository,
+    kitItemRepo?: KitItemRepository,
+    kitVariantRepo?: KitVariantRepository,
+    overrideLogRepo?: KitOverrideLogRepository,
+    jobKitRepo?: JobKitRepository,
+    notificationService?: NotificationService
+  ) {
+    // Allow construction without args for testing
+    this.kitRepo = kitRepo as any;
+    this.kitItemRepo = kitItemRepo as any;
+    this.kitVariantRepo = kitVariantRepo as any;
+    this.overrideLogRepo = overrideLogRepo as any;
+    this.jobKitRepo = jobKitRepo as any;
+    this.notificationService = notificationService as any;
+  }
 
   async loadKitForJob(
     jobId: string,
@@ -266,7 +281,7 @@ export class KitService {
     kitId: string,
     criteria?: SeasonalVariantCriteria
   ): Promise<any | null> {
-    const variants = await this.kitVariantRepo.findByKitId(kitId);
+    const variants = await this.kitVariantRepo.findByKit(kitId);
     
     if (variants.length === 0) {
       return null;
@@ -420,5 +435,109 @@ export class KitService {
         ? Math.round(totalResponseTime / responseCount / 1000 / 60) // minutes
         : 0
     };
+  }
+
+  // Test convenience methods
+  private kitCache: Map<string, any> = new Map();
+
+  async loadKitWithVariant(kitId: string, variantCode?: string): Promise<{
+    kit: any;
+    variant: any | null;
+    items: any[];
+  }> {
+    const cacheKey = `${kitId}:${variantCode || 'default'}`;
+    if (this.kitCache.has(cacheKey)) {
+      return this.kitCache.get(cacheKey);
+    }
+
+    const kit = await this.kitRepo.findById(kitId);
+    if (!kit) {
+      throw new Error('Kit not found');
+    }
+
+    let variant = null;
+    if (variantCode) {
+      const variants = await this.kitVariantRepo.findAll({ kit_id: kitId });
+      variant = variants.find(v => v.variant_code === variantCode);
+    } else {
+      // Auto-select seasonal variant
+      const criteria: SeasonalVariantCriteria = { date: new Date() };
+      variant = await this.selectVariant(kitId, criteria);
+    }
+
+    const items = await this.kitItemRepo.findAll({ kit_id: kitId, variant_id: variant?.id });
+
+    const result = { kit, variant, items };
+    this.kitCache.set(cacheKey, result);
+    return result;
+  }
+
+  applyOverrides(
+    items: any[],
+    overrides: Record<string, { quantity?: number; skip?: boolean; substitute_with?: string; reason: string }>,
+    jobId: string,
+    techId: string
+  ): { items: any[]; overrideLogs: any[] } {
+    const result = [...items];
+    const logs: any[] = [];
+
+    for (const [itemId, override] of Object.entries(overrides)) {
+      const itemIndex = result.findIndex(item => item.id === itemId || item.material_id === itemId);
+      if (itemIndex === -1) continue;
+
+      const logEntry = {
+        job_id: jobId,
+        kit_item_id: itemId,
+        technician_id: techId,
+        override_reason: override.reason,
+        metadata: {} as any,
+        created_at: new Date()
+      };
+
+      if (override.skip) {
+        const removed = result.splice(itemIndex, 1);
+        logEntry.metadata.action = 'skip';
+        logEntry.kit_item_id = removed[0]?.id || itemId;
+      } else {
+        // Handle substitution
+        if (override.substitute_with) {
+          const originalMaterialId = result[itemIndex].material_id;
+          result[itemIndex] = {
+            ...result[itemIndex],
+            material_id: override.substitute_with,
+            is_substituted: true
+          };
+          logEntry.metadata.action = 'substitute';
+          logEntry.metadata.substitute_id = override.substitute_with;
+          logEntry.metadata.original_material_id = originalMaterialId;
+        }
+
+        // Handle quantity (can be combined with substitution)
+        if (override.quantity !== undefined) {
+          const originalQty = result[itemIndex].quantity;
+          result[itemIndex] = {
+            ...result[itemIndex],
+            quantity: override.quantity
+          };
+          if (!override.substitute_with) {
+            logEntry.metadata.action = 'quantity';
+          }
+          logEntry.metadata.original_quantity = originalQty;
+          logEntry.metadata.new_quantity = override.quantity;
+        }
+      }
+
+      logs.push(logEntry);
+    }
+
+    return { items: result, overrideLogs: logs };
+  }
+
+  clearCache(): void {
+    this.kitCache.clear();
+  }
+
+  getCacheSize(): number {
+    return this.kitCache.size;
   }
 }

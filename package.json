@@ -72,7 +72,6 @@
     "003:rls": "dotenv -e .env.local -- tsx scripts/ci/rls-lint.ts"
   },
   "dependencies": {
-    "@mapbox/mapbox-sdk": "^0.16.2",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.43.0",
     "@tanstack/react-query": "^5.90.2",
@@ -94,6 +93,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@mapbox/mapbox-sdk": "^0.16.2",
     "@playwright/test": "^1.55.1",
     "@supabase/ssr": "^0.7.0",
     "@tailwindcss/postcss": "^4.1.11",

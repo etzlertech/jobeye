@@ -225,7 +225,7 @@ describe('ScheduleConflictService', () => {
       );
 
       expect(slot).toBeDefined();
-      expect(slot?.getHours()).toBe(12); // Should find 12:00 PM slot
+      expect(slot?.getUTCHours()).toBe(12); // Should find 12:00 PM slot (UTC)
     });
 
     it('should account for travel time between locations', () => {

@@ -100,6 +100,10 @@ export class DayPlanRepository {
     if (filters?.date_from && filters?.date_to) {
       query = query.gte('plan_date', filters.date_from)
                    .lte('plan_date', filters.date_to);
+    } else if (filters?.date_from) {
+      query = query.gte('plan_date', filters.date_from);
+    } else if (filters?.date_to) {
+      query = query.lte('plan_date', filters.date_to);
     }
 
     if (filters?.status) {
@@ -121,6 +125,11 @@ export class DayPlanRepository {
 
     if (error) throw error;
     return data || [];
+  }
+
+  // Alias for findAll to match API route usage
+  async findByFilters(filters?: DayPlanFilters): Promise<DayPlan[]> {
+    return this.findAll(filters);
   }
 
   async create(dayPlan: DayPlanInsert): Promise<DayPlan> {

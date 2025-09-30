@@ -65,6 +65,17 @@ export async function POST(
       body = mockReq.body || {};
     }
 
+    // Extract params from request or context
+    let jobId = context?.params?.jobId;
+    let kitId = context?.params?.kitId;
+
+    // If not in context, try to get from request.query (test environment)
+    if (!jobId || !kitId) {
+      const mockReq = request as any;
+      jobId = mockReq.query?.jobId || 'mock-job-id';
+      kitId = mockReq.query?.kitId || 'mock-kit-id';
+    }
+
     // Auth check
     if (!authHeader?.startsWith('Bearer ')) {
       return createResponse(
@@ -129,17 +140,6 @@ export async function POST(
         },
         400
       );
-    }
-
-    // Extract params from request or context
-    let jobId = context?.params?.jobId;
-    let kitId = context?.params?.kitId;
-
-    // If not in context, try to get from request.query (test environment)
-    if (!jobId || !kitId) {
-      const mockReq = request as any;
-      jobId = mockReq.query?.jobId || 'mock-job-id';
-      kitId = mockReq.query?.kitId || 'mock-kit-id';
     }
 
     // Calculate verification summary

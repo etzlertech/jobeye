@@ -4,16 +4,54 @@
  * @coverage_target ≥90%
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
 import { createMocks } from 'node-mocks-http';
 import type { NextRequest } from 'next/server';
+import { setupTestDatabase, cleanupTestDatabase, TEST_IDS, createTestDayPlan } from '@/__tests__/helpers/test-db-setup';
 
-// This will fail with "Cannot find module" - as expected for TDD
 import handler from '@/app/api/scheduling/day-plans/route';
 
 describe('GET /api/scheduling/day-plans', () => {
-  beforeEach(() => {
+  beforeAll(async () => {
+    await setupTestDatabase();
+
+    // Create some test day plans
+    await createTestDayPlan({
+      user_id: TEST_IDS.user1,
+      plan_date: '2024-01-15',
+      status: 'published',
+      total_distance_miles: 5.2,
+      estimated_duration_minutes: 45
+    });
+
+    await createTestDayPlan({
+      user_id: TEST_IDS.user1,
+      plan_date: '2024-01-16',
+      status: 'draft'
+    });
+  });
+
+  afterAll(async () => {
+    await cleanupTestDatabase();
+  });
+
+  beforeEach(async () => {
     jest.clearAllMocks();
+    // Clean up before each test to avoid unique constraint violations
+    await cleanupTestDatabase();
+    // Re-seed for this test
+    await createTestDayPlan({
+      user_id: TEST_IDS.user1,
+      plan_date: '2024-01-15',
+      status: 'published',
+      total_distance_miles: 5.2,
+      estimated_duration_minutes: 45
+    });
+    await createTestDayPlan({
+      user_id: TEST_IDS.user1,
+      plan_date: '2024-01-16',
+      status: 'draft'
+    });
   });
 
   it('should return day plans for authenticated company', async () => {

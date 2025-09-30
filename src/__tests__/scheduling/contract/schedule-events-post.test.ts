@@ -4,14 +4,32 @@
  * @coverage_target ≥90%
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
 import { createMocks } from 'node-mocks-http';
 import type { NextRequest } from 'next/server';
+import { setupTestDatabase, cleanupTestDatabase, TEST_IDS, createTestDayPlan } from '@/__tests__/helpers/test-db-setup';
 
-// This will fail with "Cannot find module" - as expected for TDD
 import handler from '@/app/api/scheduling/schedule-events/route';
 
 describe('POST /api/scheduling/schedule-events', () => {
+  let testDayPlanId: string;
+
+  beforeAll(async () => {
+    await setupTestDatabase();
+
+    // Create a test day plan for events
+    const dayPlan = await createTestDayPlan({
+      user_id: TEST_IDS.user1,
+      plan_date: '2024-01-15',
+      status: 'draft'
+    });
+    testDayPlanId = dayPlan.id;
+  });
+
+  afterAll(async () => {
+    await cleanupTestDatabase();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -24,7 +42,7 @@ describe('POST /api/scheduling/schedule-events', () => {
         'authorization': 'Bearer mock-token'
       },
       body: {
-        day_plan_id: '123e4567-e89b-12d3-a456-426614174000',
+        day_plan_id: testDayPlanId,
         event_type: 'job',
         job_id: '456e4567-e89b-12d3-a456-426614174000',
         sequence_order: 1,
@@ -100,7 +118,7 @@ describe('POST /api/scheduling/schedule-events', () => {
         'authorization': 'Bearer mock-token'
       },
       body: {
-        day_plan_id: '123e4567-e89b-12d3-a456-426614174000',
+        day_plan_id: testDayPlanId,
         event_type: 'job',
         job_id: '789e4567-e89b-12d3-a456-426614174000',
         sequence_order: 2,
@@ -168,7 +186,7 @@ describe('POST /api/scheduling/schedule-events', () => {
         'authorization': 'Bearer mock-token'
       },
       body: {
-        day_plan_id: '123e4567-e89b-12d3-a456-426614174000',
+        day_plan_id: testDayPlanId,
         event_type: 'job',
         // Missing job_id for job event
         sequence_order: 1,

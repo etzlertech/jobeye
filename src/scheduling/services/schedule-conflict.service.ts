@@ -419,20 +419,23 @@ export class ScheduleConflictService {
             affectedEventIds: [event.id],
             suggestedResolutions: [],
             details: {
-              message: 'A break is required after 4 hours of continuous work'
+              message: 'A break required after 4 hours of continuous work'
             }
           } as any);
         }
       }
     }
 
-    // Check day boundary
+    // Check day boundary - check if event spans across calendar days
     for (const event of [newEvent]) {
-      const end = addMinutes(new Date(event.scheduled_start), event.scheduled_duration_minutes);
-      const startDay = new Date(event.scheduled_start).getDate();
-      const endDay = end.getDate();
+      const start = new Date(event.scheduled_start);
+      const end = addMinutes(start, event.scheduled_duration_minutes);
 
-      if (startDay !== endDay) {
+      // Compare dates in UTC to handle timezone properly
+      const startDate = start.toISOString().split('T')[0];
+      const endDate = end.toISOString().split('T')[0];
+
+      if (startDate !== endDate) {
         conflicts.push({
           id: `boundary_${event.id}`,
           type: 'day_boundary' as any,
@@ -463,43 +466,63 @@ export class ScheduleConflictService {
       .filter(e => e.scheduled_start)
       .sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime());
 
-    // Try to find a slot
     let currentTime = new Date(dayStart);
 
     // Check if we can fit at the beginning
-    if (sortedEvents.length === 0 || 
-        addMinutes(currentTime, durationMinutes) <= new Date(sortedEvents[0].scheduled_start)) {
+    if (sortedEvents.length === 0) {
       return currentTime;
     }
 
-    // Check gaps between events
-    for (let i = 0; i < sortedEvents.length; i++) {
-      const event = sortedEvents[i];
-      const eventEnd = addMinutes(new Date(event.scheduled_start), event.scheduled_duration_minutes);
-      
-      // Add travel time if location provided
-      let bufferMinutes = 0;
-      if (location && event.location_data) {
-        const distance = this.calculateDistance(location, event.location_data);
-        bufferMinutes = Math.ceil(distance * 3); // 3 minutes per mile
+    const firstEventStart = new Date(sortedEvents[0].scheduled_start);
+    // Don't fit at start if we need travel time
+    const canFitAtStart = addMinutes(currentTime, durationMinutes) <= firstEventStart;
+    if (canFitAtStart && location && sortedEvents[0].location_data) {
+      // Need to account for travel time TO the first event
+      const distance = this.calculateDistance(location, sortedEvents[0].location_data);
+      const travelBuffer = Math.max(15, Math.ceil(distance * 3));
+      const endWithTravel = addMinutes(addMinutes(currentTime, durationMinutes), travelBuffer);
+      if (endWithTravel > firstEventStart) {
+        // Won't fit with travel time, continue searching
+      } else {
+        return currentTime;
+      }
+    } else if (canFitAtStart) {
+      return currentTime;
+    }
+
+    // Check gaps between consecutive events
+    for (let i = 0; i < sortedEvents.length - 1; i++) {
+      const currentEvent = sortedEvents[i];
+      const nextEvent = sortedEvents[i + 1];
+
+      const currentEventEnd = addMinutes(
+        new Date(currentEvent.scheduled_start),
+        currentEvent.scheduled_duration_minutes
+      );
+      const nextEventStart = new Date(nextEvent.scheduled_start);
+
+      // Calculate required buffer from current event
+      let bufferAfterCurrent = 0;
+      if (location && currentEvent.location_data) {
+        const distance = this.calculateDistance(currentEvent.location_data, location);
+        bufferAfterCurrent = Math.max(15, Math.ceil(distance * 3)); // At least 15 minutes
       }
 
-      currentTime = addMinutes(eventEnd, bufferMinutes);
+      // Calculate required buffer before next event
+      let bufferBeforeNext = 0;
+      if (location && nextEvent.location_data) {
+        const distance = this.calculateDistance(location, nextEvent.location_data);
+        bufferBeforeNext = Math.max(15, Math.ceil(distance * 3)); // At least 15 minutes
+      }
 
-      // Check if there's enough time before the next event or day end
-      const nextEventStart = i < sortedEvents.length - 1 
-        ? new Date(sortedEvents[i + 1].scheduled_start)
-        : dayEnd;
+      // Potential start time is after current event + buffer
+      const potentialStart = addMinutes(currentEventEnd, bufferAfterCurrent);
+      // We need to fit: duration + buffer before next event
+      const potentialEnd = addMinutes(potentialStart, durationMinutes);
+      const requiredEnd = addMinutes(potentialEnd, bufferBeforeNext);
 
-      // Add buffer for travel to next event if needed
-      if (i < sortedEvents.length - 1 && location && sortedEvents[i + 1].location_data) {
-        const distance = this.calculateDistance(location, sortedEvents[i + 1].location_data);
-        const travelBuffer = Math.ceil(distance * 3);
-        if (addMinutes(currentTime, durationMinutes + travelBuffer) <= nextEventStart) {
-          return currentTime;
-        }
-      } else if (addMinutes(currentTime, durationMinutes) <= nextEventStart) {
-        return currentTime;
+      if (requiredEnd <= nextEventStart) {
+        return potentialStart;
       }
     }
 
@@ -507,18 +530,21 @@ export class ScheduleConflictService {
     if (sortedEvents.length > 0) {
       const lastEvent = sortedEvents[sortedEvents.length - 1];
       const lastEventEnd = addMinutes(
-        new Date(lastEvent.scheduled_start), 
+        new Date(lastEvent.scheduled_start),
         lastEvent.scheduled_duration_minutes
       );
-      
+
       let bufferMinutes = 0;
       if (location && lastEvent.location_data) {
-        const distance = this.calculateDistance(location, lastEvent.location_data);
-        bufferMinutes = Math.ceil(distance * 3);
+        const distance = this.calculateDistance(lastEvent.location_data, location);
+        bufferMinutes = Math.max(15, Math.ceil(distance * 3)); // At least 15 minutes
+      } else if (location || lastEvent.location_data) {
+        // If only one has location, still add minimum buffer
+        bufferMinutes = 15;
       }
 
       currentTime = addMinutes(lastEventEnd, bufferMinutes);
-      
+
       if (addMinutes(currentTime, durationMinutes) <= dayEnd) {
         return currentTime;
       }
