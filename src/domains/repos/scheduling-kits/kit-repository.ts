@@ -38,7 +38,7 @@ export class KitRepository {
     const { data, error } = await this.supabase
       .from('kits')
       .select(KIT_SELECT)
-      .eq('company_id', companyId)
+      .eq('tenant_id', companyId)
       .order('kit_code', { ascending: true });
 
     if (error) {
@@ -52,7 +52,7 @@ export class KitRepository {
     const { data, error } = await this.supabase
       .from('kits')
       .select(KIT_SELECT)
-      .eq('company_id', companyId)
+      .eq('tenant_id', companyId)
       .eq('id', kitId)
       .maybeSingle();
 
@@ -71,7 +71,7 @@ export class KitRepository {
     const { data, error } = await this.supabase
       .from('kits')
       .select(KIT_SELECT)
-      .eq('company_id', companyId)
+      .eq('tenant_id', companyId)
       .eq('kit_code', kitCode)
       .eq('is_active', true)
       .maybeSingle();

@@ -359,8 +359,8 @@ export class ContainerRepository extends BaseRepository<Container> {
   private mapToDb(data: any): any {
     const mapped: any = {};
 
-    if (data.company_id !== undefined) mapped.company_id = data.company_id;
-    if (data.tenantId !== undefined) mapped.company_id = data.tenantId;
+    if (data.tenant_id !== undefined) mapped.tenant_id = data.tenant_id;
+    if (data.tenantId !== undefined) mapped.tenant_id = data.tenantId;
     if (data.containerType !== undefined) mapped.container_type = data.containerType;
     if (data.identifier !== undefined) mapped.identifier = data.identifier;
     if (data.name !== undefined) mapped.name = data.name;

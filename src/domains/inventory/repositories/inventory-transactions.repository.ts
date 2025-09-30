@@ -34,7 +34,7 @@ export async function findByCompany(
   let query = supabase
     .from('inventory_transactions')
     .select('*')
-    .eq('company_id', companyId);
+    .eq('tenant_id', companyId);
 
   if (type) {
     query = query.eq('type', type);

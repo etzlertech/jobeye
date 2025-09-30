@@ -18,7 +18,7 @@ export class KitVariantRepository {
     const { data, error } = await this.supabase
       .from('kit_variants')
       .select('*')
-      .eq('company_id', companyId)
+      .eq('tenant_id', companyId)
       .eq('kit_id', kitId)
       .order('is_default', { ascending: false })
       .order('variant_code', { ascending: true });

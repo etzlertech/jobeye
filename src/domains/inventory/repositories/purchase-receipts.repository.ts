@@ -50,7 +50,7 @@ export async function findByCompany(
   const { data, error } = await supabase
     .from('purchase_receipts')
     .select('*')
-    .eq('company_id', companyId)
+    .eq('tenant_id', companyId)
     .order('purchase_date', { ascending: false })
     .limit(limit);
 

@@ -46,7 +46,7 @@ export class KitAssignmentRepository {
     const { data, error } = await this.supabase
       .from('kit_assignments')
       .select('id, company_id, kit_id, variant_id, external_ref, notes, metadata, created_at, updated_at')
-      .eq('company_id', companyId)
+      .eq('tenant_id', companyId)
       .eq('external_ref', externalRef)
       .maybeSingle();
 

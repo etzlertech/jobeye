@@ -63,7 +63,7 @@ export async function findAll(
 
   // Apply filters
   if (filter.companyId) {
-    query = query.eq('company_id', filter.companyId);
+    query = query.eq('tenant_id', filter.companyId);
   }
 
   if (filter.type) {
