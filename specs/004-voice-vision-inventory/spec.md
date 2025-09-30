@@ -16,6 +16,11 @@
 - Q: Should purchase receipts auto-match to open purchase orders? → A: Yes, if PO system exists, with manual override option
 - Q: What happens when GPS location is unavailable for context detection? → A: Fall back to manual location type selection with voice or tap
 - Q: Should the system support barcode/QR code scanning in addition to vision detection? → A: Yes, as alternative input method with same workflow
+- Q: When the offline queue reaches capacity (50 pending operations) and a technician attempts another inventory operation, what should happen? → A: Increase queue capacity dynamically (warn user about storage limits)
+- Q: What are the expected data volume assumptions for inventory operations per company per day? → A: Medium scale: 50-200 photos/day, 500-2000 items total per company
+- Q: When should the system alert administrators about operational issues? → A: Alert on critical failures (crashes, data loss, security), performance degradation (>5s detection, >10s OCR, >10 sync retries), cost overruns (budget exceeded, VLM >30%), and UX issues (accuracy <80%, corrections >20%)
+- Q: When offline sync fails after maximum retries (10 attempts), what should happen to the queued operation? → A: Store in "failed operations" archive for 30 days, then auto-delete with notification
+- Q: When an equipment item is marked for maintenance or repair, should its location tracking continue or pause? → A: Flexible approach - allow item to remain in current container OR be transferred to maintenance facility, with full audit trail for both scenarios
 
 ---
 
@@ -63,6 +68,7 @@ A field technician arrives at the company shop at 6:30 AM to load equipment for 
 - What happens when daily VLM budget is exceeded? System continues with local YOLO only, logs warning, notifies admin, queues low-confidence detections for later VLM analysis
 - When a container is deleted but has items checked into it? System warns of X items still in container, requires reassignment or confirms cascade deletion
 - What if user wants to add an item type not in YOLO training set? VLM fallback analyzes photo, allows custom type entry, saves as training data for future model improvement
+- When offline sync fails after 10 retry attempts? Operation moves to "failed operations" archive, retained for 30 days with user notification, auto-deleted after expiration with final warning
 
 ---
 
@@ -164,55 +170,57 @@ A field technician arrives at the company shop at 6:30 AM to load equipment for 
 - **FR-071**: System MUST support voice input for maintenance notes and issue descriptions
 - **FR-072**: System MUST suggest ordering replacement parts based on detected damage
 - **FR-073**: System MUST offer to assign backup equipment when primary is marked for maintenance
+- **FR-074**: System MUST support flexible maintenance location tracking: allow equipment to remain in current container OR be transferred to maintenance facility container, with complete audit trail for both scenarios (in-place maintenance vs facility transfer)
 
 #### Background Filtering & Object Exclusion
-- **FR-074**: System MUST automatically filter common background objects (walls, floors, workbenches, people) with >95% confidence
-- **FR-075**: System MUST prompt user confirmation for ambiguous objects (70-95% confidence) before filtering
-- **FR-076**: System MUST allow users to manually include/exclude items from detection results
-- **FR-077**: System MUST learn user preferences for object filtering ("Always exclude coolers in field locations")
-- **FR-078**: System MUST apply context-aware filtering rules (cooler excluded at job site, included at HQ)
-- **FR-079**: System MUST provide "Show All Detected Items" option to review filtered objects
-- **FR-080**: System MUST support voice commands "Exclude [item]", "Include [item]", "Always exclude [category]"
+- **FR-075**: System MUST automatically filter common background objects (walls, floors, workbenches, people) with >95% confidence
+- **FR-076**: System MUST prompt user confirmation for ambiguous objects (70-95% confidence) before filtering
+- **FR-077**: System MUST allow users to manually include/exclude items from detection results
+- **FR-078**: System MUST learn user preferences for object filtering ("Always exclude coolers in field locations")
+- **FR-079**: System MUST apply context-aware filtering rules (cooler excluded at job site, included at HQ)
+- **FR-080**: System MUST provide "Show All Detected Items" option to review filtered objects
+- **FR-081**: System MUST support voice commands "Exclude [item]", "Include [item]", "Always exclude [category]"
 
 #### Training Data Collection
-- **FR-081**: System MUST save all original photos with metadata (GPS, timestamp, detection results, user selections)
-- **FR-082**: System MUST save individual 1:1 crops for each detected item with bounding box coordinates
-- **FR-083**: System MUST record user corrections (changed labels, adjusted crops, excluded items) as ground truth
-- **FR-084**: System MUST store voice transcripts and LLM extraction results alongside photos
-- **FR-085**: System MUST log detection confidence scores, VLM usage (when triggered), and processing times
-- **FR-086**: System MUST track user satisfaction indicators (items confirmed vs. corrected, retake frequency)
-- **FR-087**: System MUST organize training data by company, location type, transaction intent, and date
-- **FR-088**: System MUST provide opt-out mechanism for companies not wanting to contribute training data
-- **FR-089**: System MUST aggregate training data monthly for model fine-tuning review
-- **FR-090**: System MUST export corrected annotations in YOLO format for model retraining
+- **FR-082**: System MUST save all original photos with metadata (GPS, timestamp, detection results, user selections)
+- **FR-083**: System MUST save individual 1:1 crops for each detected item with bounding box coordinates
+- **FR-084**: System MUST record user corrections (changed labels, adjusted crops, excluded items) as ground truth
+- **FR-085**: System MUST store voice transcripts and LLM extraction results alongside photos
+- **FR-086**: System MUST log detection confidence scores, VLM usage (when triggered), and processing times
+- **FR-087**: System MUST track user satisfaction indicators (items confirmed vs. corrected, retake frequency)
+- **FR-088**: System MUST organize training data by company, location type, transaction intent, and date
+- **FR-089**: System MUST provide opt-out mechanism for companies not wanting to contribute training data
+- **FR-090**: System MUST aggregate training data monthly for model fine-tuning review
+- **FR-091**: System MUST export corrected annotations in YOLO format for model retraining
 
 #### Attribute Extraction & Assignment
-- **FR-091**: System MUST extract visible attributes (brand, model, color, type) from item photos using vision analysis
-- **FR-092**: System MUST accept voice or text input for non-visible attributes (serial number, price, purchase date)
-- **FR-093**: System MUST parse voice input via LLM to extract structured attribute fields
-- **FR-094**: System MUST display extracted attributes with confidence indicators before final save
-- **FR-095**: System MUST support sequential attribute assignment (item 1 of 3, item 2 of 3) with progress indicator
-- **FR-096**: System MUST support bulk attribute application ("All 5 are Echo SRM-225, purchased together")
-- **FR-097**: System MUST validate required fields per item type (serial numbers for equipment, SKU for materials)
-- **FR-098**: System MUST allow skipping optional attributes and completing records without them
+- **FR-092**: System MUST extract visible attributes (brand, model, color, type) from item photos using vision analysis
+- **FR-093**: System MUST accept voice or text input for non-visible attributes (serial number, price, purchase date)
+- **FR-094**: System MUST parse voice input via LLM to extract structured attribute fields
+- **FR-095**: System MUST display extracted attributes with confidence indicators before final save
+- **FR-096**: System MUST support sequential attribute assignment (item 1 of 3, item 2 of 3) with progress indicator
+- **FR-097**: System MUST support bulk attribute application ("All 5 are Echo SRM-225, purchased together")
+- **FR-098**: System MUST validate required fields per item type (serial numbers for equipment, SKU for materials)
+- **FR-099**: System MUST allow skipping optional attributes and completing records without them
 
 #### OCR & Text Extraction
-- **FR-099**: System MUST extract text from receipts, labels, and license plates in photos
-- **FR-100**: System MUST parse structured data from receipts (vendor, date, items, prices, total)
-- **FR-101**: System MUST display extracted text with confidence scores per field
-- **FR-102**: System MUST highlight detected text regions on original photo for user verification
-- **FR-103**: System MUST provide field-level editing for incorrect OCR extractions
-- **FR-104**: System MUST support manual text entry if OCR confidence is below usable threshold (<50%)
+- **FR-100**: System MUST extract text from receipts, labels, and license plates in photos
+- **FR-101**: System MUST parse structured data from receipts (vendor, date, items, prices, total)
+- **FR-102**: System MUST display extracted text with confidence scores per field
+- **FR-103**: System MUST highlight detected text regions on original photo for user verification
+- **FR-104**: System MUST provide field-level editing for incorrect OCR extractions
+- **FR-105**: System MUST support manual text entry if OCR confidence is below usable threshold (<50%)
 
 ### Performance Requirements
 - **PR-001**: Local YOLO detection MUST complete within 3 seconds on target mobile devices (iPhone 12+, Android equivalent)
 - **PR-002**: System MUST process photos at 1 frame per second when camera is active
 - **PR-003**: VLM fallback analysis (when needed) MUST complete within 10 seconds with network connectivity
 - **PR-004**: OCR extraction from receipts MUST complete within 5 seconds
-- **PR-005**: System MUST support offline queue capacity of at least 50 pending operations before requiring sync
+- **PR-005**: System MUST support offline queue with initial capacity of 50 pending operations, dynamically expanding as needed with user warnings at storage thresholds (80% device storage triggers warning, 95% blocks new operations)
 - **PR-006**: Attribute extraction via LLM MUST complete within 3 seconds for voice input
 - **PR-007**: Photo upload to storage MUST handle files up to 10MB
 - **PR-008**: Crop generation for 20 detected items MUST complete within 5 seconds
+- **PR-009**: System MUST support medium-scale operations: 50-200 photos per company per day, with total inventory capacity of 500-2000 items per company
 
 ### Cost & Budget Requirements
 - **CR-001**: System MUST attempt local YOLO detection first before using cloud-based VLM services
@@ -231,6 +239,16 @@ A field technician arrives at the company shop at 6:30 AM to load equipment for 
 - **DR-005**: System MUST support manual deletion of verification data per GDPR/privacy requirements before retention expiration
 - **DR-006**: System MUST redact sensitive information from training data (faces, license plates, customer addresses) before aggregation
 - **DR-007**: System MUST provide opt-out mechanism for companies not wanting to contribute to model training
+
+### Observability & Monitoring Requirements
+- **OR-001**: System MUST alert administrators on critical failures (system crashes, data loss, security breaches)
+- **OR-002**: System MUST alert administrators on performance degradation (YOLO detection >5s, OCR extraction >10s, offline sync failures >10 consecutive retries)
+- **OR-003**: System MUST alert administrators on cost overruns (daily VLM budget exceeded, VLM usage >30% of total operations)
+- **OR-004**: System MUST alert administrators on user experience degradation (detection accuracy <80% over 24h period, user corrections >20% of operations)
+- **OR-005**: System MUST track and report detection accuracy rates per company, location type, and item category
+- **OR-006**: System MUST track and report user correction frequency (label changes, crop adjustments, exclusions)
+- **OR-007**: System MUST log all offline sync attempts with success/failure status and retry count
+- **OR-008**: System MUST move operations that fail sync after 10 retry attempts to "failed operations" archive, retain for 30 days with user notification, and auto-delete with final warning after expiration
 
 ### Integration Requirements
 - **IR-001**: System MUST integrate with existing container definitions from Feature 001 (Vision Kit Verification)
@@ -286,9 +304,9 @@ A field technician arrives at the company shop at 6:30 AM to load equipment for 
 
 - [x] User description parsed
 - [x] Key concepts extracted (voice, vision, context-aware, multi-unit, filtering, training)
-- [x] Ambiguities marked and clarified in Clarifications section
-- [x] User scenarios defined (12 acceptance scenarios + edge cases)
-- [x] Requirements generated (104 functional, 8 performance, 7 cost, 7 data/privacy, 7 integration)
+- [x] Ambiguities marked and clarified in Clarifications section (13 total clarifications)
+- [x] User scenarios defined (12 acceptance scenarios + 13 edge cases)
+- [x] Requirements generated (105 functional, 9 performance, 7 cost, 7 data/privacy, 8 observability, 7 integration)
 - [x] Entities identified (10 key entities with relationships)
 - [x] Review checklist passed
 
