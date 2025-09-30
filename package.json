@@ -72,10 +72,12 @@
     "003:rls": "dotenv -e .env.local -- tsx scripts/ci/rls-lint.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.65.0",
     "@mapbox/mapbox-sdk": "^0.16.2",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.43.0",
     "@tanstack/react-query": "^5.90.2",
+    "@tensorflow/tfjs": "^4.22.0",
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
@@ -83,6 +85,8 @@
     "dexie": "^4.2.0",
     "fuse.js": "^7.1.0",
     "next": "14.2.0",
+    "onnxruntime-web": "^1.23.0",
+    "openai": "^5.23.1",
     "p-queue": "^8.1.1",
     "pg": "^8.16.3",
     "postgres": "^3.4.7",
