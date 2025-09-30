@@ -99,6 +99,7 @@
     "tesseract.js": "^5.1.1",
     "twilio": "^5.10.1",
     "typescript": "^5.4.0",
+    "uuid": "^13.0.0",
     "wav": "^1.0.2",
     "workbox-core": "^7.3.0",
     "zod": "^3.23.8"
@@ -115,6 +116,7 @@
     "@types/glob": "^8.1.0",
     "@types/jest": "^29.5.0",
     "@types/js-yaml": "^4.0.5",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "autoprefixer": "^10.4.21",

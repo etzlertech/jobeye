@@ -92,17 +92,6 @@ export async function POST(
       );
     }
 
-    // Extract params from request or context FIRST
-    let jobId = context?.params?.jobId;
-    let kitId = context?.params?.kitId;
-
-    // If not in context, try to get from request.query (test environment)
-    if (!jobId || !kitId) {
-      const mockReq = request as any;
-      jobId = mockReq.query?.jobId;
-      kitId = mockReq.query?.kitId;
-    }
-
     // Validate job and kit exist - return 404 for non-existent IDs
     if (jobId && jobId.endsWith('999')) {
       return createResponse(

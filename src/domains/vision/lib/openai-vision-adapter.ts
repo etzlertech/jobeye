@@ -27,7 +27,12 @@ function getOpenAIClient(): OpenAI {
     if (!apiKey) {
       throw new Error('OPENAI_API_KEY environment variable not set');
     }
-    openaiClient = new OpenAI({ apiKey });
+    // Allow browser environment in test/development
+    const isTestOrDev = process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development';
+    openaiClient = new OpenAI({
+      apiKey,
+      dangerouslyAllowBrowser: isTestOrDev
+    });
   }
   return openaiClient;
 }
