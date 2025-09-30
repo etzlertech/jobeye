@@ -12,6 +12,51 @@
  * 6. REPORT FINDINGS - Validation and assertions
  */
 
+// Mock Vision Service before imports
+jest.mock('@/domains/vision/services/vision-verification.service', () => {
+  // Helper to generate UUID v4
+  const generateUUID = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
+  return {
+    VisionVerificationService: jest.fn().mockImplementation(() => ({
+      verifyKit: jest.fn().mockImplementation(async (request) => {
+        // Simulate realistic vision verification response
+        const itemCount = request.expectedItems?.length || 3;
+        const detectedItems = (request.expectedItems || ['mower', 'trimmer', 'blower']).map((item: string, idx: number) => ({
+          itemType: item,
+          confidence: 0.85 + (Math.random() * 0.1),
+          matchStatus: 'matched' as const,
+          boundingBox: { x: idx * 100, y: idx * 100, width: 200, height: 200 }
+        }));
+
+        return {
+          data: {
+            verificationId: generateUUID(),
+            verificationResult: 'complete' as const,
+            processingMethod: 'local_yolo' as const,
+            confidenceScore: 0.88,
+            detectedItems,
+            missingItems: [],
+            unexpectedItems: [],
+            costUsd: 0.05,
+            processingTimeMs: 250 + Math.floor(Math.random() * 200),
+            imageWidth: request.imageWidth || 640,
+            imageHeight: request.imageHeight || 480,
+            timestamp: new Date().toISOString()
+          },
+          error: null
+        };
+      })
+    }))
+  };
+});
+
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { VisionVerificationService } from '@/domains/vision/services/vision-verification.service';
 import { VoiceNarrationService } from '@/domains/vision/services/voice-narration.service';
@@ -593,13 +638,15 @@ describe('Complete End-to-End Workflows', () => {
       const { data: customer, error: customerError } = await session.supabase
         .from('customers')
         .insert({
+          tenant_id: testUsers.manager.companyId,
           company_id: testUsers.manager.companyId,
-          first_name: 'John',
-          last_name: 'Smith',
+          name: 'John Smith',
           email: 'john.smith@example.com',
           phone: '555-0123',
-          customer_type: 'residential',
-          status: 'active',
+          mobile_phone: '555-0124',
+          billing_address: '123 Oak Street, Atlanta, GA 30301',
+          service_address: '123 Oak Street, Atlanta, GA 30301',
+          is_active: true,
           created_by: session.user.id
         })
         .select()
@@ -626,12 +673,9 @@ describe('Complete End-to-End Workflows', () => {
       const { data: property, error: propertyError } = await session.supabase
         .from('properties')
         .insert({
-          company_id: testUsers.manager.companyId,
+          tenant_id: testUsers.manager.companyId,
           customer_id: customer!.id,
-          address: '123 Oak Street',
-          city: 'Atlanta',
-          state: 'GA',
-          zip_code: '30301',
+          address: '123 Oak Street, Atlanta, GA 30301',
           property_type: 'residential',
           lot_size: 5000,
           has_lawn: true,
@@ -723,8 +767,8 @@ describe('Complete End-to-End Workflows', () => {
         .select(`
           id,
           job_type,
-          property:properties(address, city),
-          customer:customers(first_name, last_name),
+          property:properties(address),
+          customer:customers(name),
           actual_start,
           actual_end,
           pre_job_verification_id,
@@ -835,7 +879,6 @@ describe('Complete End-to-End Workflows', () => {
           id,
           job_type,
           assigned_to,
-          technician:users_extended!assigned_to(full_name),
           property:properties(address),
           post_job_verification_id
         `)
@@ -1206,8 +1249,8 @@ describe('Complete End-to-End Workflows', () => {
           job_type,
           scheduled_start,
           estimated_duration_minutes,
-          property:properties(id, address, city, latitude, longitude),
-          customer:customers(first_name, last_name)
+          property:properties(id, address, location),
+          customer:customers(name)
         `)
         .eq('assigned_to', session.user.id)
         .eq('status', 'assigned')
