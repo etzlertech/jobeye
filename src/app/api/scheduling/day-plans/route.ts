@@ -85,10 +85,10 @@ export async function GET(request: Request) {
 
     try {
       // Try to use real database
-      const supabase = createClient();
+      const supabase = await createClient();
       const repository = new DayPlanRepository(supabase);
 
-      const plans = await repository.findByFilters({
+      const plans = await repository.findAll({
         user_id: userId,
         date_from: startDate,
         date_to: endDate,
@@ -193,12 +193,12 @@ export async function POST(request: Request) {
       return createResponse({ error: 'Unauthorized' }, 401);
     }
     
-    const { user_id, plan_date, schedule_events = [], route_data } = body;
+    const { company_id, user_id, plan_date, schedule_events = [], route_data } = body;
 
     // Validate required fields
-    if (!user_id || !plan_date) {
-      return createResponse({ 
-        error: 'Missing required fields: user_id, plan_date' 
+    if (!company_id || !user_id || !plan_date) {
+      return createResponse({
+        error: 'Missing required fields: company_id, user_id, plan_date'
       }, 400);
     }
 
@@ -212,12 +212,13 @@ export async function POST(request: Request) {
 
     try {
       // Try to use real database
-      const supabase = createClient();
+      const supabase = await createClient();
       const dayPlanRepo = new DayPlanRepository(supabase);
       const eventRepo = new ScheduleEventRepository(supabase);
 
       // Create day plan
       const dayPlan = await dayPlanRepo.create({
+        company_id,
         user_id,
         plan_date,
         status: 'draft',
