@@ -85,20 +85,45 @@ async function apiRequest(
 }
 
 // Test user helper
-async function createTestUser(email: string, password: string) {
+async function createTestUser(email: string, password: string, companyId: string = TEST_COMPANY_A) {
   const adminClient = createClient<Database>(supabaseUrl, supabaseServiceKey, {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 
-  // Try to create user
+  // Try to create user with company_id in app_metadata
   const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
+    app_metadata: {
+      company_id: companyId,
+    },
   });
 
-  if (createError && !createError.message.includes('already registered')) {
+  if (createError && !createError.message.includes('already been registered')) {
     throw createError;
+  }
+
+  // If user already exists, update their metadata and sign them out first
+  if (createError && createError.message.includes('already been registered')) {
+    // Get user by email
+    const { data: { users }, error: listError } = await adminClient.auth.admin.listUsers();
+    const existingUser = users?.find(u => u.email === email);
+
+    if (existingUser) {
+      // Update metadata
+      await adminClient.auth.admin.updateUserById(existingUser.id, {
+        app_metadata: {
+          company_id: companyId,
+        },
+      });
+
+      // Sign out all sessions to force fresh JWT
+      await adminClient.auth.admin.signOut(existingUser.id, 'global');
+
+      // Wait a bit for metadata to propagate
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
   }
 
   // Sign in
@@ -115,6 +140,7 @@ async function createTestUser(email: string, password: string) {
     userId: signInData.user.id,
     token: signInData.session.access_token,
     client: userClient,
+    companyId,
   };
 }
 
@@ -126,6 +152,31 @@ async function cleanupTestData(companyId: string) {
 
   await adminClient.from('schedule_events').delete().eq('company_id', companyId);
   await adminClient.from('day_plans').delete().eq('company_id', companyId);
+}
+
+// Setup helper - ensure test companies exist
+async function setupTestCompanies() {
+  const adminClient = createClient<Database>(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
+
+  // Create or update test companies
+  await adminClient.from('companies').upsert([
+    {
+      id: TEST_COMPANY_A,
+      tenant_id: TEST_COMPANY_A,
+      name: 'Test Company A',
+      slug: 'test-a',
+      status: 'active',
+    },
+    {
+      id: TEST_COMPANY_B,
+      tenant_id: TEST_COMPANY_B,
+      name: 'Test Company B',
+      slug: 'test-b',
+      status: 'active',
+    },
+  ]);
 }
 
 // =============================================================================
@@ -601,8 +652,8 @@ async function scenario5() {
   log('SCENARIO 5: Multi-User Isolation', 'cyan');
   log('='.repeat(80), 'cyan');
 
-  const userA = await createTestUser('scenario5a@test.com', 'Test123!');
-  const userB = await createTestUser('scenario5b@test.com', 'Test123!');
+  const userA = await createTestUser('scenario5a@test.com', 'Test123!', TEST_COMPANY_A);
+  const userB = await createTestUser('scenario5b@test.com', 'Test123!', TEST_COMPANY_B);
   await cleanupTestData(TEST_COMPANY_A);
   await cleanupTestData(TEST_COMPANY_B);
 
@@ -954,7 +1005,7 @@ async function scenario7() {
     await step('Verify all valid locations stored correctly', async () => {
       const { data, error } = await adminClient
         .from('schedule_events')
-        .select('location_address, location_data')
+        .select('address, location_data')
         .eq('day_plan_id', planId)
         .eq('event_type', 'job')
         .not('location_data', 'is', null);
@@ -1398,6 +1449,11 @@ async function main() {
   log('COMPREHENSIVE E2E TEST SUITE', 'magenta');
   log('10 Scenarios Covering Edge Cases, Security, and Performance', 'magenta');
   log('='.repeat(80), 'magenta');
+
+  // Setup test companies
+  log('\n🔧 Setting up test companies...', 'cyan');
+  await setupTestCompanies();
+  log('✅ Test companies ready', 'green');
 
   const startTime = Date.now();
 

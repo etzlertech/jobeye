@@ -78,22 +78,26 @@ export async function POST(request: Request) {
       return createResponse({ error: 'Unauthorized' }, 401);
     }
     
-    const { 
-      day_plan_id, 
-      event_type, 
+    const {
+      company_id,
+      day_plan_id,
+      event_type,
       job_id,
       sequence_order,
+      sequence_number,
       scheduled_start,
       scheduled_duration_minutes,
+      estimated_duration_minutes,
       location_data,
       address,
-      notes 
+      status,
+      notes
     } = body;
 
     // Validate required fields
-    if (!day_plan_id || !event_type) {
-      return createResponse({ 
-        error: 'Missing required fields: day_plan_id, event_type' 
+    if (!company_id || !day_plan_id || !event_type) {
+      return createResponse({
+        error: 'Missing required fields: company_id, day_plan_id, event_type'
       }, 400);
     }
 
@@ -113,33 +117,38 @@ export async function POST(request: Request) {
     //   }, 400);
     // }
 
-    // Mock check for 6-job limit
-    if (event_type === 'job') {
-      // In real implementation, this would call SchedulingService.scheduleEvent
-      // which checks the limit
-      const mockJobCount = 5; // Mock current job count
-      if (mockJobCount >= 6) {
-        return createResponse({ 
-          error: 'Cannot add job: maximum of 6 jobs per technician per day' 
-        }, 400);
-      }
-    }
-
     try {
       // Try to use real database
       const supabase = await createClient();
+
+      // Check 6-job limit for job events
+      if (event_type === 'job') {
+        const { count, error: countError } = await supabase
+          .from('schedule_events')
+          .select('*', { count: 'exact', head: true })
+          .eq('day_plan_id', day_plan_id)
+          .eq('event_type', 'job');
+
+        if (countError) {
+          console.error('Error checking job count:', countError);
+        } else if (count !== null && count >= 6) {
+          return createResponse({
+            error: 'Cannot add job: maximum of 6 jobs per technician per day'
+          }, 400);
+        }
+      }
       const repository = new ScheduleEventRepository(supabase);
 
       const event = await repository.create({
+        company_id,
         day_plan_id,
         event_type,
         job_id,
-        sequence_order: sequence_order || 1,
+        sequence_order: sequence_number || sequence_order || 1,
         scheduled_start: scheduled_start || new Date().toISOString(),
-        scheduled_duration_minutes: scheduled_duration_minutes || 60,
-        status: 'pending',
+        scheduled_duration_minutes: estimated_duration_minutes || scheduled_duration_minutes || 60,
+        status: status || 'pending',
         location_data,
-        address,
         notes
       });
 
