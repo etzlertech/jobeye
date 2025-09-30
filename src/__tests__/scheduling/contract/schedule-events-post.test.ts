@@ -24,6 +24,7 @@ describe('POST /api/scheduling/schedule-events', () => {
         'authorization': 'Bearer mock-token'
       },
       body: {
+        company_id: '00000000-0000-0000-0000-000000000001',
         day_plan_id: '123e4567-e89b-12d3-a456-426614174000',
         event_type: 'job',
         job_id: '456e4567-e89b-12d3-a456-426614174000',
@@ -72,6 +73,7 @@ describe('POST /api/scheduling/schedule-events', () => {
         'authorization': 'Bearer mock-token'
       },
       body: {
+        company_id: '00000000-0000-0000-0000-000000000001',
         day_plan_id: '123e4567-e89b-12d3-a456-426614174000',
         event_type: 'break',
         sequence_order: 3,
@@ -100,6 +102,7 @@ describe('POST /api/scheduling/schedule-events', () => {
         'authorization': 'Bearer mock-token'
       },
       body: {
+        company_id: '00000000-0000-0000-0000-000000000001',
         day_plan_id: '123e4567-e89b-12d3-a456-426614174000',
         event_type: 'job',
         job_id: '789e4567-e89b-12d3-a456-426614174000',
@@ -144,6 +147,7 @@ describe('POST /api/scheduling/schedule-events', () => {
         'authorization': 'Bearer mock-token'
       },
       body: {
+        company_id: '00000000-0000-0000-0000-000000000001',
         day_plan_id: '123e4567-e89b-12d3-a456-426614174000',
         event_type: 'invalid_type',
         sequence_order: 1,
@@ -168,6 +172,7 @@ describe('POST /api/scheduling/schedule-events', () => {
         'authorization': 'Bearer mock-token'
       },
       body: {
+        company_id: '00000000-0000-0000-0000-000000000001',
         day_plan_id: '123e4567-e89b-12d3-a456-426614174000',
         event_type: 'job',
         // Missing job_id for job event

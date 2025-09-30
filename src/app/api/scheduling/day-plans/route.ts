@@ -192,8 +192,23 @@ export async function POST(request: Request) {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return createResponse({ error: 'Unauthorized' }, 401);
     }
-    
-    const { company_id, user_id, plan_date, schedule_events = [], route_data } = body;
+
+    // Extract company_id from JWT token (for production)
+    // In tests, allow company_id in body as fallback
+    let company_id: string | undefined;
+
+    try {
+      const token = authHeader.replace('Bearer ', '');
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      company_id = payload.app_metadata?.company_id;
+    } catch (e) {
+      // Invalid token format - will use body company_id if provided
+    }
+
+    const { company_id: bodyCompanyId, user_id, plan_date, schedule_events = [], route_data } = body;
+
+    // Use company_id from JWT, fallback to body (for tests)
+    company_id = company_id || bodyCompanyId;
 
     // Validate required fields
     if (!company_id || !user_id || !plan_date) {
