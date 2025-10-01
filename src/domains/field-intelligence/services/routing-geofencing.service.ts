@@ -178,9 +178,7 @@ export class RoutingGeofencingService {
     hoursAgo: number = 24
   ): Promise<any[]> {
     const since = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
-    return []; // TODO: await this.eventsRepository.findAll({
-    //   user_id: userId,
-    //   event_after: since.toISOString(),
+    return []; // TODO: [],
     // });
   }
 
@@ -278,12 +276,7 @@ export class RoutingGeofencingService {
 
     // Record event
     if (eventType) {
-      // TODO: await this.eventsRepository.create({
-      //   property_id: propertyId,
-      //   user_id: userId,
-      //   event_type: eventType,
-      //   coordinates,
-      //   occurred_at: new Date().toISOString(),
+      // TODO: { id: "mock-id" }.toISOString(),
       // });
 
       this.lastEvents.set(eventKey, {

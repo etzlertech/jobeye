@@ -34,7 +34,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-// TODO: import { IntakeDocumentsRepository } from '../repositories/intake-documents.repository';
+// TODO: // TODO: import { IntakeDocumentsRepository } from '../repositories/intake-documents.repository';
 import { logger } from '@/core/logger/voice-logger';
 import { ValidationError, ExternalServiceError } from '@/core/errors/error-types';
 
@@ -110,7 +110,7 @@ const DEFAULT_CONFIG: OCRConfig = {
  * ```
  */
 export class IntakeOCRService {
-  private documentsRepository: IntakeDocumentsRepository;
+  // TODO: private documentsRepository: IntakeDocumentsRepository;
   private config: OCRConfig;
 
   constructor(
@@ -157,11 +157,7 @@ export class IntakeOCRService {
       const processingTimeMs = Date.now() - startTime;
 
       // Update document with OCR results
-      // TODO: await this.documentsRepository.update(documentId, {
-      //   ocr_extracted_text: ocrResult.extractedText,
-      //   ocr_structured_data: structuredData,
-      //   ocr_confidence: confidence,
-      //   ocr_processed_at: new Date().toISOString(),
+      // TODO: { id: "mock-id" }.toISOString(),
       // });
 
       logger.info('OCR extraction completed', {

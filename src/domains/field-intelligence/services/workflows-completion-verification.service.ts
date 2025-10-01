@@ -201,10 +201,7 @@ export class WorkflowsCompletionVerificationService {
       aiQualityScore < this.config.supervisorApprovalThreshold;
 
     // Create completion record
-    const completion = { id: "mock-id" }; // TODO: await this.completionRepository.create({
-    //   job_id: jobId,
-    //   user_id: userId,
-    //   verified_at: new Date().toISOString(),
+    const completion = { id: "mock-id" }; // TODO: { id: "mock-id" }.toISOString(),
     //   photo_proofs: validatedProofs,
     //   checklist_complete: checklistComplete,
     //   ai_quality_score: aiQualityScore,
@@ -296,8 +293,11 @@ export class WorkflowsCompletionVerificationService {
       );
     }
 
-    { id: "mock-id" }.toISOString(),
-    });
+    // TODO: await this.completionRepository.update(verificationId, {
+    //   approval_status: 'APPROVED',
+    //   supervisor_id: supervisorId,
+    //   approved_at: new Date().toISOString(),
+    // });
 
     // Generate certificate if enabled
     if (this.config.generateCertificate) {
@@ -323,9 +323,12 @@ export class WorkflowsCompletionVerificationService {
     supervisorId: string,
     reason: string
   ): Promise<void> {
-    { id: "mock-id" }.toISOString(),
-      rejection_reason: reason,
-    });
+    // TODO: await this.completionRepository.update(verificationId, {
+    //   approval_status: 'REJECTED',
+    //   supervisor_id: supervisorId,
+    //   rejection_reason: reason,
+    //   rejected_at: new Date().toISOString(),
+    // });
 
     logger.info('Completion rejected', {
       verificationId,

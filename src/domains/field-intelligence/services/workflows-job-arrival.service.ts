@@ -154,10 +154,7 @@ export class WorkflowsJobArrivalService {
     }
 
     // Create arrival record
-    const arrival = { id: "mock-id" }; // TODO: await this.arrivalsRepository.create({
-    //   job_id: data.jobId,
-    //   user_id: data.userId,
-    //   arrived_at: new Date().toISOString(),
+    const arrival = { id: "mock-id" }; // TODO: { id: "mock-id" }.toISOString(),
     //   detection_method: data.detectionMethod,
     //   latitude: data.latitude,
     //   longitude: data.longitude,
@@ -289,8 +286,10 @@ export class WorkflowsJobArrivalService {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    const arrivals = [],
-    });
+    const arrivals = []; // TODO: await this.arrivalsRepository.findAll({
+    //   user_id: userId,
+    //   arrived_after: startOfDay.toISOString(),
+    // });
 
     return arrivals.map((a) => ({
       arrivalId: a.id,

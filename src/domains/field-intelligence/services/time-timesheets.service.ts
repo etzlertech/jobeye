@@ -142,9 +142,7 @@ export class TimeTimesheetsService {
     }
 
     // Get time entries for period
-    const entries = []; // TODO: await this.timeEntriesRepository.findAll({
-    //   user_id: userId,
-    //   clock_in_after: period.startDate.toISOString(),
+    const entries = []; // TODO: [],
     //   clock_in_before: period.endDate.toISOString(),
     // });
 
@@ -253,7 +251,7 @@ export class TimeTimesheetsService {
       clock_in_before: period.endDate.toISOString(),
     };
 
-    const allEntries = []; // TODO: await this.timeEntriesRepository.findAll(filters);
+    const allEntries = []; // TODO: [];
 
     // Group by employee
     const employeeMap = new Map<

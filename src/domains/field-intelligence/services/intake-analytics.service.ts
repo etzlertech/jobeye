@@ -30,7 +30,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { IntakeRequestsRepository } from '../repositories/intake-requests.repository';
+// TODO: import { IntakeRequestsRepository } from '../repositories/intake-requests.repository';
 import { logger } from '@/core/logger/voice-logger';
 import { ValidationError } from '@/core/errors/error-types';
 
@@ -118,13 +118,13 @@ export interface TrendDataPoint {
  * ```
  */
 export class IntakeAnalyticsService {
-  private requestsRepository: IntakeRequestsRepository;
+  // TODO: private requestsRepository: IntakeRequestsRepository;
 
   constructor(
     client: SupabaseClient,
     private companyId: string
   ) {
-    this.requestsRepository = new IntakeRequestsRepository(client, companyId);
+    // TODO: this.requestsRepository = new IntakeRequestsRepository(client, companyId);
   }
 
   /**

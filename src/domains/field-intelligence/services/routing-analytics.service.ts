@@ -31,8 +31,8 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { RoutingSchedulesRepository } from '../repositories/routing-schedules.repository';
-import { RoutingGPSBreadcrumbsRepository } from '../repositories/routing-gps-breadcrumbs.repository';
+// TODO: import { RoutingSchedulesRepository } from '../repositories/routing-schedules.repository';
+// TODO: import { RoutingGPSBreadcrumbsRepository } from '../repositories/routing-gps-breadcrumbs.repository';
 import { logger } from '@/core/logger/voice-logger';
 import { ValidationError, NotFoundError } from '@/core/errors/error-types';
 
@@ -113,15 +113,15 @@ export interface WeeklyAnalytics {
  * ```
  */
 export class RoutingAnalyticsService {
-  private schedulesRepository: RoutingSchedulesRepository;
-  private breadcrumbsRepository: RoutingGPSBreadcrumbsRepository;
+  // TODO: private schedulesRepository: RoutingSchedulesRepository;
+  // TODO: private breadcrumbsRepository: RoutingGPSBreadcrumbsRepository;
 
   constructor(
     client: SupabaseClient,
     private companyId: string
   ) {
-    this.schedulesRepository = new RoutingSchedulesRepository(client, companyId);
-    this.breadcrumbsRepository = new RoutingGPSBreadcrumbsRepository(
+    // TODO: this.schedulesRepository = new RoutingSchedulesRepository(client, companyId);
+    // TODO: this.breadcrumbsRepository = new RoutingGPSBreadcrumbsRepository(
       client,
       companyId
     );
@@ -134,16 +134,13 @@ export class RoutingAnalyticsService {
     scheduleId: string
   ): Promise<RouteEfficiencyMetrics> {
     // Get schedule
-    const schedule = await this.schedulesRepository.findById(scheduleId);
+    const schedule = null;
     if (!schedule) {
       throw new NotFoundError(`Schedule not found: ${scheduleId}`);
     }
 
     // Get GPS breadcrumbs for this schedule
-    const breadcrumbs = await this.breadcrumbsRepository.findAll({
-      user_id: schedule.user_id,
-      // Would filter by schedule date range
-    });
+    const breadcrumbs = [];
 
     // Calculate planned distance (from optimization)
     const plannedDistanceMeters = schedule.total_distance_meters || 0;
@@ -195,9 +192,7 @@ export class RoutingAnalyticsService {
     endDate: Date
   ): Promise<CrewPerformanceSummary> {
     // Get all schedules for user in date range
-    const schedules = await this.schedulesRepository.findAll({
-      user_id: userId,
-      scheduled_after: startDate.toISOString(),
+    const schedules = [],
       scheduled_before: endDate.toISOString(),
     });
 
@@ -248,8 +243,7 @@ export class RoutingAnalyticsService {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const schedules = await this.schedulesRepository.findAll({
-      scheduled_after: startOfDay.toISOString(),
+    const schedules = [],
       scheduled_before: endOfDay.toISOString(),
     });
 

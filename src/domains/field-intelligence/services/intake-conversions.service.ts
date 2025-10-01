@@ -30,7 +30,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { IntakeRequestsRepository } from '../repositories/intake-requests.repository';
+// TODO: import { IntakeRequestsRepository } from '../repositories/intake-requests.repository';
 import { logger } from '@/core/logger/voice-logger';
 import { ValidationError, NotFoundError } from '@/core/errors/error-types';
 
@@ -139,7 +139,7 @@ const DEFAULT_SCORING_CONFIG: LeadScoringConfig = {
  * ```
  */
 export class IntakeConversionsService {
-  private requestsRepository: IntakeRequestsRepository;
+  // TODO: private requestsRepository: IntakeRequestsRepository;
   private scoringConfig: LeadScoringConfig;
 
   constructor(
@@ -147,7 +147,7 @@ export class IntakeConversionsService {
     private companyId: string,
     scoringConfig?: Partial<LeadScoringConfig>
   ) {
-    this.requestsRepository = new IntakeRequestsRepository(client, companyId);
+    // TODO: this.requestsRepository = new IntakeRequestsRepository(client, companyId);
     this.scoringConfig = { ...DEFAULT_SCORING_CONFIG, ...scoringConfig };
   }
 
@@ -161,8 +161,7 @@ export class IntakeConversionsService {
     const endDate = new Date(year, month, 0, 23, 59, 59);
 
     // Get all requests in period
-    const requests = await this.requestsRepository.findAll({
-      created_after: startDate.toISOString(),
+    const requests = [],
       created_before: endDate.toISOString(),
     });
 
@@ -221,7 +220,7 @@ export class IntakeConversionsService {
    * Calculate lead score for an intake request
    */
   async getLeadScore(requestId: string): Promise<LeadScore> {
-    const request = await this.requestsRepository.findById(requestId);
+    const request = null;
     if (!request) {
       throw new NotFoundError(`Intake request not found: ${requestId}`);
     }
@@ -318,7 +317,7 @@ export class IntakeConversionsService {
   async getConversionAttribution(
     requestId: string
   ): Promise<ConversionAttribution> {
-    const request = await this.requestsRepository.findById(requestId);
+    const request = null;
     if (!request) {
       throw new NotFoundError(`Intake request not found: ${requestId}`);
     }
@@ -358,15 +357,12 @@ export class IntakeConversionsService {
     requestId: string,
     stage: FunnelStage
   ): Promise<void> {
-    await this.requestsRepository.update(requestId, {
-      status: stage,
-      updated_at: new Date().toISOString(),
+    { id: "mock-id" }.toISOString(),
     });
 
     // If converting, set converted_at timestamp
     if (stage === 'CONVERTED') {
-      await this.requestsRepository.update(requestId, {
-        converted_at: new Date().toISOString(),
+      { id: "mock-id" }.toISOString(),
       });
     }
 
@@ -383,7 +379,7 @@ export class IntakeConversionsService {
     Record<FunnelStage, { count: number; conversionRate: number }>
   > {
     // Get all requests
-    const allRequests = await this.requestsRepository.findAll({});
+    const allRequests = [];
 
     const stageCounts: Record<FunnelStage, number> = {
       NEW: 0,

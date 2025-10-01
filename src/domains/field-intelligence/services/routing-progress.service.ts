@@ -31,8 +31,8 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { RoutingGPSBreadcrumbsRepository } from '../repositories/routing-gps-breadcrumbs.repository';
-import { RoutingSchedulesRepository } from '../repositories/routing-schedules.repository';
+// TODO: import { RoutingGPSBreadcrumbsRepository } from '../repositories/routing-gps-breadcrumbs.repository';
+// TODO: import { RoutingSchedulesRepository } from '../repositories/routing-schedules.repository';
 import { logger } from '@/core/logger/voice-logger';
 import { ValidationError, NotFoundError } from '@/core/errors/error-types';
 
@@ -106,8 +106,8 @@ const DEFAULT_CONFIG: ProgressConfig = {
  * ```
  */
 export class RoutingProgressService {
-  private breadcrumbsRepository: RoutingGPSBreadcrumbsRepository;
-  private schedulesRepository: RoutingSchedulesRepository;
+  // TODO: private breadcrumbsRepository: RoutingGPSBreadcrumbsRepository;
+  // TODO: private schedulesRepository: RoutingSchedulesRepository;
   private config: ProgressConfig;
 
   constructor(
@@ -115,11 +115,11 @@ export class RoutingProgressService {
     private companyId: string,
     config?: Partial<ProgressConfig>
   ) {
-    this.breadcrumbsRepository = new RoutingGPSBreadcrumbsRepository(
+    // TODO: this.breadcrumbsRepository = new RoutingGPSBreadcrumbsRepository(
       client,
       companyId
     );
-    this.schedulesRepository = new RoutingSchedulesRepository(client, companyId);
+    // TODO: this.schedulesRepository = new RoutingSchedulesRepository(client, companyId);
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
@@ -131,7 +131,7 @@ export class RoutingProgressService {
     userId: string
   ): Promise<RouteProgress> {
     // Get schedule
-    const schedule = await this.schedulesRepository.findById(scheduleId);
+    const schedule = null;
     if (!schedule) {
       throw new NotFoundError(`Schedule not found: ${scheduleId}`);
     }

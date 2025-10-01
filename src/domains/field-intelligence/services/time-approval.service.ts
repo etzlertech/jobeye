@@ -32,8 +32,8 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 // TODO: These imports are commented out until the repositories are implemented
-// import { TimeEntriesRepository } from '../repositories/time-entries.repository';
-// import { TimeApprovalsRepository } from '../repositories/time-approvals.repository';
+// // TODO: import { TimeEntriesRepository } from '../repositories/time-entries.repository';
+// // TODO: import { TimeApprovalsRepository } from '../repositories/time-approvals.repository';
 import { logger } from '@/core/logger/voice-logger';
 import {
   ValidationError,
@@ -207,19 +207,12 @@ export class TimeApprovalService {
     }
 
     // Update entry status
-    // TODO: await this.timeEntriesRepository.update(entryId, {
-    //   approval_status: 'APPROVED',
-    //   approved_at: new Date().toISOString(),
+    // TODO: { id: "mock-id" }.toISOString(),
     // });
 
     // Create approval record
     const approval = { id: "stub-approval", status: "APPROVED" as any };
-    // TODO: const approval = await this.approvalsRepository.create({
-    //   time_entry_id: entryId,
-    //   approver_id: approverId,
-    //   action: 'APPROVE',
-    //   reason,
-    //   approved_at: new Date().toISOString(),
+    // TODO: const approval = { id: "mock-id" }.toISOString(),
     // });
 
     logger.info('Time entry approved', {
@@ -256,20 +249,13 @@ export class TimeApprovalService {
     }
 
     // Update entry status
-    // TODO: await this.timeEntriesRepository.update(entryId, {
-    //   approval_status: 'REJECTED',
-    //   rejected_at: new Date().toISOString(),
+    // TODO: { id: "mock-id" }.toISOString(),
     //   rejection_reason: reason,
     // });
 
     // Create approval record
     const approval = { id: "stub-approval", status: "REJECTED" as any };
-    // TODO: const approval = await this.approvalsRepository.create({
-    //   time_entry_id: entryId,
-    //   approver_id: approverId,
-    //   action: 'REJECT',
-    //   reason,
-    //   approved_at: new Date().toISOString(),
+    // TODO: const approval = { id: "mock-id" }.toISOString(),
     // });
 
     logger.info('Time entry rejected', {

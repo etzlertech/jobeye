@@ -30,7 +30,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { IntakeRequestsRepository } from '../repositories/intake-requests.repository';
+// TODO: import { IntakeRequestsRepository } from '../repositories/intake-requests.repository';
 import { logger } from '@/core/logger/voice-logger';
 import { ValidationError } from '@/core/errors/error-types';
 
@@ -108,7 +108,7 @@ const DEFAULT_CONFIG: MatchingConfig = {
  * ```
  */
 export class IntakeDuplicateMatchingService {
-  private requestsRepository: IntakeRequestsRepository;
+  // TODO: private requestsRepository: IntakeRequestsRepository;
   private config: MatchingConfig;
 
   constructor(
@@ -116,7 +116,7 @@ export class IntakeDuplicateMatchingService {
     private companyId: string,
     config?: Partial<MatchingConfig>
   ) {
-    this.requestsRepository = new IntakeRequestsRepository(client, companyId);
+    // TODO: this.requestsRepository = new IntakeRequestsRepository(client, companyId);
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
@@ -133,8 +133,7 @@ export class IntakeDuplicateMatchingService {
     const since = new Date();
     since.setDate(since.getDate() - this.config.timeWindowDays);
 
-    const recentRequests = await this.requestsRepository.findAll({
-      created_after: since.toISOString(),
+    const recentRequests = [],
     });
 
     // Calculate similarity for each request

@@ -152,8 +152,7 @@ export class TimeAnalyticsService {
     crewSize?: number
   ): Promise<LaborUtilizationMetrics> {
     // Get time entries for period
-    const entries = []; // TODO: await this.timeEntriesRepository.findAll({
-    //   clock_in_after: startDate.toISOString(),
+    const entries = []; // TODO: [],
     //   clock_in_before: endDate.toISOString(),
     // });
 
@@ -232,8 +231,7 @@ export class TimeAnalyticsService {
     regularHourlyRate: number,
     overtimeMultiplier: number = 1.5
   ): Promise<OvertimeCostAnalysis> {
-    const entries = []; // TODO: await this.timeEntriesRepository.findAll({
-    //   clock_in_after: startDate.toISOString(),
+    const entries = []; // TODO: [],
     //   clock_in_before: endDate.toISOString(),
     // });
 
@@ -299,8 +297,7 @@ export class TimeAnalyticsService {
     startDate: Date,
     endDate: Date
   ): Promise<ProductivityMetrics> {
-    const entries = []; // TODO: await this.timeEntriesRepository.findAll({
-    //   clock_in_after: startDate.toISOString(),
+    const entries = []; // TODO: [],
     //   clock_in_before: endDate.toISOString(),
     // });
 
@@ -386,8 +383,7 @@ export class TimeAnalyticsService {
     historicalStart.setDate(historicalStart.getDate() - historicalDays);
     const historicalEnd = forecastStartDate;
 
-    const historicalEntries = []; // TODO: await this.timeEntriesRepository.findAll({
-    //   clock_in_after: historicalStart.toISOString(),
+    const historicalEntries = []; // TODO: [],
     //   clock_in_before: historicalEnd.toISOString(),
     // });
 
