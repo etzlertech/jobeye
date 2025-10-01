@@ -8,7 +8,7 @@
  * @complexity_budget 200
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useCameraPermissions } from './hooks/useCameraPermissions';
 import { useVLMDetection } from './hooks/useVLMDetection';
@@ -21,7 +21,7 @@ import { OfflineQueueStatus } from './components/OfflineQueueStatus';
 import { getOfflineQueue } from '@/domains/vision/lib/offline-queue';
 
 /**
- * Equipment Verification Page
+ * Equipment Verification Page Content
  *
  * Workflow:
  * 1. Extract job_id from URL params
@@ -32,7 +32,7 @@ import { getOfflineQueue } from '@/domains/vision/lib/offline-queue';
  * 6. Trigger VLM fallback if confidence <70% or retries >=3
  * 7. Complete verification and save (Supabase or offline queue)
  */
-export default function EquipmentVerificationPage() {
+function EquipmentVerificationContent() {
   const searchParams = useSearchParams();
   const jobId = searchParams?.get('job_id') || 'demo-job';
   const companyId = searchParams?.get('company_id') || 'demo-company';
@@ -405,5 +405,36 @@ export default function EquipmentVerificationPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+/**
+ * Loading fallback component
+ */
+function EquipmentVerificationLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold text-gray-900">Equipment Verification</h1>
+        <p className="text-sm text-gray-600">Loading...</p>
+      </div>
+      <div className="space-y-4">
+        <div className="bg-white rounded-lg shadow-md p-4 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mt-2"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Main export wrapped with Suspense boundary
+ */
+export default function EquipmentVerificationPage() {
+  return (
+    <Suspense fallback={<EquipmentVerificationLoading />}>
+      <EquipmentVerificationContent />
+    </Suspense>
   );
 }

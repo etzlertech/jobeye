@@ -62,6 +62,10 @@ import { Role, type LoginDto, type UserProfile } from '@/domains/auth/types/auth
 import { createLogger } from '@/core/logger/logger';
 import { supabase } from '@/core/database/connection';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 const logger = createLogger('auth-login');
 
 // Request/Response Interfaces

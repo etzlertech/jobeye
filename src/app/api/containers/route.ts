@@ -24,6 +24,10 @@ import { createServerClient } from '@/lib/supabase/server';
 import { ContainerService } from '@/domains/equipment/services/container-service';
 import { VoiceLogger } from '@/core/logger/voice-logger';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   const logger = new VoiceLogger();
 

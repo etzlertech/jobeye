@@ -6,6 +6,10 @@ import { readFile } from 'fs/promises';
 import path from 'path';
 import { withDeveloperAuth, createErrorResponse, AuthUser } from '../middleware';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 const execAsync = promisify(exec);
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';

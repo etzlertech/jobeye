@@ -59,6 +59,10 @@ import { sanitizeAuthError, generateSessionId } from '@/domains/auth/utils/auth-
 import { createLogger } from '@/core/logger/logger';
 import { supabase } from '@/core/database/connection';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 const logger = createLogger('auth-logout');
 
 // Request/Response Interfaces

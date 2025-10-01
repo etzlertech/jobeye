@@ -11,6 +11,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as verificationRepo from '@/domains/vision/repositories/vision-verification.repository';
 import * as detectedItemRepo from '@/domains/vision/repositories/detected-item.repository';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }

@@ -48,6 +48,10 @@ import { createVoiceIntakeService } from '@/domains/voice/services/voice-intake-
 import { Logger } from '@/core/logger/logger';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 const logger = new Logger('voice-intake-api');
 
 // Request validation schema

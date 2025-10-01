@@ -10,6 +10,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCostTrackingService } from '@/domains/vision/services/cost-tracking.service';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   try {
     // Check authorization

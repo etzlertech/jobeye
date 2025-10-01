@@ -24,6 +24,10 @@ import { createServerClient } from '@/lib/supabase/server';
 import { JobLoadListService } from '@/domains/job/services/job-load-list-service';
 import { VoiceLogger } from '@/core/logger/voice-logger';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 interface RouteContext {
   params: {
     jobId: string;

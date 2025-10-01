@@ -59,6 +59,10 @@ import { isSessionExpired, sanitizeAuthError, maskSensitiveData } from '@/domain
 import { createLogger } from '@/core/logger/logger';
 import { supabase } from '@/core/database/connection';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 const logger = createLogger('auth-refresh');
 
 // Request/Response Interfaces

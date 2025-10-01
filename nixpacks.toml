@@ -10,7 +10,7 @@ cmds = ["npm ci"]
 cmds = ["npm run build"]
 
 [start]
-cmd = "npm run start:standalone"
+cmd = "npx next start -p ${PORT:-3000}"
 
 [variables]
 NODE_ENV = "production"

@@ -27,6 +27,10 @@
  *   - Track SLA timing and notification delivery
  */
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 // Helper to create responses that work in both Next.js and tests
 function createResponse(data: any, status: number) {
   // In test environment, return a mock response object

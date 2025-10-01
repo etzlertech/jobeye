@@ -10,6 +10,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBatchVerificationService } from '@/domains/vision/services/batch-verification.service';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 export async function POST(request: NextRequest) {
   try {
     // Check authorization
