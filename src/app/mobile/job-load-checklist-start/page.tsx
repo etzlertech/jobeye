@@ -311,7 +311,6 @@ export default function JobLoadChecklistStartPage() {
 
         .container-1 {
           height: 75px;
-          border: 3px solid #228B22;
           border-radius: 12px;
           background: rgba(0, 0, 0, 0.9);
           padding: 8px 15px;
@@ -377,7 +376,6 @@ export default function JobLoadChecklistStartPage() {
 
         .container-3 {
           flex: 1.375;
-          border: 3px solid #0066FF;
           border-radius: 12px;
           background: rgba(0, 0, 0, 0.9);
           overflow: hidden;
@@ -410,9 +408,10 @@ export default function JobLoadChecklistStartPage() {
           background: rgba(0, 100, 255, 0.1);
           border: 2px solid #0066FF;
           border-radius: 8px;
-          padding: 8px;
+          padding: 12px 10px;
           cursor: pointer;
           transition: all 0.2s;
+          min-height: 52px;
         }
 
         .checklist-item:hover {
@@ -527,11 +526,7 @@ export default function JobLoadChecklistStartPage() {
       `}</style>
       <div className="mobile-screen">
         <div className="container-1">
-          <div className="company-name">Miller's Landscaping</div>
-          <div className="header-info">
-            Joe Miller • Monday 9/15<br />
-            Crew 1 • Truck 1 • Status: <span className="status-highlight">Checking Load</span>
-          </div>
+          <div className="company-name">Evergold Landscaping</div>
         </div>
 
         <div className="container-2">
