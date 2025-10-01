@@ -27,11 +27,14 @@ export default function JobLoadChecklistStartPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [detectionStatus, setDetectionStatus] = useState<string>('Waiting to start...');
   const [checklist, setChecklist] = useState<ChecklistItem[]>([
-    { id: '5', name: 'Red Tape Measure', icon: '📏', checked: false },
-    { id: '6', name: 'Black Coffee Cup', icon: '☕', checked: false },
-    { id: '9', name: 'Green Sharpie Marker', icon: '🖊️', checked: false },
-    { id: '8', name: 'Small Spool of Wire', icon: '🧵', checked: false },
-    { id: '7', name: 'Mobile Phone', icon: '📱', checked: false },
+    { id: '1', name: 'Plastic Water Bottle', icon: '💧', checked: false },
+    { id: '2', name: 'Computer Mouse', icon: '🖱️', checked: false },
+    { id: '3', name: 'Book with Blue and Yellow Cover', icon: '📘', checked: false },
+    { id: '4', name: 'Red Cup', icon: '🥤', checked: false },
+    { id: '5', name: 'Whiteboard Eraser', icon: '🧽', checked: false },
+    { id: '6', name: 'Computer Keyboard', icon: '⌨️', checked: false },
+    { id: '7', name: 'Silver Laptop', icon: '💻', checked: false },
+    { id: '8', name: 'Bag of Doritos', icon: '🍿', checked: false },
   ]);
   const [detections, setDetections] = useState<Detection[]>([]);
 

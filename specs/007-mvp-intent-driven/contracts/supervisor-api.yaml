@@ -1,0 +1,370 @@
+openapi: 3.0.0
+info:
+  title: Supervisor API
+  version: 1.0.0
+  description: API endpoints for supervisor workflows
+
+paths:
+  /api/supervisor/inventory/add:
+    post:
+      summary: Add new inventory item
+      tags: [Supervisor, Inventory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, imageUrl, category]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                imageUrl:
+                  type: string
+                  format: uri
+                thumbnailUrl:
+                  type: string
+                  format: uri
+                category:
+                  type: string
+                containerId:
+                  type: string
+                  format: uuid
+                  nullable: true
+                metadata:
+                  type: object
+      responses:
+        201:
+          description: Item created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+
+  /api/supervisor/jobs/create:
+    post:
+      summary: Create new job
+      tags: [Supervisor, Jobs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customerId, propertyId, scheduledDate, assignedItems]
+              properties:
+                customerId:
+                  type: string
+                  format: uuid
+                propertyId:
+                  type: string
+                  format: uuid
+                scheduledDate:
+                  type: string
+                  format: date-time
+                estimatedDurationMinutes:
+                  type: integer
+                  minimum: 15
+                assignedItems:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                assignedVehicleId:
+                  type: string
+                  format: uuid
+                  nullable: true
+                specialInstructions:
+                  type: string
+                specialInstructionsAudioUrl:
+                  type: string
+                  format: uri
+                  nullable: true
+      responses:
+        201:
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+
+  /api/supervisor/jobs/{jobId}/assign:
+    post:
+      summary: Assign job to crew member
+      tags: [Supervisor, Jobs]
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [crewMemberId]
+              properties:
+                crewMemberId:
+                  type: string
+                  format: uuid
+                notifyImmediately:
+                  type: boolean
+                  default: true
+      responses:
+        200:
+          description: Job assigned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                    format: uuid
+                  assignedTo:
+                    type: string
+                    format: uuid
+                  notificationSent:
+                    type: boolean
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        409:
+          description: Crew member has reached daily job limit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  currentJobCount:
+                    type: integer
+                  dailyLimit:
+                    type: integer
+
+  /api/supervisor/dashboard/status:
+    get:
+      summary: Get real-time job and crew status
+      tags: [Supervisor, Dashboard]
+      responses:
+        200:
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats:
+                    type: object
+                    properties:
+                      totalJobs:
+                        type: integer
+                      completedToday:
+                        type: integer
+                      inProgress:
+                        type: integer
+                      pendingVerification:
+                        type: integer
+                  activeCrews:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        userId:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        currentJob:
+                          type: object
+                          nullable: true
+                        jobsCompletedToday:
+                          type: integer
+                        lastActivity:
+                          type: string
+                          format: date-time
+                  recentActivity:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        timestamp:
+                          type: string
+                          format: date-time
+                        type:
+                          type: string
+                        description:
+                          type: string
+                        userId:
+                          type: string
+                          format: uuid
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+
+  /api/supervisor/voice/command:
+    post:
+      summary: Process voice command
+      tags: [Supervisor, Voice]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [audioUrl]
+              properties:
+                audioUrl:
+                  type: string
+                  format: uri
+                transcript:
+                  type: string
+                  description: Optional pre-transcribed text
+                context:
+                  type: object
+                  properties:
+                    currentScreen:
+                      type: string
+                    selectedEntityId:
+                      type: string
+                      format: uuid
+      responses:
+        200:
+          description: Command processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  intent:
+                    type: string
+                  action:
+                    type: object
+                  response:
+                    type: string
+                    description: Text response for TTS
+                  audioResponseUrl:
+                    type: string
+                    format: uri
+                    nullable: true
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  schemas:
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        imageUrl:
+          type: string
+          format: uri
+        thumbnailUrl:
+          type: string
+          format: uri
+        category:
+          type: string
+        containerId:
+          type: string
+          format: uuid
+          nullable: true
+        available:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        propertyId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [draft, scheduled, assigned, in_progress, completed, cancelled]
+        scheduledDate:
+          type: string
+          format: date-time
+        assignedItems:
+          type: array
+          items:
+            type: string
+            format: uuid
+        assignedVehicleId:
+          type: string
+          format: uuid
+          nullable: true
+        specialInstructions:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Unauthorized"
+    
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Insufficient permissions"

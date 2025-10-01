@@ -1,0 +1,474 @@
+openapi: 3.0.0
+info:
+  title: Crew Member API
+  version: 1.0.0
+  description: API endpoints for crew member workflows
+
+paths:
+  /api/crew/jobs:
+    get:
+      summary: Get assigned jobs
+      tags: [Crew, Jobs]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [assigned, in_progress, completed]
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: List of assigned jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrewJob'
+                  dailyStats:
+                    type: object
+                    properties:
+                      completed:
+                        type: integer
+                      remaining:
+                        type: integer
+                      totalForDay:
+                        type: integer
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/crew/jobs/{jobId}/start:
+    post:
+      summary: Start working on a job
+      tags: [Crew, Jobs]
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                location:
+                  type: object
+                  properties:
+                    lat:
+                      type: number
+                    lng:
+                      type: number
+      responses:
+        200:
+          description: Job started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [in_progress]
+                  startTime:
+                    type: string
+                    format: date-time
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /api/crew/jobs/{jobId}/load-verify:
+    post:
+      summary: Verify job load list items
+      tags: [Crew, Jobs]
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [verifications]
+              properties:
+                verifications:
+                  type: array
+                  items:
+                    type: object
+                    required: [itemId, verified]
+                    properties:
+                      itemId:
+                        type: string
+                        format: uuid
+                      verified:
+                        type: boolean
+                      verificationMethod:
+                        type: string
+                        enum: [ai_vision, manual]
+                      imageUrl:
+                        type: string
+                        format: uri
+                        nullable: true
+                      notes:
+                        type: string
+                        nullable: true
+                isOffline:
+                  type: boolean
+                  default: false
+      responses:
+        200:
+          description: Load verification recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                    format: uuid
+                  verifiedCount:
+                    type: integer
+                  totalItems:
+                    type: integer
+                  completionPercentage:
+                    type: number
+                  allItemsVerified:
+                    type: boolean
+                  supervisorNotified:
+                    type: boolean
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /api/crew/jobs/{jobId}/tasks:
+    get:
+      summary: Get job tasks/operations
+      tags: [Crew, Jobs]
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: List of job tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/JobTask'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /api/crew/jobs/{jobId}/tasks/{taskId}/complete:
+    post:
+      summary: Mark task as complete
+      tags: [Crew, Jobs]
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+                completionPhotoUrl:
+                  type: string
+                  format: uri
+                voiceNoteUrl:
+                  type: string
+                  format: uri
+      responses:
+        200:
+          description: Task marked complete
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  taskId:
+                    type: string
+                    format: uuid
+                  completedAt:
+                    type: string
+                    format: date-time
+                  remainingTasks:
+                    type: integer
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /api/crew/maintenance/report:
+    post:
+      summary: Report maintenance issue
+      tags: [Crew, Maintenance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [imageUrl, severity]
+              properties:
+                imageUrl:
+                  type: string
+                  format: uri
+                equipmentId:
+                  type: string
+                  format: uuid
+                  nullable: true
+                severity:
+                  type: string
+                  enum: [low, medium, high, critical]
+                description:
+                  type: string
+                voiceNoteUrl:
+                  type: string
+                  format: uri
+                  nullable: true
+                location:
+                  type: object
+                  properties:
+                    lat:
+                      type: number
+                    lng:
+                      type: number
+      responses:
+        201:
+          description: Maintenance issue reported
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reportId:
+                    type: string
+                    format: uuid
+                  supervisorNotified:
+                    type: boolean
+                  priority:
+                    type: string
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/crew/voice/command:
+    post:
+      summary: Process voice command
+      tags: [Crew, Voice]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [audioUrl]
+              properties:
+                audioUrl:
+                  type: string
+                  format: uri
+                transcript:
+                  type: string
+                  description: Optional pre-transcribed text
+                context:
+                  type: object
+                  properties:
+                    currentJobId:
+                      type: string
+                      format: uuid
+                    currentTaskId:
+                      type: string
+                      format: uuid
+      responses:
+        200:
+          description: Command processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  intent:
+                    type: string
+                  action:
+                    type: object
+                  response:
+                    type: string
+                    description: Text response for TTS
+                  audioResponseUrl:
+                    type: string
+                    format: uri
+                    nullable: true
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  schemas:
+    CrewJob:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        customer:
+          type: object
+          properties:
+            name:
+              type: string
+            imageUrl:
+              type: string
+              format: uri
+        property:
+          type: object
+          properties:
+            address:
+              type: string
+            imageUrl:
+              type: string
+              format: uri
+            accessNotes:
+              type: string
+              nullable: true
+        scheduledDate:
+          type: string
+          format: date-time
+        estimatedDurationMinutes:
+          type: integer
+        status:
+          type: string
+          enum: [assigned, in_progress, completed]
+        loadList:
+          type: array
+          items:
+            type: object
+            properties:
+              itemId:
+                type: string
+                format: uuid
+              name:
+                type: string
+              thumbnailUrl:
+                type: string
+                format: uri
+              verified:
+                type: boolean
+        specialInstructions:
+          type: string
+          nullable: true
+        specialInstructionsAudioUrl:
+          type: string
+          format: uri
+          nullable: true
+        assignedVehicle:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            imageUrl:
+              type: string
+              format: uri
+
+    JobTask:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        order:
+          type: integer
+        completed:
+          type: boolean
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        required:
+          type: boolean
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Unauthorized"
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Resource not found"

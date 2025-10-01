@@ -1,0 +1,115 @@
+openapi: 3.0.0
+info:
+  title: Intent Recognition API
+  version: 1.0.0
+  description: API for camera-based intent classification
+
+paths:
+  /api/intent/classify:
+    post:
+      summary: Classify user intent from image
+      tags: [Intent]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [image, userId]
+              properties:
+                image:
+                  type: string
+                  format: base64
+                  description: Base64 encoded image
+                userId:
+                  type: string
+                  format: uuid
+                context:
+                  type: object
+                  properties:
+                    hasActiveJob:
+                      type: boolean
+                    currentScreen:
+                      type: string
+      responses:
+        200:
+          description: Intent classified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  intent:
+                    type: string
+                    enum: [inventory_add, job_load_verify, receipt_scan, maintenance_event, vehicle_add, unknown]
+                  confidence:
+                    type: number
+                    minimum: 0
+                    maximum: 1
+                  context:
+                    type: object
+                    properties:
+                      detectedItems:
+                        type: array
+                        items:
+                          type: string
+                      suggestedAction:
+                        type: string
+                      relatedEntityId:
+                        type: string
+                        format: uuid
+                  aiLogId:
+                    type: string
+                    format: uuid
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/intent/feedback:
+    post:
+      summary: Submit feedback on intent classification
+      tags: [Intent]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [classificationId, actualIntent]
+              properties:
+                classificationId:
+                  type: string
+                  format: uuid
+                actualIntent:
+                  type: string
+                  enum: [inventory_add, job_load_verify, receipt_scan, maintenance_event, vehicle_add, other]
+                comments:
+                  type: string
+      responses:
+        200:
+          description: Feedback recorded
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Unauthorized"

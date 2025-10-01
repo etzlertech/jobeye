@@ -6,6 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 JobEye is a Voice-First Field Service Management System built with Architecture-as-Code (AaC) methodology. The project uses Next.js 14 with TypeScript, Supabase for the backend, and follows a strict directive-based development approach.
 
+**Current Feature Development**: MVP Intent-Driven Mobile App (Feature 007)
+- Camera-based intent recognition for inventory, job loads, receipts, and maintenance
+- Voice-driven workflows (STT→LLM→TTS) with max 4 buttons per screen
+- Role-based access: Super Admin, Supervisor, Crew Member
+- Offline support with IndexedDB and background sync
+- Single company deployment with 6 jobs/crew/day limit
+
 ## Common Development Commands
 
 ### Running the Application
@@ -339,6 +346,21 @@ console.log(result.cost); // 0.00 (used local YOLO)
 - Production deployment to staging
 
 ---
+
+## Recent Changes
+
+### Feature 007: MVP Intent-Driven Mobile App (2025-01-27)
+- Added intent recognition layer on top of existing VLM services
+- Implemented role-based routing with Next.js middleware
+- Created new domains: `/domains/intent/`, `/domains/supervisor/`, `/domains/crew/`
+- Added PWA offline support with IndexedDB queue
+- Integrated Web Speech API for voice commands
+- New API endpoints: `/api/intent/*`, `/api/supervisor/*`, `/api/crew/*`
+
+### Previous Features
+- Feature 001: Vision-Based Kit Verification (Merged) - YOLO + VLM pipeline
+- Feature 005: Field Intelligence Safety - Workflow automation
+- Feature 006: Mobile PWA UI - Initial mobile interface
 
 ## Important Conventions
 
