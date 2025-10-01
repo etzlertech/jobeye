@@ -72,16 +72,18 @@ const { error } = await client.rpc('exec_sql', {
 ## 2. Hybrid Vision Pipeline Architecture
 
 ### Design Rationale
-- **Local YOLO Prefilter**: Run YOLOv11 locally at ~1 fps for real-time object detection
-- **VLM Fallback**: Invoke cloud Vision Language Models only when YOLO confidence < 0.7
-- **Cost Optimization**: 90%+ of vision tasks handled locally, reducing API costs
+- **Current State**: VLM First approach - all vision tasks processed by cloud Vision Language Models
+- **Future State**: Local YOLO Prefilter - Run YOLOv11 locally at ~1 fps for real-time object detection
+- **Staged Development**: YOLO infrastructure is developed and staged in some areas but not yet active
+- **Cost Optimization Goal**: When YOLO is activated, 90%+ of vision tasks will be handled locally
 
 ### Implementation Standards
 ```typescript
 // Vision pipeline configuration
 const VISION_CONFIG = {
   yolo: {
-    model: 'yolov11n',  // Nano model for edge performance
+    enabled: false,      // Currently staged but not active
+    model: 'yolov11n',  // Nano model for edge performance (when activated)
     fps: 1,             // Target frame rate
     confidence: 0.7,    // Minimum confidence for local decision
   },
@@ -89,14 +91,16 @@ const VISION_CONFIG = {
     provider: 'openai', // or 'anthropic', 'google'
     maxCost: 0.10,      // Per-request budget limit
     timeout: 5000,      // Milliseconds
+    primary: true,      // VLM is primary until YOLO activated
   }
 };
 ```
 
 ### Performance Requirements
-- YOLO inference must complete within 1 second
-- VLM fallback invocation rate must stay below 10%
-- Total vision processing cost < $0.50 per job average
+- VLM requests must complete within 5 seconds (current)
+- YOLO inference must complete within 1 second (when activated)
+- VLM usage rate will drop below 10% after YOLO activation
+- Total vision processing cost < $0.50 per job average (target)
 
 ## 3. Voice-First UX with Offline-First PWA
 
@@ -305,5 +309,5 @@ These rules are ABSOLUTE and MUST be followed by all agents and humans working o
 
 ---
 
-Last Updated: 2025-09-28
-Version: 1.1.0
+Last Updated: 2025-01-27
+Version: 1.1.1
