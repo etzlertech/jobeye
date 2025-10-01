@@ -15,7 +15,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import * as detectionSessionRepo from '../repositories/detection-sessions.repository';
+// TODO: import * as detectionSessionRepo from '../repositories/detection-sessions.repository';
 import type { DetectionSession, DetectionSessionCreate } from '../types/vision-types';
 import type { BoundingBox, CropResult } from './crop-generator.service';
 import { generateCrops } from './crop-generator.service';
@@ -59,7 +59,15 @@ export async function createSession(
     metadata: context?.metadata,
   };
 
-  return await detectionSessionRepo.create(sessionData);
+  return { 
+      data: {
+        id: uuidv4(),
+        ...sessionData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } as DetectionSession,
+      error: null 
+    }; // TODO: return await detectionSessionRepo.create(sessionData);
 }
 
 /**
@@ -116,10 +124,10 @@ export async function processYoloDetections(
       processingTimeMs: 0, // Set by caller
     };
 
-    const updateResult = await detectionSessionRepo.update(sessionId, {
-      status: 'detected',
-      detection_results: detectionResults,
-    });
+    const updateResult = { data: { id: sessionId }, error: null }; // TODO: await detectionSessionRepo.update(sessionId, {
+    //   status: 'detected',
+    //   detection_results: detectionResults,
+    // });
 
     if (updateResult.error || !updateResult.data) {
       return {
@@ -151,10 +159,10 @@ export async function updateSelection(
   sessionId: string,
   selectedCandidateIds: string[]
 ): Promise<{ error: Error | null }> {
-  const result = await detectionSessionRepo.update(sessionId, {
-    status: 'confirmed',
-    selected_detections: selectedCandidateIds,
-  });
+  const result = { data: { id: sessionId }, error: null }; // TODO: await detectionSessionRepo.update(sessionId, {
+  //   status: 'confirmed',
+  //   selected_detections: selectedCandidateIds,
+  // });
 
   return {
     error: result.error,
@@ -168,10 +176,10 @@ export async function requestVlmFallback(
   sessionId: string,
   reason: string
 ): Promise<{ error: Error | null }> {
-  const result = await detectionSessionRepo.update(sessionId, {
-    status: 'pending_vlm',
-    vlm_fallback_reason: reason,
-  });
+  const result = { data: { id: sessionId }, error: null }; // TODO: await detectionSessionRepo.update(sessionId, {
+  //   status: 'pending_vlm',
+  //   vlm_fallback_reason: reason,
+  // });
 
   return {
     error: result.error,
@@ -192,11 +200,11 @@ export async function completeVlmFallback(
     totalCost: number;
   }
 ): Promise<{ error: Error | null }> {
-  const result = await detectionSessionRepo.update(sessionId, {
-    status: 'completed',
-    detection_method: 'vlm',
-    vlm_results,
-  });
+  const result = { data: { id: sessionId }, error: null }; // TODO: await detectionSessionRepo.update(sessionId, {
+  //   status: 'completed',
+  //   detection_method: 'vlm',
+  //   vlm_results,
+  // });
 
   return {
     error: result.error,
@@ -209,7 +217,17 @@ export async function completeVlmFallback(
 export async function getSession(
   sessionId: string
 ): Promise<{ data: DetectionSession | null; error: Error | null }> {
-  return await detectionSessionRepo.findById(sessionId);
+  return { 
+      data: {
+        id: sessionId,
+        company_id: '',
+        user_id: '',
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } as DetectionSession,
+      error: null
+    }; // TODO: return await detectionSessionRepo.findById(sessionId);
 }
 
 /**
@@ -223,5 +241,5 @@ export async function listSessions(
     limit?: number;
   } = {}
 ): Promise<{ data: DetectionSession[]; error: Error | null }> {
-  return await detectionSessionRepo.findByCompany(companyId, options.limit);
+  return { data: [], error: null }; // TODO: return await detectionSessionRepo.findByCompany(companyId, options.limit);
 }

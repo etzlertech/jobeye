@@ -152,8 +152,12 @@ export class WorkflowsTaskParsingService {
 
       // Store parsed tasks
       for (const task of tasks) {
-        { id: "mock-id" }.toISOString(),
-        });
+        // TODO: await this.parsedTasksRepository.create({
+        //   job_id: jobId,
+        //   user_id: userId,
+        //   ...task,
+        //   parsed_at: new Date().toISOString(),
+        // });
       }
 
       const parsingTimeMs = Date.now() - startTime;

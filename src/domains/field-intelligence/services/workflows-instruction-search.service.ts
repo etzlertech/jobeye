@@ -122,9 +122,9 @@ export class WorkflowsInstructionSearchService {
     config?: Partial<SearchConfig>
   ) {
     // TODO: this.instructionsRepository = new WorkflowsStandardInstructionsRepository(
-      client,
-      companyId
-    )
+    //   client,
+    //   companyId
+    // );
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 

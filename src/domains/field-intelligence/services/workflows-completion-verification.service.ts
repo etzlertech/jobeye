@@ -139,9 +139,9 @@ export class WorkflowsCompletionVerificationService {
     config?: Partial<VerificationConfig>
   ) {
     // TODO: this.completionRepository = new WorkflowsCompletionRecordsRepository(
-      client,
-      companyId
-    )
+    //   client,
+    //   companyId
+    // );
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 

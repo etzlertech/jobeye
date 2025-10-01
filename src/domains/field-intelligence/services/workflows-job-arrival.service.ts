@@ -122,9 +122,9 @@ export class WorkflowsJobArrivalService {
     config?: Partial<ArrivalConfig>
   ) {
     // TODO: this.arrivalsRepository = new WorkflowsJobArrivalsRepository(
-      client,
-      companyId
-    )
+    //   client,
+    //   companyId
+    // );
     this.geofencingService = new RoutingGeofencingService(client, companyId);
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
