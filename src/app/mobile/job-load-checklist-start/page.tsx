@@ -189,10 +189,34 @@ export default function JobLoadChecklistStartPage() {
           if (!hasChanges) return prev;
 
           // Sort: unchecked items first, checked items last
-          return updated.sort((a, b) => {
+          const sorted = updated.sort((a, b) => {
             if (a.checked === b.checked) return 0;
             return a.checked ? 1 : -1;
           });
+
+          // Check if all items are now checked
+          const allChecked = sorted.every(item => item.checked);
+          if (allChecked) {
+            console.log('[VLM] ✅ All items detected! Stopping analysis and camera...');
+            setDetectionStatus('✅ LIST COMPLETED!');
+            setIsAnalyzing(false);
+
+            // Stop the interval
+            if (analysisIntervalRef.current) {
+              clearInterval(analysisIntervalRef.current);
+              analysisIntervalRef.current = null;
+            }
+
+            // Stop the camera after a short delay to show the completion status
+            setTimeout(() => {
+              if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                setStream(null);
+              }
+            }, 1500);
+          }
+
+          return sorted;
         });
       } else {
         console.log('[VLM] No detections in response');
@@ -306,11 +330,11 @@ export default function JobLoadChecklistStartPage() {
           display: flex;
           flex-direction: column;
           padding: 10px;
-          gap: 10px;
+          gap: 8px;
         }
 
         .container-1 {
-          height: 75px;
+          height: 50px;
           border-radius: 12px;
           background: rgba(0, 0, 0, 0.9);
           padding: 8px 15px;
@@ -321,10 +345,10 @@ export default function JobLoadChecklistStartPage() {
         }
 
         .company-name {
-          font-size: 18px;
+          font-size: 22px;
           font-weight: 600;
-          color: #228B22;
-          margin-bottom: 2px;
+          color: #FFD700;
+          text-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
         }
 
         .header-info {
@@ -339,7 +363,7 @@ export default function JobLoadChecklistStartPage() {
         }
 
         .container-2 {
-          flex: 1.375;
+          flex: 1.5;
           border: 3px solid #FFC107;
           border-radius: 12px;
           background: linear-gradient(135deg, #2a4d2a 0%, #1a3d1a 100%);
@@ -375,7 +399,7 @@ export default function JobLoadChecklistStartPage() {
         }
 
         .container-3 {
-          flex: 1.375;
+          flex: 1.5;
           border-radius: 12px;
           background: rgba(0, 0, 0, 0.9);
           overflow: hidden;
@@ -399,7 +423,7 @@ export default function JobLoadChecklistStartPage() {
         .checklist-items {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 8px;
+          gap: 10px;
         }
 
         .checklist-item {
@@ -408,10 +432,10 @@ export default function JobLoadChecklistStartPage() {
           background: rgba(0, 100, 255, 0.1);
           border: 2px solid #0066FF;
           border-radius: 8px;
-          padding: 12px 10px;
+          padding: 8px 12px;
           cursor: pointer;
           transition: all 0.2s;
-          min-height: 52px;
+          min-height: 44px;
         }
 
         .checklist-item:hover {
