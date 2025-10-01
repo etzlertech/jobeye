@@ -196,25 +196,6 @@ export default function JobLoadChecklistStartPage() {
             return a.checked ? 1 : -1;
           });
 
-          // Check if all items are now checked
-          const allChecked = sorted.every(item => item.checked);
-          if (allChecked) {
-            console.log('[VLM] ✅ All items detected! Stopping analysis and camera...');
-            setDetectionStatus('✅ LIST COMPLETED!');
-            setIsAnalyzing(false);
-
-            // Stop the interval
-            if (analysisIntervalRef.current) {
-              clearInterval(analysisIntervalRef.current);
-              analysisIntervalRef.current = null;
-            }
-
-            // Stop the camera after a short delay to show the completion status
-            setTimeout(() => {
-              stopCamera();
-            }, 1500);
-          }
-
           // Flash animation and sound on detection
           if (hasChanges) {
             setShowFlash(true);
@@ -303,9 +284,11 @@ export default function JobLoadChecklistStartPage() {
     // Camera start disabled - use manual button instead
     console.log('Page loaded - click button to start camera');
     
-    // Create audio element for success sound
-    audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYJGmW58OScTgwOUazi5LllHQU7ks3w14w5CRuDy/DThDYJHLzx8//6fzIHP5pVBAAA/74AAPhDAAAP/wAAmkEAAG9PAABm/wAAWEoAAE8yAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
-    audioRef.current.volume = 0.3;
+    // Create audio element for success sound - using a simple beep
+    const audio = new Audio();
+    audio.src = 'data:audio/wav;base64,UklGRhwMAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQgMAACByJqZbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXKf1wooGBhGk7Mu3eSgHIHLH8tGJOAcWcMDu3ZNHChRisuXptGIZBjiS0+3OgTQGF2nB7+OeTQ0OTp/n77xvIAUneMny3ZVHDSCA0vLaizsIHGi97OScTgwOUKzj5rllHgg2jdDwzn4yBSBuxvHSmzwIJYHD8tiJOAgjd8jz1Yg2Bhd1we/OgS0GGGfB7N6NRQ0RXLPl6rtlGAUvgcn02YU5CRpmt+jhkUsKFWHB6eCYWgwHVLDh8LZFIQY2k9HwzX8xBR1yuPDXkjkFH3PF8tm7xlYAAMDO2tjQwbKxuMPX39bIuLOxvdPg2Muyq6u63ODWwKGVl7XY5NS8op2ese/o0r+Zo6282uHWu6CYorDN3djPtJyVm7rY49e5mI6Xvd7l2LGNipeg0OPTroaGk6XJztOvlo6RqsvX06+NhpGnytvWrX9+mbDH1tOmdna6tNDZx55rafDD0NzKpVxZmMDL2tGmW1mGutje05FPTnu+2uTRl1NNeMXd4cuEPjuBx97hyHY/Qp3L79mNPSiazOrdlz8soMvp2pNCJrzJ5tiROivJ1vLXgUEozd/x04tKJMPf89aUUjfH2OzWiFAu0eTz1oFFL87m8tiIRC/U4vPRhUkv1+v02JNDMdbm8cykTCvW5O/RpFEp1OPv0bJdNdXj6NCuWTXX5+zP'
+    audio.volume = 0.5;
+    audioRef.current = audio;
     
     return () => {
       if (stream) {
@@ -334,10 +317,13 @@ export default function JobLoadChecklistStartPage() {
       
       // Stop camera after delay
       setTimeout(() => {
-        stopCamera();
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+          setStream(null);
+        }
       }, 1500);
     }
-  }, [checklist, isAnalyzing]);
+  }, [checklist, isAnalyzing, stream]);
 
   const allChecked = checklist.every(item => item.checked);
 
