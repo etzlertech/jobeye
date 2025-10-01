@@ -12,13 +12,17 @@ import { createClient } from '@/lib/supabase/server';
 import { TimeTimesheetsService } from '@/domains/field-intelligence/services/time-timesheets.service';
 import { logger } from '@/core/logger/voice-logger';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 /**
  * GET /api/field-intelligence/time/timesheets?userId=xxx&startDate=xxx&endDate=xxx&format=xxx
  * Generate and optionally export timesheet
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {

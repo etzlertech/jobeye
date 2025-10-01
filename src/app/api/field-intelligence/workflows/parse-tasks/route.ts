@@ -12,13 +12,17 @@ import { createClient } from '@/lib/supabase/server';
 import { WorkflowsTaskParsingService } from '@/domains/field-intelligence/services/workflows-task-parsing.service';
 import { logger } from '@/core/logger/voice-logger';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 /**
  * POST /api/field-intelligence/workflows/parse-tasks
  * Parse voice transcript into structured tasks
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -75,7 +79,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {

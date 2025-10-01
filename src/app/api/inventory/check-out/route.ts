@@ -30,7 +30,7 @@ import * as checkOutService from '@/domains/inventory/services/check-out.service
 export async function POST(request: NextRequest) {
   try {
     // Authenticate user
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       data: { user },
       error: authError,

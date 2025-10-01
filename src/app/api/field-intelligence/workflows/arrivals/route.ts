@@ -12,13 +12,17 @@ import { createClient } from '@/lib/supabase/server';
 import { WorkflowsJobArrivalService } from '@/domains/field-intelligence/services/workflows-job-arrival.service';
 import { logger } from '@/core/logger/voice-logger';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 /**
  * POST /api/field-intelligence/workflows/arrivals
  * Log job arrival (manual or automatic)
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -84,7 +88,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {

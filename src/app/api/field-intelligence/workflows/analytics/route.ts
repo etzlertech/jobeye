@@ -12,13 +12,17 @@ import { createClient } from '@/lib/supabase/server';
 import { WorkflowsAnalyticsService } from '@/domains/field-intelligence/services/workflows-analytics.service';
 import { logger } from '@/core/logger/voice-logger';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
 /**
  * GET /api/field-intelligence/workflows/analytics/bottlenecks
  * Detect workflow bottlenecks
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
