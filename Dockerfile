@@ -7,16 +7,15 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++ libc-dev
 
 # Copy package files
-COPY package*.json ./
+COPY package.json package-lock.json ./
 
 # Update npm to latest version first and install global tools
 RUN npm install -g npm@latest typescript
 
 # Install ALL dependencies (including devDependencies for build)
 # Add --legacy-peer-deps to handle peer dependency conflicts
-# Add --no-optional to skip optional dependencies that might fail
 # Also add verbose logging to debug any issues
-RUN npm ci --legacy-peer-deps --no-optional --verbose || (cat /root/.npm/_logs/*.log && exit 1)
+RUN npm ci --legacy-peer-deps --verbose || (echo "npm ci failed" && npm ci --legacy-peer-deps --no-optional || exit 1)
 
 # Copy all source files
 COPY . .
