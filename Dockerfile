@@ -20,6 +20,16 @@ RUN npm ci --legacy-peer-deps --verbose || (echo "npm ci failed" && npm ci --leg
 # Copy all source files
 COPY . .
 
+# Set build-time environment variables
+# These need to be available during the build process
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG SUPABASE_SERVICE_ROLE_KEY
+
+ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-https://dummy.supabase.co}
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-dummy-anon-key}
+ENV SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-dummy-service-key}
+
 # Verify installation
 RUN echo "Node version:" && node --version && \
     echo "NPM version:" && npm --version && \
@@ -37,10 +47,6 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-
-# Set dummy Supabase vars for build if not provided
-ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-https://dummy.supabase.co}
-ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-dummy-anon-key}
 
 # Start the app using Next.js built-in server
 CMD ["npm", "start"]
