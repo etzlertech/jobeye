@@ -232,9 +232,10 @@ export class TimeAnalyticsService {
     regularHourlyRate: number,
     overtimeMultiplier: number = 1.5
   ): Promise<OvertimeCostAnalysis> {
-    const entries = [] /* TODO: Repository not implemented */,
-      clock_in_before: endDate.toISOString(),
-    });
+    const entries = []; // TODO: await this.timeEntriesRepository.findAll({
+    //   clock_in_after: startDate.toISOString(),
+    //   clock_in_before: endDate.toISOString(),
+    // });
 
     const overtimeRate = regularHourlyRate * overtimeMultiplier;
     const userOvertimeMap = new Map<string, number>();

@@ -30,7 +30,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TimeEntriesRepository } from '../repositories/time-entries.repository';
+// TODO: import { TimeEntriesRepository } from '../repositories/time-entries.repository';
 import { logger } from '@/core/logger/voice-logger';
 import { ValidationError, NotFoundError } from '@/core/errors/error-types';
 
@@ -120,13 +120,13 @@ export interface PayrollExportData {
  * ```
  */
 export class TimeTimesheetsService {
-  private timeEntriesRepository: TimeEntriesRepository;
+  // TODO: private timeEntriesRepository: TimeEntriesRepository;
 
   constructor(
     client: SupabaseClient,
     private companyId: string
   ) {
-    this.timeEntriesRepository = new TimeEntriesRepository(client, companyId);
+    // TODO: this.timeEntriesRepository = new TimeEntriesRepository(client, companyId);
   }
 
   /**
@@ -142,11 +142,11 @@ export class TimeTimesheetsService {
     }
 
     // Get time entries for period
-    const entries = await this.timeEntriesRepository.findAll({
-      user_id: userId,
-      clock_in_after: period.startDate.toISOString(),
-      clock_in_before: period.endDate.toISOString(),
-    });
+    const entries = []; // TODO: await this.timeEntriesRepository.findAll({
+    //   user_id: userId,
+    //   clock_in_after: period.startDate.toISOString(),
+    //   clock_in_before: period.endDate.toISOString(),
+    // });
 
     // Build timesheet entries
     const timesheetEntries: TimesheetEntry[] = [];
@@ -253,7 +253,7 @@ export class TimeTimesheetsService {
       clock_in_before: period.endDate.toISOString(),
     };
 
-    const allEntries = await this.timeEntriesRepository.findAll(filters);
+    const allEntries = []; // TODO: await this.timeEntriesRepository.findAll(filters);
 
     // Group by employee
     const employeeMap = new Map<

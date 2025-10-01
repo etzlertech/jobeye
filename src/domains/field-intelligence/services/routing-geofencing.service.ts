@@ -278,8 +278,13 @@ export class RoutingGeofencingService {
 
     // Record event
     if (eventType) {
-      [] /* TODO: Repository not implemented */.toISOString(),
-      });
+      // TODO: await this.eventsRepository.create({
+      //   property_id: propertyId,
+      //   user_id: userId,
+      //   event_type: eventType,
+      //   coordinates,
+      //   occurred_at: new Date().toISOString(),
+      // });
 
       this.lastEvents.set(eventKey, {
         type: eventType,
