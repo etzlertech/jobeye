@@ -9,8 +9,8 @@ RUN apk add --no-cache python3 make g++ libc-dev
 # Copy package files
 COPY package*.json ./
 
-# Update npm to latest version first
-RUN npm install -g npm@latest
+# Update npm to latest version first and install global tools
+RUN npm install -g npm@latest typescript
 
 # Install ALL dependencies (including devDependencies for build)
 # Add --legacy-peer-deps to handle peer dependency conflicts
@@ -20,8 +20,15 @@ RUN npm ci --legacy-peer-deps --verbose || (cat /root/.npm/_logs/*.log && exit 1
 # Copy all source files
 COPY . .
 
-# Build the Next.js app
-RUN npm run build
+# Verify installation
+RUN echo "Node version:" && node --version && \
+    echo "NPM version:" && npm --version && \
+    echo "TypeScript version:" && tsc --version && \
+    echo "Checking for critical dependencies..." && \
+    npm ls --depth=0 || true
+
+# Build the Next.js app with verbose logging
+RUN npm run build || (echo "Build failed!" && ls -la && cat .next/build-error.log 2>/dev/null && exit 1)
 
 # Expose port
 EXPOSE 3000
