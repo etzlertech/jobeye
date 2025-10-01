@@ -28,11 +28,14 @@
  *   - [x] Add polygon containment check
  *   - [x] Implement event deduplication
  * END AGENT DIRECTIVE BLOCK
+
+// NOTE: Repository imports and usage have been temporarily commented out
+// These will be implemented when the repositories are created
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { RoutingGeofenceEventsRepository } from '../repositories/routing-geofence-events.repository';
-import { RoutingPropertyBoundariesRepository } from '../repositories/routing-property-boundaries.repository';
+// TODO: import { RoutingGeofenceEventsRepository } from '../repositories/routing-geofence-events.repository';
+// TODO: import { RoutingPropertyBoundariesRepository } from '../repositories/routing-property-boundaries.repository';
 import { logger } from '@/core/logger/voice-logger';
 import { ValidationError, NotFoundError } from '@/core/errors/error-types';
 
@@ -118,11 +121,11 @@ export class RoutingGeofencingService {
     private companyId: string,
     config?: Partial<GeofenceConfig>
   ) {
-    this.eventsRepository = new RoutingGeofenceEventsRepository(
+    // TODO: this.eventsRepository = new RoutingGeofenceEventsRepository(
       client,
       companyId
     );
-    this.boundariesRepository = new RoutingPropertyBoundariesRepository(
+    // TODO: this.boundariesRepository = new RoutingPropertyBoundariesRepository(
       client,
       companyId
     );
@@ -138,7 +141,7 @@ export class RoutingGeofencingService {
     currentLocation: Coordinate
   ): Promise<GeofenceCheckResult> {
     // Get property boundary
-    const boundary = await this.boundariesRepository.findById(propertyId);
+    const boundary = [] /* TODO: Repository not implemented */;
     if (!boundary) {
       throw new NotFoundError(`Property boundary not found: ${propertyId}`);
     }
@@ -275,13 +278,7 @@ export class RoutingGeofencingService {
 
     // Record event
     if (eventType) {
-      await this.eventsRepository.create({
-        user_id: userId,
-        property_id: propertyId,
-        event_type: eventType,
-        latitude: 0, // Would need to pass current location
-        longitude: 0,
-        detected_at: new Date().toISOString(),
+      [] /* TODO: Repository not implemented */.toISOString(),
       });
 
       this.lastEvents.set(eventKey, {

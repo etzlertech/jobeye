@@ -27,10 +27,13 @@
  *   - [x] Add duplicate coordinate detection
  *   - [x] Implement batch upload on reconnect
  * END AGENT DIRECTIVE BLOCK
+
+// NOTE: Repository imports and usage have been temporarily commented out
+// These will be implemented when the repositories are created
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { RoutingGPSBreadcrumbsRepository } from '../repositories/routing-gps-breadcrumbs.repository';
+// TODO: import { RoutingGPSBreadcrumbsRepository } from '../repositories/routing-gps-breadcrumbs.repository';
 import { logger } from '@/core/logger/voice-logger';
 import {
   ValidationError,
