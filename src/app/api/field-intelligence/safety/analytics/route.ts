@@ -9,46 +9,55 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { SafetyAnalyticsService } from '@/domains/field-intelligence/services/safety-analytics.service';
+// TODO: These imports are commented out until the modules are implemented
 import { logger } from '@/core/logger/voice-logger';
+// These imports are commented out until the modules are implemented
+// TODO: // import { SafetyAnalyticsService } from '@/domains/field-intelligence/services/safety-analytics.service';
 
 /**
- * GET /api/field-intelligence/safety/analytics/completion?startDate=xxx&endDate=xxx
- * Get completion rate analytics
+ * GET endpoint - stubbed
  */
 export async function GET(request: NextRequest) {
-  try {
-    const supabase = createClient();
+  // TODO: Implement when field-intelligence domain is ready
+  logger.info('Field Intelligence safety analytics GET called - feature not yet implemented');
+  return NextResponse.json(
+    { message: 'Field Intelligence safety analytics feature coming soon' },
+    { status: 501 }
+  );
+}
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+/**
+ * POST endpoint - stubbed
+ */
+export async function POST(request: NextRequest) {
+  // TODO: Implement when field-intelligence domain is ready
+  logger.info('Field Intelligence safety analytics POST called - feature not yet implemented');
+  return NextResponse.json(
+    { message: 'Field Intelligence safety analytics feature coming soon' },
+    { status: 501 }
+  );
+}
 
-    const companyId = user.user_metadata?.company_id;
-    if (!companyId) {
-      return NextResponse.json({ error: 'Company ID not found' }, { status: 400 });
-    }
+/**
+ * PUT endpoint - stubbed
+ */
+export async function PUT(request: NextRequest) {
+  // TODO: Implement when field-intelligence domain is ready
+  logger.info('Field Intelligence safety analytics PUT called - feature not yet implemented');
+  return NextResponse.json(
+    { message: 'Field Intelligence safety analytics feature coming soon' },
+    { status: 501 }
+  );
+}
 
-    const { searchParams } = new URL(request.url);
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-
-    const analyticsService = new SafetyAnalyticsService(supabase, companyId);
-    const completionRate = await analyticsService.getCompletionRate(
-      startDate ? new Date(startDate) : undefined,
-      endDate ? new Date(endDate) : undefined
-    );
-
-    return NextResponse.json({
-      success: true,
-      data: completionRate,
-    });
-  } catch (error: any) {
-    logger.error('Safety analytics API error', { error });
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
-  }
+/**
+ * DELETE endpoint - stubbed
+ */
+export async function DELETE(request: NextRequest) {
+  // TODO: Implement when field-intelligence domain is ready
+  logger.info('Field Intelligence safety analytics DELETE called - feature not yet implemented');
+  return NextResponse.json(
+    { message: 'Field Intelligence safety analytics feature coming soon' },
+    { status: 501 }
+  );
 }

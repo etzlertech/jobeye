@@ -9,200 +9,56 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { TimeEntriesRepository } from '@/domains/field-intelligence/repositories/time-entries.repository';
-import { TimeAutoClockoutService } from '@/domains/field-intelligence/services/time-auto-clockout.service';
+// TODO: These imports are commented out until the modules are implemented
 import { logger } from '@/core/logger/voice-logger';
+// These imports are commented out until the modules are implemented
+// TODO: // import { TimeEntriesRepository } from '@/domains/field-intelligence/repositories/time-entries.repository';
+// TODO: // import { TimeAutoClockoutService } from '@/domains/field-intelligence/services/time-auto-clockout.service';
 
 /**
- * POST /api/field-intelligence/time/clock/in
- * Clock in for job
- */
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const companyId = user.user_metadata?.company_id;
-    if (!companyId) {
-      return NextResponse.json({ error: 'Company ID not found' }, { status: 400 });
-    }
-
-    const body = await request.json();
-    const { userId, jobId, latitude, longitude } = body;
-
-    if (!userId || !jobId) {
-      return NextResponse.json(
-        { error: 'userId and jobId are required' },
-        { status: 400 }
-      );
-    }
-
-    const timeEntriesRepo = new TimeEntriesRepository(supabase, companyId);
-
-    // Check if already clocked in
-    const activeEntries = await timeEntriesRepo.findAll({
-      user_id: userId,
-      clock_out_time: null,
-    });
-
-    if (activeEntries.length > 0) {
-      return NextResponse.json(
-        { error: 'User already clocked in' },
-        { status: 400 }
-      );
-    }
-
-    // Create time entry
-    const entry = await timeEntriesRepo.create({
-      user_id: userId,
-      job_id: jobId,
-      clock_in_time: new Date().toISOString(),
-      clock_in_latitude: latitude || null,
-      clock_in_longitude: longitude || null,
-      clock_out_time: null,
-      approval_status: 'PENDING',
-    });
-
-    logger.info('User clocked in via API', {
-      entryId: entry.id,
-      userId,
-      jobId,
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: entry,
-    });
-  } catch (error: any) {
-    logger.error('Clock in API error', { error });
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * PUT /api/field-intelligence/time/clock/out
- * Clock out from job
- */
-export async function PUT(request: NextRequest) {
-  try {
-    const supabase = createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const companyId = user.user_metadata?.company_id;
-    if (!companyId) {
-      return NextResponse.json({ error: 'Company ID not found' }, { status: 400 });
-    }
-
-    const body = await request.json();
-    const { userId, latitude, longitude } = body;
-
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
-    }
-
-    const timeEntriesRepo = new TimeEntriesRepository(supabase, companyId);
-
-    // Find active time entry
-    const activeEntries = await timeEntriesRepo.findAll({
-      user_id: userId,
-      clock_out_time: null,
-    });
-
-    if (activeEntries.length === 0) {
-      return NextResponse.json(
-        { error: 'No active time entry found' },
-        { status: 400 }
-      );
-    }
-
-    const entry = activeEntries[0];
-
-    // Update with clock out time
-    await timeEntriesRepo.update(entry.id, {
-      clock_out_time: new Date().toISOString(),
-      clock_out_latitude: latitude || null,
-      clock_out_longitude: longitude || null,
-      auto_clocked_out: false,
-    });
-
-    const updated = await timeEntriesRepo.findById(entry.id);
-
-    logger.info('User clocked out via API', {
-      entryId: entry.id,
-      userId,
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: updated,
-    });
-  } catch (error: any) {
-    logger.error('Clock out API error', { error });
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * GET /api/field-intelligence/time/clock/status?userId=xxx
- * Get current clock status
+ * GET endpoint - stubbed
  */
 export async function GET(request: NextRequest) {
-  try {
-    const supabase = createClient();
+  // TODO: Implement when field-intelligence domain is ready
+  logger.info('Field Intelligence time clock GET called - feature not yet implemented');
+  return NextResponse.json(
+    { message: 'Field Intelligence time clock feature coming soon' },
+    { status: 501 }
+  );
+}
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+/**
+ * POST endpoint - stubbed
+ */
+export async function POST(request: NextRequest) {
+  // TODO: Implement when field-intelligence domain is ready
+  logger.info('Field Intelligence time clock POST called - feature not yet implemented');
+  return NextResponse.json(
+    { message: 'Field Intelligence time clock feature coming soon' },
+    { status: 501 }
+  );
+}
 
-    const companyId = user.user_metadata?.company_id;
-    if (!companyId) {
-      return NextResponse.json({ error: 'Company ID not found' }, { status: 400 });
-    }
+/**
+ * PUT endpoint - stubbed
+ */
+export async function PUT(request: NextRequest) {
+  // TODO: Implement when field-intelligence domain is ready
+  logger.info('Field Intelligence time clock PUT called - feature not yet implemented');
+  return NextResponse.json(
+    { message: 'Field Intelligence time clock feature coming soon' },
+    { status: 501 }
+  );
+}
 
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
-    }
-
-    const timeEntriesRepo = new TimeEntriesRepository(supabase, companyId);
-
-    const activeEntries = await timeEntriesRepo.findAll({
-      user_id: userId,
-      clock_out_time: null,
-    });
-
-    const isClockedIn = activeEntries.length > 0;
-    const activeEntry = isClockedIn ? activeEntries[0] : null;
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        isClockedIn,
-        activeEntry,
-      },
-    });
-  } catch (error: any) {
-    logger.error('Get clock status API error', { error });
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
-  }
+/**
+ * DELETE endpoint - stubbed
+ */
+export async function DELETE(request: NextRequest) {
+  // TODO: Implement when field-intelligence domain is ready
+  logger.info('Field Intelligence time clock DELETE called - feature not yet implemented');
+  return NextResponse.json(
+    { message: 'Field Intelligence time clock feature coming soon' },
+    { status: 501 }
+  );
 }
