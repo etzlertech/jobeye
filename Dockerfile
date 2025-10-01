@@ -14,8 +14,9 @@ RUN npm install -g npm@latest typescript
 
 # Install ALL dependencies (including devDependencies for build)
 # Add --legacy-peer-deps to handle peer dependency conflicts
+# Add --no-optional to skip optional dependencies that might fail
 # Also add verbose logging to debug any issues
-RUN npm ci --legacy-peer-deps --verbose || (cat /root/.npm/_logs/*.log && exit 1)
+RUN npm ci --legacy-peer-deps --no-optional --verbose || (cat /root/.npm/_logs/*.log && exit 1)
 
 # Copy all source files
 COPY . .

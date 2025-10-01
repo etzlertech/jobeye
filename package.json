@@ -96,7 +96,6 @@
     "postgres": "^3.4.7",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
-    "speaker": "^0.5.5",
     "tesseract.js": "^5.1.1",
     "twilio": "^5.10.1",
     "typescript": "^5.4.0",
@@ -104,6 +103,9 @@
     "wav": "^1.0.2",
     "workbox-core": "^7.3.0",
     "zod": "^3.23.8"
+  },
+  "optionalDependencies": {
+    "speaker": "^0.5.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.1",
