@@ -110,8 +110,8 @@ const DEFAULT_CONFIG: GeofenceConfig = {
  * ```
  */
 export class RoutingGeofencingService {
-  private eventsRepository: RoutingGeofenceEventsRepository;
-  private boundariesRepository: RoutingPropertyBoundariesRepository;
+  // TODO: private eventsRepository: RoutingGeofenceEventsRepository;
+  // TODO: private boundariesRepository: RoutingPropertyBoundariesRepository;
   private config: GeofenceConfig;
   private lastEvents: Map<string, { type: GeofenceEventType; timestamp: Date }> =
     new Map();
@@ -178,10 +178,10 @@ export class RoutingGeofencingService {
     hoursAgo: number = 24
   ): Promise<any[]> {
     const since = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
-    return this.eventsRepository.findAll({
-      user_id: userId,
-      event_after: since.toISOString(),
-    });
+    return []; // TODO: await this.eventsRepository.findAll({
+    //   user_id: userId,
+    //   event_after: since.toISOString(),
+    // });
   }
 
   /**

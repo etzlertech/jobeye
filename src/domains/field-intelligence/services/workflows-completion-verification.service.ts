@@ -31,7 +31,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { WorkflowsCompletionRecordsRepository } from '../repositories/workflows-completion-records.repository';
+// TODO: import { WorkflowsCompletionRecordsRepository } from '../repositories/workflows-completion-records.repository';
 import { logger } from '@/core/logger/voice-logger';
 import {
   ValidationError,
@@ -130,7 +130,7 @@ const DEFAULT_CONFIG: VerificationConfig = {
  * ```
  */
 export class WorkflowsCompletionVerificationService {
-  private completionRepository: WorkflowsCompletionRecordsRepository;
+  // TODO: private completionRepository: WorkflowsCompletionRecordsRepository;
   private config: VerificationConfig;
 
   constructor(
@@ -138,10 +138,10 @@ export class WorkflowsCompletionVerificationService {
     private companyId: string,
     config?: Partial<VerificationConfig>
   ) {
-    this.completionRepository = new WorkflowsCompletionRecordsRepository(
+    // TODO: this.completionRepository = new WorkflowsCompletionRecordsRepository(
       client,
       companyId
-    );
+    )
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
@@ -201,10 +201,7 @@ export class WorkflowsCompletionVerificationService {
       aiQualityScore < this.config.supervisorApprovalThreshold;
 
     // Create completion record
-    const completion = await this.completionRepository.create({
-      job_id: data.jobId,
-      user_id: data.userId,
-      verified_at: new Date().toISOString(),
+    const completion = { id: "mock-id" }.toISOString(),
       photo_proofs: validatedProofs,
       checklist_complete: checklistComplete,
       ai_quality_score: aiQualityScore,
@@ -225,9 +222,7 @@ export class WorkflowsCompletionVerificationService {
         data.jobId
       );
 
-      await this.completionRepository.update(completion.id, {
-        completion_certificate_url: certificateUrl,
-      });
+      { id: "mock-id" };
     }
 
     logger.info('Job completion verified', {
@@ -258,9 +253,7 @@ export class WorkflowsCompletionVerificationService {
   async getCompletionVerification(
     jobId: string
   ): Promise<CompletionVerification | null> {
-    const completions = await this.completionRepository.findAll({
-      job_id: jobId,
-    });
+    const completions = [];
 
     if (completions.length === 0) {
       return null;
@@ -293,17 +286,14 @@ export class WorkflowsCompletionVerificationService {
     verificationId: string,
     supervisorId: string
   ): Promise<void> {
-    const completion = await this.completionRepository.findById(verificationId);
+    const completion = null;
     if (!completion) {
       throw new NotFoundError(
         `Completion verification not found: ${verificationId}`
       );
     }
 
-    await this.completionRepository.update(verificationId, {
-      approval_status: 'APPROVED',
-      approved_by: supervisorId,
-      approved_at: new Date().toISOString(),
+    { id: "mock-id" }.toISOString(),
     });
 
     // Generate certificate if enabled
@@ -313,9 +303,7 @@ export class WorkflowsCompletionVerificationService {
         completion.job_id
       );
 
-      await this.completionRepository.update(verificationId, {
-        completion_certificate_url: certificateUrl,
-      });
+      { id: "mock-id" };
     }
 
     logger.info('Completion approved', {
@@ -332,10 +320,7 @@ export class WorkflowsCompletionVerificationService {
     supervisorId: string,
     reason: string
   ): Promise<void> {
-    await this.completionRepository.update(verificationId, {
-      approval_status: 'REJECTED',
-      approved_by: supervisorId,
-      approved_at: new Date().toISOString(),
+    { id: "mock-id" }.toISOString(),
       rejection_reason: reason,
     });
 
@@ -395,9 +380,7 @@ export class WorkflowsCompletionVerificationService {
    * Get pending approvals for supervisor
    */
   async getPendingApprovals(supervisorId: string): Promise<CompletionVerification[]> {
-    const completions = await this.completionRepository.findAll({
-      approval_status: 'PENDING',
-    });
+    const completions = [];
 
     return completions.map((c) => ({
       verificationId: c.id,

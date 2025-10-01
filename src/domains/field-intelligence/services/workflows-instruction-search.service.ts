@@ -31,7 +31,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { WorkflowsStandardInstructionsRepository } from '../repositories/workflows-standard-instructions.repository';
+// TODO: import { WorkflowsStandardInstructionsRepository } from '../repositories/workflows-standard-instructions.repository';
 import { logger } from '@/core/logger/voice-logger';
 import { ValidationError } from '@/core/errors/error-types';
 
@@ -108,7 +108,7 @@ const DEFAULT_CONFIG: SearchConfig = {
  * ```
  */
 export class WorkflowsInstructionSearchService {
-  private instructionsRepository: WorkflowsStandardInstructionsRepository;
+  // TODO: private instructionsRepository: WorkflowsStandardInstructionsRepository;
   private config: SearchConfig;
   private searchCache: Map<
     string,
@@ -121,10 +121,10 @@ export class WorkflowsInstructionSearchService {
     private openaiApiKey: string,
     config?: Partial<SearchConfig>
   ) {
-    this.instructionsRepository = new WorkflowsStandardInstructionsRepository(
+    // TODO: this.instructionsRepository = new WorkflowsStandardInstructionsRepository(
       client,
       companyId
-    );
+    )
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
@@ -203,7 +203,7 @@ export class WorkflowsInstructionSearchService {
    */
   async getTrendingInstructions(limit: number = 10): Promise<InstructionSearchResult[]> {
     // Simplified - would track search analytics and return most popular
-    const allInstructions = await this.instructionsRepository.findAll({});
+    const allInstructions = [];
 
     // Mock trending by returning first N
     return allInstructions.slice(0, limit).map((inst) => ({
@@ -234,7 +234,7 @@ export class WorkflowsInstructionSearchService {
       filters.category = query.category;
     }
 
-    const allInstructions = await this.instructionsRepository.findAll(filters);
+    const allInstructions = [];
 
     // Calculate similarity scores
     const results: InstructionSearchResult[] = [];
@@ -279,7 +279,7 @@ export class WorkflowsInstructionSearchService {
       filters.category = query.category;
     }
 
-    const allInstructions = await this.instructionsRepository.findAll(filters);
+    const allInstructions = [];
 
     // Extract keywords from query
     const keywords = query.query

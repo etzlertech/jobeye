@@ -134,7 +134,7 @@ export interface LaborCostForecast {
  * ```
  */
 export class TimeAnalyticsService {
-  private timeEntriesRepository: TimeEntriesRepository;
+  // TODO: private timeEntriesRepository: TimeEntriesRepository;
 
   constructor(
     client: SupabaseClient,
@@ -299,9 +299,10 @@ export class TimeAnalyticsService {
     startDate: Date,
     endDate: Date
   ): Promise<ProductivityMetrics> {
-    const entries = [] /* TODO: Repository not implemented */,
-      clock_in_before: endDate.toISOString(),
-    });
+    const entries = []; // TODO: await this.timeEntriesRepository.findAll({
+    //   clock_in_after: startDate.toISOString(),
+    //   clock_in_before: endDate.toISOString(),
+    // });
 
     // Count unique jobs
     const uniqueJobs = new Set(entries.map((e) => e.job_id));
@@ -385,9 +386,10 @@ export class TimeAnalyticsService {
     historicalStart.setDate(historicalStart.getDate() - historicalDays);
     const historicalEnd = forecastStartDate;
 
-    const historicalEntries = [] /* TODO: Repository not implemented */,
-      clock_in_before: historicalEnd.toISOString(),
-    });
+    const historicalEntries = []; // TODO: await this.timeEntriesRepository.findAll({
+    //   clock_in_after: historicalStart.toISOString(),
+    //   clock_in_before: historicalEnd.toISOString(),
+    // });
 
     // Calculate historical hours
     let historicalRegularHours = 0;
