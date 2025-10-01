@@ -25,6 +25,7 @@ export interface QueuedVerification {
 const DB_NAME = 'vision_offline_queue';
 const DB_VERSION = 1;
 const STORE_NAME = 'verifications';
+const MAX_QUEUE_SIZE = 200;
 
 /**
  * Offline queue manager for vision verifications
@@ -79,12 +80,23 @@ export class OfflineVerificationQueue {
 
   /**
    * Add verification to queue
+   * Implements FIFO eviction when queue exceeds MAX_QUEUE_SIZE (200)
    */
   async enqueue(verification: Omit<QueuedVerification, 'id' | 'queuedAt' | 'attempts' | 'status'>): Promise<string> {
     await this.init();
 
     if (!this.db) {
       throw new Error('Database not initialized');
+    }
+
+    // Check queue size and evict oldest if at limit
+    const currentCount = await this.getCount();
+    if (currentCount >= MAX_QUEUE_SIZE) {
+      const oldestId = await this.getOldestId();
+      if (oldestId) {
+        await this.remove(oldestId);
+        console.warn(`[OfflineQueue] Evicted oldest record (${oldestId}) - queue at ${MAX_QUEUE_SIZE} limit`);
+      }
     }
 
     const id = `queue-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -372,6 +384,51 @@ export class OfflineVerificationQueue {
    */
   getIsOnline(): boolean {
     return this.isOnline;
+  }
+
+  /**
+   * Get total count of queued items
+   */
+  private async getCount(): Promise<number> {
+    if (!this.db) {
+      return 0;
+    }
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction([STORE_NAME], 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.count();
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(new Error('Failed to count items'));
+    });
+  }
+
+  /**
+   * Get ID of oldest queued item (by queuedAt timestamp)
+   */
+  private async getOldestId(): Promise<string | null> {
+    if (!this.db) {
+      return null;
+    }
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction([STORE_NAME], 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const index = store.index('queuedAt');
+      const request = index.openCursor(null, 'next'); // Ascending order
+
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (cursor) {
+          resolve(cursor.value.id);
+        } else {
+          resolve(null);
+        }
+      };
+
+      request.onerror = () => reject(new Error('Failed to get oldest item'));
+    });
   }
 
   /**

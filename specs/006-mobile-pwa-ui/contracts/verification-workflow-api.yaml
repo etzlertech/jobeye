@@ -1,0 +1,255 @@
+openapi: 3.0.0
+info:
+  title: Equipment Verification Workflow API
+  version: 1.0.0
+  description: |
+    Mobile PWA UI integration with existing vision services.
+    REUSES Feature 001 vision endpoints - no new backend APIs.
+    This contract documents the UI-to-service integration.
+
+paths:
+  # EXISTING ENDPOINT (Feature 001) - Reused as-is
+  /api/vision/verify:
+    post:
+      summary: Verify equipment from photo
+      description: |
+        Existing endpoint from Feature 001.
+        Mobile UI calls this for final verification record creation.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - photo
+                - job_id
+              properties:
+                photo:
+                  type: string
+                  format: binary
+                  description: JPEG image from camera (final verification photo)
+                job_id:
+                  type: string
+                  format: uuid
+                  description: Job to verify equipment for
+                user_id:
+                  type: string
+                  format: uuid
+                  description: Technician performing verification
+      responses:
+        '201':
+          description: Verification record created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationRecord'
+        '400':
+          description: Invalid request (missing photo, invalid job_id)
+        '507':
+          description: Offline queue full (200 record limit exceeded)
+
+  # EXISTING ENDPOINT (Feature 001) - Reused as-is
+  /api/vision/detect:
+    post:
+      summary: Real-time YOLO detection
+      description: |
+        Existing endpoint from Feature 001.
+        Mobile UI calls this at 1fps for live detection.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - image_data
+              properties:
+                image_data:
+                  type: string
+                  description: Base64-encoded frame from camera
+                expected_items:
+                  type: array
+                  items:
+                    type: string
+                  description: Equipment checklist item names
+      responses:
+        '200':
+          description: Detection results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetectionResult'
+        '429':
+          description: Rate limit exceeded (max 1fps)
+
+  # EXISTING ENDPOINT (Feature 001) - Reused as-is
+  /api/vision/vlm-fallback:
+    post:
+      summary: VLM cloud fallback for low confidence
+      description: |
+        Existing endpoint from Feature 001.
+        Triggered automatically when YOLO confidence <70% or after 3 retries.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - image_data
+                - expected_items
+              properties:
+                image_data:
+                  type: string
+                  description: Base64-encoded frame
+                expected_items:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: VLM detection results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetectionResult'
+        '503':
+          description: VLM service unavailable (fall back to manual checklist)
+
+components:
+  schemas:
+    VerificationRecord:
+      type: object
+      required:
+        - id
+        - job_id
+        - verified_items
+        - verification_status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        job_id:
+          type: string
+          format: uuid
+        photo_url:
+          type: string
+          format: uri
+          description: Cloud storage URL (null if manual checklist mode)
+        verified_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetectedItem'
+        verification_status:
+          type: string
+          enum: [verified, partial, failed]
+          description: |
+            - verified: All required items detected
+            - partial: Some items missing
+            - failed: Detection failed (camera unavailable, all retries exhausted)
+        created_at:
+          type: string
+          format: date-time
+          description: Auto-deleted after 30 days via pg_cron
+
+    DetectedItem:
+      type: object
+      required:
+        - item_name
+        - confidence
+        - detection_method
+      properties:
+        item_name:
+          type: string
+          description: Equipment item name from checklist
+        confidence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Detection confidence score
+        bounding_box:
+          type: object
+          properties:
+            x:
+              type: number
+            y:
+              type: number
+            width:
+              type: number
+            height:
+              type: number
+          description: Coordinates for visual overlay (null if manual mode)
+        detection_method:
+          type: string
+          enum: [yolo, vlm, manual]
+          description: |
+            - yolo: On-device detection (1fps)
+            - vlm: Cloud fallback (<70% confidence or 3 retries)
+            - manual: User tapped in manual checklist mode
+
+    DetectionResult:
+      type: object
+      required:
+        - detected_items
+        - confidence_score
+      properties:
+        detected_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetectedItem'
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Overall frame confidence
+        should_fallback:
+          type: boolean
+          description: True if confidence <0.7 (trigger VLM)
+        retry_count:
+          type: integer
+          description: Current retry attempt (max 3)
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []
+
+# UI-Specific Behavior (Not API Contract)
+x-ui-workflows:
+  camera_mode:
+    - Request MediaDevices permissions
+    - Start camera stream (facingMode: environment)
+    - Throttle to 1fps: POST /api/vision/detect
+    - If confidence >=0.7: Mark item verified in UI
+    - If confidence <0.7: POST /api/vision/vlm-fallback
+    - If retries >=3: POST /api/vision/vlm-fallback
+    - If all verified: POST /api/vision/verify (final record)
+
+  manual_mode:
+    - Triggered when camera permissions denied
+    - Render tap-to-verify checklist
+    - User toggles item.verified = true
+    - If all verified: POST /api/vision/verify (no photo)
+
+  offline_mode:
+    - Queue verification records to IndexedDB
+    - Max 200 entries (FIFO eviction if full)
+    - Sync on network restore: POST /api/vision/verify
+
+  partial_detection:
+    - If bounding_box at frame edge: Display "Reposition camera" prompt
+    - Do not accept partial detections
+    - Retry after repositioning
+
+  timeout_handling:
+    - Detection timeout: Retry up to 3 times
+    - After 3 retries: POST /api/vision/vlm-fallback
+    - If VLM fails: Fall back to manual_mode
