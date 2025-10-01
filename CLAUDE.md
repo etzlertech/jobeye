@@ -355,6 +355,7 @@ The project uses:
 - Respect complexity budgets to maintain codebase quality
 - Include voice considerations in all user-facing features
 - Use repository pattern for all database operations
+- **IMPORTANT: Claude can push changes directly - never ask the user to push or commit. Always use `git push` directly when changes need to be deployed**
 
 ## Backend & Testing Guidelines
 
