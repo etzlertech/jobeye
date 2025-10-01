@@ -6,7 +6,7 @@
  */
 
 import { ContainerRepository } from '@/domains/equipment/repositories/container-repository';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import type {
   Container,
   ContainerCreate,
@@ -29,7 +29,6 @@ let repositoryInstance: ContainerRepository | null = null;
 
 function getRepository(): ContainerRepository {
   if (!repositoryInstance) {
-    const supabase = createClient();
     repositoryInstance = new ContainerRepository(supabase);
   }
   return repositoryInstance;

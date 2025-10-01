@@ -8,7 +8,7 @@
  * @dependencies @supabase/supabase-js
  */
 
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { Database } from '@/types/database.types';
 
 type DetectedItem = Database['public']['Tables']['vision_detected_items']['Row'];
@@ -29,7 +29,6 @@ export interface DetectedItemFilter {
 export async function findDetectedItemById(
   id: string
 ): Promise<{ data: DetectedItem | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('vision_detected_items')
@@ -49,7 +48,6 @@ export async function findDetectedItemById(
 export async function findDetectedItems(
   filter: DetectedItemFilter
 ): Promise<{ data: DetectedItem[]; error: Error | null; count: number }> {
-  const supabase = createClient();
 
   let query = supabase
     .from('vision_detected_items')
@@ -95,7 +93,6 @@ export async function findDetectedItems(
 export async function findItemsForVerification(
   verificationId: string
 ): Promise<{ data: DetectedItem[]; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('vision_detected_items')
@@ -125,7 +122,6 @@ export async function findByVerificationId(
 export async function createDetectedItem(
   item: DetectedItemInsert
 ): Promise<{ data: DetectedItem | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('vision_detected_items')
@@ -145,7 +141,6 @@ export async function createDetectedItem(
 export async function createDetectedItems(
   items: DetectedItemInsert[]
 ): Promise<{ data: DetectedItem[]; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('vision_detected_items')
@@ -165,7 +160,6 @@ export async function updateDetectedItem(
   id: string,
   updates: Partial<DetectedItemInsert>
 ): Promise<{ data: DetectedItem | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('vision_detected_items')
@@ -186,7 +180,6 @@ export async function updateDetectedItem(
 export async function deleteDetectedItem(
   id: string
 ): Promise<{ error: Error | null }> {
-  const supabase = createClient();
 
   const { error } = await supabase
     .from('vision_detected_items')
@@ -204,7 +197,6 @@ export async function deleteDetectedItem(
 export async function deleteItemsForVerification(
   verificationId: string
 ): Promise<{ error: Error | null }> {
-  const supabase = createClient();
 
   const { error } = await supabase
     .from('vision_detected_items')

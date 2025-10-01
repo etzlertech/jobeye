@@ -8,7 +8,7 @@
  * @dependencies @supabase/supabase-js
  */
 
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { Database } from '@/types/database.types';
 
 type CostRecord = Database['public']['Tables']['vision_cost_records']['Row'];
@@ -36,7 +36,6 @@ export interface DailyCostSummary {
 export async function findCostRecordById(
   id: string
 ): Promise<{ data: CostRecord | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('vision_cost_records')
@@ -56,7 +55,6 @@ export async function findCostRecordById(
 export async function findCostRecords(
   filter: CostRecordFilter
 ): Promise<{ data: CostRecord[]; error: Error | null; count: number }> {
-  const supabase = createClient();
 
   let query = supabase
     .from('vision_cost_records')
@@ -102,7 +100,6 @@ export async function findCostRecords(
 export async function createCostRecord(
   record: CostRecordInsert
 ): Promise<{ data: CostRecord | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('vision_cost_records')
@@ -122,7 +119,6 @@ export async function createCostRecord(
 export async function getTodaysCost(
   companyId: string
 ): Promise<{ data: { totalCost: number; requestCount: number } | null; error: Error | null }> {
-  const supabase = createClient();
 
   // Get start of today in UTC
   const today = new Date();
@@ -159,7 +155,6 @@ export async function getDailyCostSummaries(
   startDate: string,
   endDate: string
 ): Promise<{ data: DailyCostSummary[]; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('vision_cost_records')
@@ -213,7 +208,6 @@ export async function getTotalCost(
   startDate?: string,
   endDate?: string
 ): Promise<{ data: { totalCost: number; requestCount: number } | null; error: Error | null }> {
-  const supabase = createClient();
 
   let query = supabase
     .from('vision_cost_records')
@@ -314,7 +308,6 @@ export async function getCostStatsByProvider(
   }>;
   error: Error | null;
 }> {
-  const supabase = createClient();
 
   let query = supabase
     .from('vision_cost_records')

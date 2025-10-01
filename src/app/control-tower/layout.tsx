@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
-import { useMemo, useState } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { featureFlags } from '@/core/config/feature-flags'
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { featureFlags } from '@/core/config/feature-flags';
 
 const baseNavigation = [
   { 

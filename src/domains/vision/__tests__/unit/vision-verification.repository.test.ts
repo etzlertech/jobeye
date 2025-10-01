@@ -6,58 +6,51 @@
  */
 
 import * as repo from '../../repositories/vision-verification.repository';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 
 // Mock Supabase client
 jest.mock('@/lib/supabase/client', () => ({
-  createClient: jest.fn()
+  supabase: {
+    from: jest.fn(),
+    select: jest.fn(),
+    insert: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    eq: jest.fn(),
+    gte: jest.fn(),
+    lte: jest.fn(),
+    range: jest.fn(),
+    order: jest.fn(),
+    limit: jest.fn(),
+    single: jest.fn(),
+    then: jest.fn()
+  }
 }));
 
-const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
+const mockSupabase = supabase as jest.Mocked<typeof supabase>;
 
 describe('Vision Verification Repository', () => {
-  let mockSupabase: any;
-
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Create chainable mock that's also thenable (can be awaited)
-    mockSupabase = {
-      from: jest.fn(),
-      select: jest.fn(),
-      insert: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      eq: jest.fn(),
-      gte: jest.fn(),
-      lte: jest.fn(),
-      range: jest.fn(),
-      order: jest.fn(),
-      limit: jest.fn(),
-      single: jest.fn(),
-      then: jest.fn()
-    };
-
     // Set up return values to return the mock itself for chaining
-    mockSupabase.from.mockReturnValue(mockSupabase);
-    mockSupabase.select.mockReturnValue(mockSupabase);
-    mockSupabase.insert.mockReturnValue(mockSupabase);
-    mockSupabase.update.mockReturnValue(mockSupabase);
-    mockSupabase.delete.mockReturnValue(mockSupabase);
-    mockSupabase.eq.mockReturnValue(mockSupabase);
-    mockSupabase.gte.mockReturnValue(mockSupabase);
-    mockSupabase.lte.mockReturnValue(mockSupabase);
-    mockSupabase.range.mockReturnValue(mockSupabase);
-    mockSupabase.order.mockReturnValue(mockSupabase);
-    mockSupabase.limit.mockReturnValue(mockSupabase);
-    mockSupabase.single.mockReturnValue(mockSupabase);
+    (mockSupabase.from as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.select as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.insert as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.update as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.delete as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.eq as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.gte as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.lte as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.range as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.order as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.limit as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.single as jest.Mock).mockReturnValue(mockSupabase);
 
     // Make it thenable - by default resolve with empty result
-    mockSupabase.then.mockImplementation((resolve: any) => {
+    (mockSupabase.then as jest.Mock).mockImplementation((resolve: any) => {
       return Promise.resolve({ data: null, error: null }).then(resolve);
     });
-
-    mockCreateClient.mockReturnValue(mockSupabase);
   });
 
   describe('findVerificationById', () => {

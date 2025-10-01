@@ -12,6 +12,8 @@ import { createClient } from '@/lib/supabase/server';
 import { WorkflowsInstructionSearchService } from '@/domains/field-intelligence/services/workflows-instruction-search.service';
 import { logger } from '@/core/logger/voice-logger';
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/field-intelligence/workflows/search-instructions?q=xxx&category=xxx
  * Search for job instructions

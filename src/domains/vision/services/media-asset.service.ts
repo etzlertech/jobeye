@@ -6,7 +6,7 @@
  * @complexity_budget 200
  */
 
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 
 export interface UploadImageOptions {
   companyId: string;
@@ -27,7 +27,7 @@ export interface UploadImageResult {
  * Service for uploading verification photos to Supabase Storage
  */
 export class MediaAssetService {
-  private supabase = createClient();
+  private supabase = supabase;
   private readonly STORAGE_BUCKET = 'verification-photos';
 
   /**

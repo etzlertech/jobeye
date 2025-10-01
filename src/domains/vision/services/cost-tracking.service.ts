@@ -263,11 +263,12 @@ export class CostTrackingService {
     totalCost: number;
     requestCount: number;
   }>> {
-    const result = await costRecordRepo.getCostSummaryByDateRange(
-      companyId,
+    const result = await costRecordRepo.findCostRecords({
+      tenantId: companyId,
       startDate,
-      endDate
-    );
+      endDate,
+      limit: 1000
+    });
 
     if (result.error || !result.data) {
       return [];

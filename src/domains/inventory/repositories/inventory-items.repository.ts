@@ -9,7 +9,7 @@
  * @feature 004-voice-vision-inventory
  */
 
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import type {
   InventoryItem,
   InventoryItemCreate,
@@ -35,7 +35,6 @@ export interface InventoryItemFilter {
 export async function findById(
   id: string
 ): Promise<{ data: InventoryItem | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('inventory_items')
@@ -55,7 +54,6 @@ export async function findById(
 export async function findAll(
   filter: InventoryItemFilter = {}
 ): Promise<{ data: InventoryItem[]; error: Error | null; count: number }> {
-  const supabase = createClient();
 
   let query = supabase
     .from('inventory_items')
@@ -109,7 +107,6 @@ export async function findAll(
 export async function create(
   item: InventoryItemCreate
 ): Promise<{ data: InventoryItem | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('inventory_items')
@@ -130,7 +127,6 @@ export async function update(
   id: string,
   updates: InventoryItemUpdate
 ): Promise<{ data: InventoryItem | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('inventory_items')
@@ -151,7 +147,6 @@ export async function update(
 export async function deleteById(
   id: string
 ): Promise<{ error: Error | null }> {
-  const supabase = createClient();
 
   const { error } = await supabase
     .from('inventory_items')

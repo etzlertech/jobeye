@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { featureFlags } from '@/core/config/feature-flags'
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { featureFlags } from '@/core/config/feature-flags';
 
 type KitSummary = {
   id: string
@@ -199,7 +199,7 @@ export default function SchedulingKitsPreviewPage() {
           </div>
           <div className="p-4">
             {isLoading ? (
-              <div className="text-gray-400 text-sm">Loading kits…</div>
+              <div className="text-gray-400 text-sm">Loading kitsï¿½</div>
             ) : error ? (
               <div className="text-red-400 text-sm">{error}</div>
             ) : kits.length === 0 ? (
@@ -248,7 +248,7 @@ export default function SchedulingKitsPreviewPage() {
                     <li key={item.id ?? `${item.itemType}-${item.unit}`}>
                       <span className="font-mono text-xs mr-2 uppercase">{item.itemType}</span>
                       {item.quantity} {item.unit}
-                      {item.isRequired ? ' • Required' : ''}
+                      {item.isRequired ? ' ï¿½ Required' : ''}
                     </li>
                   ))}
                 </ul>
@@ -382,7 +382,7 @@ export default function SchedulingKitsPreviewPage() {
               disabled={isSubmitting}
               className="w-full rounded bg-tower-accent px-4 py-2 text-sm font-medium text-white hover:bg-tower-accent/90 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Creating…' : 'Create Kit'}
+              {isSubmitting ? 'Creatingï¿½' : 'Create Kit'}
             </button>
           </form>
         </div>

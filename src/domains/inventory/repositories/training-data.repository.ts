@@ -4,13 +4,12 @@
  * @feature 004-voice-vision-inventory
  */
 
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import type { TrainingDataRecord, TrainingDataRecordCreate } from '../types/inventory-types';
 
 export async function create(
   record: TrainingDataRecordCreate
 ): Promise<{ data: TrainingDataRecord | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('training_data_records')
@@ -27,7 +26,6 @@ export async function create(
 export async function findById(
   id: string
 ): Promise<{ data: TrainingDataRecord | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('training_data_records')
@@ -45,7 +43,6 @@ export async function findByCompany(
   companyId: string,
   limit = 100
 ): Promise<{ data: TrainingDataRecord[]; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('training_data_records')

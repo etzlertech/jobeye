@@ -6,51 +6,44 @@
  */
 
 import * as repo from '../../repositories/cost-record.repository';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 
 // Mock Supabase client
 jest.mock('@/lib/supabase/client', () => ({
-  createClient: jest.fn()
+  supabase: {
+    from: jest.fn(),
+    select: jest.fn(),
+    insert: jest.fn(),
+    eq: jest.fn(),
+    gte: jest.fn(),
+    lte: jest.fn(),
+    range: jest.fn(),
+    order: jest.fn(),
+    single: jest.fn(),
+    then: jest.fn()
+  }
 }));
 
-const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
+const mockSupabase = supabase as jest.Mocked<typeof supabase>;
 
 describe('Cost Record Repository', () => {
-  let mockSupabase: any;
-
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Create chainable mock that's also thenable (can be awaited)
-    mockSupabase = {
-      from: jest.fn(),
-      select: jest.fn(),
-      insert: jest.fn(),
-      eq: jest.fn(),
-      gte: jest.fn(),
-      lte: jest.fn(),
-      range: jest.fn(),
-      order: jest.fn(),
-      single: jest.fn(),
-      then: jest.fn()
-    };
-
-    mockSupabase.from.mockReturnValue(mockSupabase);
-    mockSupabase.select.mockReturnValue(mockSupabase);
-    mockSupabase.insert.mockReturnValue(mockSupabase);
-    mockSupabase.eq.mockReturnValue(mockSupabase);
-    mockSupabase.gte.mockReturnValue(mockSupabase);
-    mockSupabase.lte.mockReturnValue(mockSupabase);
-    mockSupabase.range.mockReturnValue(mockSupabase);
-    mockSupabase.order.mockReturnValue(mockSupabase);
-    mockSupabase.single.mockReturnValue(mockSupabase);
+    (mockSupabase.from as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.select as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.insert as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.eq as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.gte as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.lte as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.range as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.order as jest.Mock).mockReturnValue(mockSupabase);
+    (mockSupabase.single as jest.Mock).mockReturnValue(mockSupabase);
 
     // Make it thenable - by default resolve with empty result
-    mockSupabase.then.mockImplementation((resolve: any) => {
+    (mockSupabase.then as jest.Mock).mockImplementation((resolve: any) => {
       return Promise.resolve({ data: null, error: null }).then(resolve);
     });
-
-    mockCreateClient.mockReturnValue(mockSupabase);
   });
 
   describe('findCostRecordById', () => {
@@ -94,7 +87,7 @@ describe('Cost Record Repository', () => {
 
       expect(result.data).toEqual(mockData);
       expect(result.count).toBe(2);
-      expect(mockSupabase.eq).toHaveBeenCalledWith('company_id', 'company-123');
+      expect(mockSupabase.eq).toHaveBeenCalledWith('tenant_id', 'company-123');
       expect(mockSupabase.eq).toHaveBeenCalledWith('provider', 'openai-gpt4-vision');
     });
 
@@ -158,7 +151,7 @@ describe('Cost Record Repository', () => {
         totalCost: 0.30,
         requestCount: 3
       });
-      expect(mockSupabase.eq).toHaveBeenCalledWith('company_id', 'company-123');
+      expect(mockSupabase.eq).toHaveBeenCalledWith('tenant_id', 'company-123');
       expect(mockSupabase.gte).toHaveBeenCalled(); // Date filter applied
     });
 

@@ -12,6 +12,8 @@ import { createClient } from '@/lib/supabase/server';
 import { TimeAnalyticsService } from '@/domains/field-intelligence/services/time-analytics.service';
 import { logger } from '@/core/logger/voice-logger';
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/field-intelligence/time/analytics?type=xxx&startDate=xxx&endDate=xxx
  * Get time tracking analytics

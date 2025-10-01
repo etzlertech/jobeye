@@ -8,7 +8,7 @@
  * @dependencies @supabase/supabase-js
  */
 
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { Database } from '@/types/database.types';
 
 type VisionVerification = Database['public']['Tables']['vision_verifications']['Row'];
@@ -33,7 +33,6 @@ export interface VisionVerificationFilter {
 export async function findVerificationById(
   id: string
 ): Promise<{ data: VisionVerification | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('vision_verifications')
@@ -86,7 +85,6 @@ export async function deleteById(
 export async function findVerifications(
   filter: VisionVerificationFilter
 ): Promise<{ data: VisionVerification[]; error: Error | null; count: number }> {
-  const supabase = createClient();
 
   let query = supabase
     .from('vision_verifications')
@@ -144,7 +142,6 @@ export async function findVerifications(
 export async function createVerification(
   verification: VisionVerificationInsert
 ): Promise<{ data: VisionVerification | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('vision_verifications')
@@ -165,7 +162,6 @@ export async function updateVerification(
   id: string,
   updates: VisionVerificationUpdate
 ): Promise<{ data: VisionVerification | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('vision_verifications')
@@ -186,7 +182,6 @@ export async function updateVerification(
 export async function deleteVerification(
   id: string
 ): Promise<{ error: Error | null }> {
-  const supabase = createClient();
 
   const { error } = await supabase
     .from('vision_verifications')
@@ -217,7 +212,6 @@ export async function getVerificationStats(
   } | null;
   error: Error | null;
 }> {
-  const supabase = createClient();
 
   let query = supabase
     .from('vision_verifications')
@@ -275,7 +269,6 @@ export async function getVerificationStats(
 export async function findLatestVerificationForKit(
   kitId: string
 ): Promise<{ data: VisionVerification | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('vision_verifications')

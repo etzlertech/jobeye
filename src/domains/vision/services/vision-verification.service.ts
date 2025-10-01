@@ -7,7 +7,7 @@
  * @test_coverage ≥80%
  */
 
-import { detectObjects, YoloInferenceResult } from '../lib/yolo-inference';
+import { runYoloInference, YoloInferenceResult } from '../lib/yolo-inference';
 import { evaluateFallbackNeed, VlmRequest, VlmResult } from '../lib/vlm-fallback-router';
 import { callOpenAIVision } from '../lib/openai-vision-adapter';
 import { estimateCost } from '../lib/cost-estimator';
@@ -241,7 +241,7 @@ export class VisionVerificationService {
    */
   private async runYoloDetection(imageData: ImageData): Promise<YoloInferenceResult> {
     try {
-      return await detectObjects(imageData);
+      return await runYoloInference(imageData);
     } catch (error: any) {
       return {
         success: false,

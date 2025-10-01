@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * AGENT DIRECTIVE BLOCK
  * file: src/app/offline/page.tsx

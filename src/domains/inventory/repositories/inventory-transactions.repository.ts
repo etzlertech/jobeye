@@ -4,13 +4,12 @@
  * @feature 004-voice-vision-inventory
  */
 
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import type { InventoryTransaction, InventoryTransactionCreate, TransactionType } from '../types/inventory-types';
 
 export async function create(
   transaction: InventoryTransactionCreate
 ): Promise<{ data: InventoryTransaction | null; error: Error | null }> {
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('inventory_transactions')
@@ -29,7 +28,6 @@ export async function findByCompany(
   type?: TransactionType,
   limit = 50
 ): Promise<{ data: InventoryTransaction[]; error: Error | null }> {
-  const supabase = createClient();
 
   let query = supabase
     .from('inventory_transactions')
