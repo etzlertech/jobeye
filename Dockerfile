@@ -6,9 +6,13 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
+# Update npm to latest version first
+RUN npm install -g npm@latest
+
 # Install ALL dependencies (including devDependencies for build)
 # Add --legacy-peer-deps to handle peer dependency conflicts
-RUN npm ci --legacy-peer-deps
+# Also add verbose logging to debug any issues
+RUN npm ci --legacy-peer-deps --verbose || (cat /root/.npm/_logs/*.log && exit 1)
 
 # Copy all source files
 COPY . .
