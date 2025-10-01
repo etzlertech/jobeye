@@ -209,10 +209,7 @@ export default function JobLoadChecklistStartPage() {
 
             // Stop the camera after a short delay to show the completion status
             setTimeout(() => {
-              if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                setStream(null);
-              }
+              stopCamera();
             }, 1500);
           }
 
@@ -326,7 +323,7 @@ export default function JobLoadChecklistStartPage() {
           max-width: 375px;
           max-height: 812px;
           margin: 0 auto;
-          background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+          background: #000;
           display: flex;
           flex-direction: column;
           padding: 10px;
@@ -336,7 +333,7 @@ export default function JobLoadChecklistStartPage() {
         .container-1 {
           height: 50px;
           border-radius: 12px;
-          background: rgba(0, 0, 0, 0.9);
+          background: #000;
           padding: 8px 15px;
           display: flex;
           flex-direction: column;
@@ -363,10 +360,10 @@ export default function JobLoadChecklistStartPage() {
         }
 
         .container-2 {
-          flex: 1.5;
+          flex: 1.3;
           border: 3px solid #FFC107;
           border-radius: 12px;
-          background: linear-gradient(135deg, #2a4d2a 0%, #1a3d1a 100%);
+          background: #000;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -399,9 +396,9 @@ export default function JobLoadChecklistStartPage() {
         }
 
         .container-3 {
-          flex: 1.5;
+          flex: 1.7;
           border-radius: 12px;
-          background: rgba(0, 0, 0, 0.9);
+          background: #000;
           overflow: hidden;
           display: flex;
           flex-direction: column;
@@ -508,7 +505,7 @@ export default function JobLoadChecklistStartPage() {
           flex: 1;
           border: 3px solid;
           border-radius: 12px;
-          background: rgba(0, 0, 0, 0.9);
+          background: #000;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -544,7 +541,7 @@ export default function JobLoadChecklistStartPage() {
         }
 
         .button-yes.disabled:hover {
-          background: rgba(0, 0, 0, 0.9);
+          background: #000;
           transform: scale(1);
         }
       `}</style>
