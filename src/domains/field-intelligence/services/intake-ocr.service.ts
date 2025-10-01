@@ -157,8 +157,12 @@ export class IntakeOCRService {
       const processingTimeMs = Date.now() - startTime;
 
       // Update document with OCR results
-      [] /* TODO: Repository not implemented */.toISOString(),
-      });
+      // TODO: await this.documentsRepository.update(documentId, {
+      //   ocr_extracted_text: ocrResult.extractedText,
+      //   ocr_structured_data: structuredData,
+      //   ocr_confidence: confidence,
+      //   ocr_processed_at: new Date().toISOString(),
+      // });
 
       logger.info('OCR extraction completed', {
         documentId,

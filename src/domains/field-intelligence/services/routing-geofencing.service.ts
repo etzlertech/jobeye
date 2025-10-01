@@ -122,13 +122,13 @@ export class RoutingGeofencingService {
     config?: Partial<GeofenceConfig>
   ) {
     // TODO: this.eventsRepository = new RoutingGeofenceEventsRepository(
-      client,
-      companyId
-    );
+    //   client,
+    //   companyId
+    // );
     // TODO: this.boundariesRepository = new RoutingPropertyBoundariesRepository(
-      client,
-      companyId
-    );
+    //   client,
+    //   companyId
+    // );
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 

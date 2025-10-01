@@ -152,9 +152,10 @@ export class TimeAnalyticsService {
     crewSize?: number
   ): Promise<LaborUtilizationMetrics> {
     // Get time entries for period
-    const entries = [] /* TODO: Repository not implemented */,
-      clock_in_before: endDate.toISOString(),
-    });
+    const entries = []; // TODO: await this.timeEntriesRepository.findAll({
+    //   clock_in_after: startDate.toISOString(),
+    //   clock_in_before: endDate.toISOString(),
+    // });
 
     // Calculate period duration in days
     const periodDays =
