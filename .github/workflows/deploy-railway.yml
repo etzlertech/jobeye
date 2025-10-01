@@ -1,0 +1,65 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+        
+      - name: Deploy to Railway
+        id: deploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          # Deploy and capture output
+          OUTPUT=$(railway up --ci --json 2>&1 || true)
+          echo "$OUTPUT"
+          
+          # Try to extract deployment ID from output
+          DEPLOYMENT_ID=$(echo "$OUTPUT" | grep -oP '"deploymentId":\s*"[^"]+' | cut -d'"' -f4 || true)
+          
+          if [ -n "$DEPLOYMENT_ID" ]; then
+            echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+            echo "✅ Deployment started: $DEPLOYMENT_ID"
+          else
+            echo "⚠️ Could not extract deployment ID from output"
+            echo "deployment_id=unknown" >> $GITHUB_OUTPUT
+          fi
+          
+          # Save full output as artifact
+          echo "$OUTPUT" > railway-deploy-output.json
+          
+      - name: Upload deployment output
+        uses: actions/upload-artifact@v4
+        with:
+          name: railway-deploy-${{ github.sha }}
+          path: railway-deploy-output.json
+          
+      - name: Comment on commit
+        if: steps.deploy.outputs.deployment_id != 'unknown'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deploymentId = '${{ steps.deploy.outputs.deployment_id }}';
+            const sha = context.sha;
+            
+            await github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: sha,
+              body: `🚂 Railway deployment started!\n\nDeployment ID: \`${deploymentId}\`\n\nMonitor with:\n\`\`\`bash\nnpm run railway:monitor ${deploymentId}\n\`\`\``
+            });

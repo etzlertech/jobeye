@@ -44,6 +44,33 @@ npm run db:reset        # Reset database to clean state
 npm run check:db-actual # Check ACTUAL database schema (ALWAYS run before migrations!)
 ```
 
+### Railway Deployment Monitoring
+```bash
+# Monitor a specific deployment
+npm run railway:monitor <deployment-id>
+
+# View build logs
+npm run railway:build-logs <deployment-id> [limit]
+
+# View runtime/deployment logs  
+npm run railway:deploy-logs <deployment-id> [limit]
+
+# Check latest deployment
+npm run railway:check
+```
+
+**Finding Deployment IDs:**
+- After pushing to GitHub, check the Actions tab for the deployment workflow
+- The deployment ID is shown in the Railway CLI output
+- Or visit https://railway.app to find recent deployments
+
+**Example Railway debugging workflow:**
+1. Push changes: `git push`
+2. Wait for GitHub Actions to trigger Railway deployment
+3. Monitor deployment: `npm run railway:monitor <deployment-id>`
+4. If failed, the script will automatically show error logs
+5. Fix issues and push again
+
 #### CRITICAL: Direct Database Modifications via Supabase
 **The ONLY reliable method to execute SQL migrations and schema changes on hosted Supabase is through the Supabase JavaScript client using `client.rpc('exec_sql', { sql: '...' })`**
 
