@@ -42,6 +42,43 @@ export default function Home() {
             </p>
           </div>
         </div>
+
+        <div className="mt-8 bg-tower-gray rounded-lg p-8 border border-tower-border">
+          <h2 className="text-2xl font-semibold text-white mb-4">
+            📱 Mobile Interfaces
+          </h2>
+          <p className="text-gray-300 mb-6">
+            Test our AI-powered mobile interfaces for field service management.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link 
+              href="/mobile/job-load-checklist-start"
+              className="block bg-gray-800 hover:bg-gray-700 text-white p-4 rounded-lg transition-colors"
+            >
+              <div className="flex items-center space-x-3 mb-2">
+                <span className="text-2xl">🎯</span>
+                <span className="font-semibold">Gemini VLM Item Checklist</span>
+              </div>
+              <p className="text-sm text-gray-400">
+                Real-time equipment detection using Gemini AI vision. Automatically checks off items as they're detected in your camera feed.
+              </p>
+            </Link>
+            
+            <Link 
+              href="/mobile/equipment-verification"
+              className="block bg-gray-800 hover:bg-gray-700 text-white p-4 rounded-lg transition-colors"
+            >
+              <div className="flex items-center space-x-3 mb-2">
+                <span className="text-2xl">✅</span>
+                <span className="font-semibold">Equipment Verification</span>
+              </div>
+              <p className="text-sm text-gray-400">
+                Comprehensive kit verification with offline support. Uses hybrid YOLO + VLM detection for accurate equipment tracking.
+              </p>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   )
