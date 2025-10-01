@@ -3,6 +3,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Install Python and build dependencies for native modules
+RUN apk add --no-cache python3 make g++ libc-dev
+
 # Copy package files
 COPY package*.json ./
 
