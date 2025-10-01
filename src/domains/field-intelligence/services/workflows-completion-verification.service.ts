@@ -201,14 +201,17 @@ export class WorkflowsCompletionVerificationService {
       aiQualityScore < this.config.supervisorApprovalThreshold;
 
     // Create completion record
-    const completion = { id: "mock-id" }.toISOString(),
-      photo_proofs: validatedProofs,
-      checklist_complete: checklistComplete,
-      ai_quality_score: aiQualityScore,
-      requires_supervisor_approval: requiresSupervisorApproval,
-      approval_status: requiresSupervisorApproval ? 'PENDING' : null,
-      completion_certificate_url: null,
-    });
+    const completion = { id: "mock-id" }; // TODO: await this.completionRepository.create({
+    //   job_id: jobId,
+    //   user_id: userId,
+    //   verified_at: new Date().toISOString(),
+    //   photo_proofs: validatedProofs,
+    //   checklist_complete: checklistComplete,
+    //   ai_quality_score: aiQualityScore,
+    //   requires_supervisor_approval: requiresSupervisorApproval,
+    //   approval_status: requiresSupervisorApproval ? 'PENDING' : null,
+    //   completion_certificate_url: null,
+    // });
 
     // Generate completion certificate if enabled and approved
     let certificateUrl: string | undefined;

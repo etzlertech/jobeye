@@ -154,14 +154,17 @@ export class WorkflowsJobArrivalService {
     }
 
     // Create arrival record
-    const arrival = { id: "mock-id" }.toISOString(),
-      detection_method: data.detectionMethod,
-      latitude: data.latitude,
-      longitude: data.longitude,
-      photo_proof_url: data.photoProofUrl || null,
-      checklist_initialized: false,
-      notification_sent: false,
-    });
+    const arrival = { id: "mock-id" }; // TODO: await this.arrivalsRepository.create({
+    //   job_id: data.jobId,
+    //   user_id: data.userId,
+    //   arrived_at: new Date().toISOString(),
+    //   detection_method: data.detectionMethod,
+    //   latitude: data.latitude,
+    //   longitude: data.longitude,
+    //   photo_proof_url: data.photoProofUrl || null,
+    //   checklist_initialized: false,
+    //   notification_sent: false,
+    // });
 
     // Initialize checklist if enabled
     let checklistInitialized = false;

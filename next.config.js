@@ -19,6 +19,26 @@ const nextConfig = {
     NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version || '3.2.1',
   },
   
+  // Webpack configuration
+  webpack: (config, { isServer }) => {
+    // Handle ESM modules
+    config.module.rules.push({
+      test: /\.mjs$/,
+      include: /node_modules/,
+      type: 'javascript/auto',
+    });
+    
+    // Exclude ONNX runtime node module from client bundle
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'onnxruntime-node': false,
+      };
+    }
+    
+    return config;
+  },
+  
   // Security headers
   async headers() {
     return [
