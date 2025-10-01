@@ -38,7 +38,7 @@
 
 ## Phase 3.1: Setup & Infrastructure
 - [ ] T001 Create domain directories for intent, supervisor, and crew in src/domains/
-- [ ] T002 Set up database migrations for new tables (ai_interaction_logs, intent_classifications, offline_sync_queue)
+- [ ] T002 Set up database migrations for new tables (ai_interaction_logs, intent_classifications, offline_sync_queue) with tenant_id column using Supabase RPC method
 - [ ] T003 [P] Configure PWA manifest and service worker in public/ directory
 - [ ] T004 [P] Set up offline storage utilities using IndexedDB in src/lib/offline/
 - [ ] T005 [P] Create camera capture component with 1fps throttling in src/components/camera/
@@ -102,6 +102,7 @@
 - [ ] T047 [P] Voice command button component in src/components/voice/VoiceCommandButton.tsx
 - [ ] T048 [P] Job card component with 512x512 thumbnails in src/components/ui/JobCard.tsx
 - [ ] T049 [P] Item checklist component for load verification in src/components/ui/ItemChecklist.tsx
+- [ ] T049a [P] Create ButtonLimiter component to enforce max 4 buttons per screen in src/components/ui/ButtonLimiter.tsx
 - [ ] T050 Login page with role detection in src/app/(auth)/sign-in/page.tsx
 - [ ] T051 Supervisor dashboard page in src/app/supervisor/page.tsx
 - [ ] T052 Supervisor inventory management page in src/app/supervisor/inventory/page.tsx
@@ -109,6 +110,7 @@
 - [ ] T054 Crew dashboard page in src/app/crew/page.tsx
 - [ ] T055 Crew job detail page in src/app/crew/jobs/[jobId]/page.tsx
 - [ ] T056 Crew load verification page in src/app/crew/jobs/[jobId]/verify/page.tsx
+- [ ] T056a Super Admin role management UI page in src/app/admin/users/page.tsx
 
 ## Phase 3.4: Integration & Middleware
 - [ ] T057 Role-based middleware for supervisor/crew routes in src/middleware.ts
@@ -127,6 +129,12 @@
 - [ ] T068 Create seed data script for demo users and jobs in scripts/seed-mvp-demo.ts
 - [ ] T069 Validate all quickstart scenarios pass
 - [ ] T070 Security audit: RLS policies on new tables
+- [ ] T071 Create RLS policies for ai_interaction_logs table with tenant isolation
+- [ ] T072 Create RLS policies for intent_classifications table with tenant isolation
+- [ ] T073 Create RLS policies for offline_sync_queue table with tenant isolation
+- [ ] T074 Create RLS isolation tests for all new tables in tests/security/
+- [ ] T075 Create agent directive blocks for all new TypeScript files in src/ directories per constitution requirements
+- [ ] T076 Implement VLM budget enforcement with $0.10/request limit per constitution in src/domains/intent/lib/budget-enforcer.ts
 
 ## Dependencies
 - Setup (T001-T007) must complete first

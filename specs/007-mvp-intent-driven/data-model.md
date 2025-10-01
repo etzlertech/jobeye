@@ -17,9 +17,9 @@ This document defines the data model for the MVP intent-driven mobile app, inclu
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
 | id | uuid | PK, DEFAULT uuid_generate_v4() | Unique identifier |
+| tenant_id | uuid | FK → tenants.id, NOT NULL | Tenant/company identifier |
 | created_at | timestamp | NOT NULL, DEFAULT NOW() | When interaction occurred |
 | user_id | uuid | FK → users.id, NOT NULL | User who triggered interaction |
-| company_id | uuid | FK → companies.id, NOT NULL | Company context |
 | interaction_type | text | NOT NULL, CHECK (type IN ('intent', 'stt', 'tts', 'llm', 'vlm')) | Type of AI interaction |
 | model_used | text | NOT NULL | Model name (e.g., 'gemini-2.0-flash', 'gpt-4-vision') |
 | prompt | text | NOT NULL | Prompt sent to model |
@@ -32,7 +32,7 @@ This document defines the data model for the MVP intent-driven mobile app, inclu
 
 **Indexes**:
 - `idx_ai_logs_user_created` ON (user_id, created_at DESC)
-- `idx_ai_logs_company_type` ON (company_id, interaction_type)
+- `idx_ai_logs_tenant_type` ON (tenant_id, interaction_type)
 - `idx_ai_logs_created` ON (created_at DESC)
 
 **RLS Policies**:
@@ -48,9 +48,9 @@ This document defines the data model for the MVP intent-driven mobile app, inclu
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
 | id | uuid | PK, DEFAULT uuid_generate_v4() | Unique identifier |
+| tenant_id | uuid | FK → tenants.id, NOT NULL | Tenant/company identifier |
 | created_at | timestamp | NOT NULL, DEFAULT NOW() | When classified |
 | user_id | uuid | FK → users.id, NOT NULL | User who triggered |
-| company_id | uuid | FK → companies.id, NOT NULL | Company context |
 | image_url | text | NOT NULL | Image analyzed |
 | detected_intent | text | NOT NULL, CHECK (intent IN ('inventory_add', 'job_load_verify', 'receipt_scan', 'maintenance_event', 'vehicle_add', 'unknown')) | Detected intent |
 | confidence | decimal(3,2) | NOT NULL, CHECK (confidence BETWEEN 0 AND 1) | Confidence score |
@@ -70,6 +70,7 @@ This document defines the data model for the MVP intent-driven mobile app, inclu
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
 | id | uuid | PK, DEFAULT uuid_generate_v4() | Unique identifier |
+| tenant_id | uuid | FK → tenants.id, NOT NULL | Tenant/company identifier |
 | created_at | timestamp | NOT NULL, DEFAULT NOW() | When queued |
 | user_id | uuid | FK → users.id, NOT NULL | User who performed action |
 | operation_type | text | NOT NULL | Type of operation |
@@ -134,8 +135,9 @@ erDiagram
     jobs ||--o| equipment_containers : "assigned vehicle"
     equipment_items }o--o| equipment_containers : "stored in"
     
-    companies ||--o{ ai_interaction_logs : owns
-    companies ||--o{ intent_classifications : owns
+    tenants ||--o{ ai_interaction_logs : owns
+    tenants ||--o{ intent_classifications : owns
+    tenants ||--o{ offline_sync_queue : owns
 ```
 
 ## Validation Rules

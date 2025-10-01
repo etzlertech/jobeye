@@ -37,10 +37,12 @@ export default function JobLoadChecklistStartPage() {
     { id: '8', name: 'Bag of Doritos', icon: '🍿', checked: false },
   ]);
   const [detections, setDetections] = useState<Detection[]>([]);
+  const [showFlash, setShowFlash] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const analysisIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const startCamera = async () => {
     try {
@@ -213,6 +215,13 @@ export default function JobLoadChecklistStartPage() {
             }, 1500);
           }
 
+          // Flash animation and sound on detection
+          if (hasChanges) {
+            setShowFlash(true);
+            audioRef.current?.play().catch(() => {});
+            setTimeout(() => setShowFlash(false), 300);
+          }
+
           return sorted;
         });
       } else {
@@ -253,6 +262,7 @@ export default function JobLoadChecklistStartPage() {
     }
     if (analysisIntervalRef.current) {
       clearInterval(analysisIntervalRef.current);
+      analysisIntervalRef.current = null;
     }
     setIsAnalyzing(false);
   };
@@ -292,6 +302,11 @@ export default function JobLoadChecklistStartPage() {
   useEffect(() => {
     // Camera start disabled - use manual button instead
     console.log('Page loaded - click button to start camera');
+    
+    // Create audio element for success sound
+    audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYJGmW58OScTgwOUazi5LllHQU7ks3w14w5CRuDy/DThDYJHLzx8//6fzIHP5pVBAAA/74AAPhDAAAP/wAAmkEAAG9PAABm/wAAWEoAAE8yAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+    audioRef.current.volume = 0.3;
+    
     return () => {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
@@ -302,6 +317,27 @@ export default function JobLoadChecklistStartPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Watch for all items being checked
+  useEffect(() => {
+    const allChecked = checklist.every(item => item.checked);
+    if (allChecked && checklist.length > 0 && isAnalyzing) {
+      console.log('[AUTO-STOP] All items checked! Stopping...');
+      setDetectionStatus('✅ LIST COMPLETED!');
+      setIsAnalyzing(false);
+      
+      // Stop the interval immediately
+      if (analysisIntervalRef.current) {
+        clearInterval(analysisIntervalRef.current);
+        analysisIntervalRef.current = null;
+      }
+      
+      // Stop camera after delay
+      setTimeout(() => {
+        stopCamera();
+      }, 1500);
+    }
+  }, [checklist, isAnalyzing]);
 
   const allChecked = checklist.every(item => item.checked);
 
@@ -405,7 +441,7 @@ export default function JobLoadChecklistStartPage() {
         }
 
         .details-content {
-          padding: 20px;
+          padding: 15px 0;
           overflow-y: auto;
           flex: 1;
         }
@@ -415,6 +451,7 @@ export default function JobLoadChecklistStartPage() {
           font-size: 18px;
           font-weight: bold;
           margin-bottom: 15px;
+          padding: 0 15px;
         }
 
         .checklist-items {
@@ -450,8 +487,8 @@ export default function JobLoadChecklistStartPage() {
         }
 
         .item-checkbox {
-          width: 20px;
-          height: 20px;
+          width: 24px;
+          height: 24px;
           border: 2px solid #0066FF;
           border-radius: 4px;
           margin-right: 8px;
@@ -544,7 +581,26 @@ export default function JobLoadChecklistStartPage() {
           background: #000;
           transform: scale(1);
         }
+
+        .flash-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 255, 0, 0.4);
+          pointer-events: none;
+          animation: flash 0.3s ease-out;
+          z-index: 9999;
+        }
+
+        @keyframes flash {
+          0% { opacity: 0; }
+          50% { opacity: 1; }
+          100% { opacity: 0; }
+        }
       `}</style>
+      {showFlash && <div className="flash-overlay" />}
       <div className="mobile-screen">
         <div className="container-1">
           <div className="company-name">Evergold Landscaping</div>

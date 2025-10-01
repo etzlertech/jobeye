@@ -31,7 +31,7 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-Build an MVP intent-driven mobile PWA that enables field service supervisors to manage inventory, jobs, and crew assignments through camera and voice interactions. Crew members can verify equipment loads and complete job tasks with AI assistance. The system uses camera-based intent recognition (1fps capture) to automatically determine user actions: adding inventory, verifying job loads, scanning receipts, or reporting maintenance issues. All interactions support voice commands (STT→LLM→TTS) and are limited to 4 buttons per screen for simplicity. Single company deployment with offline capabilities for viewing jobs and manual item checking.
+Build an MVP intent-driven mobile PWA that enables field service supervisors to manage inventory, jobs, and crew assignments through camera and voice interactions. Crew members can verify equipment loads and complete job tasks with AI assistance. The system uses camera-based intent recognition (1fps capture) to automatically determine user actions: adding inventory, verifying job loads, scanning receipts, or reporting maintenance issues. All interactions support voice commands (STT→LLM→TTS) and are limited to 4 buttons per screen for simplicity. Single tenant deployment with offline capabilities for viewing jobs and manual item checking.
 
 ## Technical Context
 **Language/Version**: TypeScript 5.x, Node.js 20.x  
@@ -215,4 +215,4 @@ tests/
 - [x] Complexity deviations documented
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+*Based on Constitution v1.1.1 - See `.specify/constitution.md`*

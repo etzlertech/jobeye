@@ -7,7 +7,7 @@ This document establishes the fundamental architectural principles and governanc
 ## 1. Database Architecture: Supabase Multi-Tenant with RLS-First
 
 ### Principles
-- **Tenant Isolation at Database Level**: Every table includes `company_id` for multi-tenant separation
+- **Tenant Isolation at Database Level**: Every table includes `tenant_id` for multi-tenant separation
 - **Row Level Security (RLS) Mandatory**: All tables must have RLS policies enabled
 - **No Bypass Patterns**: Application code cannot circumvent RLS except through dedicated admin functions
 - **Service Role Minimal Use**: Service role key usage limited to admin operations and background jobs
@@ -15,7 +15,7 @@ This document establishes the fundamental architectural principles and governanc
 ### Implementation Rules
 ```sql
 -- Every table must include:
-company_id UUID NOT NULL REFERENCES companies(id),
+tenant_id UUID NOT NULL REFERENCES tenants(id),
 created_at TIMESTAMPTZ DEFAULT NOW(),
 updated_at TIMESTAMPTZ DEFAULT NOW()
 
@@ -23,15 +23,15 @@ updated_at TIMESTAMPTZ DEFAULT NOW()
 ALTER TABLE table_name ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "tenant_isolation" ON table_name
   FOR ALL USING (
-    company_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'company_id')
+    tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id')
   );
 ```
 
 **CRITICAL NOTE ON RLS POLICIES:**
-- RLS policies MUST check `request.jwt.claims -> 'app_metadata' ->> 'company_id'`
-- DO NOT use `auth.jwt() ->> 'company_id'` (that path doesn't exist)
-- User's company_id is stored in JWT's `app_metadata` object by Supabase Auth
-- Set user's company_id via: `auth.admin.createUser({ app_metadata: { company_id: '...' } })`
+- RLS policies MUST check `request.jwt.claims -> 'app_metadata' ->> 'tenant_id'`
+- DO NOT use `auth.jwt() ->> 'tenant_id'` (that path doesn't exist)
+- User's tenant_id is stored in JWT's `app_metadata` object by Supabase Auth
+- Set user's tenant_id via: `auth.admin.createUser({ app_metadata: { tenant_id: '...' } })`
 
 ### Executing Database Changes
 **The ONLY reliable method to apply SQL migrations to hosted Supabase:**
@@ -67,7 +67,7 @@ const { error } = await client.rpc('exec_sql', {
 - Integration tests must verify cross-tenant access denial
 - Each repository must include RLS isolation tests
 - Admin bypass operations require explicit audit logging
-- Test users must have `app_metadata.company_id` set in their JWT
+- Test users must have `app_metadata.tenant_id` set in their JWT
 
 ## 2. Hybrid Vision Pipeline Architecture
 
@@ -166,7 +166,7 @@ interface CostGovernance {
 - Every AI operation must record estimated cost
 - Daily budgets enforced at repository level
 - Cost alerts triggered at 80% threshold
-- Monthly reports per company and user
+- Monthly reports per tenant and user
 
 ## 5. Development Standards
 
@@ -255,7 +255,7 @@ These rules are ABSOLUTE and MUST be followed by all agents and humans working o
   - RLS policies
   - Row counts
   - Current schema version
-- [ ] **READ** the actual schema from information_schema to decide when to insert records (e.g., company records)
+- [ ] **READ** the actual schema from information_schema to decide when to insert records (e.g., tenant records)
 - [ ] **RUN** `scripts/check-actual-db.ts` (or equivalent) and include findings in ALL plans/tasks
 - [ ] **APPLY** migration statements one by one instead of relying on multi-statement DO $$ blocks
 - [ ] **USE** idempotent reconciler style:
@@ -310,4 +310,4 @@ These rules are ABSOLUTE and MUST be followed by all agents and humans working o
 ---
 
 Last Updated: 2025-01-27
-Version: 1.1.1
+Version: 1.1.2

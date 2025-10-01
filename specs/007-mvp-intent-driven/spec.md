@@ -19,7 +19,7 @@
 4. Fill User Scenarios & Testing section
    → ✓ Primary flows defined for both user types
 5. Generate Functional Requirements
-   → ✓ 44 core requirements defined, all testable
+   → ✓ 47 core requirements defined, all testable
 6. Identify Key Entities
    → ✓ 12 primary entities identified
 7. Run Review Checklist
@@ -94,7 +94,7 @@ Field service companies need a mobile app where supervisors can manage inventory
 23. **Given** new entity is created, **When** image is captured, **Then** system generates and stores square thumbnail for display
 
 ### Edge Cases
-- What happens when camera can't identify intent after [NEEDS CLARIFICATION: timeout period]?
+- What happens when camera can't identify intent after 10 seconds?
 - How does system handle poor lighting or blurry images during verification?
 - What if crew member doesn't have assigned job but scans inventory items?
 - How does app handle offline mode transitions (manual checkbox vs AI verification)?
@@ -117,67 +117,69 @@ Field service companies need a mobile app where supervisors can manage inventory
 **Camera Intent Recognition:**
 - **FR-006**: System MUST capture images at 1fps when camera mode is active
 - **FR-007**: System MUST automatically classify camera input into intents: inventory add, job load verification, receipt scan, or maintenance event
-- **FR-008**: System MUST provide visual feedback showing recognized intent within [NEEDS CLARIFICATION: response time target?]
+  - *Note: Receipt scan is handled through the general intent classification endpoint*
+- **FR-008**: System MUST provide visual feedback showing recognized intent within 3 seconds
 
 **Inventory Management:**
-- **FR-007**: Supervisors MUST be able to add new items to inventory via camera capture
-- **FR-008**: System MUST capture and store profile images for all inventory items
-- **FR-009**: System MUST detect when shown items are not in existing inventory
+- **FR-009**: Supervisors MUST be able to add new items to inventory via camera capture
+- **FR-010**: System MUST capture and store profile images for all inventory items
+- **FR-011**: System MUST detect when shown items are not in existing inventory
 
 **Job Management:**
-- **FR-010**: Supervisors MUST be able to create jobs and assign inventory items or kits
-- **FR-011**: Supervisors MUST be able to assign jobs to specific crew members
-- **FR-012**: System MUST limit jobs per crew member to 6 jobs per day maximum
-- **FR-013**: Supervisors MUST be able to reschedule jobs and edit details
+- **FR-012**: Supervisors MUST be able to create jobs and assign inventory items or kits
+- **FR-013**: Supervisors MUST be able to assign jobs to specific crew members
+- **FR-014**: System MUST limit jobs per crew member to 6 jobs per day maximum
+- **FR-015**: Supervisors MUST be able to reschedule jobs and edit details
 
 **Load Verification:**
-- **FR-014**: Crew members MUST be able to verify job load lists using camera
-- **FR-015**: System MUST automatically check off detected items from load list
-- **FR-016**: System MUST notify supervisor when load verification is complete
+- **FR-016**: Crew members MUST be able to verify job load lists using camera
+- **FR-017**: System MUST automatically check off detected items from load list
+- **FR-018**: System MUST notify supervisor when load verification is complete
 
 **Additional Capabilities:**
-- **FR-017**: System MUST store all captured images for [NEEDS CLARIFICATION: retention period?]
-- **FR-018**: Users MUST be able to add context via voice or text selection
-- **FR-019**: System MUST support customer and property management for job assignment
+- **FR-019**: System MUST store all captured images for 90 days for audit and analysis
+- **FR-020**: Users MUST be able to add context via voice or text selection
+- **FR-021**: System MUST support customer and property management for job assignment
 
 **Data Capture & Analytics:**
-- **FR-020**: System MUST store ALL LLM/VLM interactions including prompts sent, images processed, and responses received
-- **FR-021**: System MUST capture performance metrics for each AI interaction (response time, cost, model used)
-- **FR-022**: System MUST generate and store 512x512 pixel square thumbnail images for all entities
-- **FR-023**: Every entity (items, customers, properties, vehicles, jobs) MUST have a primary display image
+- **FR-022**: System MUST store ALL LLM/VLM interactions including prompts sent, images processed, and responses received
+- **FR-023**: System MUST capture performance metrics for each AI interaction (response time, cost, model used)
+- **FR-024**: System MUST generate and store 512x512 pixel square thumbnail images for all entities
+- **FR-025**: Every entity (items, customers, properties, vehicles, jobs) MUST have a primary display image
 
 **Vehicle/Container Management:**
-- **FR-024**: System MUST allow adding vehicles/containers via camera capture
-- **FR-025**: System MUST support assigning vehicles to jobs
-- **FR-026**: System MUST support assigning items to containers (truck, trailer, building bins)
-- **FR-027**: System MUST track item location hierarchy (item → container → vehicle/location)
-- **FR-028**: System MUST support nested containers with parent-child relationships (e.g., Box → Truck Bed → Truck, or Bin → Shelf → Building)
-- **FR-029**: System MUST distinguish between mobile containers (vehicles) and stationary containers (buildings, storage areas)
+- **FR-026**: System MUST allow adding vehicles/containers via camera capture
+- **FR-027**: System MUST support assigning vehicles to jobs
+- **FR-028**: System MUST support assigning items to containers (truck, trailer, building bins)
+- **FR-029**: System MUST track item location hierarchy (item → container → vehicle/location)
+- **FR-030**: System MUST support nested containers with parent-child relationships (e.g., Box → Truck Bed → Truck, or Bin → Shelf → Building)
+- **FR-031**: System MUST distinguish between mobile containers (vehicles) and stationary containers (buildings, storage areas)
 
 **Voice & UI Interaction:**
-- **FR-030**: System MUST provide STT (Speech-to-Text) → LLM → TTS (Text-to-Speech) pipeline for voice interactions
-- **FR-031**: Mobile interface MUST limit choices to maximum 4 buttons per screen
-- **FR-032**: All entity creation and editing MUST be possible via voice or camera guidance
-- **FR-033**: System MUST provide voice feedback for all major actions
+- **FR-032**: System MUST provide STT (Speech-to-Text) → LLM → TTS (Text-to-Speech) pipeline for voice interactions
+- **FR-033**: Mobile interface MUST limit choices to maximum 4 buttons per screen
+- **FR-034**: All entity creation and editing MUST be possible via voice or camera guidance
+- **FR-035**: System MUST provide voice feedback for all major actions
 
 **Supervisor Capabilities:**
-- **FR-034**: Supervisors MUST be able to create all entity types (item, property, customer, vehicle, container, building, job)
-- **FR-035**: Supervisors MUST be able to view real-time status of all jobs and load lists
-- **FR-036**: Supervisors MUST be able to edit any entity via voice or camera
+- **FR-036**: Supervisors MUST be able to create all entity types (item, property, customer, vehicle, container, building, job)
+- **FR-037**: Supervisors MUST be able to view real-time status of all jobs and load lists
+- **FR-038**: Supervisors MUST be able to edit any entity via voice or camera
 
 **Crew Member Capabilities:**
-- **FR-037**: Crew members MUST be able to view their assigned jobs
-- **FR-038**: Crew members MUST be able to check off job tasks
-- **FR-039**: System MUST show job details including operations/steps, scheduled time, and special instructions
-- **FR-040**: Crew members MUST receive notifications for new job assignments
+- **FR-039**: Crew members MUST be able to view their assigned jobs
+- **FR-040**: Crew members MUST be able to check off job tasks
+- **FR-041**: System MUST show job details including operations/steps, scheduled time, and special instructions
+- **FR-042**: Crew members MUST receive notifications for new job assignments
 
 **Offline Capabilities:**
-- **FR-041**: System MUST allow viewing assigned jobs and job details while offline
-- **FR-042**: System MUST allow manual checking of load list items offline (without AI verification)
-- **FR-043**: System MUST sync offline changes when connectivity is restored
+- **FR-043**: System MUST allow viewing assigned jobs and job details while offline
+- **FR-044**: System MUST allow manual checking of load list items offline (without AI verification)
+- **FR-045**: System MUST sync offline changes when connectivity is restored
 
 **System Constraints:**
-- **FR-044**: System MUST support single company operations for MVP (multi-company architecture deferred)
+- **FR-046**: System MUST support multi-tenant architecture with tenant isolation via tenant_id from day one (single tenant deployment for MVP, but architecture supports multiple)
+- **FR-047**: All new database tables MUST include tenant_id column referencing tenants table for RLS isolation
 
 ### Key Entities *(include if feature involves data)*
 
@@ -211,18 +213,9 @@ Field service companies need a mobile app where supervisors can manage inventory
 - [x] Scope is clearly bounded
 - [ ] Dependencies and assumptions identified
 
-**Items Needing Clarification:**
-1. Authentication method (email, phone, or both)
-2. Camera intent recognition timeout period
-3. Response time targets for intent detection
-4. Maximum jobs per crew member per day
-5. Image retention period for audit/analysis
-6. Offline mode capabilities and limitations
-7. Multi-company support requirements
-8. AI interaction log retention period
-9. Square thumbnail dimensions (e.g., 256x256, 512x512)
-10. Container hierarchy depth limits (e.g., item → bin → shelf → trailer)
-11. Vehicle capacity tracking requirements
+**Defined Clarifications:**
+1. AI interaction log retention period: 90 days (same as images)
+2. Container hierarchy depth limit: maximum 5 levels
 
 ---
 
