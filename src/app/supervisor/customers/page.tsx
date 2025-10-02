@@ -52,7 +52,8 @@ import { voiceProcessor } from '@/lib/voice/voice-processor';
 import { voiceNavigator } from '@/lib/voice/voice-navigator';
 import { 
   Users, Search, Plus, Edit, Trash2, Phone, Mail, MapPin, 
-  AlertCircle, CheckCircle, X, Loader2, Settings, ChevronLeft 
+  AlertCircle, CheckCircle, X, Loader2, Settings, ChevronLeft,
+  ArrowLeft, Save
 } from 'lucide-react';
 
 interface Customer {
@@ -276,13 +277,11 @@ export default function SupervisorCustomersPage() {
 
         {/* Header */}
         <div className="header-bar">
-          <div className="flex items-center gap-3">
-            <Users className="w-6 h-6 text-golden" />
-            <h1 className="text-xl font-semibold">Customers</h1>
+          <div>
+            <h1 className="text-xl font-semibold">Customer Management</h1>
+            <p className="text-xs text-gray-500 mt-1">{filteredCustomers.length} customers</p>
           </div>
-          <div className="text-sm text-gray-500">
-            {filteredCustomers.length} total
-          </div>
+          <Users className="w-6 h-6 text-golden" />
         </div>
 
         {/* Voice Transcript */}
@@ -295,145 +294,144 @@ export default function SupervisorCustomersPage() {
 
         {/* Notifications */}
         {error && (
-          <div className="notification-container mt-4">
-            <div className="notification error">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <span>{error}</span>
-              <button 
-                onClick={() => setError(null)}
-                className="ml-auto"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+          <div className="notification-bar error">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            <span className="text-sm">{error}</span>
+            <button 
+              onClick={() => setError(null)}
+              className="ml-auto text-red-500"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         )}
 
         {showSuccess && (
-          <div className="notification-container mt-4">
-            <div className="notification success">
-              <CheckCircle className="w-5 h-5 flex-shrink-0" />
-              <span>Operation completed successfully</span>
-            </div>
+          <div className="notification-bar success">
+            <CheckCircle className="w-5 h-5 text-golden flex-shrink-0" />
+            <span className="text-sm">Operation completed successfully</span>
           </div>
         )}
 
-        <div className="px-4 py-4">
-          <div className="space-y-4">
-            {/* Search Bar */}
-            <div className="search-container">
-              <Search className="search-icon" />
+        <div className="flex-1 overflow-y-auto">
+          {/* Search */}
+          <div className="px-4 py-4 space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
               <input
                 type="text"
                 placeholder="Search customers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="search-input"
+                className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
               />
             </div>
+          </div>
 
-            {/* Action Button */}
-            <button
-              onClick={() => {
-                setView('create');
-                resetForm();
-              }}
-              className="btn-primary w-full"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Add New Customer
-            </button>
-
-            {/* Customer List */}
-            <div className="card">
-              {filteredCustomers.length === 0 ? (
-                <div className="p-12 text-center">
-                  <Users className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-300 mb-2">No customers found</h3>
-                  <p className="text-gray-500">
-                    {searchQuery ? 'Try adjusting your search' : 'Add your first customer to get started'}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredCustomers.map((customer) => (
-                    <div
-                      key={customer.id}
-                      className="customer-item"
-                      onClick={() => handleEdit(customer)}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-lg font-semibold text-white">
+          {/* Customer List */}
+          <div className="px-4">
+            {filteredCustomers.length === 0 ? (
+              <div className="empty-state">
+                <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                <p className="text-gray-500">
+                  {searchQuery ? 'Try adjusting your search' : 'Add your first customer to get started'}
+                </p>
+              </div>
+            ) : (
+              <div className="customer-list">
+                {filteredCustomers.map((customer) => (
+                  <div
+                    key={customer.id}
+                    className="customer-card"
+                    onClick={() => handleEdit(customer)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-start gap-3 mb-2">
+                          <Users className="w-5 h-5 text-golden mt-0.5" />
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-white">
                               {customer.name}
                             </h3>
-                            {customer.property_count && customer.property_count > 0 && (
-                              <span className="badge">
-                                {customer.property_count} properties
-                              </span>
-                            )}
-                          </div>
-                            
-                          <div className="space-y-1 text-sm">
-                            <div className="flex items-center gap-2 text-gray-400">
-                              <Mail className="w-4 h-4 text-golden" />
-                              <span>{customer.email}</span>
+                            <div className="flex items-center gap-3 mt-1">
+                              {customer.property_count && customer.property_count > 0 && (
+                                <span className="customer-type-badge">
+                                  {customer.property_count} properties
+                                </span>
+                              )}
                             </div>
-                            
-                            {customer.phone && (
-                              <div className="flex items-center gap-2 text-gray-400">
-                                <Phone className="w-4 h-4 text-golden" />
-                                <span>{customer.phone}</span>
-                              </div>
-                            )}
-                            
-                            {customer.address && (
-                              <div className="flex items-center gap-2 text-gray-400">
-                                <MapPin className="w-4 h-4 text-golden" />
-                                <span className="truncate">{customer.address}</span>
-                              </div>
-                            )}
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-2 ml-4">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(customer);
-                            }}
-                            className="icon-button"
-                          >
-                            <Edit className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(customer.id);
-                            }}
-                            className="icon-button text-red-400 hover:text-red-300"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
+                        
+                        <div className="ml-8 space-y-1 text-xs">
+                          <div className="flex items-center gap-2 text-gray-400">
+                            <Mail className="w-3 h-3" />
+                            <span>{customer.email}</span>
+                          </div>
+                          
+                          {customer.phone && (
+                            <div className="flex items-center gap-2 text-gray-400">
+                              <Phone className="w-3 h-3" />
+                              <span>{customer.phone}</span>
+                            </div>
+                          )}
+                          
+                          {customer.address && (
+                            <div className="flex items-start gap-2 text-gray-500">
+                              <MapPin className="w-3 h-3 mt-0.5" />
+                              <span className="line-clamp-2">{customer.address}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
 
-          {/* Voice Command Button */}
-          <div className="voice-fab">
-            <VoiceCommandButton
-              onTranscript={handleVoiceTranscript}
-              onCommand={handleVoiceCommand}
-              size="lg"
-              autoSpeak={true}
-            />
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(customer);
+                          }}
+                          className="icon-button"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(customer.id);
+                          }}
+                          className="icon-button text-red-500"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Bottom Actions */}
+        <div className="bottom-actions">
+          <button
+            onClick={() => router.push('/supervisor')}
+            className="btn-secondary flex-1"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back
+          </button>
+          <button
+            onClick={() => {
+              setView('create');
+              resetForm();
+            }}
+            className="btn-primary flex-1"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Add Customer
+          </button>
         </div>
       </div>
     );
@@ -442,150 +440,146 @@ export default function SupervisorCustomersPage() {
   // Create/Edit Form View
   return (
     <div className="mobile-container">
+      {/* Mobile Navigation */}
+      <MobileNavigation 
+        currentRole="supervisor" 
+        onLogout={() => router.push('/sign-in')}
+        showBackButton={true}
+        backTo="/supervisor/customers"
+      />
+
       {/* Header */}
       <div className="header-bar">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => {
-              setView('list');
-              resetForm();
-            }}
-            className="icon-button"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
+        <div>
           <h1 className="text-xl font-semibold">
-            {view === 'edit' ? 'Edit Customer' : 'Add Customer'}
+            {view === 'edit' ? 'Edit Customer' : 'Add New Customer'}
           </h1>
         </div>
+        <Users className="w-6 h-6 text-golden" />
       </div>
 
-      <div className="px-4 py-4">
-        <div className="card">
-          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
-            {/* Name Field */}
-            <div className="form-group">
-              <label htmlFor="name" className="form-label">
-                Customer Name *
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className={`form-input ${formErrors.name ? 'error' : ''}`}
-                placeholder="Enter customer name"
-              />
-              {formErrors.name && (
-                <p className="form-error">{formErrors.name}</p>
-              )}
-            </div>
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
+          {/* Name Field */}
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-400 mb-2">
+              Customer Name *
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className={`w-full px-4 py-3 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 ${
+                formErrors.name 
+                  ? 'border-red-500 focus:ring-red-500' 
+                  : 'border-gray-800 focus:ring-golden focus:border-golden'
+              }`}
+              placeholder="Enter customer name"
+            />
+            {formErrors.name && (
+              <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>
+            )}
+          </div>
 
-            {/* Email Field */}
-            <div className="form-group">
-              <label htmlFor="email" className="form-label">
-                Email Address *
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className={`form-input ${formErrors.email ? 'error' : ''}`}
-                placeholder="customer@example.com"
-              />
-              {formErrors.email && (
-                <p className="form-error">{formErrors.email}</p>
-              )}
-            </div>
+          {/* Email Field */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-400 mb-2">
+              Email Address *
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className={`w-full px-4 py-3 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 ${
+                formErrors.email 
+                  ? 'border-red-500 focus:ring-red-500' 
+                  : 'border-gray-800 focus:ring-golden focus:border-golden'
+              }`}
+              placeholder="customer@example.com"
+            />
+            {formErrors.email && (
+              <p className="mt-1 text-sm text-red-500">{formErrors.email}</p>
+            )}
+          </div>
 
-            {/* Phone Field */}
-            <div className="form-group">
-              <label htmlFor="phone" className="form-label">
-                Phone Number
-              </label>
-              <input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="form-input"
-                placeholder="(555) 123-4567"
-              />
-            </div>
+          {/* Phone Field */}
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-400 mb-2">
+              Phone Number
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+              placeholder="(555) 123-4567"
+            />
+          </div>
 
-            {/* Address Field */}
-            <div className="form-group">
-              <label htmlFor="address" className="form-label">
-                Address
-              </label>
-              <textarea
-                id="address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                rows={3}
-                className="form-input"
-                placeholder="Enter customer address"
-              />
-            </div>
+          {/* Address Field */}
+          <div>
+            <label htmlFor="address" className="block text-sm font-medium text-gray-400 mb-2">
+              Address
+            </label>
+            <textarea
+              id="address"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              rows={3}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+              placeholder="Enter customer address"
+            />
+          </div>
 
-            {/* Notes Field */}
-            <div className="form-group">
-              <label htmlFor="notes" className="form-label">
-                Notes
-              </label>
-              <textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={4}
-                className="form-input"
-                placeholder="Additional notes about the customer..."
-              />
-            </div>
-
-            {/* Form Actions */}
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setView('list');
-                  resetForm();
-                }}
-                className="btn-secondary flex-1"
-                disabled={isSaving}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn-primary flex-1"
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    {view === 'edit' ? 'Update' : 'Create'} Customer
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
+          {/* Notes Field */}
+          <div>
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-400 mb-2">
+              Notes
+            </label>
+            <textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              rows={4}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+              placeholder="Additional notes about the customer..."
+            />
+          </div>
+        </form>
       </div>
 
-      {/* Voice Command Button */}
-      <div className="voice-fab">
-        <VoiceCommandButton
-          onTranscript={handleVoiceTranscript}
-          onCommand={handleVoiceCommand}
-          size="lg"
-          autoSpeak={true}
-        />
+      {/* Bottom Actions */}
+      <div className="bottom-actions">
+        <button
+          onClick={() => {
+            setView('list');
+            resetForm();
+          }}
+          className="btn-secondary flex-1"
+        >
+          <X className="w-5 h-5 mr-2" />
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={isSaving}
+          className="btn-primary flex-1"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="w-5 h-5 mr-2" />
+              Save
+            </>
+          )}
+        </button>
       </div>
 
       {/* Styled JSX */}
@@ -612,53 +606,89 @@ export default function SupervisorCustomersPage() {
           background: rgba(0, 0, 0, 0.9);
         }
 
-        .card {
+        .notification-bar {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1rem;
+          margin: 0.5rem 1rem;
+          border-radius: 0.5rem;
+        }
+        .notification-bar.error {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .notification-bar.success {
+          background: rgba(255, 215, 0, 0.1);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .empty-state {
+          text-align: center;
+          padding: 3rem 1rem;
+        }
+
+        .customer-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .customer-card {
           background: rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 215, 0, 0.2);
           border-radius: 0.75rem;
-          padding: 1.25rem;
-          backdrop-filter: blur(10px);
+          padding: 1rem;
+          cursor: pointer;
+          transition: all 0.2s;
         }
 
-        .search-container {
-          position: relative;
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 0.75rem 1rem 0.75rem 2.5rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 215, 0, 0.3);
-          border-radius: 0.5rem;
-          color: white;
-          font-size: 0.875rem;
-        }
-
-        .search-input::placeholder {
-          color: rgba(255, 255, 255, 0.5);
-        }
-
-        .search-input:focus {
-          outline: none;
-          border-color: #FFD700;
+        .customer-card:hover {
           background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 215, 0, 0.4);
+          transform: translateX(2px);
         }
 
-        .search-icon {
-          position: absolute;
-          left: 0.75rem;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 1.25rem;
-          height: 1.25rem;
+        .customer-type-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 0.125rem 0.5rem;
+          font-size: 0.7rem;
+          font-weight: 500;
+          background: rgba(255, 215, 0, 0.2);
           color: #FFD700;
+          border-radius: 9999px;
+          text-transform: uppercase;
+        }
+
+        .icon-button {
+          padding: 0.375rem;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.375rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .icon-button:hover {
+          background: rgba(255, 215, 0, 0.2);
+          border-color: #FFD700;
+        }
+
+        .bottom-actions {
+          display: flex;
+          gap: 0.75rem;
+          padding: 1rem;
+          background: rgba(0, 0, 0, 0.9);
+          border-top: 1px solid #333;
         }
 
         .btn-primary {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 0.75rem 1.5rem;
+          padding: 0.75rem 1rem;
           background: #FFD700;
           color: #000;
           font-weight: 600;
@@ -671,11 +701,10 @@ export default function SupervisorCustomersPage() {
 
         .btn-primary:hover:not(:disabled) {
           background: #FFC700;
-          transform: translateY(-1px);
         }
 
         .btn-primary:disabled {
-          opacity: 0.5;
+          opacity: 0.6;
           cursor: not-allowed;
         }
 
@@ -683,7 +712,7 @@ export default function SupervisorCustomersPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 0.75rem 1.5rem;
+          padding: 0.75rem 1rem;
           background: rgba(255, 255, 255, 0.1);
           color: white;
           font-weight: 600;
@@ -694,146 +723,9 @@ export default function SupervisorCustomersPage() {
           transition: all 0.2s;
         }
 
-        .btn-secondary:hover:not(:disabled) {
+        .btn-secondary:hover {
           background: rgba(255, 255, 255, 0.15);
           border-color: #FFD700;
-        }
-
-        .btn-secondary:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .customer-item {
-          padding: 1rem;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 215, 0, 0.1);
-          border-radius: 0.5rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .customer-item:hover {
-          background: rgba(255, 255, 255, 0.06);
-          border-color: rgba(255, 215, 0, 0.3);
-        }
-
-        .badge {
-          display: inline-flex;
-          align-items: center;
-          padding: 0.125rem 0.5rem;
-          background: rgba(255, 215, 0, 0.2);
-          color: #FFD700;
-          font-size: 0.75rem;
-          font-weight: 500;
-          border-radius: 9999px;
-        }
-
-        .icon-button {
-          padding: 0.5rem;
-          background: transparent;
-          color: #FFD700;
-          border: none;
-          border-radius: 0.375rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .icon-button:hover {
-          background: rgba(255, 215, 0, 0.1);
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .form-label {
-          margin-bottom: 0.5rem;
-          color: #FFD700;
-          font-size: 0.875rem;
-          font-weight: 500;
-        }
-
-        .form-input {
-          padding: 0.75rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 215, 0, 0.3);
-          border-radius: 0.5rem;
-          color: white;
-          font-size: 0.875rem;
-        }
-
-        .form-input::placeholder {
-          color: rgba(255, 255, 255, 0.5);
-        }
-
-        .form-input:focus {
-          outline: none;
-          border-color: #FFD700;
-          background: rgba(255, 255, 255, 0.08);
-        }
-
-        .form-input.error {
-          border-color: #ef4444;
-        }
-
-        .form-error {
-          margin-top: 0.25rem;
-          color: #ef4444;
-          font-size: 0.75rem;
-        }
-
-        .notification-container {
-          padding: 0 1rem;
-        }
-
-        .notification {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 0.75rem 1rem;
-          border-radius: 0.5rem;
-          font-size: 0.875rem;
-        }
-
-        .notification.success {
-          background: rgba(34, 197, 94, 0.1);
-          border: 1px solid rgba(34, 197, 94, 0.3);
-          color: #22c55e;
-        }
-
-        .notification.error {
-          background: rgba(239, 68, 68, 0.1);
-          border: 1px solid rgba(239, 68, 68, 0.3);
-          color: #ef4444;
-        }
-
-        .voice-fab {
-          position: fixed;
-          bottom: 2rem;
-          right: 50%;
-          transform: translateX(50%);
-          z-index: 1000;
-        }
-
-        .transcript-overlay {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: rgba(0, 0, 0, 0.9);
-          border: 1px solid #FFD700;
-          border-radius: 0.75rem;
-          padding: 1.5rem 2rem;
-          box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
-          z-index: 2000;
-          animation: fadeInOut 3s ease-in-out;
-        }
-
-        @keyframes fadeInOut {
-          0%, 100% { opacity: 0; }
-          20%, 80% { opacity: 1; }
         }
 
         .golden { color: #FFD700; }
