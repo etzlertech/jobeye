@@ -40,10 +40,10 @@
 - [x] T001 Create domain directories for intent, supervisor, and crew in src/domains/
 - [x] T002 Set up database migrations for new tables (ai_interaction_logs, intent_classifications, offline_sync_queue) with tenant_id column using Supabase RPC method
 - [x] T003 [P] Configure PWA manifest and service worker in public/ directory
-- [ ] T004 [P] Set up offline storage utilities using IndexedDB in src/lib/offline/
-- [ ] T005 [P] Create camera capture component with 1fps throttling in src/components/camera/
-- [ ] T006 [P] Create voice interaction components (STT/TTS) in src/components/voice/
-- [ ] T007 Update environment variables for VLM API keys in .env.example
+- [x] T004 [P] Set up offline storage utilities using IndexedDB in src/lib/offline/
+- [x] T005 [P] Create camera capture component with 1fps throttling in src/components/camera/
+- [x] T006 [P] Create voice interaction components (STT/TTS) in src/components/voice/
+- [x] T007 Update environment variables for VLM API keys in .env.example
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 

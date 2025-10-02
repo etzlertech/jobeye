@@ -43,6 +43,7 @@ export default function JobLoadChecklistStartPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const analysisIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const successAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const startCamera = async () => {
     try {
@@ -212,12 +213,12 @@ export default function JobLoadChecklistStartPage() {
                   oscillator.connect(gainNode);
                   gainNode.connect(audioContext.destination);
                   
-                  oscillator.frequency.value = 800;
+                  oscillator.frequency.value = 880; // A5 note
                   oscillator.type = 'sine';
-                  gainNode.gain.value = 0.3;
+                  gainNode.gain.value = 0.2;
                   
                   oscillator.start();
-                  oscillator.stop(audioContext.currentTime + 0.1);
+                  oscillator.stop(audioContext.currentTime + 0.05); // Shorter beep
                 } catch (e) {
                   console.log('[Audio] Fallback also failed:', e);
                 }
@@ -279,6 +280,40 @@ export default function JobLoadChecklistStartPage() {
     );
   };
 
+  const playSuccessSound = () => {
+    try {
+      // Create a celebratory sound using Web Audio API
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const duration = 0.5;
+      
+      // Create multiple oscillators for a chord
+      const frequencies = [523.25, 659.25, 783.99]; // C, E, G (C major chord)
+      
+      frequencies.forEach((freq, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = freq;
+        oscillator.type = 'sine';
+        
+        // Fade in and out
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+        
+        oscillator.start(audioContext.currentTime + index * 0.05);
+        oscillator.stop(audioContext.currentTime + duration);
+      });
+      
+      console.log('[Audio] Success chord played!');
+    } catch (err) {
+      console.error('[Audio] Failed to play success sound:', err);
+    }
+  };
+
   const handleStart = () => {
     if (!stream) {
       // Camera not started yet - start it
@@ -307,17 +342,20 @@ export default function JobLoadChecklistStartPage() {
     // Camera start disabled - use manual button instead
     console.log('Page loaded - click button to start camera');
     
-    // Create audio element for success sound
+    // Create audio elements for sounds
     try {
+      // Item detection beep
       const audio = new Audio();
-      // Use a simple beep sound
       audio.src = 'data:audio/wav;base64,UklGRl9uBABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YTtuBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////';
-      audio.volume = 0.7;
-      audio.load(); // Preload the audio
+      audio.volume = 0.5;
+      audio.load();
       audioRef.current = audio;
-      console.log('[Audio] Success sound loaded');
+      
+      // Final success celebration sound (will be created with Web Audio API)
+      successAudioRef.current = new Audio();
+      console.log('[Audio] Sounds loaded');
     } catch (err) {
-      console.error('[Audio] Failed to create audio element:', err);
+      console.error('[Audio] Failed to create audio elements:', err);
     }
     
     return () => {
@@ -338,6 +376,9 @@ export default function JobLoadChecklistStartPage() {
       console.log('[AUTO-STOP] All items checked! Stopping...');
       setDetectionStatus('✅ LIST COMPLETED!');
       setIsAnalyzing(false);
+      
+      // Play success sound
+      playSuccessSound();
       
       // Stop the interval immediately
       if (analysisIntervalRef.current) {
