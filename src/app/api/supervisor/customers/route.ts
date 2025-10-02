@@ -92,14 +92,23 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Build query
+    // Build query - map billing_address to address for UI compatibility
     let query = supabase
       .from('customers')
-      .select('*, properties(count)', { count: 'exact' });
+      .select(`
+        id,
+        name,
+        email,
+        phone,
+        billing_address,
+        notes,
+        created_at,
+        properties(count)
+      `, { count: 'exact' });
 
-    // Add company filter
+    // Add tenant filter (use tenant_id instead of company_id)
     if (companyId) {
-      query = query.eq('company_id', companyId);
+      query = query.eq('tenant_id', companyId);
     }
 
     // Add search filter
@@ -117,8 +126,17 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
+    // Transform customers for UI compatibility (map billing_address to address)
+    const transformedCustomers = (customers || []).map(customer => ({
+      ...customer,
+      address: customer.billing_address 
+        ? `${customer.billing_address.street}, ${customer.billing_address.city}, ${customer.billing_address.state} ${customer.billing_address.zip}`.replace(/N\/A,?\s*/g, '').replace(/,\s*$/, '')
+        : null,
+      property_count: customer.properties?.length || 0
+    }));
+
     return NextResponse.json({
-      customers: customers || [],
+      customers: transformedCustomers,
       total_count: count || 0,
       page,
       limit,
@@ -145,10 +163,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Get company ID from headers
-    const companyId = request.headers.get('x-tenant-id');
-    if (!companyId) {
-      return validationError('Company ID required');
+    // Get tenant ID from headers
+    const tenantId = request.headers.get('x-tenant-id');
+    if (!tenantId) {
+      return validationError('Tenant ID required');
     }
 
     // Check if demo mode
@@ -159,25 +177,48 @@ export async function POST(request: NextRequest) {
         customer: {
           id: Date.now().toString(),
           ...body,
-          company_id: companyId,
+          tenant_id: tenantId,
           created_at: new Date().toISOString()
         }
       }, { status: 201 });
     }
 
+    // Generate customer number
+    const timestamp = Date.now();
+    const customerNumber = `CUST-${timestamp}`;
+
+    // Transform address field to billing_address object if provided
+    const billingAddress = body.address ? {
+      street: body.address,
+      city: 'N/A',
+      state: 'N/A',
+      zip: 'N/A'
+    } : null;
+
+    // Prepare customer data with correct schema
+    const customerData = {
+      tenant_id: tenantId,
+      customer_number: customerNumber,
+      name: body.name,
+      email: body.email,
+      phone: body.phone || null,
+      billing_address: billingAddress,
+      notes: body.notes || null
+    };
+
     // Create customer
     const { data: customer, error } = await supabase
       .from('customers')
-      .insert({
-        ...body,
-        company_id: companyId
-      })
+      .insert(customerData)
       .select()
       .single();
 
     if (error) throw error;
 
-    return NextResponse.json({ customer }, { status: 201 });
+    return NextResponse.json({ 
+      customer,
+      message: 'Customer successfully created and saved to database'
+    }, { status: 201 });
 
   } catch (error) {
     return handleApiError(error);
