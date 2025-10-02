@@ -98,11 +98,11 @@
 - [x] T045 POST /api/crew/voice/command endpoint in src/app/api/crew/voice/command/route.ts
 
 ### UI Components & Pages
-- [ ] T046 [P] Camera capture component with intent display in src/components/camera/CameraCapture.tsx
-- [ ] T047 [P] Voice command button component in src/components/voice/VoiceCommandButton.tsx
-- [ ] T048 [P] Job card component with 512x512 thumbnails in src/components/ui/JobCard.tsx
-- [ ] T049 [P] Item checklist component for load verification in src/components/ui/ItemChecklist.tsx
-- [ ] T049a [P] Create ButtonLimiter component to enforce max 4 buttons per screen in src/components/ui/ButtonLimiter.tsx
+- [x] T046 [P] Camera capture component with intent display in src/components/camera/CameraCapture.tsx
+- [x] T047 [P] Voice command button component in src/components/voice/VoiceCommandButton.tsx
+- [x] T048 [P] Job card component with 512x512 thumbnails in src/components/ui/JobCard.tsx
+- [x] T049 [P] Item checklist component for load verification in src/components/ui/ItemChecklist.tsx
+- [x] T049a [P] Create ButtonLimiter component to enforce max 4 buttons per screen in src/components/ui/ButtonLimiter.tsx
 - [ ] T050 Login page with role detection in src/app/(auth)/sign-in/page.tsx
 - [ ] T051 Supervisor dashboard page in src/app/supervisor/page.tsx
 - [ ] T052 Supervisor inventory management page in src/app/supervisor/inventory/page.tsx

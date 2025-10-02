@@ -52,6 +52,7 @@ export default function JobLoadChecklistStartPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const successAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const inputRefs = useRef<HTMLInputElement[]>([]);
 
   const startCamera = async () => {
     try {
@@ -422,6 +423,22 @@ export default function JobLoadChecklistStartPage() {
     const updated = [...editableItems];
     updated[index] = value;
     setEditableItems(updated);
+  };
+
+  const clearField = (index: number) => {
+    // Clear the field value
+    const updated = [...editableItems];
+    updated[index] = '';
+    setEditableItems(updated);
+    
+    // Focus the input and position cursor at the beginning
+    setTimeout(() => {
+      const input = inputRefs.current[index];
+      if (input) {
+        input.focus();
+        input.setSelectionRange(0, 0);
+      }
+    }, 10);
   };
 
   // Attach stream to video element when stream changes
@@ -957,6 +974,47 @@ export default function JobLoadChecklistStartPage() {
           border-color: #FFD700;
         }
 
+        .input-with-clear {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+
+        .input-with-clear .input-field {
+          padding-right: 45px; /* Make room for clear button */
+        }
+
+        .clear-button {
+          position: absolute;
+          right: 8px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: #666;
+          border: none;
+          border-radius: 50%;
+          width: 28px;
+          height: 28px;
+          color: #fff;
+          font-size: 14px;
+          font-weight: bold;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+          z-index: 1;
+        }
+
+        .clear-button:hover {
+          background: #FFD700;
+          color: #000;
+          transform: translateY(-50%) scale(1.1);
+        }
+
+        .clear-button:active {
+          transform: translateY(-50%) scale(0.95);
+        }
+
         .modal-buttons {
           display: flex;
           gap: 10px;
@@ -1176,14 +1234,26 @@ export default function JobLoadChecklistStartPage() {
             {editableItems.map((item, index) => (
               <div key={index} className="input-group">
                 <label className="input-label">Item {index + 1}:</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  value={item}
-                  onChange={(e) => updateEditableItem(index, e.target.value)}
-                  placeholder={`Enter item ${index + 1} name...`}
-                  maxLength={50}
-                />
+                <div className="input-with-clear">
+                  <input
+                    ref={(el) => {
+                      if (el) inputRefs.current[index] = el;
+                    }}
+                    type="text"
+                    className="input-field"
+                    value={item}
+                    onChange={(e) => updateEditableItem(index, e.target.value)}
+                    placeholder={`Enter item ${index + 1} name...`}
+                    maxLength={50}
+                  />
+                  <button
+                    className="clear-button"
+                    onClick={() => clearField(index)}
+                    type="button"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             ))}
             <div className="modal-buttons">
