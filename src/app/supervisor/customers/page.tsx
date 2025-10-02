@@ -162,10 +162,31 @@ export default function SupervisorCustomersPage() {
     loadCustomers();
   }, []);
 
+  // Demo auth helper
+  const authenticateAsDemo = async () => {
+    try {
+      // Set demo cookies
+      document.cookie = 'isDemo=true; path=/';
+      document.cookie = 'demoRole=supervisor; path=/';
+      
+      // Reload to trigger middleware with demo auth
+      window.location.reload();
+    } catch (err) {
+      console.error('Demo auth error:', err);
+    }
+  };
+
   const loadCustomers = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/supervisor/customers');
+      // Add tenant ID header for demo mode
+      const headers: HeadersInit = {};
+      const isDemo = document.cookie.includes('isDemo=true');
+      if (isDemo) {
+        headers['x-tenant-id'] = '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'; // Demo tenant ID
+      }
+
+      const response = await fetch('/api/supervisor/customers', { headers });
       const data = await response.json();
 
       if (!response.ok) throw new Error(data.message);
@@ -219,9 +240,16 @@ export default function SupervisorCustomersPage() {
 
       const method = view === 'edit' ? 'PUT' : 'POST';
 
+      // Add tenant ID header for demo mode
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      const isDemo = document.cookie.includes('isDemo=true');
+      if (isDemo) {
+        headers['x-tenant-id'] = '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'; // Demo tenant ID
+      }
+
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(formData)
       });
 
@@ -260,8 +288,16 @@ export default function SupervisorCustomersPage() {
     if (!confirm('Are you sure you want to delete this customer?')) return;
 
     try {
+      // Add tenant ID header for demo mode
+      const headers: HeadersInit = {};
+      const isDemo = document.cookie.includes('isDemo=true');
+      if (isDemo) {
+        headers['x-tenant-id'] = '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'; // Demo tenant ID
+      }
+
       const response = await fetch(`/api/supervisor/customers/${customerId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers
       });
 
       if (!response.ok) {
@@ -358,6 +394,15 @@ export default function SupervisorCustomersPage() {
                 <p className="text-gray-500">
                   {searchQuery ? 'Try adjusting your search' : 'Add your first customer to get started'}
                 </p>
+                {/* Demo Auth Button */}
+                {!document.cookie.includes('isDemo=true') && (
+                  <button
+                    onClick={authenticateAsDemo}
+                    className="mt-4 px-4 py-2 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 transition-all"
+                  >
+                    Activate Demo Mode
+                  </button>
+                )}
               </div>
             ) : (
               <div className="flex flex-col gap-3">
