@@ -1,0 +1,185 @@
+/**
+ * AGENT DIRECTIVE BLOCK
+ * 
+ * file: /src/app/api/supervisor/customers/route.ts
+ * phase: 3
+ * domain: supervisor
+ * purpose: API endpoints for customer management
+ * spec_ref: 007-mvp-intent-driven/contracts/supervisor-api.md
+ * complexity_budget: 200
+ * migrations_touched: ['companies', 'customers']
+ * state_machine: none
+ * estimated_llm_cost: {
+ *   "read": "$0.00",
+ *   "write": "$0.00"
+ * }
+ * offline_capability: OPTIONAL
+ * dependencies: {
+ *   internal: ['@/lib/supabase/server', '@/core/errors/error-handler'],
+ *   external: ['next/server'],
+ *   supabase: ['customers']
+ * }
+ * exports: ['GET', 'POST']
+ * voice_considerations: None - API endpoint
+ * test_requirements: {
+ *   coverage: 85,
+ *   unit_tests: 'tests/api/supervisor/customers.test.ts'
+ * }
+ * tasks: [
+ *   'List customers for company',
+ *   'Create new customer',
+ *   'Handle pagination and filtering'
+ * ]
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { createServerClient } from '@/lib/supabase/server';
+import { handleApiError, validationError } from '@/core/errors/error-handler';
+
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createServerClient();
+    
+    // Get query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const search = searchParams.get('search');
+    const offset = (page - 1) * limit;
+
+    // Check if demo mode
+    const isDemo = request.headers.get('x-is-demo') === 'true';
+    const companyId = request.headers.get('x-tenant-id');
+
+    if (isDemo) {
+      // Return mock customers for demo mode
+      const mockCustomers = [
+        {
+          id: '1',
+          name: 'Johnson Family',
+          email: 'johnson@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          created_at: new Date().toISOString(),
+          property_count: 2
+        },
+        {
+          id: '2', 
+          name: 'Smith Residence',
+          email: 'smith@example.com',
+          phone: '(555) 234-5678',
+          address: '456 Oak Ave, Somewhere, USA',
+          created_at: new Date().toISOString(),
+          property_count: 1
+        },
+        {
+          id: '3',
+          name: 'Green Acres HOA',
+          email: 'contact@greenacres.com',
+          phone: '(555) 345-6789',
+          address: '789 Park Blvd, Elsewhere, USA',
+          created_at: new Date().toISOString(),
+          property_count: 15
+        }
+      ];
+
+      return NextResponse.json({
+        customers: mockCustomers,
+        total_count: mockCustomers.length,
+        page,
+        limit,
+        total_pages: 1
+      });
+    }
+
+    // Build query
+    let query = supabase
+      .from('customers')
+      .select('*, properties(count)', { count: 'exact' });
+
+    // Add company filter
+    if (companyId) {
+      query = query.eq('company_id', companyId);
+    }
+
+    // Add search filter
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+    }
+
+    // Add pagination
+    query = query
+      .range(offset, offset + limit - 1)
+      .order('created_at', { ascending: false });
+
+    // Execute query
+    const { data: customers, error, count } = await query;
+
+    if (error) throw error;
+
+    return NextResponse.json({
+      customers: customers || [],
+      total_count: count || 0,
+      page,
+      limit,
+      total_pages: Math.ceil((count || 0) / limit)
+    });
+
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createServerClient();
+    const body = await request.json();
+
+    // Validate required fields
+    const requiredFields = ['name', 'email'];
+    const missingFields = requiredFields.filter(field => !body[field]);
+
+    if (missingFields.length > 0) {
+      return validationError('Missing required fields', { 
+        missing_fields: missingFields 
+      });
+    }
+
+    // Get company ID from headers
+    const companyId = request.headers.get('x-tenant-id');
+    if (!companyId) {
+      return validationError('Company ID required');
+    }
+
+    // Check if demo mode
+    const isDemo = request.headers.get('x-is-demo') === 'true';
+    if (isDemo) {
+      // Return mock response for demo mode
+      return NextResponse.json({
+        customer: {
+          id: Date.now().toString(),
+          ...body,
+          company_id: companyId,
+          created_at: new Date().toISOString()
+        }
+      }, { status: 201 });
+    }
+
+    // Create customer
+    const { data: customer, error } = await supabase
+      .from('customers')
+      .insert({
+        ...body,
+        company_id: companyId
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ customer }, { status: 201 });
+
+  } catch (error) {
+    return handleApiError(error);
+  }
+}

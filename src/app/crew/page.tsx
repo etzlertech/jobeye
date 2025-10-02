@@ -170,7 +170,7 @@ export default function CrewDashboardPage() {
         label: 'Verify Load',
         priority: 'high',
         icon: Camera,
-        onClick: () => router.push('/crew/load-verify'),
+        onClick: () => router.push('/crew/job-load'),
         className: 'bg-purple-600 text-white hover:bg-purple-700'
       });
 
