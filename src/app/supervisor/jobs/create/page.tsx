@@ -50,6 +50,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import {
   ArrowLeft,
   Calendar,
@@ -65,7 +66,8 @@ import {
   AlertTriangle,
   CheckCircle,
   MapPin,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { ButtonLimiter, useButtonActions } from '@/components/ui/ButtonLimiter';
 import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
@@ -352,10 +354,10 @@ export default function SupervisorJobCreatePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="mobile-container flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading job creation form...</p>
+          <Loader2 className="w-12 h-12 animate-spin text-golden mx-auto mb-4" />
+          <p className="text-gray-400 text-lg">Loading job creation form...</p>
         </div>
       </div>
     );
@@ -364,18 +366,31 @@ export default function SupervisorJobCreatePage() {
   // Voice instructions step
   if (step === 'voice') {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Voice Instructions</h2>
-          
+      <div className="mobile-container">
+        {/* Mobile Navigation */}
+        <MobileNavigation 
+          currentRole="supervisor" 
+          onLogout={() => router.push('/sign-in')}
+          showBackButton={true}
+          onBack={() => setStep('form')}
+        />
+        
+        <div className="header-bar">
+          <div>
+            <h1 className="text-xl font-semibold">Voice Instructions</h1>
+          </div>
+          <Mic className="w-6 h-6 text-golden" />
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-4">
           {voiceRecording ? (
             <div className="space-y-4">
-              <div className="p-4 bg-emerald-50 rounded-lg">
+              <div className="p-4 bg-emerald-900 bg-opacity-20 border border-emerald-600 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle className="w-5 h-5 text-emerald-600" />
-                  <span className="font-medium text-emerald-800">Recording Complete</span>
+                  <CheckCircle className="w-5 h-5 text-emerald-400" />
+                  <span className="font-medium text-emerald-300">Recording Complete</span>
                 </div>
-                <p className="text-sm text-gray-700 mb-4">{voiceRecording.transcript}</p>
+                <p className="text-sm text-gray-300 mb-4">{voiceRecording.transcript}</p>
                 
                 <div className="flex gap-2">
                   <button
@@ -401,13 +416,13 @@ export default function SupervisorJobCreatePage() {
               </div>
             </div>
           ) : (
-            <div className="text-center">
+            <div className="text-center py-8">
               <VoiceCommandButton
                 onTranscript={handleVoiceRecordingComplete}
                 size="lg"
                 className="mx-auto mb-4"
               />
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-400 text-sm">
                 Record voice instructions for the crew
               </p>
               <p className="text-gray-500 text-xs mt-2">
@@ -415,15 +430,17 @@ export default function SupervisorJobCreatePage() {
               </p>
             </div>
           )}
+        </div>
 
-          <div className="mt-6">
-            <ButtonLimiter
-              actions={actions}
-              maxVisibleButtons={4}
-              showVoiceButton={false}
-              className="justify-center"
-            />
-          </div>
+        {/* Bottom Actions */}
+        <div className="bottom-actions">
+          <ButtonLimiter
+            actions={actions}
+            maxVisibleButtons={4}
+            showVoiceButton={false}
+            className="w-full"
+            layout="grid"
+          />
         </div>
       </div>
     );
@@ -432,49 +449,64 @@ export default function SupervisorJobCreatePage() {
   // Equipment selection step
   if (step === 'equipment') {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Required Equipment</h2>
-          
+      <div className="mobile-container">
+        {/* Mobile Navigation */}
+        <MobileNavigation 
+          currentRole="supervisor" 
+          onLogout={() => router.push('/sign-in')}
+          showBackButton={true}
+          onBack={() => setStep('form')}
+        />
+        
+        <div className="header-bar">
+          <div>
+            <h1 className="text-xl font-semibold">Required Equipment</h1>
+          </div>
+          <Package className="w-6 h-6 text-golden" />
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-4">
           <div className="space-y-3">
             {equipment.map(item => (
               <div
                 key={item.id}
                 className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                   formData.requiredEquipmentIds.includes(item.id)
-                    ? 'border-emerald-500 bg-emerald-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-golden bg-golden bg-opacity-20'
+                    : 'border-gray-700 bg-gray-900 hover:border-gray-600'
                 }`}
                 onClick={() => handleEquipmentToggle(item.id)}
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-medium text-gray-900">{item.name}</h3>
-                    <p className="text-sm text-gray-600 capitalize">{item.category}</p>
+                    <h3 className="font-medium text-white">{item.name}</h3>
+                    <p className="text-sm text-gray-400 capitalize">{item.category}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {!item.available && (
-                      <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
+                      <span className="px-2 py-1 bg-red-600 bg-opacity-20 border border-red-500 text-red-400 text-xs rounded">
                         Unavailable
                       </span>
                     )}
                     {formData.requiredEquipmentIds.includes(item.id) && (
-                      <CheckCircle className="w-5 h-5 text-emerald-600" />
+                      <CheckCircle className="w-5 h-5 text-golden" />
                     )}
                   </div>
                 </div>
               </div>
             ))}
           </div>
+        </div>
 
-          <div className="mt-6">
-            <ButtonLimiter
-              actions={actions}
-              maxVisibleButtons={4}
-              showVoiceButton={false}
-              className="justify-center"
-            />
-          </div>
+        {/* Bottom Actions */}
+        <div className="bottom-actions">
+          <ButtonLimiter
+            actions={actions}
+            maxVisibleButtons={4}
+            showVoiceButton={false}
+            className="w-full"
+            layout="grid"
+          />
         </div>
       </div>
     );
@@ -482,39 +514,38 @@ export default function SupervisorJobCreatePage() {
 
   // Main form view
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="mobile-container">
+      {/* Mobile Navigation */}
+      <MobileNavigation 
+        currentRole="supervisor" 
+        onLogout={() => router.push('/sign-in')}
+        showBackButton={true}
+        backTo="/supervisor"
+      />
+
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4 h-16">
-            <button
-              onClick={() => router.back()}
-              className="text-gray-600 hover:text-gray-800"
-            >
-              <ArrowLeft className="w-6 h-6" />
-            </button>
-            <h1 className="text-2xl font-bold text-gray-900">Create New Job</h1>
-          </div>
+      <div className="header-bar">
+        <div>
+          <h1 className="text-xl font-semibold">Create New Job</h1>
         </div>
+        <Send className="w-6 h-6 text-golden" />
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="space-y-6">
             {/* Customer & Property */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer & Property</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-white mb-4">Customer & Property</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
                     Customer *
                   </label>
                   <select
                     value={formData.customerId}
                     onChange={(e) => setFormData(prev => ({ ...prev, customerId: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
                     required
                   >
                     <option value="">Select customer...</option>
@@ -525,18 +556,18 @@ export default function SupervisorJobCreatePage() {
                     ))}
                   </select>
                   {validationErrors.customerId && (
-                    <p className="text-red-600 text-sm mt-1">{validationErrors.customerId}</p>
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.customerId}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
                     Property *
                   </label>
                   <select
                     value={formData.propertyId}
                     onChange={(e) => setFormData(prev => ({ ...prev, propertyId: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden disabled:opacity-50"
                     disabled={!formData.customerId}
                     required
                   >
@@ -548,19 +579,19 @@ export default function SupervisorJobCreatePage() {
                     ))}
                   </select>
                   {validationErrors.propertyId && (
-                    <p className="text-red-600 text-sm mt-1">{validationErrors.propertyId}</p>
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.propertyId}</p>
                   )}
                 </div>
               </div>
 
               {getSelectedCustomer() && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <div className="mt-4 p-3 bg-gray-900 bg-opacity-50 border border-gray-700 rounded-lg">
                   <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
+                    <MapPin className="w-5 h-5 text-golden mt-0.5" />
                     <div>
-                      <p className="font-medium text-gray-900">{getSelectedCustomer()!.name}</p>
-                      <p className="text-sm text-gray-600">{getSelectedCustomer()!.address}</p>
-                      <p className="text-sm text-gray-600">{getSelectedCustomer()!.phone}</p>
+                      <p className="font-medium text-white">{getSelectedCustomer()!.name}</p>
+                      <p className="text-sm text-gray-400">{getSelectedCustomer()!.address}</p>
+                      <p className="text-sm text-gray-400">{getSelectedCustomer()!.phone}</p>
                     </div>
                   </div>
                 </div>
@@ -638,81 +669,53 @@ export default function SupervisorJobCreatePage() {
               />
             </div>
           </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
-              <ButtonLimiter
-                actions={actions}
-                maxVisibleButtons={4}
-                showVoiceButton={false}
-                layout="grid"
-                className="w-full"
-              />
-            </div>
-
-            {/* Voice Instructions Status */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Voice Instructions</h3>
-              {voiceRecording ? (
-                <div className="flex items-center gap-2 text-emerald-600">
-                  <CheckCircle className="w-5 h-5" />
-                  <span className="text-sm">Recording saved</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Mic className="w-5 h-5" />
-                  <span className="text-sm">No recording</span>
-                </div>
-              )}
-            </div>
-
-            {/* Equipment Summary */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Equipment</h3>
-              {formData.requiredEquipmentIds.length > 0 ? (
-                <div>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {formData.requiredEquipmentIds.length} items selected
-                  </p>
-                  <div className="space-y-1">
-                    {formData.requiredEquipmentIds.slice(0, 3).map(id => {
-                      const item = equipment.find(e => e.id === id);
-                      return item ? (
-                        <p key={id} className="text-xs text-gray-700">{item.name}</p>
-                      ) : null;
-                    })}
-                    {formData.requiredEquipmentIds.length > 3 && (
-                      <p className="text-xs text-gray-500">
-                        +{formData.requiredEquipmentIds.length - 3} more
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">No equipment selected</p>
-              )}
-            </div>
-
-            {/* Validation Errors */}
-            {Object.keys(validationErrors).length > 0 && (
-              <div className="bg-red-50 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle className="w-5 h-5 text-red-600" />
-                  <span className="font-medium text-red-800">Form Errors</span>
-                </div>
-                <ul className="text-sm text-red-700 space-y-1">
-                  {Object.values(validationErrors).map((error, index) => (
-                    <li key={index}>• {error}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
         </div>
-      </div>
+
+        {/* Bottom Actions */}
+        <div className="bottom-actions">
+          <ButtonLimiter
+            actions={actions}
+            maxVisibleButtons={4}
+            showVoiceButton={false}
+            layout="grid"
+            className="w-full"
+          />
+        </div>
+
+        {/* Mobile Styling */}
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+            background: rgba(0, 0, 0, 0.9);
+          }
+
+          .bottom-actions {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.9);
+            border-top: 1px solid #333;
+          }
+
+          .golden { color: #FFD700; }
+        `}</style>
     </div>
   );
 }

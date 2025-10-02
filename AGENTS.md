@@ -66,6 +66,18 @@
 
 ## Commit & Pull Request Guidelines
 - Follow Conventional Commits (`feat:`, `fix:`, `chore:`) with optional scopes (`feat(domains/voice): add pipeline step`); keep subjects <= 72 chars.
+- Use exact commit format from CLAUDE.md with heredoc pattern:
+  ```bash
+  git commit -m "$(cat <<'EOF'
+  commit message here
+  
+  🤖 Generated with [Claude Code](https://claude.ai/code)
+  
+  Co-Authored-By: Claude <noreply@anthropic.com>
+  EOF
+  )"
+  ```
+- Always push directly to main: `git push`
 - Rebase or squash noisy history; confirm `npm run pre-commit` locally.
 - PRs need a crisp summary, linked issues, visuals or payload samples for UX/API changes, and the test commands you ran.
 

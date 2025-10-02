@@ -90,7 +90,19 @@ For any task with 3+ steps or complexity, use TodoWrite to:
 ### Push Changes Directly to Main
 - **ALWAYS push to main branch** - Never create or switch branches
 - **Never ask user to commit/push** - You have PAT token, do it directly
-- Use `git push origin main` when changes need deployment
+- **Use exact commit format from CLAUDE.md:**
+  ```bash
+  git add <files>
+  git commit -m "$(cat <<'EOF'
+  conventional commit message
+  
+  🤖 Generated with [Claude Code](https://claude.ai/code)
+  
+  Co-Authored-By: Claude <noreply@anthropic.com>
+  EOF
+  )"
+  git push
+  ```
 - Railway will auto-deploy within 2-3 minutes of push
 - Multiple agents can work simultaneously without branch conflicts
 

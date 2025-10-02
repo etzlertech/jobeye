@@ -39,11 +39,18 @@ export function VoiceCommandButton({
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Size classes
+  // Size classes - 3x larger as requested
   const sizeClasses = {
-    sm: 'w-12 h-12',
-    md: 'w-16 h-16',
-    lg: 'w-20 h-20'
+    sm: 'w-36 h-36',  // was w-12 h-12, now 3x larger
+    md: 'w-48 h-48',  // was w-16 h-16, now 3x larger  
+    lg: 'w-60 h-60'   // was w-20 h-20, now 3x larger
+  };
+
+  // Icon sizes - also 3x larger to match
+  const iconSizeClasses = {
+    sm: 'w-24 h-24',  // was w-8 h-8, now 3x larger
+    md: 'w-32 h-32',  // was w-8 h-8, now 4x larger for proportion
+    lg: 'w-40 h-40'   // was w-8 h-8, now 5x larger for proportion
   };
 
   // Initialize speech recognition
@@ -187,11 +194,11 @@ export function VoiceCommandButton({
         aria-label={isListening ? 'Stop listening' : 'Start voice command'}
       >
         {isSpeaking ? (
-          <Volume2 className="w-8 h-8 text-white" />
+          <Volume2 className={`${iconSizeClasses[size]} text-white`} />
         ) : isListening ? (
-          <MicOff className="w-8 h-8 text-white" />
+          <MicOff className={`${iconSizeClasses[size]} text-white`} />
         ) : (
-          <Mic className="w-8 h-8 text-white" />
+          <Mic className={`${iconSizeClasses[size]} text-white`} />
         )}
       </button>
 

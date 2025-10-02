@@ -43,18 +43,26 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
-import { createPortal } from 'react-dom';
-import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
-import { voiceProcessor } from '@/lib/voice/voice-processor';
-import { voiceNavigator } from '@/lib/voice/voice-navigator';
-import { 
-  Users, Search, Plus, Edit, Trash2, Phone, Mail, MapPin, 
-  AlertCircle, CheckCircle, X, Loader2, Settings, ChevronLeft,
-  ArrowLeft, Save
+import {
+  Plus,
+  Search,
+  Users,
+  MapPin,
+  Mail,
+  Phone,
+  Edit,
+  Trash2,
+  ArrowLeft,
+  AlertCircle,
+  CheckCircle,
+  X,
+  Save,
+  Loader2
 } from 'lucide-react';
+import { ButtonLimiter, useButtonActions } from '@/components/ui/ButtonLimiter';
 
 interface Customer {
   id: string;
@@ -77,18 +85,16 @@ interface CustomerFormData {
 
 export default function SupervisorCustomersPage() {
   const router = useRouter();
-  
+  const { actions, addAction, clearActions } = useButtonActions();
+
   // State
   const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [mounted, setMounted] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [voiceActive, setVoiceActive] = useState(false);
-  const [transcript, setTranscript] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   
   // Form state
   const [formData, setFormData] = useState<CustomerFormData>({
@@ -101,9 +107,55 @@ export default function SupervisorCustomersPage() {
   const [formErrors, setFormErrors] = useState<Partial<CustomerFormData>>({});
   const [isSaving, setIsSaving] = useState(false);
 
+  // Set up button actions based on view
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    clearActions();
+
+    if (view === 'list') {
+      addAction({
+        id: 'back',
+        label: 'Back to Dashboard',
+        priority: 'medium',
+        icon: ArrowLeft,
+        onClick: () => router.push('/supervisor'),
+        className: 'bg-gray-600 text-white hover:bg-gray-700'
+      });
+
+      addAction({
+        id: 'create-customer',
+        label: 'Add New Customer',
+        priority: 'high',
+        icon: Plus,
+        onClick: () => {
+          setView('create');
+          resetForm();
+        },
+        className: 'bg-emerald-600 text-white hover:bg-emerald-700'
+      });
+    } else if (view === 'create' || view === 'edit') {
+      addAction({
+        id: 'cancel',
+        label: 'Cancel',
+        priority: 'medium',
+        icon: X,
+        onClick: () => {
+          setView('list');
+          resetForm();
+        },
+        className: 'bg-gray-600 text-white hover:bg-gray-700'
+      });
+
+      addAction({
+        id: 'save',
+        label: isSaving ? 'Saving...' : 'Save Customer',
+        priority: 'high',
+        icon: Save,
+        disabled: isSaving,
+        onClick: handleSubmit,
+        className: 'bg-emerald-600 text-white hover:bg-emerald-700'
+      });
+    }
+  }, [view, isSaving, clearActions, addAction, router]);
 
   // Load customers on mount
   useEffect(() => {
@@ -126,30 +178,6 @@ export default function SupervisorCustomersPage() {
     }
   };
 
-  // Voice command handling
-  const handleVoiceTranscript = (text: string) => {
-    setTranscript(text);
-    setTimeout(() => setTranscript(null), 3000);
-  };
-
-  const handleVoiceCommand = async (transcript: string, confidence: number) => {
-    const lowerTranscript = transcript.toLowerCase();
-
-    if (lowerTranscript.includes('create') || lowerTranscript.includes('add') || lowerTranscript.includes('new')) {
-      if (lowerTranscript.includes('customer')) {
-        setView('create');
-        resetForm();
-      }
-    } else if (lowerTranscript.includes('search') || lowerTranscript.includes('find')) {
-      const searchMatch = lowerTranscript.match(/(?:search|find)\s+(.+)/i);
-      if (searchMatch) {
-        setSearchQuery(searchMatch[1]);
-      }
-    } else if (lowerTranscript.includes('back') || lowerTranscript.includes('cancel')) {
-      setView('list');
-      resetForm();
-    }
-  };
 
   const resetForm = () => {
     setFormData({
@@ -201,8 +229,9 @@ export default function SupervisorCustomersPage() {
 
       if (!response.ok) throw new Error(data.message);
 
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      // Use the specific message from the API response that indicates if it was saved to database
+      setSuccess(data.message || (view === 'edit' ? 'Customer updated successfully' : 'Customer created successfully'));
+      setTimeout(() => setSuccess(null), 5000); // Longer display time for database confirmation
 
       // Refresh list and return to list view
       await loadCustomers();
@@ -240,8 +269,9 @@ export default function SupervisorCustomersPage() {
         throw new Error(data.message);
       }
 
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      // Use the specific message from the API response that indicates if it was deleted from database
+      setSuccess(data.message || 'Customer deleted successfully');
+      setTimeout(() => setSuccess(null), 5000); // Longer display time for database confirmation
       await loadCustomers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete customer');
@@ -284,13 +314,6 @@ export default function SupervisorCustomersPage() {
           <Users className="w-6 h-6 text-golden" />
         </div>
 
-        {/* Voice Transcript */}
-        {transcript && mounted && createPortal(
-          <div className="transcript-overlay">
-            <p className="text-golden">{transcript}</p>
-          </div>,
-          document.body
-        )}
 
         {/* Notifications */}
         {error && (
@@ -306,10 +329,10 @@ export default function SupervisorCustomersPage() {
           </div>
         )}
 
-        {showSuccess && (
+        {success && (
           <div className="notification-bar success">
             <CheckCircle className="w-5 h-5 text-golden flex-shrink-0" />
-            <span className="text-sm">Operation completed successfully</span>
+            <span className="text-sm">{success}</span>
           </div>
         )}
 
@@ -614,10 +637,12 @@ export default function SupervisorCustomersPage() {
           margin: 0.5rem 1rem;
           border-radius: 0.5rem;
         }
+
         .notification-bar.error {
           background: rgba(239, 68, 68, 0.1);
           border: 1px solid rgba(239, 68, 68, 0.3);
         }
+
         .notification-bar.success {
           background: rgba(255, 215, 0, 0.1);
           border: 1px solid rgba(255, 215, 0, 0.3);
