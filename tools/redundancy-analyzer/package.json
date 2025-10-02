@@ -1,0 +1,56 @@
+{
+  "name": "@jobeye/redundancy-analyzer",
+  "version": "1.0.0",
+  "description": "Codebase redundancy analysis tool for identifying duplicate code, unused tables, and overlapping implementations",
+  "main": "dist/cli/analyze.js",
+  "bin": {
+    "redundancy-analyzer": "./dist/cli/analyze.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "analyze": "node dist/cli/analyze.js",
+    "status": "node dist/cli/analyze.js status"
+  },
+  "keywords": [
+    "redundancy",
+    "code-analysis",
+    "typescript",
+    "ast",
+    "duplicate-detection"
+  ],
+  "author": "JobEye Team",
+  "license": "MIT",
+  "dependencies": {
+    "@babel/parser": "^7.24.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "glob": "^10.3.10",
+    "ts-morph": "^21.0.1",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/babel__parser": "^7.1.1",
+    "@types/glob": "^8.1.0",
+    "@types/jest": "^29.5.11",
+    "@types/node": "^20.11.0",
+    "@types/uuid": "^9.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.2.4",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

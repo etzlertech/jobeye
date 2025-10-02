@@ -155,17 +155,28 @@ reports/
 **Task Generation Strategy**:
 - Load `.specify/templates/tasks-template.md` as base
 - Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
-- Each contract → contract test task [P]
-- Each entity → model creation task [P] 
-- Each user story → integration test task
-- Implementation tasks to make tests pass
+- Each entity in data model → model creation task [P]
+- Each service → service implementation task
+- CLI interface → command implementation task
+- Each analysis type → dedicated analyzer task
+- Report generation → formatter task
+- Integration tests for end-to-end flow
 
 **Ordering Strategy**:
 - TDD order: Tests before implementation 
-- Dependency order: Models before services before UI
+- Dependency order: Models → Services → CLI → Integration
 - Mark [P] for parallel execution (independent files)
+- Database analysis depends on connection setup
 
-**Estimated Output**: 25-30 numbered, ordered tasks in tasks.md
+**Estimated Output**: 20-25 numbered, ordered tasks in tasks.md
+
+**Key Task Categories**:
+1. Setup and configuration (TypeScript, dependencies)
+2. Model implementations (4-5 tasks)
+3. Service implementations (5-6 tasks)  
+4. CLI command structure (2-3 tasks)
+5. Report generation (2-3 tasks)
+6. Testing (4-5 tasks)
 
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
@@ -189,18 +200,18 @@ reports/
 *This checklist is updated during execution flow*
 
 **Phase Status**:
-- [ ] Phase 0: Research complete (/plan command)
-- [ ] Phase 1: Design complete (/plan command)
-- [ ] Phase 2: Task planning complete (/plan command - describe approach only)
+- [x] Phase 0: Research complete (/plan command)
+- [x] Phase 1: Design complete (/plan command)
+- [x] Phase 2: Task planning complete (/plan command - describe approach only)
 - [ ] Phase 3: Tasks generated (/tasks command)
 - [ ] Phase 4: Implementation complete
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
-- [ ] Initial Constitution Check: PASS
-- [ ] Post-Design Constitution Check: PASS
-- [ ] All NEEDS CLARIFICATION resolved
-- [ ] Complexity deviations documented
+- [x] Initial Constitution Check: PASS
+- [x] Post-Design Constitution Check: PASS
+- [x] All NEEDS CLARIFICATION resolved
+- [x] Complexity deviations documented
 
 ---
 *Based on Constitution v2.1.1 - See `/memory/constitution.md`*

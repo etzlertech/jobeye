@@ -48,6 +48,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import {
   Calendar,
   Users,
@@ -270,6 +271,12 @@ export default function SupervisorDashboard() {
 
   return (
     <div className="mobile-container">
+      {/* Mobile Navigation */}
+      <MobileNavigation 
+        currentRole="supervisor" 
+        onLogout={() => router.push('/sign-in')}
+      />
+
       {/* Header */}
       <div className="header-bar">
         <div>

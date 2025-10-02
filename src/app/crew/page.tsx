@@ -51,6 +51,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import {
   Calendar,
   Clock,
@@ -326,6 +327,12 @@ export default function CrewDashboardPage() {
 
   return (
     <div className="mobile-container">
+      {/* Mobile Navigation */}
+      <MobileNavigation 
+        currentRole="crew" 
+        onLogout={() => router.push('/sign-in')}
+      />
+
       {/* Header */}
       <div className="header-bar">
         <div>
