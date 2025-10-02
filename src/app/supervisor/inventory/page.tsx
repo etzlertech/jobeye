@@ -69,9 +69,110 @@ import {
   PackageCheck,
   PackageX
 } from 'lucide-react';
-import { CameraCapture } from '@/components/camera/CameraCapture';
 import { ButtonLimiter, useButtonActions } from '@/components/ui/ButtonLimiter';
 import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
+
+// Simple camera component for capturing photos
+interface SimpleCameraCaptureProps {
+  onCapture: (imageUrl: string) => void;
+  onCancel: () => void;
+}
+
+function SimpleCameraCapture({ onCapture, onCancel }: SimpleCameraCaptureProps) {
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    startCamera();
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment', // Use back camera if available
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+      setStream(mediaStream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      alert('Could not access camera. Please check permissions.');
+    }
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    setIsCapturing(true);
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    if (context) {
+      context.drawImage(video, 0, 0);
+      const imageUrl = canvas.toDataURL('image/jpeg', 0.8);
+      onCapture(imageUrl);
+    }
+    
+    setIsCapturing(false);
+  };
+
+  return (
+    <div className="flex-1 flex flex-col bg-black">
+      <div className="flex-1 relative overflow-hidden">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="w-full h-full object-cover"
+        />
+        <canvas ref={canvasRef} className="hidden" />
+        
+        {/* Camera overlay with capture button */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+          <div className="flex items-center justify-center gap-6">
+            <button
+              onClick={onCancel}
+              className="w-12 h-12 bg-gray-600 text-white rounded-full flex items-center justify-center hover:bg-gray-700"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            <button
+              onClick={capturePhoto}
+              disabled={isCapturing}
+              className="w-16 h-16 bg-white border-4 border-golden rounded-full flex items-center justify-center hover:bg-gray-100 disabled:opacity-50"
+            >
+              {isCapturing ? (
+                <Loader2 className="w-8 h-8 text-golden animate-spin" />
+              ) : (
+                <Camera className="w-8 h-8 text-golden" />
+              )}
+            </button>
+            
+            <div className="w-12 h-12" /> {/* Spacer for centering */}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface InventoryItem {
   id: string;
@@ -85,11 +186,6 @@ interface InventoryItem {
   status: 'in_stock' | 'low_stock' | 'out_of_stock';
 }
 
-interface IntentResult {
-  intent: string;
-  confidence: number;
-  suggestedAction?: string;
-}
 
 interface NewItemForm {
   name: string;
@@ -125,9 +221,6 @@ export default function SupervisorInventoryPage() {
   // View states
   const [view, setView] = useState<'list' | 'add_form' | 'camera'>('list');
   
-  // Camera/Intent states
-  const [currentIntent, setCurrentIntent] = useState<IntentResult | null>(null);
-  const [isProcessingIntent, setIsProcessingIntent] = useState(false);
   
   // Add item form
   const [newItem, setNewItem] = useState<NewItemForm>({
@@ -138,6 +231,7 @@ export default function SupervisorInventoryPage() {
     container: ''
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Mock inventory data
   const mockItems: InventoryItem[] = [
@@ -270,7 +364,7 @@ export default function SupervisorInventoryPage() {
         label: 'Add Item',
         priority: 'high',
         icon: Plus,
-        onClick: () => setView('camera'),
+        onClick: () => setView('add_form'),
         className: 'bg-emerald-600 text-white hover:bg-emerald-700'
       });
 
@@ -334,24 +428,62 @@ export default function SupervisorInventoryPage() {
     };
   }, []);
 
-  const handleCameraCapture = useCallback((imageBlob: Blob, imageUrl: string) => {
-    setNewItem(prev => ({ ...prev, imageUrl }));
-    setView('add_form');
-  }, []);
-
-  const handleIntentConfirmed = useCallback((intent: IntentResult) => {
-    setCurrentIntent(intent);
-    if (intent.intent === 'INVENTORY_ADD' && intent.confidence > 0.7) {
-      setIsProcessingIntent(true);
-      setTimeout(() => {
-        setIsProcessingIntent(false);
-        // Auto-fill form based on intent
-        if (intent.suggestedAction) {
-          setNewItem(prev => ({ ...prev, name: intent.suggestedAction }));
+  const analyzePhoto = async () => {
+    if (!newItem.imageUrl) return;
+    
+    setIsAnalyzing(true);
+    try {
+      // Convert data URL to base64
+      const base64Image = newItem.imageUrl.split(',')[1];
+      
+      const response = await fetch('/api/vision/analyze-item', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: base64Image,
+          prompt: 'Identify this item and suggest an appropriate name for inventory tracking. Focus on the main object in the image. Respond with just the item name, like "Lawn Mower" or "Safety Goggles".'
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.analysis) {
+        // Extract the suggested name and try to determine category
+        const suggestedName = data.analysis.trim();
+        let suggestedCategory = 'equipment';
+        
+        // Simple category detection based on common keywords
+        const lowerName = suggestedName.toLowerCase();
+        if (lowerName.includes('fertilizer') || lowerName.includes('seed') || lowerName.includes('chemical') || lowerName.includes('fuel')) {
+          suggestedCategory = 'materials';
+        } else if (lowerName.includes('safety') || lowerName.includes('goggle') || lowerName.includes('helmet') || lowerName.includes('glove')) {
+          suggestedCategory = 'safety';
+        } else if (lowerName.includes('tool') || lowerName.includes('wrench') || lowerName.includes('screwdriver') || lowerName.includes('hammer')) {
+          suggestedCategory = 'tools';
         }
-      }, 1000);
+        
+        setNewItem(prev => ({
+          ...prev,
+          name: suggestedName,
+          category: suggestedCategory
+        }));
+        
+        setSuccess(`Item identified as: ${suggestedName}`);
+        setTimeout(() => setSuccess(null), 3000);
+      } else {
+        setError('Could not analyze photo. Please enter item name manually.');
+        setTimeout(() => setError(null), 3000);
+      }
+    } catch (error) {
+      console.error('Photo analysis error:', error);
+      setError('Photo analysis failed. Please enter item name manually.');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setIsAnalyzing(false);
     }
-  }, []);
+  };
 
   const handleSaveItem = async () => {
     if (!newItem.name) return;
@@ -428,34 +560,57 @@ export default function SupervisorInventoryPage() {
   // Camera view
   if (view === 'camera') {
     return (
-      <div className="min-h-screen bg-black">
-        <CameraCapture
-          onCapture={handleCameraCapture}
-          onIntentDetected={handleIntentConfirmed}
-          maxFps={1}
-          showIntentOverlay={true}
-          currentIntent={currentIntent}
-          isProcessing={isProcessingIntent}
-          className="h-screen"
+      <div className="mobile-container">
+        {/* Mobile Navigation */}
+        <MobileNavigation 
+          currentRole="supervisor" 
+          onLogout={() => router.push('/sign-in')}
+          showBackButton={true}
+          onBack={() => setView('add_form')}
         />
         
-        {/* Camera Controls */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-          <div className="flex justify-center gap-4">
-            <button
-              onClick={() => setView('list')}
-              className="px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => setView('add_form')}
-              className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700"
-            >
-              Add Without Photo
-            </button>
+        {/* Header */}
+        <div className="header-bar">
+          <div>
+            <h1 className="text-xl font-semibold">Capture Photo</h1>
           </div>
+          <Camera className="w-6 h-6 text-golden" />
         </div>
+
+        {/* Camera Content */}
+        <div className="flex-1 flex flex-col">
+          <SimpleCameraCapture
+            onCapture={(imageUrl) => {
+              setNewItem(prev => ({ ...prev, imageUrl }));
+              setView('add_form');
+            }}
+            onCancel={() => setView('add_form')}
+          />
+        </div>
+
+        {/* Styled JSX for mobile styling */}
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+          .header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+            background: rgba(0, 0, 0, 0.9);
+          }
+        `}</style>
       </div>
     );
   }
@@ -502,15 +657,64 @@ export default function SupervisorInventoryPage() {
 
         {/* Form Content */}
         <div className="flex-1 overflow-y-auto px-4 py-4">
-          {newItem.imageUrl && (
-            <div className="mb-4">
-              <img 
-                src={newItem.imageUrl} 
-                alt="Captured item"
-                className="w-full h-32 object-cover rounded-lg border-2 border-golden"
-              />
-            </div>
-          )}
+          {/* Photo Capture Section */}
+          <div className="mb-6">
+            {newItem.imageUrl ? (
+              <div className="space-y-3">
+                <img 
+                  src={newItem.imageUrl} 
+                  alt="Captured item"
+                  className="w-full h-32 object-cover rounded-lg border-2 border-golden"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewItem(prev => ({ ...prev, imageUrl: '' }))}
+                    className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700"
+                  >
+                    Remove Photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setView('camera')}
+                    className="flex-1 py-2 px-4 bg-gray-600 text-white rounded-lg text-sm font-medium hover:bg-gray-700"
+                  >
+                    Retake Photo
+                  </button>
+                </div>
+                {!newItem.name && (
+                  <button
+                    type="button"
+                    onClick={analyzePhoto}
+                    disabled={isAnalyzing}
+                    className="w-full py-2 px-4 bg-golden text-black rounded-lg text-sm font-medium hover:bg-yellow-500 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Analyzing Photo...
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-4 h-4" />
+                        Auto-fill from Photo
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setView('camera')}
+                className="w-full py-4 px-4 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-golden hover:text-golden transition-colors flex flex-col items-center gap-2"
+              >
+                <Camera className="w-8 h-8" />
+                <span className="font-medium">Add Photo (Optional)</span>
+                <span className="text-sm">Tap to capture item image</span>
+              </button>
+            )}
+          </div>
 
           <form onSubmit={(e) => { e.preventDefault(); handleSaveItem(); }} className="space-y-4">
             {/* Item Name */}
