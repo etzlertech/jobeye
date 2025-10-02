@@ -47,50 +47,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const offset = (page - 1) * limit;
 
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
+    // Get tenant ID (no more demo mode - all users use live database)
     const companyId = request.headers.get('x-tenant-id');
-
-    if (isDemo) {
-      // Return mock customers for demo mode
-      const mockCustomers = [
-        {
-          id: '1',
-          name: 'Johnson Family',
-          email: 'johnson@example.com',
-          phone: '(555) 123-4567',
-          address: '123 Main St, Anytown, USA',
-          created_at: new Date().toISOString(),
-          property_count: 2
-        },
-        {
-          id: '2', 
-          name: 'Smith Residence',
-          email: 'smith@example.com',
-          phone: '(555) 234-5678',
-          address: '456 Oak Ave, Somewhere, USA',
-          created_at: new Date().toISOString(),
-          property_count: 1
-        },
-        {
-          id: '3',
-          name: 'Green Acres HOA',
-          email: 'contact@greenacres.com',
-          phone: '(555) 345-6789',
-          address: '789 Park Blvd, Elsewhere, USA',
-          created_at: new Date().toISOString(),
-          property_count: 15
-        }
-      ];
-
-      return NextResponse.json({
-        customers: mockCustomers,
-        total_count: mockCustomers.length,
-        page,
-        limit,
-        total_pages: 1
-      });
-    }
 
     // Build query - map billing_address to address for UI compatibility
     let query = supabase
@@ -169,19 +127,7 @@ export async function POST(request: NextRequest) {
       return validationError('Tenant ID required');
     }
 
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
-    if (isDemo) {
-      // Return mock response for demo mode
-      return NextResponse.json({
-        customer: {
-          id: Date.now().toString(),
-          ...body,
-          tenant_id: tenantId,
-          created_at: new Date().toISOString()
-        }
-      }, { status: 201 });
-    }
+    // All users (including demo users) now use live database
 
     // Generate customer number
     const timestamp = Date.now();
