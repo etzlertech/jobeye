@@ -80,16 +80,16 @@ const navigationItems: NavigationItem[] = [
   { id: 'admin-dashboard', label: 'Admin Dashboard', path: '/admin', icon: Shield, roles: ['admin'] },
   
   // Supervisor screens
-  { id: 'supervisor-dashboard', label: 'Dashboard', path: '/supervisor', icon: Home, roles: ['supervisor', 'admin'] },
+  { id: 'supervisor-dashboard', label: 'Supervisor Hub', path: '/supervisor', icon: Home, roles: ['supervisor', 'admin'] },
   { id: 'customers', label: 'Customers', path: '/supervisor/customers', icon: Users, roles: ['supervisor', 'admin'] },
   { id: 'properties', label: 'Properties', path: '/supervisor/properties', icon: Building, roles: ['supervisor', 'admin'] },
   { id: 'inventory', label: 'Inventory', path: '/supervisor/inventory', icon: Package, roles: ['supervisor', 'admin'] },
   { id: 'create-job', label: 'Create Job', path: '/supervisor/jobs/create', icon: Calendar, roles: ['supervisor', 'admin'] },
   
-  // Crew screens
-  { id: 'crew-dashboard', label: 'Dashboard', path: '/crew', icon: Home, roles: ['crew', 'supervisor', 'admin'] },
-  { id: 'job-load', label: 'Verify Load', path: '/crew/job-load', icon: Camera, roles: ['crew', 'supervisor', 'admin'] },
-  { id: 'load-verify', label: 'Load Check', path: '/crew/load-verify', icon: Wrench, roles: ['crew', 'supervisor', 'admin'] },
+  // Crew screens  
+  { id: 'crew-dashboard', label: 'Crew Hub', path: '/crew', icon: Briefcase, roles: ['crew', 'supervisor', 'admin'] },
+  { id: 'job-load', label: 'Job Load List', path: '/crew/job-load', icon: Camera, roles: ['crew', 'supervisor', 'admin'] },
+  { id: 'load-verify', label: 'Load Verification', path: '/crew/load-verify', icon: Wrench, roles: ['crew', 'supervisor', 'admin'] },
   
   // Vision admin
   { id: 'vision-admin', label: 'Vision Admin', path: '/vision/admin', icon: Settings, roles: ['admin'] },

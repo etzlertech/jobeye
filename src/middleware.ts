@@ -65,7 +65,9 @@ const ROUTE_CONFIG = {
       '/supervisor',
       '/supervisor/inventory', 
       '/supervisor/jobs',
-      '/supervisor/dashboard'
+      '/supervisor/dashboard',
+      '/supervisor/customers',
+      '/supervisor/properties'
     ],
     crew: [
       '/crew',
@@ -89,7 +91,10 @@ const ROUTE_CONFIG = {
     'supervisor,crew': [
       '/jobs', // Generic job routes
       '/equipment',
-      '/profile'
+      '/profile',
+      '/crew/load-verify', // Supervisors need access to load verification
+      '/crew/job-load', // Supervisors can view job loads
+      '/crew/jobs' // Supervisors can view crew job pages
     ],
     // Routes accessible by admin and supervisor  
     'admin,supervisor': [
