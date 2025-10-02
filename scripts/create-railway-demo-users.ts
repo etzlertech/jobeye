@@ -2,8 +2,11 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Railway's Supabase configuration
-const RAILWAY_SUPABASE_URL = 'https://rtwigjwqufozqfwozpvo.supabase.co';
+// Load from environment
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
+const RAILWAY_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const RAILWAY_SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 // Railway's demo tenant ID

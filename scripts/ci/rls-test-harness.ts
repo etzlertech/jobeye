@@ -8,15 +8,8 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-const serviceKey =
-  process.env.SUPABASE_SECRET_KEY ??
-  process.env.SUPABASE_SERVICE_ROLE_KEY ??
-  '';
-const anonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ??
-  process.env.SUPABASE_PUBLISHABLE_KEY ??
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-  '';
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 if (!supabaseUrl || !serviceKey) {
   console.log('Skipping RLS tests - Supabase credentials not available');
@@ -24,7 +17,7 @@ if (!supabaseUrl || !serviceKey) {
 }
 
 if (!anonKey) {
-  console.log('Missing anon key (NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY) for tenant auth tests');
+  console.log('Missing anon key (NEXT_PUBLIC_SUPABASE_ANON_KEY) for tenant auth tests');
   process.exit(1);
 }
 
