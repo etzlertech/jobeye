@@ -69,3 +69,8 @@ export function createServiceClient() {
     }
   });
 }
+
+/**
+ * Alias for createClient to match expected import name in API routes
+ */
+export const createServerClient = createClient;

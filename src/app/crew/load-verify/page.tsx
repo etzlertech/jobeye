@@ -49,7 +49,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
@@ -112,7 +112,7 @@ interface VerificationResult {
   cost: number;
 }
 
-export default function CrewLoadVerifyPage() {
+function CrewLoadVerifyPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedJobId = searchParams?.get('jobId');
@@ -787,5 +787,26 @@ export default function CrewLoadVerifyPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading component for Suspense boundary
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-4" />
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+// Main export with Suspense boundary
+export default function CrewLoadVerifyPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <CrewLoadVerifyPageContent />
+    </Suspense>
   );
 }

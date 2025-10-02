@@ -421,3 +421,187 @@ export const handleError = (error: Error, context?: ErrorContext): Promise<void>
 export const registerRecoveryStrategy = (errorType: string, strategy: RecoveryStrategy): void => {
   ErrorHandler.getInstance().registerRecoveryStrategy(errorType, strategy);
 };
+
+// API-specific error handling exports for Next.js routes
+import { NextResponse } from 'next/server';
+
+/**
+ * API Error class for structured API responses
+ */
+export class ApiError extends Error {
+  public readonly statusCode: number;
+  public readonly code: string;
+  public readonly details?: any;
+
+  constructor(
+    message: string,
+    statusCode: number = 500,
+    code: string = 'INTERNAL_ERROR',
+    details?: any
+  ) {
+    super(message);
+    this.name = 'ApiError';
+    this.statusCode = statusCode;
+    this.code = code;
+    this.details = details;
+  }
+
+  toJSON() {
+    return {
+      error: {
+        message: this.message,
+        code: this.code,
+        statusCode: this.statusCode,
+        details: this.details,
+        timestamp: new Date().toISOString()
+      }
+    };
+  }
+}
+
+/**
+ * Main API error handler for Next.js routes
+ */
+export function handleApiError(error: unknown): NextResponse {
+  // Log the error through the main error handler
+  if (error instanceof Error) {
+    handleError(error, { operation: 'api_request' }).catch(console.error);
+  }
+
+  if (error instanceof ApiError) {
+    return NextResponse.json(error.toJSON(), { 
+      status: error.statusCode,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Error-Code': error.code
+      }
+    });
+  }
+
+  if (error instanceof Error) {
+    // Handle known error types
+    if (error.message.includes('JWT') || error.message.includes('Unauthorized')) {
+      return unauthorized('Invalid or expired authentication token');
+    }
+
+    if (error.message.includes('permission') || error.message.includes('access') || error.message.includes('Forbidden')) {
+      return forbidden('Insufficient permissions for this operation');
+    }
+
+    if (error.message.includes('not found') || error.message.includes('404')) {
+      return notFound('The requested resource was not found');
+    }
+
+    // Generic error handling
+    const apiError = new ApiError(
+      'An unexpected error occurred',
+      500,
+      'INTERNAL_ERROR',
+      { originalMessage: error.message }
+    );
+
+    return NextResponse.json(apiError.toJSON(), { 
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Error-Code': 'INTERNAL_ERROR'
+      }
+    });
+  }
+
+  // Handle non-Error objects
+  const unknownError = new ApiError(
+    'An unknown error occurred',
+    500,
+    'UNKNOWN_ERROR',
+    { error: String(error) }
+  );
+
+  return NextResponse.json(unknownError.toJSON(), { 
+    status: 500,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Error-Code': 'UNKNOWN_ERROR'
+    }
+  });
+}
+
+/**
+ * Convenience methods for common HTTP errors
+ */
+export function unauthorized(message: string = 'Unauthorized access', details?: any): NextResponse {
+  const error = new ApiError(message, 401, 'UNAUTHORIZED', details);
+  return NextResponse.json(error.toJSON(), { 
+    status: 401,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Error-Code': 'UNAUTHORIZED'
+    }
+  });
+}
+
+export function forbidden(message: string = 'Forbidden access', details?: any): NextResponse {
+  const error = new ApiError(message, 403, 'FORBIDDEN', details);
+  return NextResponse.json(error.toJSON(), { 
+    status: 403,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Error-Code': 'FORBIDDEN'
+    }
+  });
+}
+
+export function notFound(message: string = 'Resource not found', details?: any): NextResponse {
+  const error = new ApiError(message, 404, 'NOT_FOUND', details);
+  return NextResponse.json(error.toJSON(), { 
+    status: 404,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Error-Code': 'NOT_FOUND'
+    }
+  });
+}
+
+export function validationError(message: string = 'Validation failed', details?: any): NextResponse {
+  const error = new ApiError(message, 422, 'VALIDATION_ERROR', details);
+  return NextResponse.json(error.toJSON(), { 
+    status: 422,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Error-Code': 'VALIDATION_ERROR'
+    }
+  });
+}
+
+export function serverError(message: string = 'Internal server error', details?: any): NextResponse {
+  const error = new ApiError(message, 500, 'INTERNAL_ERROR', details);
+  return NextResponse.json(error.toJSON(), { 
+    status: 500,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Error-Code': 'INTERNAL_ERROR'
+    }
+  });
+}
+
+export function conflictError(message: string = 'Resource conflict', details?: any): NextResponse {
+  const error = new ApiError(message, 409, 'CONFLICT', details);
+  return NextResponse.json(error.toJSON(), { 
+    status: 409,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Error-Code': 'CONFLICT'
+    }
+  });
+}
+
+export function badRequest(message: string = 'Bad request', details?: any): NextResponse {
+  const error = new ApiError(message, 400, 'BAD_REQUEST', details);
+  return NextResponse.json(error.toJSON(), { 
+    status: 400,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Error-Code': 'BAD_REQUEST'
+    }
+  });
+}

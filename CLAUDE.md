@@ -239,6 +239,46 @@ Every TypeScript/JavaScript file MUST start with an AGENT DIRECTIVE BLOCK contai
 
 ## Development Workflow
 
+### Railway Deployment Validation Strategy
+
+**Force Deploy and Debug Pattern**: A highly effective strategy for identifying deployment issues:
+
+1. **Push Incomplete Code to Railway**
+   ```bash
+   git add .
+   git commit --no-verify -m "feat: force deployment to reveal bugs"
+   git push  # Triggers automatic Railway deployment
+   ```
+
+2. **Use Deployment Validation Script**
+   ```bash
+   # Test against live deployment
+   NEXTAUTH_URL=https://your-app.railway.app npx tsx scripts/validate-mvp-deployment.ts
+   ```
+
+3. **Analyze Production Failures**
+   - API routes returning 404 = Missing dependencies/build failures
+   - Database connection issues = Environment variables or RLS problems
+   - Storage access issues = Missing buckets or permissions
+   - Security header issues = Middleware or Next.js configuration
+
+4. **Benefits of This Approach**
+   - **Real Production Environment**: Tests actual deployment, not just local dev
+   - **Concrete Error Messages**: Railway build logs show exact missing dependencies
+   - **End-to-End Validation**: Tests full stack from frontend to database
+   - **Fast Feedback Loop**: Railway deployments complete in 2-3 minutes
+   - **No Guesswork**: Precise error identification vs. theoretical problems
+
+5. **Railway Monitoring Commands**
+   ```bash
+   npm run railway:check              # Find latest deployment
+   npm run railway:monitor <id>       # Monitor specific deployment  
+   npm run railway:build-logs <id>    # View build errors
+   npm run railway:deploy-logs <id>   # View runtime errors
+   ```
+
+**Key Insight**: Railway's production environment reveals dependency issues that local development misses due to different module resolution, environment variables, and build processes.
+
 ### Creating New Features
 
 1. **Start with Skeleton Generation**
