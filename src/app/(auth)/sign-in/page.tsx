@@ -87,6 +87,42 @@ const roleRoutes = {
   crew: '/crew'
 };
 
+// Offline Notice Component - checks navigator only on client-side
+function OfflineNotice() {
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    // Check if we're in the browser
+    if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+      setIsOffline(!navigator.onLine);
+
+      const handleOnline = () => setIsOffline(false);
+      const handleOffline = () => setIsOffline(true);
+
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
+    }
+  }, []);
+
+  if (!isOffline) return null;
+
+  return (
+    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <div className="flex items-center gap-2">
+        <AlertCircle className="w-4 h-4 text-yellow-600" />
+        <span className="text-yellow-800 text-sm">
+          You're offline. Authentication may be limited.
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function SignInPage() {
   const router = useRouter();
   const supabase = createClientComponentClient();
@@ -361,16 +397,7 @@ export default function SignInPage() {
         </div>
 
         {/* Offline Notice */}
-        {!navigator?.onLine && (
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-yellow-600" />
-              <span className="text-yellow-800 text-sm">
-                You're offline. Authentication may be limited.
-              </span>
-            </div>
-          </div>
-        )}
+        <OfflineNotice />
       </div>
     </div>
   );
