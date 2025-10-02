@@ -606,12 +606,59 @@ export default function CrewJobLoadPage() {
     }
   };
 
-  const toggleChecklistItem = (id: string) => {
+  const toggleChecklistItem = async (id: string) => {
+    // Update local state first for immediate UI feedback
     setChecklist(prev =>
       prev.map(item =>
         item.id === id ? { ...item, checked: !item.checked } : item
       )
     );
+    
+    // Save the updated checklist to the database
+    if (selectedJob) {
+      try {
+        // Get the updated checklist with the toggled item
+        const updatedChecklist = checklist.map(item =>
+          item.id === id ? { ...item, checked: !item.checked } : item
+        );
+        
+        // Convert to the format expected by the API
+        const updatedEquipment = updatedChecklist.map(item => ({
+          name: item.name,
+          checked: item.checked,
+          icon: item.icon,
+          category: item.name.toLowerCase().includes('mower') || item.name.toLowerCase().includes('trimmer') || item.name.toLowerCase().includes('blower') || item.name.toLowerCase().includes('edger') ? 'primary' :
+                    item.name.toLowerCase().includes('safety') || item.name.toLowerCase().includes('glasses') || item.name.toLowerCase().includes('protection') || item.name.toLowerCase().includes('first aid') ? 'safety' :
+                    item.name.toLowerCase().includes('gas') || item.name.toLowerCase().includes('oil') || item.name.toLowerCase().includes('fuel') || item.name.toLowerCase().includes('water') || item.name.toLowerCase().includes('tools') ? 'support' : 'materials'
+        }));
+        
+        const response = await fetch(`/api/crew/jobs/${selectedJob.id}/equipment`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-is-demo': 'true'
+          },
+          body: JSON.stringify({
+            equipment: updatedEquipment
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save checklist item');
+        }
+
+        console.log('[Checklist] Saved item toggle to database:', updatedEquipment.find(eq => eq.name === checklist.find(item => item.id === id)?.name));
+      } catch (err) {
+        console.error('Failed to save checklist item:', err);
+        // Revert the local state change if the save failed
+        setChecklist(prev =>
+          prev.map(item =>
+            item.id === id ? { ...item, checked: !item.checked } : item
+          )
+        );
+        alert('Failed to save checklist item. Please try again.');
+      }
+    }
   };
 
   const openSettings = () => {
