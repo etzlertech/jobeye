@@ -50,10 +50,12 @@ const ROUTE_CONFIG = {
   public: [
     '/',
     '/sign-in',
+    '/simple-signin',
     '/sign-up', 
     '/reset-password',
     '/api/health',
-    '/api/webhook'
+    '/api/webhook',
+    '/api/debug/auth'
   ],
 
   // Role-based protected routes
