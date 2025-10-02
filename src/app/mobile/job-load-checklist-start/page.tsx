@@ -45,6 +45,7 @@ export default function JobLoadChecklistStartPage() {
   const analysisIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const successAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const startCamera = async () => {
     try {
@@ -261,11 +262,12 @@ export default function JobLoadChecklistStartPage() {
 
   const playBeep = () => {
     try {
-      const audioContext = (window as any).audioContext;
-      if (!audioContext || audioContext.state !== 'running') {
-        console.warn('[Audio] Context not ready, skipping beep');
+      if (!audioContextRef.current || audioContextRef.current.state !== 'running') {
+        console.warn('[Audio] Context not ready, skipping beep. State:', audioContextRef.current?.state);
         return;
       }
+      
+      const audioContext = audioContextRef.current;
       
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -291,11 +293,12 @@ export default function JobLoadChecklistStartPage() {
 
   const playSuccessSound = () => {
     try {
-      const audioContext = (window as any).audioContext;
-      if (!audioContext || audioContext.state !== 'running') {
-        console.warn('[Audio] Context not ready for success sound');
+      if (!audioContextRef.current || audioContextRef.current.state !== 'running') {
+        console.warn('[Audio] Context not ready for success sound. State:', audioContextRef.current?.state);
         return;
       }
+      
+      const audioContext = audioContextRef.current;
       
       const now = audioContext.currentTime;
       const duration = 0.6;
@@ -337,31 +340,31 @@ export default function JobLoadChecklistStartPage() {
     // Initialize audio context on user interaction (Safari requirement)
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      let audioContext = (window as any).audioContext;
       
-      if (!audioContext) {
-        audioContext = new AudioContext();
-        (window as any).audioContext = audioContext;
-        console.log('[Audio] Context created on START button press');
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext();
+        console.log('[Audio] Context created on START button press, state:', audioContextRef.current.state);
       }
       
       // CRITICAL for Safari: Must resume on user gesture
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
-        console.log('[Audio] Context resumed successfully');
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+        console.log('[Audio] Context resumed successfully, state:', audioContextRef.current.state);
       }
       
       // Test beep to verify audio is working
-      if (audioContext.state === 'running') {
-        const osc = audioContext.createOscillator();
-        const gain = audioContext.createGain();
+      if (audioContextRef.current.state === 'running') {
+        const osc = audioContextRef.current.createOscillator();
+        const gain = audioContextRef.current.createGain();
         osc.connect(gain);
-        gain.connect(audioContext.destination);
-        gain.gain.value = 0.1;
+        gain.connect(audioContextRef.current.destination);
+        gain.gain.value = 0.2;
         osc.frequency.value = 440;
         osc.start();
-        osc.stop(audioContext.currentTime + 0.05);
-        console.log('[Audio] Test beep played');
+        osc.stop(audioContextRef.current.currentTime + 0.1);
+        console.log('[Audio] Test beep should play now');
+      } else {
+        console.warn('[Audio] Context not running after resume, state:', audioContextRef.current.state);
       }
     } catch (e) {
       console.error('[Audio] Failed to initialize:', e);
@@ -823,22 +826,6 @@ export default function JobLoadChecklistStartPage() {
           }
         }
       `}</style>
-      {showFlash && <div className="flash-overlay" />}
-      {showConfetti && (
-        <div className="confetti-container">
-          {[...Array(100)].map((_, i) => (
-            <div
-              key={i}
-              className={`confetti-${(i % 6) + 1}`}
-              style={{
-                left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 4}s`,
-                borderRadius: i % 3 === 0 ? '50%' : i % 3 === 1 ? '20%' : '0'
-              }}
-            />
-          ))}
-        </div>
-      )}
       <div className="mobile-screen">
         <div className="container-1">
           <div className="company-name">Evergold Landscaping</div>
@@ -987,6 +974,22 @@ export default function JobLoadChecklistStartPage() {
         </div>
       </div>
       <canvas ref={canvasRef} style={{ display: 'none' }} />
+      {showFlash && <div className="flash-overlay" />}
+      {showConfetti && (
+        <div className="confetti-container">
+          {[...Array(100)].map((_, i) => (
+            <div
+              key={i}
+              className={`confetti-${(i % 6) + 1}`}
+              style={{
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 4}s`,
+                borderRadius: i % 3 === 0 ? '50%' : i % 3 === 1 ? '20%' : '0'
+              }}
+            />
+          ))}
+        </div>
+      )}
     </>
   );
 }

@@ -59,12 +59,12 @@
 - [x] T016 [P] Contract test POST /api/crew/jobs/{jobId}/start in tests/domains/crew/api/test_jobs_start_contract.test.ts
 - [x] T017 [P] Contract test POST /api/crew/jobs/{jobId}/load-verify in tests/domains/crew/api/test_load_verify_contract.test.ts
 - [x] T018 [P] Contract test POST /api/crew/maintenance/report in tests/domains/crew/api/test_maintenance_report_contract.test.ts
-- [ ] T019 [P] Contract test POST /api/crew/voice/command in tests/domains/crew/api/test_crew_voice_command_contract.test.ts
+- [x] T019 [P] Contract test POST /api/crew/voice/command in tests/domains/crew/api/test_crew_voice_command_contract.test.ts
 
 ### Integration Tests
-- [ ] T020 [P] Integration test: Supervisor adds inventory through camera in tests/e2e/supervisor-inventory-flow.test.ts
-- [ ] T021 [P] Integration test: Crew member verifies job load in tests/e2e/crew-load-verification-flow.test.ts
-- [ ] T022 [P] Integration test: Voice-driven job creation in tests/e2e/voice-job-creation-flow.test.ts
+- [x] T020 [P] Integration test: Supervisor adds inventory through camera in tests/e2e/supervisor-inventory-flow.test.ts
+- [x] T021 [P] Integration test: Crew member verifies job load in tests/e2e/crew-load-verification-flow.test.ts
+- [x] T022 [P] Integration test: Voice-driven job creation in tests/e2e/voice-job-creation-flow.test.ts
 - [ ] T023 [P] Integration test: Offline mode sync in tests/e2e/offline-sync-flow.test.ts
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
