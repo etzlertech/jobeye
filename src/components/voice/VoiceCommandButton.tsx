@@ -19,7 +19,7 @@ export interface VoiceCommandButtonProps {
   autoSpeak?: boolean;
   language?: string;
   className?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
 }
 
 export function VoiceCommandButton({
@@ -39,20 +39,22 @@ export function VoiceCommandButton({
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Size classes - 3x larger as requested
+  // Size classes - progressively larger sizes
   const sizeClasses = {
-    sm: 'w-36 h-36',  // was w-12 h-12, now 3x larger
-    md: 'w-48 h-48',  // was w-16 h-16, now 3x larger  
-    lg: 'w-60 h-60',  // was w-20 h-20, now 3x larger
-    xl: 'w-80 h-80'   // 3x larger than lg for supervisor dashboard
+    sm: 'w-36 h-36',   // was w-12 h-12, now 3x larger
+    md: 'w-48 h-48',   // was w-16 h-16, now 3x larger  
+    lg: 'w-60 h-60',   // was w-20 h-20, now 3x larger
+    xl: 'w-80 h-80',   // 3x larger than lg
+    xxl: 'w-96 h-96'   // 3x larger than xl (384px x 384px)
   };
 
-  // Icon sizes - also 3x larger to match
+  // Icon sizes - proportionally larger to match buttons
   const iconSizeClasses = {
-    sm: 'w-24 h-24',  // was w-8 h-8, now 3x larger
-    md: 'w-32 h-32',  // was w-8 h-8, now 4x larger for proportion
-    lg: 'w-40 h-40',  // was w-8 h-8, now 5x larger for proportion
-    xl: 'w-52 h-52'   // 3x larger than lg for supervisor dashboard  
+    sm: 'w-24 h-24',   // was w-8 h-8, now 3x larger
+    md: 'w-32 h-32',   // was w-8 h-8, now 4x larger for proportion
+    lg: 'w-40 h-40',   // was w-8 h-8, now 5x larger for proportion
+    xl: 'w-52 h-52',   // 3x larger than lg
+    xxl: 'w-64 h-64'   // 3x larger than xl (256px x 256px)
   };
 
   // Initialize speech recognition

@@ -22,10 +22,11 @@ body {
 
 /* Custom golden cursor with glow effect */
 html {
-  /* Golden cursor as CSS property for better browser support */
-  --golden-cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="%23FFD700" stroke-width="2"/><circle cx="12" cy="12" r="6" fill="%23FFD700" opacity="0.9"/><circle cx="12" cy="12" r="2" fill="%23FFFFFF"/></svg>') 12 12, crosshair;
+  /* Golden orbital cursor - visible on black backgrounds */
+  --golden-cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="none" stroke="%23FFD700" stroke-width="2" opacity="0.8"/><circle cx="16" cy="16" r="8" fill="none" stroke="%23FFD700" stroke-width="1.5" opacity="0.6"/><circle cx="16" cy="16" r="3" fill="%23FFD700" opacity="0.9"/><circle cx="16" cy="16" r="1" fill="%23FFFFFF"/></svg>') 16 16, crosshair;
   
-  --golden-pointer: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7 2 L7 18 L11 14 L14 20 L17 19 L14 13 L19 13 Z" fill="%23FFD700" stroke="%23FFD700" stroke-width="1"/></svg>') 7 2, pointer;
+  /* Golden pointer for interactive elements */
+  --golden-pointer: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M8 3 L8 20 L12 16 L16 23 L19 22 L15 15 L22 15 Z" fill="%23FFD700" stroke="%23FFA500" stroke-width="1.5"/><circle cx="8" cy="3" r="2" fill="%23FFD700" opacity="0.8"/></svg>') 8 3, pointer;
 }
 
 body, * {

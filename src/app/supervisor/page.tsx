@@ -456,7 +456,7 @@ export default function SupervisorDashboard() {
         <VoiceCommandButton
           onTranscript={handleVoiceCommand}
           responseText={voiceResponse}
-          size="xl"
+          size="xxl"
           autoSpeak={true}
         />
       </div>
