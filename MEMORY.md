@@ -74,10 +74,25 @@ For any task with 3+ steps or complexity, use TodoWrite to:
 
 ## 🔧 CRITICAL DEVELOPMENT PATTERNS
 
-### Push Changes Directly
-- Never ask user to commit/push
-- Use `git push` directly when changes need deployment
-- User expects you to handle git operations
+### Single Developer Team with Multiple Claude Agents
+- **ONE HUMAN DEVELOPER** with multiple Claude Code CLI agents running in parallel
+- **MAIN BRANCH ONLY** - Never create feature branches, never deviate from main
+- **AUTO-DEPLOY DEPENDENCY** - Railway auto-deploys from main branch pushes
+- **PAT TOKEN AVAILABLE** - You have Personal Access Token for direct git operations
+
+### Parallel Agent Coordination
+- **AWARENESS REQUIRED** - Check `git status` and recent commits before starting work
+- **WORK IN APPROVED LANES** - Coordinate to avoid editing same files simultaneously
+- **FILE CONFLICT PREVENTION** - If another agent recently modified a file, communicate before editing
+- **COMMIT FREQUENCY** - Push small, focused changes frequently to minimize conflicts
+- **DOMAIN SEPARATION** - Prefer working in different `/domains/` directories when possible
+
+### Push Changes Directly to Main
+- **ALWAYS push to main branch** - Never create or switch branches
+- **Never ask user to commit/push** - You have PAT token, do it directly
+- Use `git push origin main` when changes need deployment
+- Railway will auto-deploy within 2-3 minutes of push
+- Multiple agents can work simultaneously without branch conflicts
 
 ### Railway Monitoring
 - Use `npm run railway:monitor <deployment-id>` for 5-second polling
