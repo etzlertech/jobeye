@@ -52,6 +52,13 @@ When creating this spec from a user prompt:
 
 ---
 
+## Clarifications
+
+### Session 2025-01-02
+- Q: What metrics should determine impact for redundancy assessment? → A: Scale (LoC), risk (dependencies), code quality
+
+---
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### Primary User Story
@@ -78,7 +85,7 @@ As a development team lead, I need to understand the current state of code redun
 - **FR-001**: System MUST identify all duplicate implementations of the same functionality across different folders and domains
 - **FR-002**: System MUST map all database tables to their corresponding application code implementations
 - **FR-003**: System MUST categorize redundancies into types: duplicate code, overlapping features, unused/abandoned code, and disconnected implementations
-- **FR-004**: System MUST provide impact assessment for each redundancy showing [NEEDS CLARIFICATION: what metrics determine impact - lines of code, number of dependencies, frequency of use?]
+- **FR-004**: System MUST provide impact assessment for each redundancy using three metrics: scale (lines of code), risk (number of dependencies), and code quality (adherence to app goals, contribution value, and 2025 best practices)
 - **FR-005**: System MUST generate actionable recommendations for consolidation with priority levels
 - **FR-006**: System MUST identify code that exists but has no entry points or is never called
 - **FR-007**: System MUST track feature specifications that have multiple implementations
