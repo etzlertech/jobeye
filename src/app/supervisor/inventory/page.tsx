@@ -25,7 +25,8 @@
  *   internal: [
  *     '@/components/camera/CameraCapture',
  *     '@/components/ui/ButtonLimiter',
- *     '@/components/voice/VoiceCommandButton'
+ *     '@/components/voice/VoiceCommandButton',
+ *     '@/components/navigation/MobileNavigation'
  *   ],
  *   external: ['react', 'next/navigation'],
  *   supabase: ['inventory']
@@ -48,6 +49,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import {
   Plus,
   Search,
@@ -58,7 +60,14 @@ import {
   RefreshCw,
   WifiOff,
   X,
-  CheckCircle
+  CheckCircle,
+  AlertCircle,
+  ArrowLeft,
+  Save,
+  Loader2,
+  PackageOpen,
+  PackageCheck,
+  PackageX
 } from 'lucide-react';
 import { CameraCapture } from '@/components/camera/CameraCapture';
 import { ButtonLimiter, useButtonActions } from '@/components/ui/ButtonLimiter';
@@ -82,6 +91,24 @@ interface IntentResult {
   suggestedAction?: string;
 }
 
+interface NewItemForm {
+  name: string;
+  category: string;
+  quantity: number;
+  minQuantity: number;
+  container: string;
+  imageUrl?: string;
+}
+
+const categories = [
+  { value: 'all', label: 'All Categories' },
+  { value: 'equipment', label: 'Equipment' },
+  { value: 'materials', label: 'Materials' },
+  { value: 'tools', label: 'Tools' },
+  { value: 'safety', label: 'Safety' },
+  { value: 'other', label: 'Other' }
+];
+
 export default function SupervisorInventoryPage() {
   const router = useRouter();
   const { actions, addAction, clearActions } = useButtonActions();
@@ -92,270 +119,259 @@ export default function SupervisorInventoryPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  
+  // View states
+  const [view, setView] = useState<'list' | 'add_form' | 'camera'>('list');
   
   // Camera/Intent states
-  const [showCamera, setShowCamera] = useState(false);
   const [currentIntent, setCurrentIntent] = useState<IntentResult | null>(null);
   const [isProcessingIntent, setIsProcessingIntent] = useState(false);
   
-  // Add item form state
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newItem, setNewItem] = useState({
+  // Add item form
+  const [newItem, setNewItem] = useState<NewItemForm>({
     name: '',
     category: 'equipment',
     quantity: 1,
     minQuantity: 5,
-    container: '',
-    imageUrl: ''
+    container: ''
   });
+  const [isSaving, setIsSaving] = useState(false);
 
-  const categories = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'equipment', label: 'Equipment' },
-    { value: 'materials', label: 'Materials' },
-    { value: 'tools', label: 'Tools' },
-    { value: 'safety', label: 'Safety' },
-    { value: 'other', label: 'Other' }
+  // Mock inventory data
+  const mockItems: InventoryItem[] = [
+    {
+      id: '1',
+      name: 'Lawn Mower - Commercial',
+      category: 'equipment',
+      quantity: 3,
+      minQuantity: 2,
+      status: 'in_stock',
+      container: 'Truck 1 - Main Bay',
+      lastUpdated: new Date().toISOString()
+    },
+    {
+      id: '2',
+      name: 'Trimmer Line 0.095"',
+      category: 'materials',
+      quantity: 1,
+      minQuantity: 5,
+      status: 'low_stock',
+      container: 'Storage - Shelf A',
+      lastUpdated: new Date().toISOString()
+    },
+    {
+      id: '3',
+      name: 'Safety Goggles',
+      category: 'safety',
+      quantity: 0,
+      minQuantity: 10,
+      status: 'out_of_stock',
+      lastUpdated: new Date().toISOString()
+    },
+    {
+      id: '4',
+      name: 'Hedge Trimmer',
+      category: 'equipment',
+      quantity: 2,
+      minQuantity: 1,
+      status: 'in_stock',
+      container: 'Truck 2 - Tool Box',
+      lastUpdated: new Date().toISOString()
+    }
   ];
+
+  // Load inventory items
+  const loadInventory = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setItems(mockItems);
+    } catch (err) {
+      setError('Failed to load inventory');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Filter items
+  useEffect(() => {
+    let filtered = items;
+    
+    if (searchQuery) {
+      filtered = filtered.filter(item => 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.container?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    if (selectedCategory && selectedCategory !== 'all') {
+      filtered = filtered.filter(item => item.category === selectedCategory);
+    }
+    
+    setFilteredItems(filtered);
+  }, [items, searchQuery, selectedCategory]);
 
   // Setup button actions
   useEffect(() => {
     clearActions();
-
-    if (showCamera || showAddForm) {
-      addAction({
-        id: 'cancel',
-        label: 'Cancel',
-        priority: 'high',
-        icon: X,
-        onClick: () => {
-          setShowCamera(false);
-          setShowAddForm(false);
-          setCurrentIntent(null);
-        },
-        className: 'bg-gray-600 text-white hover:bg-gray-700'
-      });
-    } else {
+    
+    if (view === 'list') {
       addAction({
         id: 'add-item',
         label: 'Add Item',
-        priority: 'critical',
+        priority: 'high',
         icon: Plus,
-        onClick: () => setShowCamera(true),
+        onClick: () => setView('camera'),
         className: 'bg-emerald-600 text-white hover:bg-emerald-700'
       });
 
       addAction({
         id: 'search',
         label: 'Search',
-        priority: 'high',
+        priority: 'medium',
         icon: Search,
         onClick: () => document.getElementById('search-input')?.focus(),
         className: 'bg-blue-600 text-white hover:bg-blue-700'
       });
 
       addAction({
+        id: 'filter',
+        label: 'Filter',
+        priority: 'medium',
+        icon: Filter,
+        onClick: () => setSelectedCategory(selectedCategory === 'all' ? 'equipment' : 'all'),
+        className: 'bg-purple-600 text-white hover:bg-purple-700'
+      });
+
+      addAction({
         id: 'refresh',
         label: 'Refresh',
-        priority: 'medium',
+        priority: 'low',
         icon: RefreshCw,
-        onClick: fetchInventory,
+        onClick: loadInventory,
         className: 'bg-gray-600 text-white hover:bg-gray-700'
       });
+    } else if (view === 'add_form') {
+      addAction({
+        id: 'save-item',
+        label: 'Save',
+        priority: 'high',
+        icon: Save,
+        disabled: !newItem.name || isSaving,
+        onClick: handleSaveItem,
+        className: 'bg-emerald-600 text-white hover:bg-emerald-700'
+      });
     }
-  }, [showCamera, showAddForm, clearActions, addAction]);
+  }, [view, selectedCategory, newItem.name, isSaving, addAction, clearActions, loadInventory]);
 
-  // Fetch inventory data
-  const fetchInventory = useCallback(async () => {
-    try {
-      const response = await fetch('/api/supervisor/inventory');
-      if (!response.ok) throw new Error('Failed to fetch inventory');
-      
-      const data = await response.json();
-      setItems(data.items || []);
-      setIsOffline(false);
-    } catch (error) {
-      console.error('Failed to fetch inventory:', error);
-      setIsOffline(true);
-      
-      // Load from cache
-      const cached = localStorage.getItem('inventory_cache');
-      if (cached) {
-        setItems(JSON.parse(cached));
-      }
-    } finally {
-      setIsLoading(false);
+  // Load data on mount
+  useEffect(() => {
+    loadInventory();
+  }, [loadInventory]);
+
+  // Network status
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    setIsOffline(!navigator.onLine);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const handleCameraCapture = useCallback((imageBlob: Blob, imageUrl: string) => {
+    setNewItem(prev => ({ ...prev, imageUrl }));
+    setView('add_form');
+  }, []);
+
+  const handleIntentConfirmed = useCallback((intent: IntentResult) => {
+    setCurrentIntent(intent);
+    if (intent.intent === 'INVENTORY_ADD' && intent.confidence > 0.7) {
+      setIsProcessingIntent(true);
+      setTimeout(() => {
+        setIsProcessingIntent(false);
+        // Auto-fill form based on intent
+        if (intent.suggestedAction) {
+          setNewItem(prev => ({ ...prev, name: intent.suggestedAction }));
+        }
+      }, 1000);
     }
   }, []);
 
-  // Filter items based on search and category
-  useEffect(() => {
-    let filtered = items;
-
-    if (searchQuery) {
-      filtered = filtered.filter(item =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.category.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(item => item.category === selectedCategory);
-    }
-
-    setFilteredItems(filtered);
-  }, [items, searchQuery, selectedCategory]);
-
-  // Initial data fetch
-  useEffect(() => {
-    fetchInventory();
-  }, [fetchInventory]);
-
-  // Handle camera capture for intent recognition
-  const handleCameraCapture = async (imageBlob: Blob, imageUrl: string) => {
-    setIsProcessingIntent(true);
+  const handleSaveItem = async () => {
+    if (!newItem.name) return;
     
-    try {
-      // Convert blob to base64
-      const base64 = await blobToBase64(imageBlob);
-      
-      const response = await fetch('/api/intent/classify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image: base64,
-          context: {
-            currentPage: 'inventory',
-            userRole: 'supervisor'
-          }
-        })
-      });
-
-      if (!response.ok) throw new Error('Intent classification failed');
-      
-      const result = await response.json();
-      
-      if (result.classification.intent === 'inventory_add') {
-        setCurrentIntent({
-          intent: result.classification.intent,
-          confidence: result.classification.confidence,
-          suggestedAction: result.classification.suggestedAction
-        });
-        
-        // Pre-fill form with detected item
-        setNewItem(prev => ({
-          ...prev,
-          imageUrl
-        }));
-      } else {
-        // Intent not recognized for inventory
-        setCurrentIntent({
-          intent: 'unknown',
-          confidence: 0,
-          suggestedAction: 'This doesn\'t look like an inventory item'
-        });
-      }
-    } catch (error) {
-      console.error('Intent recognition failed:', error);
-      setCurrentIntent({
-        intent: 'error',
-        confidence: 0,
-        suggestedAction: 'Failed to analyze image'
-      });
-    } finally {
-      setIsProcessingIntent(false);
-    }
-  };
-
-  // Handle intent confirmation
-  const handleIntentConfirmed = () => {
-    setShowCamera(false);
-    setShowAddForm(true);
-  };
-
-  // Handle voice commands
-  const handleVoiceCommand = async (transcript: string) => {
-    try {
-      const response = await fetch('/api/supervisor/voice/command', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transcript,
-          context: {
-            currentPage: 'inventory',
-            itemCount: items.length
-          }
-        })
-      });
-
-      const result = await response.json();
-      
-      // Handle voice actions
-      if (result.response.actions) {
-        for (const action of result.response.actions) {
-          if (action.type === 'create' && action.target === 'inventory_item') {
-            setShowCamera(true);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Voice command error:', error);
-    }
-  };
-
-  // Handle form submission
-  const handleAddItem = async () => {
+    setIsSaving(true);
     try {
       const response = await fetch('/api/supervisor/inventory/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newItem)
       });
-
-      if (!response.ok) throw new Error('Failed to add item');
       
-      const result = await response.json();
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message);
       
-      if (result.success) {
-        setItems(prev => [...prev, result.item]);
-        setShowAddForm(false);
-        setNewItem({
-          name: '',
-          category: 'equipment',
-          quantity: 1,
-          minQuantity: 5,
-          container: '',
-          imageUrl: ''
-        });
-      }
-    } catch (error) {
-      console.error('Failed to add item:', error);
+      setSuccess(data.message || 'Item added successfully');
+      setTimeout(() => setSuccess(null), 5000);
+      
+      // Reset form and return to list
+      setNewItem({
+        name: '',
+        category: 'equipment',
+        quantity: 1,
+        minQuantity: 5,
+        container: ''
+      });
+      setView('list');
+      await loadInventory();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add item');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  // Helper function to convert blob to base64
-  const blobToBase64 = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
+  const handleVoiceCommand = useCallback((transcript: string) => {
+    const command = transcript.toLowerCase();
+    
+    if (command.includes('add') || command.includes('new')) {
+      setView('camera');
+    } else if (command.includes('search')) {
+      document.getElementById('search-input')?.focus();
+    } else if (command.includes('low stock')) {
+      setSelectedCategory('all');
+      setSearchQuery('');
+      // Filter will show all, but stats will highlight low stock
+    } else if (command.includes('show inventory') || command.includes('list items')) {
+      setView('list');
+    }
+  }, []);
 
+  // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="mobile-container flex items-center justify-center">
         <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading inventory...</p>
+          <Loader2 className="w-12 h-12 animate-spin text-golden mx-auto mb-4" />
+          <p className="text-gray-400 text-lg">Loading inventory...</p>
         </div>
       </div>
     );
   }
 
   // Camera view
-  if (showCamera) {
+  if (view === 'camera') {
     return (
       <div className="min-h-screen bg-black">
         <CameraCapture
@@ -368,59 +384,106 @@ export default function SupervisorInventoryPage() {
           className="h-screen"
         />
         
-        {/* Action Bar */}
+        {/* Camera Controls */}
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-          <ButtonLimiter
-            actions={actions}
-            maxVisibleButtons={4}
-            showVoiceButton={false}
-            className="justify-center"
-          />
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => setView('list')}
+              className="px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => setView('add_form')}
+              className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700"
+            >
+              Add Without Photo
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Add item form
-  if (showAddForm) {
+  // Add item form view
+  if (view === 'add_form') {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Add Inventory Item</h2>
-          
+      <div className="mobile-container">
+        {/* Mobile Navigation */}
+        <MobileNavigation 
+          currentRole="supervisor" 
+          onLogout={() => router.push('/sign-in')}
+          showBackButton={true}
+          onBack={() => setView('list')}
+        />
+        
+        {/* Header */}
+        <div className="header-bar">
+          <div>
+            <h1 className="text-xl font-semibold">Add New Item</h1>
+          </div>
+          <Plus className="w-6 h-6 text-golden" />
+        </div>
+
+        {/* Notifications */}
+        {error && (
+          <div className="notification-bar error">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            <span className="text-sm">{error}</span>
+            <button 
+              onClick={() => setError(null)}
+              className="ml-auto text-red-500"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+        {success && (
+          <div className="notification-bar success">
+            <CheckCircle className="w-5 h-5 text-golden flex-shrink-0" />
+            <span className="text-sm">{success}</span>
+          </div>
+        )}
+
+        {/* Form Content */}
+        <div className="flex-1 overflow-y-auto px-4 py-4">
           {newItem.imageUrl && (
             <div className="mb-4">
               <img 
                 src={newItem.imageUrl} 
                 alt="Captured item"
-                className="w-full h-32 object-cover rounded-lg"
+                className="w-full h-32 object-cover rounded-lg border-2 border-golden"
               />
             </div>
           )}
-          
-          <form className="space-y-4">
+
+          <form onSubmit={(e) => { e.preventDefault(); handleSaveItem(); }} className="space-y-4">
+            {/* Item Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Item Name
+              <label htmlFor="name" className="block text-sm font-medium text-gray-400 mb-2">
+                Item Name *
               </label>
               <input
+                id="name"
                 type="text"
                 value={newItem.name}
                 onChange={(e) => setNewItem(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                className="input-field"
                 placeholder="Enter item name"
                 required
               />
             </div>
-            
+
+            {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="category" className="block text-sm font-medium text-gray-400 mb-2">
                 Category
               </label>
               <select
+                id="category"
                 value={newItem.category}
                 onChange={(e) => setNewItem(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                className="input-field"
               >
                 {categories.slice(1).map(cat => (
                   <option key={cat.value} value={cat.value}>
@@ -429,257 +492,535 @@ export default function SupervisorInventoryPage() {
                 ))}
               </select>
             </div>
-            
+
+            {/* Quantity and Min Stock */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="quantity" className="block text-sm font-medium text-gray-400 mb-2">
                   Quantity
                 </label>
                 <input
+                  id="quantity"
                   type="number"
                   value={newItem.quantity}
-                  onChange={(e) => setNewItem(prev => ({ ...prev, quantity: parseInt(e.target.value) }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
-                  min="1"
+                  onChange={(e) => setNewItem(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
+                  className="input-field"
+                  min="0"
                 />
               </div>
-              
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="minQuantity" className="block text-sm font-medium text-gray-400 mb-2">
                   Min Stock
                 </label>
                 <input
+                  id="minQuantity"
                   type="number"
                   value={newItem.minQuantity}
-                  onChange={(e) => setNewItem(prev => ({ ...prev, minQuantity: parseInt(e.target.value) }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                  onChange={(e) => setNewItem(prev => ({ ...prev, minQuantity: parseInt(e.target.value) || 0 }))}
+                  className="input-field"
                   min="0"
                 />
               </div>
             </div>
-            
+
+            {/* Container */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="container" className="block text-sm font-medium text-gray-400 mb-2">
                 Container (Optional)
               </label>
               <input
+                id="container"
                 type="text"
                 value={newItem.container}
                 onChange={(e) => setNewItem(prev => ({ ...prev, container: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                className="input-field"
                 placeholder="e.g., Truck 1 - Tool Box"
               />
             </div>
           </form>
-          
-          <div className="mt-6 flex gap-3">
-            <button
-              onClick={handleAddItem}
-              disabled={!newItem.name}
-              className="flex-1 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Add Item
-            </button>
-            <button
-              onClick={() => setShowAddForm(false)}
-              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-400"
-            >
-              Cancel
-            </button>
-          </div>
         </div>
+
+        {/* Bottom Actions */}
+        <div className="bottom-actions">
+          <button
+            onClick={() => setView('list')}
+            className="btn-secondary flex-1"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Cancel
+          </button>
+          <button
+            onClick={handleSaveItem}
+            disabled={!newItem.name || isSaving}
+            className="btn-primary flex-1"
+          >
+            {isSaving ? (
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            ) : (
+              <Save className="w-5 h-5 mr-2" />
+            )}
+            Save Item
+          </button>
+        </div>
+
+        {/* Styled JSX */}
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+            background: rgba(0, 0, 0, 0.9);
+          }
+
+          .notification-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 1rem;
+            border-radius: 0.5rem;
+          }
+          .notification-bar.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+          }
+          .notification-bar.success {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+          }
+
+          .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            color: white;
+            font-size: 1rem;
+          }
+          .input-field:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
+          }
+
+          .bottom-actions {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            border-top: 1px solid #333;
+            background: rgba(0, 0, 0, 0.9);
+          }
+
+          .btn-primary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.875rem 1.5rem;
+            background: #FFD700;
+            color: #000;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+          }
+          .btn-primary:hover:not(:disabled) {
+            background: #F5D914;
+          }
+          .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+
+          .btn-secondary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.875rem 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+          }
+          .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+          }
+        `}</style>
       </div>
     );
   }
 
-  // Main inventory view
+  // Main list view
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="mobile-container">
+      {/* Mobile Navigation */}
+      <MobileNavigation 
+        currentRole="supervisor" 
+        onLogout={() => router.push('/sign-in')}
+        showBackButton={true}
+        onBack={() => router.push('/supervisor')}
+      />
+      
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => router.back()}
-                className="text-gray-600 hover:text-gray-800"
-              >
-                ← Back
-              </button>
-              <h1 className="text-2xl font-bold text-gray-900">Inventory Management</h1>
-            </div>
-            
-            {isOffline && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-orange-100 rounded-full">
-                <WifiOff className="w-4 h-4 text-orange-600" />
-                <span className="text-orange-800 text-sm">Offline</span>
-              </div>
-            )}
+      <div className="header-bar">
+        <div>
+          <h1 className="text-xl font-semibold">Inventory Management</h1>
+          <p className="text-xs text-gray-500 mt-1">{filteredItems.length} items • {isOffline ? 'Offline' : 'Online'}</p>
+        </div>
+        <Package className="w-6 h-6 text-golden" />
+      </div>
+
+      {/* Notifications */}
+      {error && (
+        <div className="notification-bar error">
+          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+          <span className="text-sm">{error}</span>
+          <button 
+            onClick={() => setError(null)}
+            className="ml-auto text-red-500"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+      {success && (
+        <div className="notification-bar success">
+          <CheckCircle className="w-5 h-5 text-golden flex-shrink-0" />
+          <span className="text-sm">{success}</span>
+        </div>
+      )}
+
+      {/* Search Bar */}
+      <div className="search-bar">
+        <Search className="w-5 h-5 text-gray-400" />
+        <input
+          id="search-input"
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search inventory..."
+          className="search-input"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="text-gray-400 hover:text-white"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+
+      {/* Stats Cards */}
+      <div className="stats-container">
+        <div className="stat-card">
+          <PackageCheck className="w-6 h-6 text-emerald-500" />
+          <div className="stat-info">
+            <p className="stat-label">In Stock</p>
+            <p className="stat-value">{items.filter(item => item.status === 'in_stock').length}</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <AlertTriangle className="w-6 h-6 text-orange-500" />
+          <div className="stat-info">
+            <p className="stat-label">Low Stock</p>
+            <p className="stat-value">{items.filter(item => item.status === 'low_stock').length}</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <PackageX className="w-6 h-6 text-red-500" />
+          <div className="stat-info">
+            <p className="stat-label">Out of Stock</p>
+            <p className="stat-value">{items.filter(item => item.status === 'out_of_stock').length}</p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Search and Filter Bar */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  id="search-input"
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search inventory..."
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-            </div>
-            
-            <div className="sm:w-48">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
-              >
-                {categories.map(cat => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <Package className="w-8 h-8 text-blue-500" />
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Total Items</p>
-                <p className="text-2xl font-bold text-gray-900">{items.length}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <AlertTriangle className="w-8 h-8 text-orange-500" />
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Low Stock</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {items.filter(item => item.status === 'low_stock').length}
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <X className="w-8 h-8 text-red-500" />
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Out of Stock</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {items.filter(item => item.status === 'out_of_stock').length}
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <CheckCircle className="w-8 h-8 text-emerald-500" />
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">In Stock</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {items.filter(item => item.status === 'in_stock').length}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions and Voice */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Inventory List */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Inventory Items ({filteredItems.length})
-                </h2>
-              </div>
-              <div className="p-6">
-                {filteredItems.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {filteredItems.map((item) => (
-                      <InventoryItemCard key={item.id} item={item} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No items found</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-              <ButtonLimiter
-                actions={actions}
-                maxVisibleButtons={4}
-                showVoiceButton={false}
-                layout="grid"
-                className="w-full"
-              />
-            </div>
-
-            {/* Voice Assistant */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Voice Assistant</h3>
-              <div className="text-center">
-                <VoiceCommandButton
-                  onTranscript={handleVoiceCommand}
-                  size="lg"
-                  className="mx-auto"
-                />
-                <p className="text-sm text-gray-600 mt-2">
-                  Try: "Add new item", "Show low stock"
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Category Filter */}
+      <div className="filter-container">
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="filter-select"
+        >
+          {categories.map(cat => (
+            <option key={cat.value} value={cat.value}>
+              {cat.label}
+            </option>
+          ))}
+        </select>
       </div>
+
+      {/* Inventory List */}
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        {filteredItems.length > 0 ? (
+          <div className="space-y-3">
+            {filteredItems.map((item) => (
+              <InventoryItemCard key={item.id} item={item} />
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <PackageOpen className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+            <p className="text-gray-400 text-center text-lg">No items found</p>
+            <p className="text-gray-600 text-center text-sm mt-2">
+              {searchQuery ? 'Try adjusting your search' : 'Add items to get started'}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Voice Assistant */}
+      <div className="voice-container">
+        <VoiceCommandButton
+          onTranscript={handleVoiceCommand}
+          size="md"
+        />
+        <p className="voice-hint">Try: "Add new item", "Show low stock"</p>
+      </div>
+
+      {/* Bottom Actions */}
+      <div className="bottom-actions">
+        <button
+          onClick={() => router.push('/supervisor')}
+          className="btn-secondary flex-1"
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back
+        </button>
+        <button
+          onClick={() => setView('camera')}
+          className="btn-primary flex-1"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          Add Item
+        </button>
+      </div>
+
+      {/* Styled JSX */}
+      <style jsx>{`
+        .mobile-container {
+          width: 100%;
+          max-width: 375px;
+          height: 100vh;
+          max-height: 812px;
+          margin: 0 auto;
+          background: #000;
+          color: white;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .header-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem;
+          border-bottom: 1px solid #333;
+          background: rgba(0, 0, 0, 0.9);
+        }
+
+        .notification-bar {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1rem;
+          margin: 0.5rem 1rem;
+          border-radius: 0.5rem;
+        }
+        .notification-bar.error {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .notification-bar.success {
+          background: rgba(255, 215, 0, 0.1);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .search-bar {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin: 1rem;
+          padding: 0.75rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 0.5rem;
+        }
+
+        .search-input {
+          flex: 1;
+          background: transparent;
+          border: none;
+          color: white;
+          font-size: 1rem;
+          outline: none;
+        }
+        .search-input::placeholder {
+          color: #9CA3AF;
+        }
+
+        .stats-container {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 0.75rem;
+          margin: 0 1rem 1rem 1rem;
+        }
+
+        .stat-card {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 0.5rem;
+        }
+
+        .stat-info {
+          min-width: 0;
+        }
+
+        .stat-label {
+          font-size: 0.75rem;
+          color: #9CA3AF;
+          margin: 0;
+        }
+
+        .stat-value {
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: white;
+          margin: 0;
+        }
+
+        .filter-container {
+          margin: 0 1rem 1rem 1rem;
+        }
+
+        .filter-select {
+          width: 100%;
+          padding: 0.75rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 0.5rem;
+          color: white;
+          font-size: 1rem;
+        }
+
+        .empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 200px;
+        }
+
+        .voice-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 1rem;
+          border-top: 1px solid #333;
+          background: rgba(0, 0, 0, 0.9);
+        }
+
+        .voice-hint {
+          font-size: 0.75rem;
+          color: #9CA3AF;
+          text-align: center;
+          margin: 0;
+        }
+
+        .bottom-actions {
+          display: flex;
+          gap: 1rem;
+          padding: 1rem;
+          border-top: 1px solid #333;
+          background: rgba(0, 0, 0, 0.9);
+        }
+
+        .btn-primary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.875rem 1.5rem;
+          background: #FFD700;
+          color: #000;
+          border: none;
+          border-radius: 0.5rem;
+          font-weight: 600;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+        .btn-primary:hover {
+          background: #F5D914;
+        }
+
+        .btn-secondary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.875rem 1.5rem;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 0.5rem;
+          font-weight: 600;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+        .btn-secondary:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+      `}</style>
     </div>
   );
 }
 
-// Inventory item card component
-interface InventoryItemCardProps {
-  item: InventoryItem;
-}
+// Inventory Item Card Component
+function InventoryItemCard({ item }: { item: InventoryItem }) {
+  const statusColors = {
+    in_stock: 'bg-emerald-600 text-white',
+    low_stock: 'bg-orange-600 text-white',
+    out_of_stock: 'bg-red-600 text-white'
+  };
 
-function InventoryItemCard({ item }: InventoryItemCardProps) {
-  const statusColor = {
-    in_stock: 'bg-emerald-100 text-emerald-800',
-    low_stock: 'bg-orange-100 text-orange-800',
-    out_of_stock: 'bg-red-100 text-red-800'
+  const statusLabels = {
+    in_stock: 'In Stock',
+    low_stock: 'Low Stock',
+    out_of_stock: 'Out of Stock'
   };
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div className="item-card">
       <div className="flex items-start gap-3">
-        <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+        <div className="item-thumbnail">
           {item.thumbnailUrl ? (
             <img 
               src={item.thumbnailUrl} 
@@ -687,30 +1028,87 @@ function InventoryItemCard({ item }: InventoryItemCardProps) {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Package className="w-6 h-6 text-gray-400" />
-            </div>
+            <Package className="w-6 h-6 text-gray-400" />
           )}
         </div>
         
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-gray-900 truncate">{item.name}</h4>
-          <p className="text-sm text-gray-600 capitalize">{item.category}</p>
+          <h4 className="item-name">{item.name}</h4>
+          <p className="item-category">{item.category}</p>
           
           <div className="flex items-center justify-between mt-2">
-            <span className="text-lg font-semibold text-gray-900">
-              {item.quantity}
+            <span className="item-quantity">
+              {item.quantity} units
             </span>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[item.status]}`}>
-              {item.status.replace('_', ' ')}
+            <span className={`item-status ${statusColors[item.status]}`}>
+              {statusLabels[item.status]}
             </span>
           </div>
           
           {item.container && (
-            <p className="text-xs text-gray-500 mt-1">{item.container}</p>
+            <p className="item-container">{item.container}</p>
           )}
         </div>
       </div>
+
+      <style jsx>{`
+        .item-card {
+          padding: 1rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 0.5rem;
+          transition: background-color 0.2s;
+        }
+        .item-card:hover {
+          background: rgba(255, 255, 255, 0.08);
+        }
+
+        .item-thumbnail {
+          width: 3rem;
+          height: 3rem;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 0.5rem;
+          overflow: hidden;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .item-name {
+          font-weight: 600;
+          color: white;
+          margin: 0 0 0.25rem 0;
+          font-size: 1rem;
+          line-height: 1.25;
+        }
+
+        .item-category {
+          font-size: 0.875rem;
+          color: #9CA3AF;
+          margin: 0;
+          text-transform: capitalize;
+        }
+
+        .item-quantity {
+          font-size: 1rem;
+          font-weight: 600;
+          color: white;
+        }
+
+        .item-status {
+          padding: 0.25rem 0.5rem;
+          border-radius: 9999px;
+          font-size: 0.75rem;
+          font-weight: 500;
+        }
+
+        .item-container {
+          font-size: 0.75rem;
+          color: #6B7280;
+          margin: 0.5rem 0 0 0;
+        }
+      `}</style>
     </div>
   );
 }
