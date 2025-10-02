@@ -199,7 +199,30 @@ export default function JobLoadChecklistStartPage() {
           // Flash animation and sound on detection
           if (hasChanges) {
             setShowFlash(true);
-            audioRef.current?.play().catch(() => {});
+            // Play sound with user gesture context
+            if (audioRef.current) {
+              audioRef.current.play().catch(err => {
+                console.log('[Audio] Failed to play sound:', err);
+                // Try Web Audio API as fallback
+                try {
+                  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+                  const oscillator = audioContext.createOscillator();
+                  const gainNode = audioContext.createGain();
+                  
+                  oscillator.connect(gainNode);
+                  gainNode.connect(audioContext.destination);
+                  
+                  oscillator.frequency.value = 800;
+                  oscillator.type = 'sine';
+                  gainNode.gain.value = 0.3;
+                  
+                  oscillator.start();
+                  oscillator.stop(audioContext.currentTime + 0.1);
+                } catch (e) {
+                  console.log('[Audio] Fallback also failed:', e);
+                }
+              });
+            }
             setTimeout(() => setShowFlash(false), 300);
           }
 
@@ -284,11 +307,18 @@ export default function JobLoadChecklistStartPage() {
     // Camera start disabled - use manual button instead
     console.log('Page loaded - click button to start camera');
     
-    // Create audio element for success sound - using a simple beep
-    const audio = new Audio();
-    audio.src = 'data:audio/wav;base64,UklGRhwMAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQgMAACByJqZbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXKf1wooGBhGk7Mu3eSgHIHLH8tGJOAcWcMDu3ZNHChRisuXptGIZBjiS0+3OgTQGF2nB7+OeTQ0OTp/n77xvIAUneMny3ZVHDSCA0vLaizsIHGi97OScTgwOUKzj5rllHgg2jdDwzn4yBSBuxvHSmzwIJYHD8tiJOAgjd8jz1Yg2Bhd1we/OgS0GGGfB7N6NRQ0RXLPl6rtlGAUvgcn02YU5CRpmt+jhkUsKFWHB6eCYWgwHVLDh8LZFIQY2k9HwzX8xBR1yuPDXkjkFH3PF8tm7xlYAAMDO2tjQwbKxuMPX39bIuLOxvdPg2Muyq6u63ODWwKGVl7XY5NS8op2ese/o0r+Zo6282uHWu6CYorDN3djPtJyVm7rY49e5mI6Xvd7l2LGNipeg0OPTroaGk6XJztOvlo6RqsvX06+NhpGnytvWrX9+mbDH1tOmdna6tNDZx55rafDD0NzKpVxZmMDL2tGmW1mGutje05FPTnu+2uTRl1NNeMXd4cuEPjuBx97hyHY/Qp3L79mNPSiazOrdlz8soMvp2pNCJrzJ5tiROivJ1vLXgUEozd/x04tKJMPf89aUUjfH2OzWiFAu0eTz1oFFL87m8tiIRC/U4vPRhUkv1+v02JNDMdbm8cykTCvW5O/RpFEp1OPv0bJdNdXj6NCuWTXX5+zP'
-    audio.volume = 0.5;
-    audioRef.current = audio;
+    // Create audio element for success sound
+    try {
+      const audio = new Audio();
+      // Use a simple beep sound
+      audio.src = 'data:audio/wav;base64,UklGRl9uBABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YTtuBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////';
+      audio.volume = 0.7;
+      audio.load(); // Preload the audio
+      audioRef.current = audio;
+      console.log('[Audio] Success sound loaded');
+    } catch (err) {
+      console.error('[Audio] Failed to create audio element:', err);
+    }
     
     return () => {
       if (stream) {

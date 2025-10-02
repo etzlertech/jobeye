@@ -1,7 +1,7 @@
 {
   "name": "JobEye Field Service",
   "short_name": "JobEye",
-  "description": "Voice-First Field Service Management with Multi-Object Vision",
+  "description": "Voice-first field service management for supervisors and crew members",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -9,48 +9,67 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "categories": ["business", "productivity"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "scope": "/",
   "screenshots": [
     {
-      "src": "/screenshots/job-list.png",
-      "sizes": "1080x1920",
+      "src": "/screenshots/supervisor-dashboard.png",
+      "sizes": "375x812",
       "type": "image/png",
-      "label": "Job Management"
+      "label": "Supervisor Dashboard"
     },
     {
-      "src": "/screenshots/load-verification.png",
-      "sizes": "1080x1920",
+      "src": "/screenshots/camera-intent.png",
+      "sizes": "375x812",
       "type": "image/png",
-      "label": "Load Verification"
+      "label": "Camera Intent Recognition"
+    },
+    {
+      "src": "/screenshots/crew-jobs.png",
+      "sizes": "375x812",
+      "type": "image/png",
+      "label": "Crew Job List"
     }
   ],
   "shortcuts": [
     {
-      "name": "Create Job",
-      "short_name": "New Job",
-      "description": "Create a new job with voice",
-      "url": "/jobs/new?voice=true",
-      "icons": [{ "src": "/icon-96.png", "sizes": "96x96" }]
+      "name": "Add Inventory",
+      "short_name": "Add Item",
+      "description": "Quickly add new inventory using camera",
+      "url": "/supervisor/inventory?action=add",
+      "icons": [{ "src": "/icons/add-inventory.png", "sizes": "96x96" }]
     },
     {
-      "name": "Verify Load",
-      "short_name": "Verify",
-      "description": "Verify equipment loading",
-      "url": "/jobs/verify",
-      "icons": [{ "src": "/icon-96.png", "sizes": "96x96" }]
+      "name": "My Jobs",
+      "short_name": "Jobs",
+      "description": "View assigned jobs",
+      "url": "/crew",
+      "icons": [{ "src": "/icons/jobs.png", "sizes": "96x96" }]
     }
   ],
+  "features": [
+    "screen-wake-lock",
+    "idle-detection",
+    "web-share"
+  ],
+  "capture_links": "existing_client_event",
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
   "prefer_related_applications": false,
   "related_applications": []
 }
