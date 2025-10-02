@@ -1,0 +1,167 @@
+openapi: 3.0.0
+info:
+  title: Redundancy Analyzer API
+  version: 1.0.0
+  description: CLI tool API for analyzing codebase redundancy
+
+paths:
+  /analyze:
+    post:
+      summary: Start redundancy analysis
+      operationId: analyzeCodebase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisRequest'
+      responses:
+        '202':
+          description: Analysis started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /analyze/{analysisId}/status:
+    get:
+      summary: Get analysis status
+      operationId: getAnalysisStatus
+      parameters:
+        - name: analysisId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Analysis status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisStatus'
+        '404':
+          description: Analysis not found
+
+  /analyze/{analysisId}/report:
+    get:
+      summary: Get analysis report
+      operationId: getAnalysisReport
+      parameters:
+        - name: analysisId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Analysis report
+          content:
+            text/markdown:
+              schema:
+                type: string
+        '404':
+          description: Report not found
+        '202':
+          description: Analysis still in progress
+
+components:
+  schemas:
+    AnalysisRequest:
+      type: object
+      required:
+        - projectPath
+      properties:
+        projectPath:
+          type: string
+          description: Root path of the project to analyze
+        options:
+          $ref: '#/components/schemas/AnalysisOptions'
+
+    AnalysisOptions:
+      type: object
+      properties:
+        excludePatterns:
+          type: array
+          items:
+            type: string
+          default: ['node_modules', '.git', 'build', 'dist']
+        includeTests:
+          type: boolean
+          default: true
+        includeDocs:
+          type: boolean
+          default: true
+        similarityThreshold:
+          type: number
+          minimum: 0
+          maximum: 100
+          default: 70
+        minModuleSize:
+          type: integer
+          minimum: 1
+          default: 10
+
+    AnalysisResponse:
+      type: object
+      required:
+        - analysisId
+        - status
+      properties:
+        analysisId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [initializing, scanning, analyzing, generating_report, complete]
+        estimatedTime:
+          type: string
+          description: Estimated completion time in ISO 8601 format
+
+    AnalysisStatus:
+      type: object
+      required:
+        - analysisId
+        - status
+        - progress
+      properties:
+        analysisId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [initializing, scanning, analyzing, generating_report, complete, failed]
+        progress:
+          type: number
+          minimum: 0
+          maximum: 100
+        currentPhase:
+          type: string
+        filesScanned:
+          type: integer
+        findingsCount:
+          type: integer
+        error:
+          type: string
+          description: Present only if status is 'failed'
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object

@@ -4,10 +4,10 @@
  * file: /src/app/api/crew/jobs/[jobId]/equipment/route.ts
  * phase: 3
  * domain: crew
- * purpose: API endpoint for job equipment management
+ * purpose: API endpoint for job equipment management using jobs.checklist_items
  * spec_ref: 007-mvp-intent-driven/contracts/crew-api.md
  * complexity_budget: 200
- * migrations_touched: ['job_equipment_requirements']
+ * migrations_touched: []
  * state_machine: null
  * estimated_llm_cost: {
  *   "GET": "$0.00",
@@ -17,18 +17,17 @@
  * dependencies: {
  *   internal: ['@/lib/supabase/server', '@/core/errors/error-handler'],
  *   external: ['next/server'],
- *   supabase: ['job_equipment_requirements', 'jobs']
+ *   supabase: ['jobs']
  * }
- * exports: ['GET', 'PUT', 'POST', 'DELETE']
+ * exports: ['GET', 'PUT']
  * voice_considerations: None - API endpoint
  * test_requirements: {
  *   coverage: 85,
  *   unit_tests: 'tests/api/crew/job-equipment.test.ts'
  * }
  * tasks: [
- *   'Get equipment list for job',
- *   'Update equipment verification status',
- *   'Add/remove equipment items',
+ *   'Get equipment list from job checklist_items',
+ *   'Update equipment checklist items',
  *   'Support demo mode'
  * ]
  */
@@ -38,15 +37,12 @@ import { createServerClient } from '@/lib/supabase/server';
 import { handleApiError } from '@/core/errors/error-handler';
 
 interface EquipmentItem {
-  id?: string;
-  equipment_name: string;
-  quantity: number;
-  category: 'primary' | 'safety' | 'support' | 'materials';
-  is_required: boolean;
-  is_verified: boolean;
+  name: string;
+  checked: boolean;
+  category?: 'primary' | 'safety' | 'support' | 'materials';
+  quantity?: number;
   verified_at?: string;
-  notes?: string;
-  display_order: number;
+  icon?: string;
 }
 
 export async function GET(
@@ -64,40 +60,40 @@ export async function GET(
       // Return varied mock equipment for demo jobs
       const demoEquipment: Record<string, EquipmentItem[]> = {
         '1': [
-          { equipment_name: 'Walk-Behind Mower', quantity: 1, category: 'primary', is_required: true, is_verified: false, display_order: 1 },
-          { equipment_name: 'String Trimmer', quantity: 1, category: 'primary', is_required: true, is_verified: false, display_order: 2 },
-          { equipment_name: 'Leaf Blower', quantity: 1, category: 'primary', is_required: true, is_verified: false, display_order: 3 },
-          { equipment_name: 'Safety Glasses', quantity: 1, category: 'safety', is_required: true, is_verified: false, display_order: 4 },
-          { equipment_name: 'Hearing Protection', quantity: 1, category: 'safety', is_required: true, is_verified: false, display_order: 5 },
-          { equipment_name: 'Gas Can (2 gal)', quantity: 1, category: 'support', is_required: true, is_verified: false, display_order: 6 },
-          { equipment_name: 'Hand Tools Bag', quantity: 1, category: 'support', is_required: false, is_verified: false, display_order: 7 },
-          { equipment_name: 'Trash Bags', quantity: 10, category: 'materials', is_required: false, is_verified: false, display_order: 8 }
+          { name: 'Walk-Behind Mower', checked: false, category: 'primary', icon: '🚜' },
+          { name: 'String Trimmer', checked: false, category: 'primary', icon: '✂️' },
+          { name: 'Leaf Blower', checked: false, category: 'primary', icon: '💨' },
+          { name: 'Safety Glasses', checked: false, category: 'safety', icon: '🥽' },
+          { name: 'Hearing Protection', checked: false, category: 'safety', icon: '🎧' },
+          { name: 'Gas Can (2 gal)', checked: false, category: 'support', icon: '⛽' },
+          { name: 'Hand Tools Bag', checked: false, category: 'support', icon: '🧰' },
+          { name: 'Trash Bags', checked: false, category: 'materials', quantity: 10, icon: '🗑️' }
         ],
         '2': [
-          { equipment_name: 'Zero-Turn Mower', quantity: 1, category: 'primary', is_required: true, is_verified: false, display_order: 1 },
-          { equipment_name: 'String Trimmer', quantity: 1, category: 'primary', is_required: true, is_verified: false, display_order: 2 },
-          { equipment_name: 'Edger', quantity: 1, category: 'primary', is_required: true, is_verified: false, display_order: 3 },
-          { equipment_name: 'Backpack Blower', quantity: 1, category: 'primary', is_required: true, is_verified: false, display_order: 4 },
-          { equipment_name: 'Safety Kit', quantity: 1, category: 'safety', is_required: true, is_verified: false, display_order: 5 },
-          { equipment_name: 'Gas Can (5 gal)', quantity: 1, category: 'support', is_required: true, is_verified: false, display_order: 6 },
-          { equipment_name: '2-Cycle Oil', quantity: 2, category: 'support', is_required: true, is_verified: false, display_order: 7 },
-          { equipment_name: 'Trimmer Line', quantity: 1, category: 'materials', is_required: false, is_verified: false, display_order: 8 },
-          { equipment_name: 'First Aid Kit', quantity: 1, category: 'safety', is_required: false, is_verified: false, display_order: 9 },
-          { equipment_name: 'Water Cooler', quantity: 1, category: 'support', is_required: false, is_verified: false, display_order: 10 }
+          { name: 'Zero-Turn Mower', checked: false, category: 'primary', icon: '🚜' },
+          { name: 'String Trimmer', checked: false, category: 'primary', icon: '✂️' },
+          { name: 'Edger', checked: false, category: 'primary', icon: '🔪' },
+          { name: 'Backpack Blower', checked: false, category: 'primary', icon: '🎒' },
+          { name: 'Safety Kit', checked: false, category: 'safety', icon: '🦺' },
+          { name: 'Gas Can (5 gal)', checked: false, category: 'support', icon: '⛽' },
+          { name: '2-Cycle Oil', checked: false, category: 'support', quantity: 2, icon: '🛢️' },
+          { name: 'Trimmer Line', checked: false, category: 'materials', icon: '🧵' },
+          { name: 'First Aid Kit', checked: false, category: 'safety', icon: '🏥' },
+          { name: 'Water Cooler', checked: false, category: 'support', icon: '💧' }
         ],
         '3': [
-          { equipment_name: 'Commercial Mower (60")', quantity: 1, category: 'primary', is_required: true, is_verified: false, display_order: 1 },
-          { equipment_name: 'Zero-Turn Mower', quantity: 1, category: 'primary', is_required: true, is_verified: false, display_order: 2 },
-          { equipment_name: 'String Trimmer', quantity: 2, category: 'primary', is_required: true, is_verified: false, display_order: 3 },
-          { equipment_name: 'Edger', quantity: 2, category: 'primary', is_required: true, is_verified: false, display_order: 4 },
-          { equipment_name: 'Backpack Blower', quantity: 2, category: 'primary', is_required: true, is_verified: false, display_order: 5 },
-          { equipment_name: 'Safety Cones', quantity: 6, category: 'safety', is_required: true, is_verified: false, display_order: 6 },
-          { equipment_name: 'Team Safety Gear', quantity: 2, category: 'safety', is_required: true, is_verified: false, display_order: 7 },
-          { equipment_name: 'Gas Can (5 gal)', quantity: 2, category: 'support', is_required: true, is_verified: false, display_order: 8 },
-          { equipment_name: '2-Cycle Mix', quantity: 4, category: 'support', is_required: true, is_verified: false, display_order: 9 },
-          { equipment_name: 'Trailer', quantity: 1, category: 'support', is_required: true, is_verified: false, display_order: 10 },
-          { equipment_name: 'Hedge Trimmer', quantity: 1, category: 'primary', is_required: false, is_verified: false, display_order: 11 },
-          { equipment_name: 'Mulch (bags)', quantity: 20, category: 'materials', is_required: false, is_verified: false, display_order: 12 }
+          { name: 'Commercial Mower (60")', checked: false, category: 'primary', icon: '🚜' },
+          { name: 'Zero-Turn Mower', checked: false, category: 'primary', icon: '🚜' },
+          { name: 'String Trimmer', checked: false, category: 'primary', quantity: 2, icon: '✂️' },
+          { name: 'Edger', checked: false, category: 'primary', quantity: 2, icon: '🔪' },
+          { name: 'Backpack Blower', checked: false, category: 'primary', quantity: 2, icon: '🎒' },
+          { name: 'Safety Cones', checked: false, category: 'safety', quantity: 6, icon: '🚧' },
+          { name: 'Team Safety Gear', checked: false, category: 'safety', quantity: 2, icon: '🦺' },
+          { name: 'Gas Can (5 gal)', checked: false, category: 'support', quantity: 2, icon: '⛽' },
+          { name: '2-Cycle Mix', checked: false, category: 'support', quantity: 4, icon: '🛢️' },
+          { name: 'Trailer', checked: false, category: 'support', icon: '🚛' },
+          { name: 'Hedge Trimmer', checked: false, category: 'primary', icon: '✂️' },
+          { name: 'Mulch (bags)', checked: false, category: 'materials', quantity: 20, icon: '🌿' }
         ]
       };
 
@@ -107,17 +103,20 @@ export async function GET(
       });
     }
 
-    // Get equipment list from database
-    const { data: equipment, error } = await supabase
-      .from('job_equipment_requirements')
-      .select('*')
-      .eq('job_id', jobId)
-      .order('display_order', { ascending: true });
+    // Get job with checklist_items
+    const { data: job, error } = await supabase
+      .from('jobs')
+      .select('id, checklist_items')
+      .eq('id', jobId)
+      .single();
 
     if (error) throw error;
 
+    // checklist_items is a JSONB array of equipment items
+    const equipment = job?.checklist_items || [];
+
     return NextResponse.json({
-      equipment: equipment || [],
+      equipment: equipment,
       job_id: jobId
     });
 
@@ -146,29 +145,28 @@ export async function PUT(
       });
     }
 
-    const { equipment_name, updates } = body;
+    const { equipment } = body;
 
-    if (!equipment_name) {
+    if (!Array.isArray(equipment)) {
       return NextResponse.json(
-        { error: 'Equipment name is required' },
+        { error: 'Equipment array is required' },
         { status: 400 }
       );
     }
 
-    // Update equipment item
+    // Update the job's checklist_items
     const { data, error } = await supabase
-      .from('job_equipment_requirements')
-      .update(updates)
-      .eq('job_id', jobId)
-      .eq('equipment_name', equipment_name)
-      .select()
+      .from('jobs')
+      .update({ checklist_items: equipment })
+      .eq('id', jobId)
+      .select('checklist_items')
       .single();
 
     if (error) throw error;
 
     return NextResponse.json({
       success: true,
-      equipment: data
+      equipment: data.checklist_items
     });
 
   } catch (error) {
@@ -176,104 +174,4 @@ export async function PUT(
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { jobId: string } }
-) {
-  try {
-    const supabase = await createServerClient();
-    const { jobId } = params;
-    const body = await request.json();
-    
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
-    const tenantId = request.headers.get('x-tenant-id') || '11111111-1111-1111-1111-111111111111';
-    
-    if (isDemo) {
-      return NextResponse.json({
-        success: true,
-        message: 'Equipment added (demo mode)'
-      });
-    }
-
-    const { equipment_name, quantity, category, is_required, display_order } = body;
-
-    if (!equipment_name) {
-      return NextResponse.json(
-        { error: 'Equipment name is required' },
-        { status: 400 }
-      );
-    }
-
-    // Add new equipment item
-    const { data, error } = await supabase
-      .from('job_equipment_requirements')
-      .insert({
-        tenant_id: tenantId,
-        job_id: jobId,
-        equipment_name,
-        quantity: quantity || 1,
-        category: category || 'support',
-        is_required: is_required ?? false,
-        display_order: display_order || 999
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json({
-      success: true,
-      equipment: data
-    });
-
-  } catch (error) {
-    return handleApiError(error);
-  }
-}
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { jobId: string } }
-) {
-  try {
-    const supabase = await createServerClient();
-    const { jobId } = params;
-    const { searchParams } = new URL(request.url);
-    const equipmentName = searchParams.get('equipment_name');
-    
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
-    
-    if (isDemo) {
-      return NextResponse.json({
-        success: true,
-        message: 'Equipment removed (demo mode)'
-      });
-    }
-
-    if (!equipmentName) {
-      return NextResponse.json(
-        { error: 'Equipment name is required' },
-        { status: 400 }
-      );
-    }
-
-    // Delete equipment item
-    const { error } = await supabase
-      .from('job_equipment_requirements')
-      .delete()
-      .eq('job_id', jobId)
-      .eq('equipment_name', equipmentName);
-
-    if (error) throw error;
-
-    return NextResponse.json({
-      success: true,
-      message: 'Equipment item removed'
-    });
-
-  } catch (error) {
-    return handleApiError(error);
-  }
-}
+// Note: POST and DELETE are not needed since we update the entire checklist array with PUT
