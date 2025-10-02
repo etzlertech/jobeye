@@ -1,0 +1,25 @@
+{
+  "timestamp": "2025-10-02T18:00:43.918Z",
+  "url": "https://jobeye-production.up.railway.app/supervisor",
+  "finalUrl": "https://jobeye-production.up.railway.app/sign-in?redirectTo=%2Fsupervisor",
+  "title": "JobEye - Voice-First FSM",
+  "redirected": true,
+  "elements": {
+    "nav": 0,
+    "mainContent": 0,
+    "buttons": 7,
+    "forms": 1,
+    "loginForm": 0,
+    "supervisorDashboard": 0
+  },
+  "authenticationDetected": false,
+  "consoleLogs": 0,
+  "errorLogs": 0,
+  "networkRequests": 12,
+  "failedRequests": 0,
+  "pageError": null,
+  "screenshots": {
+    "desktop": "ui-review-output/supervisor-test/supervisor-desktop.png",
+    "mobile": "ui-review-output/supervisor-test/supervisor-mobile.png"
+  }
+}

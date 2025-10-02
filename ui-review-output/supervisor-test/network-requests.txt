@@ -1,0 +1,12 @@
+GET https://jobeye-production.up.railway.app/supervisor 307
+GET https://jobeye-production.up.railway.app/sign-in?redirectTo=%2Fsupervisor 200
+GET https://jobeye-production.up.railway.app/_next/static/css/68fc7ccb780c45d8.css 200
+GET https://jobeye-production.up.railway.app/_next/static/chunks/webpack-7b4ac457766c4ab8.js 200
+GET https://jobeye-production.up.railway.app/_next/static/chunks/fd9d1056-5cf7f3c8311b07c9.js 200
+GET https://jobeye-production.up.railway.app/_next/static/chunks/7023-9f587643d0dfdd69.js 200
+GET https://jobeye-production.up.railway.app/_next/static/chunks/main-app-2a5d4c19ce891f66.js 200
+GET https://jobeye-production.up.railway.app/_next/static/chunks/8059-d199d44192deb114.js 200
+GET https://jobeye-production.up.railway.app/_next/static/chunks/6569-96de22e5824a30ae.js 200
+GET https://jobeye-production.up.railway.app/_next/static/chunks/7270-35855b9c4c3ba235.js 200
+GET https://jobeye-production.up.railway.app/_next/static/chunks/app/(auth)/sign-in/page-d2bc01d66f17a522.js 200
+GET https://jobeye-production.up.railway.app/_next/static/chunks/app/layout-5fa736914da30188.js 200

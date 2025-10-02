@@ -25,7 +25,7 @@ html {
   /* Golden cursor as CSS property for better browser support */
   --golden-cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="%23FFD700" stroke-width="2"/><circle cx="12" cy="12" r="6" fill="%23FFD700" opacity="0.9"/><circle cx="12" cy="12" r="2" fill="%23FFFFFF"/></svg>') 12 12, crosshair;
   
-  --golden-pointer: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7 2 L7 18 L11 14 L14 20 L17 19 L14 13 L19 13 Z" fill="%23FFD700" stroke="%23FFA500" stroke-width="1"/></svg>') 7 2, pointer;
+  --golden-pointer: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7 2 L7 18 L11 14 L14 20 L17 19 L14 13 L19 13 Z" fill="%23FFD700" stroke="%23FFD700" stroke-width="1"/></svg>') 7 2, pointer;
 }
 
 body, * {

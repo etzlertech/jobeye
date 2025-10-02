@@ -528,7 +528,6 @@ export default function SupervisorJobCreatePage() {
         <div>
           <h1 className="text-xl font-semibold">Create New Job</h1>
         </div>
-        <Send className="w-6 h-6 text-golden" />
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4">

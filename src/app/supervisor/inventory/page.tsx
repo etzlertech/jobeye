@@ -947,7 +947,6 @@ export default function SupervisorInventoryPage() {
           <h1 className="text-xl font-semibold">Inventory Management</h1>
           <p className="text-xs text-gray-500 mt-1">{filteredItems.length} items • {isOffline ? 'Offline' : 'Online'}</p>
         </div>
-        <Package className="w-6 h-6 text-golden" />
       </div>
 
       {/* Notifications */}

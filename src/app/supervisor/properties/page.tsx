@@ -354,7 +354,6 @@ export default function SupervisorPropertiesPage() {
             <h1 className="text-xl font-semibold">Property Management</h1>
             <p className="text-xs text-gray-500 mt-1">{filteredProperties.length} properties</p>
           </div>
-          <Building className="w-6 h-6 text-golden" />
         </div>
 
         {/* Notifications */}

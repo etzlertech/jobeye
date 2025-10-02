@@ -311,7 +311,6 @@ export default function SupervisorCustomersPage() {
             <h1 className="text-xl font-semibold">Customer Management</h1>
             <p className="text-xs text-gray-500 mt-1">{filteredCustomers.length} customers</p>
           </div>
-          <Users className="w-6 h-6 text-golden" />
         </div>
 
 
