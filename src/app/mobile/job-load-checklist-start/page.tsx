@@ -41,6 +41,10 @@ export default function JobLoadChecklistStartPage() {
   const [showFlash, setShowFlash] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [editableItems, setEditableItems] = useState(
+    checklist.map(item => item.name)
+  );
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -390,6 +394,34 @@ export default function JobLoadChecklistStartPage() {
 
   const handleStop = () => {
     stopCamera();
+  };
+
+  const openSettings = () => {
+    setEditableItems(checklist.map(item => item.name));
+    setShowSettings(true);
+  };
+
+  const closeSettings = () => {
+    setShowSettings(false);
+  };
+
+  const saveSettings = () => {
+    const icons = ['💧', '🖱️', '📘', '🥤', '🧽', '⌨️', '💻', '🍿']; // Default icons
+    const updatedChecklist = editableItems.map((name, index) => ({
+      id: (index + 1).toString(),
+      name: name.trim() || `Item ${index + 1}`,
+      icon: icons[index] || '📦',
+      checked: false
+    }));
+    
+    setChecklist(updatedChecklist);
+    setShowSettings(false);
+  };
+
+  const updateEditableItem = (index: number, value: string) => {
+    const updated = [...editableItems];
+    updated[index] = value;
+    setEditableItems(updated);
   };
 
   // Attach stream to video element when stream changes
@@ -833,10 +865,140 @@ export default function JobLoadChecklistStartPage() {
             opacity: 0;
           }
         }
+
+        .settings-button {
+          position: absolute;
+          top: 15px;
+          left: 15px;
+          width: 44px;
+          height: 44px;
+          background: rgba(0, 0, 0, 0.7);
+          border: 2px solid #FFD700;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 1000;
+          transition: all 0.3s ease;
+        }
+
+        .settings-button:hover {
+          background: rgba(255, 215, 0, 0.2);
+          transform: scale(1.1);
+        }
+
+        .settings-button:active {
+          transform: scale(0.95);
+        }
+
+        .settings-icon {
+          font-size: 20px;
+          color: #FFD700;
+        }
+
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10001;
+          padding: 20px;
+        }
+
+        .modal-content {
+          background: #1a1a1a;
+          border: 3px solid #FFD700;
+          border-radius: 12px;
+          padding: 20px;
+          width: 100%;
+          max-width: 400px;
+          max-height: 90vh;
+          overflow-y: auto;
+        }
+
+        .modal-header {
+          color: #FFD700;
+          font-size: 20px;
+          font-weight: bold;
+          margin-bottom: 20px;
+          text-align: center;
+        }
+
+        .input-group {
+          margin-bottom: 15px;
+        }
+
+        .input-label {
+          color: #ddd;
+          font-size: 14px;
+          margin-bottom: 5px;
+          display: block;
+        }
+
+        .input-field {
+          width: 100%;
+          padding: 12px;
+          background: #2a2a2a;
+          border: 2px solid #666;
+          border-radius: 8px;
+          color: #fff;
+          font-size: 16px;
+          box-sizing: border-box;
+        }
+
+        .input-field:focus {
+          outline: none;
+          border-color: #FFD700;
+        }
+
+        .modal-buttons {
+          display: flex;
+          gap: 10px;
+          margin-top: 20px;
+        }
+
+        .modal-button {
+          flex: 1;
+          padding: 12px;
+          border: 2px solid;
+          border-radius: 8px;
+          background: #000;
+          font-size: 16px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .modal-button.primary {
+          border-color: #228B22;
+          color: #228B22;
+        }
+
+        .modal-button.primary:hover {
+          background: rgba(34, 139, 34, 0.2);
+        }
+
+        .modal-button.secondary {
+          border-color: #FF6B35;
+          color: #FF6B35;
+        }
+
+        .modal-button.secondary:hover {
+          background: rgba(255, 107, 53, 0.2);
+        }
       `}</style>
       <div className="mobile-screen">
         <div className="container-1">
           <div className="company-name">Evergold Landscaping</div>
+          <div className="settings-button" onClick={openSettings}>
+            <div className="settings-icon">⚙️</div>
+          </div>
         </div>
 
         <div className="container-2">
@@ -1006,6 +1168,34 @@ export default function JobLoadChecklistStartPage() {
           ))}
         </div>,
         document.body
+      )}
+      {showSettings && (
+        <div className="modal-overlay" onClick={closeSettings}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">Edit Checklist Items</div>
+            {editableItems.map((item, index) => (
+              <div key={index} className="input-group">
+                <label className="input-label">Item {index + 1}:</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={item}
+                  onChange={(e) => updateEditableItem(index, e.target.value)}
+                  placeholder={`Enter item ${index + 1} name...`}
+                  maxLength={50}
+                />
+              </div>
+            ))}
+            <div className="modal-buttons">
+              <button className="modal-button secondary" onClick={closeSettings}>
+                Cancel
+              </button>
+              <button className="modal-button primary" onClick={saveSettings}>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

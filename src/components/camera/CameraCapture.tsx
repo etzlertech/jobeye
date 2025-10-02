@@ -10,20 +10,30 @@
 'use client';
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Camera, X, CheckCircle, Loader } from 'lucide-react';
+import { Camera, X, CheckCircle, Loader, Brain, Target } from 'lucide-react';
 
 export interface CameraCaptureProps {
   onCapture: (imageBlob: Blob, imageUrl: string) => void;
   onIntentDetected?: (intent: string, confidence: number) => void;
   maxFps?: number;
   className?: string;
+  showIntentOverlay?: boolean;
+  currentIntent?: {
+    intent: string;
+    confidence: number;
+    suggestedAction?: string;
+  };
+  isProcessing?: boolean;
 }
 
 export function CameraCapture({
   onCapture,
   onIntentDetected,
   maxFps = 1,
-  className = ''
+  className = '',
+  showIntentOverlay = false,
+  currentIntent,
+  isProcessing = false
 }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -301,6 +311,80 @@ export function CameraCapture({
               </span>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Intent Recognition Overlay */}
+      {showIntentOverlay && isActive && (
+        <div className="absolute top-0 left-0 right-0 p-4">
+          <div className="bg-black/70 backdrop-blur-sm rounded-lg p-4 text-white">
+            <div className="flex items-center gap-2 mb-2">
+              <Brain className="w-5 h-5 text-emerald-400" />
+              <span className="text-sm font-medium">Intent Recognition</span>
+              {isProcessing && (
+                <Loader className="w-4 h-4 animate-spin ml-auto" />
+              )}
+            </div>
+            
+            {currentIntent ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 text-blue-400" />
+                    <span className="font-mono text-sm">
+                      {currentIntent.intent.replace('_', ' ').toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-12 bg-gray-600 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          currentIntent.confidence > 0.8 ? 'bg-emerald-400' :
+                          currentIntent.confidence > 0.6 ? 'bg-yellow-400' : 'bg-red-400'
+                        }`}
+                        style={{ width: `${currentIntent.confidence * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-gray-300 ml-1">
+                      {Math.round(currentIntent.confidence * 100)}%
+                    </span>
+                  </div>
+                </div>
+                
+                {currentIntent.suggestedAction && (
+                  <p className="text-xs text-gray-300">
+                    {currentIntent.suggestedAction}
+                  </p>
+                )}
+                
+                {/* Action Confirmation */}
+                {currentIntent.confidence > 0.7 && (
+                  <div className="flex gap-2 mt-3">
+                    <button 
+                      className="flex-1 py-2 px-3 bg-emerald-600 rounded text-xs font-medium hover:bg-emerald-700"
+                      onClick={() => onIntentDetected?.(currentIntent.intent, currentIntent.confidence)}
+                    >
+                      Confirm Action
+                    </button>
+                    <button className="px-3 py-2 bg-gray-600 rounded text-xs hover:bg-gray-700">
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-300">
+                {isProcessing ? 'Analyzing image...' : 'Point camera at objects to detect intent'}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Offline Indicator */}
+      {!navigator?.onLine && (
+        <div className="absolute top-4 left-4 bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-medium">
+          Offline Mode
         </div>
       )}
     </div>

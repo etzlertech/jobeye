@@ -76,26 +76,26 @@
 - [x] T027 Extend jobs table with new columns via migration in supabase/migrations/
 
 ### Services Layer
-- [ ] T028 [P] Intent classification service using existing VLM in src/domains/intent/services/intent-classification.service.ts
-- [ ] T029 [P] AI interaction logging service in src/domains/intent/services/ai-interaction-logger.service.ts
-- [ ] T030 [P] Offline sync service with retry logic in src/domains/intent/services/offline-sync.service.ts
-- [ ] T031 [P] Supervisor workflow service in src/domains/supervisor/services/supervisor-workflow.service.ts
-- [ ] T032 [P] Crew workflow service in src/domains/crew/services/crew-workflow.service.ts
-- [ ] T033 [P] Voice command processor service in src/domains/intent/services/voice-command.service.ts
+- [x] T028 [P] Intent classification service using existing VLM in src/domains/intent/services/intent-classification.service.ts
+- [x] T029 [P] AI interaction logging service in src/domains/intent/services/ai-interaction-logger.service.ts
+- [x] T030 [P] Offline sync service with retry logic in src/domains/intent/services/offline-sync.service.ts
+- [x] T031 [P] Supervisor workflow service in src/domains/supervisor/services/supervisor-workflow.service.ts
+- [x] T032 [P] Crew workflow service in src/domains/crew/services/crew-workflow.service.ts
+- [x] T033 [P] Voice command processor service in src/domains/intent/services/voice-command.service.ts
 
 ### API Endpoints
-- [ ] T034 POST /api/intent/classify endpoint in src/app/api/intent/classify/route.ts
-- [ ] T035 POST /api/intent/feedback endpoint in src/app/api/intent/feedback/route.ts
-- [ ] T036 POST /api/supervisor/inventory/add endpoint in src/app/api/supervisor/inventory/add/route.ts
-- [ ] T037 POST /api/supervisor/jobs/create endpoint in src/app/api/supervisor/jobs/create/route.ts
-- [ ] T038 POST /api/supervisor/jobs/[jobId]/assign endpoint in src/app/api/supervisor/jobs/[jobId]/assign/route.ts
-- [ ] T039 GET /api/supervisor/dashboard/status endpoint in src/app/api/supervisor/dashboard/status/route.ts
-- [ ] T040 POST /api/supervisor/voice/command endpoint in src/app/api/supervisor/voice/command/route.ts
-- [ ] T041 GET /api/crew/jobs endpoint in src/app/api/crew/jobs/route.ts
-- [ ] T042 POST /api/crew/jobs/[jobId]/start endpoint in src/app/api/crew/jobs/[jobId]/start/route.ts
-- [ ] T043 POST /api/crew/jobs/[jobId]/load-verify endpoint in src/app/api/crew/jobs/[jobId]/load-verify/route.ts
-- [ ] T044 POST /api/crew/maintenance/report endpoint in src/app/api/crew/maintenance/report/route.ts
-- [ ] T045 POST /api/crew/voice/command endpoint in src/app/api/crew/voice/command/route.ts
+- [x] T034 POST /api/intent/classify endpoint in src/app/api/intent/classify/route.ts
+- [x] T035 POST /api/intent/feedback endpoint in src/app/api/intent/feedback/route.ts
+- [x] T036 POST /api/supervisor/inventory/add endpoint in src/app/api/supervisor/inventory/add/route.ts
+- [x] T037 POST /api/supervisor/jobs/create endpoint in src/app/api/supervisor/jobs/create/route.ts
+- [x] T038 POST /api/supervisor/jobs/[jobId]/assign endpoint in src/app/api/supervisor/jobs/[jobId]/assign/route.ts
+- [x] T039 GET /api/supervisor/dashboard/status endpoint in src/app/api/supervisor/dashboard/status/route.ts
+- [x] T040 POST /api/supervisor/voice/command endpoint in src/app/api/supervisor/voice/command/route.ts
+- [x] T041 GET /api/crew/jobs endpoint in src/app/api/crew/jobs/route.ts
+- [x] T042 POST /api/crew/jobs/[jobId]/start endpoint in src/app/api/crew/jobs/[jobId]/start/route.ts
+- [x] T043 POST /api/crew/jobs/[jobId]/load-verify endpoint in src/app/api/crew/jobs/[jobId]/load-verify/route.ts
+- [x] T044 POST /api/crew/maintenance/report endpoint in src/app/api/crew/maintenance/report/route.ts
+- [x] T045 POST /api/crew/voice/command endpoint in src/app/api/crew/voice/command/route.ts
 
 ### UI Components & Pages
 - [ ] T046 [P] Camera capture component with intent display in src/components/camera/CameraCapture.tsx
