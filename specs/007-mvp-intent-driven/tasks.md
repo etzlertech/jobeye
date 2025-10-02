@@ -49,9 +49,9 @@
 
 ### Contract Tests
 - [x] T008 [P] Contract test POST /api/intent/classify in tests/domains/intent/api/test_classify_contract.test.ts
-- [ ] T009 [P] Contract test POST /api/intent/feedback in tests/domains/intent/api/test_feedback_contract.test.ts
-- [ ] T010 [P] Contract test POST /api/supervisor/inventory/add in tests/domains/supervisor/api/test_inventory_add_contract.test.ts
-- [ ] T011 [P] Contract test POST /api/supervisor/jobs/create in tests/domains/supervisor/api/test_jobs_create_contract.test.ts
+- [x] T009 [P] Contract test POST /api/intent/feedback in tests/domains/intent/api/test_feedback_contract.test.ts
+- [x] T010 [P] Contract test POST /api/supervisor/inventory/add in tests/domains/supervisor/api/test_inventory_add_contract.test.ts
+- [x] T011 [P] Contract test POST /api/supervisor/jobs/create in tests/domains/supervisor/api/test_jobs_create_contract.test.ts
 - [ ] T012 [P] Contract test POST /api/supervisor/jobs/{jobId}/assign in tests/domains/supervisor/api/test_jobs_assign_contract.test.ts
 - [ ] T013 [P] Contract test GET /api/supervisor/dashboard/status in tests/domains/supervisor/api/test_dashboard_status_contract.test.ts
 - [ ] T014 [P] Contract test POST /api/supervisor/voice/command in tests/domains/supervisor/api/test_voice_command_contract.test.ts

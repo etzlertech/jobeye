@@ -1,0 +1,5 @@
+# Audio File Placeholder
+This is a placeholder for the beep.mp3 file.
+In production, replace this with an actual MP3 file containing a short beep sound.
+
+For development, the app will use Web Audio API fallback.

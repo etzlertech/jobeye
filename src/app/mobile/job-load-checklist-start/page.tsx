@@ -203,27 +203,34 @@ export default function JobLoadChecklistStartPage() {
             setShowFlash(true);
             // Play sound with user gesture context
             if (audioRef.current) {
-              audioRef.current.play().catch(err => {
-                console.log('[Audio] Failed to play sound:', err);
-                // Try Web Audio API as fallback
-                try {
-                  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-                  const oscillator = audioContext.createOscillator();
-                  const gainNode = audioContext.createGain();
-                  
-                  oscillator.connect(gainNode);
-                  gainNode.connect(audioContext.destination);
-                  
-                  oscillator.frequency.value = 880; // A5 note
-                  oscillator.type = 'sine';
-                  gainNode.gain.value = 0.2;
-                  
-                  oscillator.start();
-                  oscillator.stop(audioContext.currentTime + 0.05); // Shorter beep
-                } catch (e) {
-                  console.log('[Audio] Fallback also failed:', e);
-                }
-              });
+              // Use Web Audio API for better Safari compatibility
+            try {
+              const audioContext = (window as any).audioContext || new (window.AudioContext || (window as any).webkitAudioContext)();
+              
+              // Resume if suspended
+              if (audioContext.state === 'suspended') {
+                audioContext.resume();
+              }
+              
+              const oscillator = audioContext.createOscillator();
+              const gainNode = audioContext.createGain();
+              
+              oscillator.connect(gainNode);
+              gainNode.connect(audioContext.destination);
+              
+              oscillator.frequency.value = 880; // A5 note
+              oscillator.type = 'sine';
+              
+              // Quick fade in/out for cleaner sound
+              gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+              gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+              gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.08);
+              
+              oscillator.start(audioContext.currentTime);
+              oscillator.stop(audioContext.currentTime + 0.1);
+            } catch (e) {
+              console.log('[Audio] Beep failed:', e);
+            }
             }
             setTimeout(() => setShowFlash(false), 300);
           }
@@ -283,14 +290,26 @@ export default function JobLoadChecklistStartPage() {
 
   const playSuccessSound = () => {
     try {
-      // Create a celebratory sound using Web Audio API
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const duration = 0.5;
+      // Use existing audio context or create new one
+      const audioContext = (window as any).audioContext || new (window.AudioContext || (window as any).webkitAudioContext)();
       
-      // Create multiple oscillators for a chord
-      const frequencies = [523.25, 659.25, 783.99]; // C, E, G (C major chord)
+      // Resume if suspended (Safari requirement)
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
       
-      frequencies.forEach((freq, index) => {
+      const now = audioContext.currentTime;
+      const duration = 0.6;
+      
+      // Create multiple oscillators for a celebratory chord progression
+      const notes = [
+        { freq: 523.25, start: 0 },      // C5
+        { freq: 659.25, start: 0.1 },    // E5
+        { freq: 783.99, start: 0.2 },    // G5
+        { freq: 1046.5, start: 0.3 },    // C6
+      ];
+      
+      notes.forEach(({ freq, start }) => {
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
@@ -300,13 +319,13 @@ export default function JobLoadChecklistStartPage() {
         oscillator.frequency.value = freq;
         oscillator.type = 'sine';
         
-        // Fade in and out
-        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+        // Envelope
+        gainNode.gain.setValueAtTime(0, now + start);
+        gainNode.gain.linearRampToValueAtTime(0.4, now + start + 0.02);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + start + duration);
         
-        oscillator.start(audioContext.currentTime + index * 0.05);
-        oscillator.stop(audioContext.currentTime + duration);
+        oscillator.start(now + start);
+        oscillator.stop(now + start + duration);
       });
       
       console.log('[Audio] Success chord played!');
@@ -343,21 +362,30 @@ export default function JobLoadChecklistStartPage() {
     // Camera start disabled - use manual button instead
     console.log('Page loaded - click button to start camera');
     
-    // Create audio elements for sounds
-    try {
-      // Item detection beep
-      const audio = new Audio();
-      audio.src = 'data:audio/wav;base64,UklGRl9uBABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YTtuBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////';
-      audio.volume = 0.5;
-      audio.load();
-      audioRef.current = audio;
+    // Create audio context on first user interaction (required for Safari)
+    const initAudio = () => {
+      if (!window.AudioContext && !(window as any).webkitAudioContext) {
+        console.log('[Audio] Web Audio API not supported');
+        return;
+      }
       
-      // Final success celebration sound (will be created with Web Audio API)
-      successAudioRef.current = new Audio();
-      console.log('[Audio] Sounds loaded');
-    } catch (err) {
-      console.error('[Audio] Failed to create audio elements:', err);
-    }
+      // Create or resume audio context
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      const audioContext = new AudioContext();
+      
+      // Resume if suspended (Safari requirement)
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      
+      // Store audio context for later use
+      (window as any).audioContext = audioContext;
+      console.log('[Audio] Audio context initialized');
+    };
+    
+    // Initialize audio on first click/touch
+    document.addEventListener('click', initAudio, { once: true });
+    document.addEventListener('touchstart', initAudio, { once: true });
     
     return () => {
       if (stream) {
@@ -382,8 +410,8 @@ export default function JobLoadChecklistStartPage() {
       playSuccessSound();
       setShowConfetti(true);
       
-      // Stop confetti after 3 seconds
-      setTimeout(() => setShowConfetti(false), 3000);
+      // Stop confetti after 5 seconds
+      setTimeout(() => setShowConfetti(false), 5000);
       
       // Stop the interval immediately
       if (analysisIntervalRef.current) {
@@ -678,23 +706,110 @@ export default function JobLoadChecklistStartPage() {
           width: 10px;
           height: 10px;
           background: #f0f;
-          animation: confetti-fall 3s linear forwards;
         }
 
-        .confetti:nth-child(2n) { background: #0ff; width: 8px; height: 8px; }
-        .confetti:nth-child(3n) { background: #ff0; width: 6px; height: 6px; }
-        .confetti:nth-child(4n) { background: #0f0; }
-        .confetti:nth-child(5n) { background: #f00; width: 12px; height: 12px; }
-        .confetti:nth-child(6n) { background: #00f; }
-        .confetti:nth-child(7n) { background: #fff; width: 7px; height: 7px; }
+        .confetti-1 { 
+          width: 13px; 
+          height: 13px; 
+          background: linear-gradient(45deg, #ff0080, #ff8c00);
+          animation: confetti-fall-1 5s linear forwards;
+        }
+        .confetti-2 { 
+          width: 10px; 
+          height: 16px; 
+          background: linear-gradient(45deg, #00ff88, #00ffff);
+          animation: confetti-fall-2 5s linear forwards;
+        }
+        .confetti-3 { 
+          width: 11px; 
+          height: 11px; 
+          background: linear-gradient(45deg, #ffff00, #ffaa00);
+          animation: confetti-fall-3 5s linear forwards;
+        }
+        .confetti-4 { 
+          width: 9px; 
+          height: 14px; 
+          background: linear-gradient(45deg, #ff00ff, #ff0080);
+          animation: confetti-fall-1 5s linear forwards;
+        }
+        .confetti-5 { 
+          width: 15px; 
+          height: 8px; 
+          background: linear-gradient(45deg, #00ff00, #00ff88);
+          animation: confetti-fall-2 5s linear forwards;
+        }
+        .confetti-6 { 
+          width: 12px; 
+          height: 12px; 
+          background: linear-gradient(45deg, #4169e1, #00bfff);
+          animation: confetti-fall-3 5s linear forwards;
+        }
 
-        @keyframes confetti-fall {
+        @keyframes confetti-fall-1 {
           0% {
-            transform: translateY(-100vh) rotate(0deg);
+            transform: translateY(-100vh) translateX(0) rotate(0deg) scale(0);
+            opacity: 1;
+          }
+          10% {
+            transform: translateY(-80vh) translateX(10px) rotate(90deg) scale(1);
+          }
+          20% {
+            transform: translateY(-60vh) translateX(-10px) rotate(180deg) scale(1);
+          }
+          30% {
+            transform: translateY(-40vh) translateX(15px) rotate(270deg) scale(1);
+          }
+          50% {
             opacity: 1;
           }
           100% {
-            transform: translateY(100vh) rotate(720deg);
+            transform: translateY(100vh) translateX(-20px) rotate(720deg) scale(0.5);
+            opacity: 0;
+          }
+        }
+
+        @keyframes confetti-fall-2 {
+          0% {
+            transform: translateY(-100vh) translateX(0) rotate(0deg) scale(0);
+            opacity: 1;
+          }
+          10% {
+            transform: translateY(-80vh) translateX(-15px) rotate(-90deg) scale(1);
+          }
+          25% {
+            transform: translateY(-50vh) translateX(20px) rotate(-180deg) scale(1);
+          }
+          40% {
+            transform: translateY(-20vh) translateX(-25px) rotate(-270deg) scale(1);
+          }
+          60% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(100vh) translateX(15px) rotate(-630deg) scale(0.5);
+            opacity: 0;
+          }
+        }
+
+        @keyframes confetti-fall-3 {
+          0% {
+            transform: translateY(-100vh) translateX(0) rotate(0deg) scale(0);
+            opacity: 1;
+          }
+          15% {
+            transform: translateY(-70vh) translateX(25px) rotate(120deg) scale(1);
+          }
+          35% {
+            transform: translateY(-35vh) translateX(-15px) rotate(240deg) scale(1);
+          }
+          55% {
+            transform: translateY(0vh) translateX(10px) rotate(360deg) scale(1);
+          }
+          70% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(100vh) translateX(-10px) rotate(540deg) scale(0.3);
             opacity: 0;
           }
         }
@@ -702,14 +817,14 @@ export default function JobLoadChecklistStartPage() {
       {showFlash && <div className="flash-overlay" />}
       {showConfetti && (
         <div className="confetti-container">
-          {[...Array(50)].map((_, i) => (
+          {[...Array(100)].map((_, i) => (
             <div
               key={i}
-              className="confetti"
+              className={`confetti-${(i % 6) + 1}`}
               style={{
                 left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${2 + Math.random() * 2}s`
+                animationDelay: `${Math.random() * 2}s`,
+                borderRadius: i % 3 === 0 ? '50%' : i % 3 === 1 ? '20%' : '0'
               }}
             />
           ))}
