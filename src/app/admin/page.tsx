@@ -315,10 +315,10 @@ export default function AdminDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="mobile-container flex items-center justify-center">
         <div className="text-center">
-          <Shield className="w-8 h-8 animate-pulse text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading admin dashboard...</p>
+          <Shield className="w-12 h-12 animate-pulse text-golden mx-auto mb-4" />
+          <p className="text-gray-400 text-lg">Loading admin dashboard...</p>
         </div>
       </div>
     );
@@ -327,47 +327,50 @@ export default function AdminDashboardPage() {
   // User creation/edit modal
   if (showUserModal) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">
+      <div className="mobile-container">
+        <div className="header-bar">
+          <h1 className="text-xl font-semibold">
             {selectedUser ? 'Edit User' : 'Create New User'}
-          </h2>
+          </h1>
+          <Shield className="w-6 h-6 text-golden" />
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 py-4">
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-400 mb-1">
                 Email Address
               </label>
               <input
                 type="email"
                 value={newUser.email}
                 onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-golden focus:border-golden"
                 placeholder="user@company.com"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-400 mb-1">
                 Full Name
               </label>
               <input
                 type="text"
                 value={newUser.fullName}
                 onChange={(e) => setNewUser(prev => ({ ...prev, fullName: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-golden focus:border-golden"
                 placeholder="John Smith"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-400 mb-1">
                 Role
               </label>
               <select
                 value={newUser.role}
                 onChange={(e) => setNewUser(prev => ({ ...prev, role: e.target.value as any }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white focus:ring-2 focus:ring-golden focus:border-golden"
               >
                 <option value="crew">Crew Member</option>
                 <option value="supervisor">Supervisor</option>
@@ -376,13 +379,13 @@ export default function AdminDashboardPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-400 mb-1">
                 Company
               </label>
               <select
                 value={newUser.companyId}
                 onChange={(e) => setNewUser(prev => ({ ...prev, companyId: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white focus:ring-2 focus:ring-golden focus:border-golden"
               >
                 <option value="">Select company...</option>
                 {companies.map(company => (
@@ -394,131 +397,123 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          <div className="flex gap-3 mt-6">
-            <button
-              onClick={handleCreateUser}
-              disabled={!newUser.email || !newUser.fullName || !newUser.companyId}
-              className="flex-1 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50"
-            >
-              {selectedUser ? 'Update User' : 'Create User'}
-            </button>
-            <button
-              onClick={() => setShowUserModal(false)}
-              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-400"
-            >
-              Cancel
-            </button>
-          </div>
+        </div>
+        <div className="bottom-actions">
+          <button
+            onClick={() => setShowUserModal(false)}
+            className="btn-secondary flex-1"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreateUser}
+            disabled={!newUser.email || !newUser.fullName || !newUser.companyId}
+            className="btn-primary flex-1"
+          >
+            {selectedUser ? 'Update User' : 'Create User'}
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="mobile-container">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Shield className="w-8 h-8 text-purple-600" />
-              <h1 className="text-2xl font-bold text-gray-900">Super Admin</h1>
-            </div>
-            
-            {stats && (
-              <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                stats.systemHealth === 'healthy' ? 'bg-emerald-100 text-emerald-800' :
-                stats.systemHealth === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-red-100 text-red-800'
-              }`}>
-                System {stats.systemHealth}
-              </div>
-            )}
-          </div>
+      <div className="header-bar">
+        <div>
+          <h1 className="text-xl font-semibold">Super Admin</h1>
+          {stats && (
+            <p className={`text-xs mt-1 ${
+              stats.systemHealth === 'healthy' ? 'text-green-500' :
+              stats.systemHealth === 'warning' ? 'text-yellow-500' :
+              'text-red-500'
+            }`}>
+              System {stats.systemHealth}
+            </p>
+          )}
         </div>
+        <Shield className="w-6 h-6 text-golden" />
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            {[
-              { id: 'overview', label: 'Overview', icon: BarChart3 },
-              { id: 'users', label: 'Users', icon: Users },
-              { id: 'companies', label: 'Companies', icon: Building },
-              { id: 'settings', label: 'Settings', icon: Settings }
-            ].map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
-                      ? 'border-purple-500 text-purple-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
+      <div className="px-4 py-2 border-b border-gray-800">
+        <div className="flex space-x-1">
+          {[
+            { id: 'overview', label: 'Overview', icon: BarChart3 },
+            { id: 'users', label: 'Users', icon: Users },
+            { id: 'companies', label: 'Companies', icon: Building },
+            { id: 'settings', label: 'Settings', icon: Settings }
+          ].map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-golden text-black'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            {/* Overview Tab */}
-            {activeTab === 'overview' && stats && (
-              <div className="space-y-8">
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <div className="flex items-center">
-                      <Users className="w-8 h-8 text-blue-500" />
-                      <div className="ml-4">
-                        <p className="text-sm text-gray-600">Total Users</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <div className="flex items-center">
-                      <Building className="w-8 h-8 text-purple-500" />
-                      <div className="ml-4">
-                        <p className="text-sm text-gray-600">Companies</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.totalCompanies}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <div className="flex items-center">
-                      <Briefcase className="w-8 h-8 text-emerald-500" />
-                      <div className="ml-4">
-                        <p className="text-sm text-gray-600">Active Jobs</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.activeJobs}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <div className="flex items-center">
-                      <DollarSign className="w-8 h-8 text-yellow-500" />
-                      <div className="ml-4">
-                        <p className="text-sm text-gray-600">Monthly Revenue</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {formatCurrency(stats.monthlyRevenue)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        {/* Main Content */}
+        {/* Overview Tab */}
+        {activeTab === 'overview' && stats && (
+          <div className="space-y-6">
+            {/* Stats Cards */}
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-header">
+                  <Users className="w-5 h-5 text-golden" />
+                  <span>Users</span>
                 </div>
+                <div className="stat-content">
+                  <p className="stat-value">{stats.totalUsers}</p>
+                  <p className="stat-label">Total</p>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-header">
+                  <Building className="w-5 h-5 text-golden" />
+                  <span>Companies</span>
+                </div>
+                <div className="stat-content">
+                  <p className="stat-value">{stats.totalCompanies}</p>
+                  <p className="stat-label">Active</p>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-header">
+                  <Briefcase className="w-5 h-5 text-golden" />
+                  <span>Jobs</span>
+                </div>
+                <div className="stat-content">
+                  <p className="stat-value">{stats.activeJobs}</p>
+                  <p className="stat-label">Active</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="revenue-card">
+              <div className="flex items-center gap-3 mb-2">
+                <DollarSign className="w-6 h-6 text-golden" />
+                <span className="text-sm text-gray-400">Monthly Revenue</span>
+              </div>
+              <p className="text-2xl font-bold text-golden">
+                {formatCurrency(stats.monthlyRevenue)}
+              </p>
+            </div>
 
                 {/* Recent Activity */}
                 <div className="bg-white rounded-lg shadow">
@@ -791,8 +786,167 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             )}
-          </div>
         </div>
+
+        {/* Voice FAB */}
+        <div className="voice-fab">
+          <VoiceCommandButton
+            onTranscript={handleVoiceCommand}
+            size="lg"
+            autoSpeak={true}
+          />
+        </div>
+
+        {/* Bottom Action */}
+        <div className="bottom-actions">
+          <button
+            onClick={() => setShowUserModal(true)}
+            className="btn-primary w-full"
+          >
+            <UserPlus className="w-5 h-5 mr-2" />
+            Create New User
+          </button>
+        </div>
+
+        {/* Styled JSX */}
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+            background: rgba(0, 0, 0, 0.9);
+          }
+
+          .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+          }
+
+          .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 0.5rem;
+            padding: 1rem;
+          }
+
+          .stat-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: #999;
+            margin-bottom: 0.5rem;
+          }
+
+          .stat-content {
+            text-align: center;
+          }
+
+          .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #FFD700;
+            margin: 0;
+          }
+
+          .stat-label {
+            font-size: 0.75rem;
+            color: #666;
+            margin: 0;
+          }
+
+          .revenue-card {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 2rem;
+          }
+
+          .voice-fab {
+            position: fixed;
+            bottom: 5.5rem;
+            right: 50%;
+            transform: translateX(50%);
+            z-index: 1000;
+          }
+
+          .bottom-actions {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 375px;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.9);
+            border-top: 1px solid #333;
+          }
+
+          .btn-primary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            background: #FFD700;
+            color: #000;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            border: none;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+          }
+
+          .btn-primary:hover:not(:disabled) {
+            background: #FFC700;
+          }
+
+          .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+
+          .btn-secondary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #FFD700;
+          }
+
+          .golden { color: #FFD700; }
+        `}</style>
       </div>
     </div>
   );
