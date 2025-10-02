@@ -72,6 +72,42 @@ For any task with 3+ steps or complexity, use TodoWrite to:
 - Maximum: 500 LoC per file
 - Break large features into smaller, focused files
 
+## 🌐 BROWSER MCP CAPABILITIES
+
+### Real-Time Browser Control
+- **BROWSER MCP INSTALLED**: User has Browser MCP Chrome extension active
+- **REAL-TIME CONTROL**: Can control user's live browser tab in production Railway environment
+- **VISUAL FEEDBACK**: Take screenshots to see exactly what user sees
+- **FORM TESTING**: Fill out forms, click buttons, navigate pages in real-time
+- **PRODUCTION TESTING**: Test CRUD operations on live Railway deployment directly
+
+### Browser MCP Tools Available
+```javascript
+// Navigate to any URL
+mcp__browsermcp__browser_navigate({ url: "https://jobeye-production.up.railway.app" })
+
+// Take screenshot to see current state
+mcp__browsermcp__browser_screenshot()
+
+// Get page structure for element references
+mcp__browsermcp__browser_snapshot()
+
+// Click elements (requires ref from snapshot)
+mcp__browsermcp__browser_click({ element: "Save button", ref: "s1e42" })
+
+// Type into form fields
+mcp__browsermcp__browser_type({ element: "Email field", ref: "s1e24", text: "test@example.com", submit: false })
+
+// Wait for page loads
+mcp__browsermcp__browser_wait({ time: 3 })
+```
+
+### Railway Deployment Timing
+- **5 MINUTE RULE**: Always wait 5 minutes after `git push` before testing via Browser MCP
+- **DEPLOYMENT STAGES**: Code push → Build → Deploy → Live (5 min total)
+- **PATIENCE REQUIRED**: Don't test immediately after push - deployment takes time
+- **VERIFY COMPLETION**: Use railway monitor commands or check deployment logs
+
 ## 🔧 CRITICAL DEVELOPMENT PATTERNS
 
 ### Single Developer Team with Multiple Claude Agents
@@ -106,9 +142,23 @@ For any task with 3+ steps or complexity, use TodoWrite to:
 - Railway will auto-deploy within 2-3 minutes of push
 - Multiple agents can work simultaneously without branch conflicts
 
-### Railway Monitoring
+### Railway Monitoring & Browser MCP Integration
+- **POST-PUSH MONITORING**: After every `git push`, WAIT 5 minutes for Railway deployment
 - Use `npm run railway:monitor <deployment-id>` for 5-second polling
 - Auto-fetch error logs on failure
+- **BROWSER MCP AVAILABLE**: Can control user's browser in real-time via Browser MCP tools:
+  - `mcp__browsermcp__browser_navigate` - Navigate to URLs
+  - `mcp__browsermcp__browser_screenshot` - Take real-time screenshots
+  - `mcp__browsermcp__browser_click` - Click elements on page
+  - `mcp__browsermcp__browser_type` - Type into form fields
+  - `mcp__browsermcp__browser_snapshot` - Get page structure
+- **LIVE TESTING WORKFLOW**: 
+  1. Push code changes to main
+  2. Monitor Railway deployment status via API
+  3. Wait 5 minutes for deployment completion
+  4. Use Browser MCP to test live Railway deployment in user's browser
+  5. Verify CRUD operations, UI behavior, API responses in real production environment
+- **BROWSER MCP SETUP**: User must have Browser MCP Chrome extension connected to Railway tab
 - Apply fixes and push immediately
 
 ### Testing Requirements
