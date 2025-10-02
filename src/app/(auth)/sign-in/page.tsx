@@ -188,7 +188,8 @@ export default function SignInPage() {
       }
 
       if (data.user) {
-        const userRole = data.user.user_metadata?.role || role;
+        // Check app_metadata first (where we store the role), then user_metadata
+        const userRole = data.user.app_metadata?.role || data.user.user_metadata?.role || role;
         setDetectedRole(userRole);
         setAuthState(prev => ({ ...prev, success: `Demo access granted! Redirecting to ${userRole} dashboard...` }));
         
