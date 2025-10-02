@@ -157,7 +157,8 @@ export async function middleware(request: NextRequest) {
       }
 
       session = authSession;
-      userRole = session.user.app_metadata?.role as string;
+      // Check both app_metadata and user_metadata for role (demo users use user_metadata)
+      userRole = (session.user.app_metadata?.role || session.user.user_metadata?.role) as string;
       userId = session.user.id;
     }
 

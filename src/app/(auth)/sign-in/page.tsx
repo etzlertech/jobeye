@@ -145,7 +145,8 @@ export default function SignInPage() {
       }
 
       if (data.user) {
-        const role = data.user.app_metadata?.role || 'crew';
+        // Check both app_metadata and user_metadata for role
+        const role = data.user.app_metadata?.role || data.user.user_metadata?.role || 'crew';
         setDetectedRole(role);
         setAuthState(prev => ({ ...prev, success: `Welcome back! Redirecting to ${role} dashboard...` }));
         
@@ -167,20 +168,35 @@ export default function SignInPage() {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      setDetectedRole(role);
-      setAuthState(prev => ({ ...prev, success: `Demo mode activated! Accessing ${role} dashboard...` }));
+      // Map roles to demo user emails
+      const demoCredentials = {
+        crew: { email: 'demo.crew@jobeye.app', password: 'demo123' },
+        supervisor: { email: 'demo.supervisor@jobeye.app', password: 'demo123' },
+        admin: { email: 'demo.supervisor@jobeye.app', password: 'demo123' } // Admin uses supervisor for now
+      };
+
+      const credentials = demoCredentials[role];
       
-      // Set demo cookies for middleware
-      if (typeof window !== 'undefined') {
-        document.cookie = `demoRole=${role}; path=/; max-age=3600`; // 1 hour
-        document.cookie = `isDemo=true; path=/; max-age=3600`; // 1 hour
+      // Authenticate with real Supabase using demo credentials
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password
+      });
+
+      if (error) {
+        throw error;
       }
 
-      // Simulate authentication delay
-      setTimeout(() => {
-        const targetRoute = roleRoutes[role as keyof typeof roleRoutes] || '/crew';
-        router.push(targetRoute);
-      }, 2000);
+      if (data.user) {
+        const userRole = data.user.user_metadata?.role || role;
+        setDetectedRole(userRole);
+        setAuthState(prev => ({ ...prev, success: `Demo access granted! Redirecting to ${userRole} dashboard...` }));
+        
+        // Small delay to show role detection
+        setTimeout(() => {
+          router.push(roleRoutes[userRole as keyof typeof roleRoutes]);
+        }, 2000);
+      }
 
     } catch (error) {
       setAuthState(prev => ({
@@ -434,15 +450,15 @@ export default function SignInPage() {
         <div className="credentials-info">
           <div className="credential-item">
             <span className="credential-label">Crew:</span>
-            <span className="credential-value">crew@demo.com / demo123</span>
+            <span className="credential-value">demo.crew@jobeye.app / demo123</span>
           </div>
           <div className="credential-item">
             <span className="credential-label">Supervisor:</span>
-            <span className="credential-value">supervisor@demo.com / demo123</span>
+            <span className="credential-value">demo.supervisor@jobeye.app / demo123</span>
           </div>
           <div className="credential-item">
             <span className="credential-label">Admin:</span>
-            <span className="credential-value">admin@demo.com / demo123</span>
+            <span className="credential-value">demo.supervisor@jobeye.app / demo123</span>
           </div>
         </div>
       </div>
