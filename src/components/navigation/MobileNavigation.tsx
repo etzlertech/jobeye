@@ -252,7 +252,12 @@ export function MobileNavigation({
 
         .nav-overlay {
           position: fixed;
-          inset: 0;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 100%;
+          max-width: 375px;
+          height: 100vh;
           background: rgba(0, 0, 0, 0.5);
           z-index: 1001;
         }
@@ -260,12 +265,13 @@ export function MobileNavigation({
         .nav-drawer {
           position: fixed;
           top: 0;
-          left: 0;
+          left: 50%;
+          transform: translateX(-50%) translateX(-100%);
           height: 100vh;
           width: 280px;
+          max-width: 375px;
           background: #000;
           border-right: 1px solid #333;
-          transform: translateX(-100%);
           transition: transform 0.3s ease;
           z-index: 1002;
           display: flex;
@@ -273,7 +279,7 @@ export function MobileNavigation({
         }
 
         .nav-drawer.open {
-          transform: translateX(0);
+          transform: translateX(-50%) translateX(0);
         }
 
         .nav-header {
