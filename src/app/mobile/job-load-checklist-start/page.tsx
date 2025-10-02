@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ChecklistItem {
   id: string;
@@ -39,6 +40,7 @@ export default function JobLoadChecklistStartPage() {
   const [detections, setDetections] = useState<Detection[]>([]);
   const [showFlash, setShowFlash] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -262,30 +264,36 @@ export default function JobLoadChecklistStartPage() {
 
   const playBeep = () => {
     try {
-      if (!audioContextRef.current || audioContextRef.current.state !== 'running') {
-        console.warn('[Audio] Context not ready, skipping beep. State:', audioContextRef.current?.state);
-        return;
-      }
-      
-      const audioContext = audioContextRef.current;
-      
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.value = 800;
-      oscillator.type = 'sine';
-      
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.1);
-      
-      console.log('[Audio] Beep played at', new Date().toISOString());
+      // Try HTML5 Audio first (might work better on Safari)
+      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYJGmW58OScTgwOUazi5LllHQU7ks3w14w5CRuDy/DThDYJHLzx8//6fzIHP5pVBAAA/74AAPhDAAAP/wAAmkEAAG9PAABm/wAAWEoAAE8yAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+      audio.volume = 0.5;
+      audio.play().then(() => {
+        console.log('[Audio] HTML5 beep played');
+      }).catch(err => {
+        console.log('[Audio] HTML5 audio failed, trying Web Audio API');
+        
+        // Fallback to Web Audio API
+        if (audioContextRef.current && audioContextRef.current.state === 'running') {
+          const audioContext = audioContextRef.current;
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.frequency.value = 800;
+          oscillator.type = 'sine';
+          
+          gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+          gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+          
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.1);
+          
+          console.log('[Audio] Web Audio API beep played');
+        }
+      });
     } catch (err) {
       console.error('[Audio] Beep error:', err);
     }
@@ -396,6 +404,7 @@ export default function JobLoadChecklistStartPage() {
   useEffect(() => {
     // Camera start disabled - use manual button instead
     console.log('Page loaded - click button to start camera');
+    setMounted(true);
     
     return () => {
       if (stream) {
@@ -701,16 +710,15 @@ export default function JobLoadChecklistStartPage() {
         }
 
         .confetti-container {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          width: 100vw;
-          height: 100vh;
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
           pointer-events: none;
-          overflow: hidden;
-          z-index: 10000;
+          overflow: visible !important;
+          z-index: 99999 !important;
+          transform: none !important;
         }
 
         .confetti {
@@ -975,8 +983,16 @@ export default function JobLoadChecklistStartPage() {
       </div>
       <canvas ref={canvasRef} style={{ display: 'none' }} />
       {showFlash && <div className="flash-overlay" />}
-      {showConfetti && (
-        <div className="confetti-container">
+      {mounted && showConfetti && createPortal(
+        <div className="confetti-container" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          pointerEvents: 'none',
+          zIndex: 99999
+        }}>
           {[...Array(100)].map((_, i) => (
             <div
               key={i}
@@ -988,7 +1004,8 @@ export default function JobLoadChecklistStartPage() {
               }}
             />
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

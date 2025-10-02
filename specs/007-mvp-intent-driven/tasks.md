@@ -65,15 +65,15 @@
 - [x] T020 [P] Integration test: Supervisor adds inventory through camera in tests/e2e/supervisor-inventory-flow.test.ts
 - [x] T021 [P] Integration test: Crew member verifies job load in tests/e2e/crew-load-verification-flow.test.ts
 - [x] T022 [P] Integration test: Voice-driven job creation in tests/e2e/voice-job-creation-flow.test.ts
-- [ ] T023 [P] Integration test: Offline mode sync in tests/e2e/offline-sync-flow.test.ts
+- [x] T023 [P] Integration test: Offline mode sync in tests/e2e/offline-sync-flow.test.ts
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 
 ### Data Models & Repositories
-- [ ] T024 [P] Create AIInteractionLog model and repository in src/domains/intent/repositories/ai-interaction-log.repository.ts
-- [ ] T025 [P] Create IntentClassification model and repository in src/domains/intent/repositories/intent-classification.repository.ts
-- [ ] T026 [P] Create OfflineSyncQueue model and repository in src/domains/intent/repositories/offline-sync-queue.repository.ts
-- [ ] T027 Extend jobs table with new columns via migration in supabase/migrations/
+- [x] T024 [P] Create AIInteractionLog model and repository in src/domains/intent/repositories/ai-interaction-log.repository.ts
+- [x] T025 [P] Create IntentClassification model and repository in src/domains/intent/repositories/intent-classification.repository.ts
+- [x] T026 [P] Create OfflineSyncQueue model and repository in src/domains/intent/repositories/offline-sync-queue.repository.ts
+- [x] T027 Extend jobs table with new columns via migration in supabase/migrations/
 
 ### Services Layer
 - [ ] T028 [P] Intent classification service using existing VLM in src/domains/intent/services/intent-classification.service.ts
