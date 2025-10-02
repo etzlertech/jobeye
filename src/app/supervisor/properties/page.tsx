@@ -268,8 +268,9 @@ export default function SupervisorPropertiesPage() {
 
       if (!response.ok) throw new Error(data.message);
 
-      setSuccess(view === 'edit' ? 'Property updated successfully' : 'Property created successfully');
-      setTimeout(() => setSuccess(null), 3000);
+      // Use the specific message from the API response that indicates if it was saved to database
+      setSuccess(data.message || (view === 'edit' ? 'Property updated successfully' : 'Property created successfully'));
+      setTimeout(() => setSuccess(null), 5000); // Longer display time for database confirmation
 
       // Refresh list and return to list view
       await loadProperties();
@@ -302,13 +303,14 @@ export default function SupervisorPropertiesPage() {
         method: 'DELETE'
       });
 
+      const data = await response.json();
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.message);
       }
 
-      setSuccess('Property deleted successfully');
-      setTimeout(() => setSuccess(null), 3000);
+      // Use the specific message from the API response that indicates if it was deleted from database
+      setSuccess(data.message || 'Property deleted successfully');
+      setTimeout(() => setSuccess(null), 5000); // Longer display time for database confirmation
       await loadProperties();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete property');

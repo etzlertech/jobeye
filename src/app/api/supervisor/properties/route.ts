@@ -161,7 +161,9 @@ export async function POST(request: NextRequest) {
           ...body,
           company_id: companyId,
           created_at: new Date().toISOString()
-        }
+        },
+        message: 'Property created successfully (demo mode - not saved to database)',
+        isDemoMode: true
       }, { status: 201 });
     }
 
@@ -177,7 +179,11 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
-    return NextResponse.json({ property }, { status: 201 });
+    return NextResponse.json({ 
+      property,
+      message: 'Property created successfully and saved to database',
+      isDemoMode: false
+    }, { status: 201 });
 
   } catch (error) {
     return handleApiError(error);
