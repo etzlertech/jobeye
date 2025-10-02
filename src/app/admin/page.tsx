@@ -413,6 +413,85 @@ export default function AdminDashboardPage() {
             {selectedUser ? 'Update User' : 'Create User'}
           </button>
         </div>
+
+        {/* Styled JSX for Modal */}
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+            background: rgba(0, 0, 0, 0.9);
+          }
+
+          .bottom-actions {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.9);
+            border-top: 1px solid #333;
+          }
+
+          .btn-primary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            background: #FFD700;
+            color: #000;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            border: none;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .btn-primary:hover:not(:disabled) {
+            background: #FFC700;
+          }
+
+          .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+
+          .btn-secondary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #FFD700;
+          }
+
+          .golden { color: #FFD700; }
+        `}</style>
       </div>
     );
   }
