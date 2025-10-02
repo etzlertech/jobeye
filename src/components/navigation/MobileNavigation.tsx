@@ -263,15 +263,14 @@ export function MobileNavigation({
         }
 
         .nav-drawer {
-          position: fixed;
+          position: absolute;
           top: 0;
-          left: 50%;
-          transform: translateX(-50%) translateX(-100%);
+          left: 0;
           height: 100vh;
           width: 280px;
-          max-width: 375px;
           background: #000;
           border-right: 1px solid #333;
+          transform: translateX(-100%);
           transition: transform 0.3s ease;
           z-index: 1002;
           display: flex;
@@ -279,7 +278,7 @@ export function MobileNavigation({
         }
 
         .nav-drawer.open {
-          transform: translateX(-50%) translateX(0);
+          transform: translateX(0);
         }
 
         .nav-header {
