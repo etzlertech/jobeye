@@ -48,7 +48,7 @@
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 
 ### Contract Tests
-- [ ] T008 [P] Contract test POST /api/intent/classify in tests/domains/intent/api/test_classify_contract.test.ts
+- [x] T008 [P] Contract test POST /api/intent/classify in tests/domains/intent/api/test_classify_contract.test.ts
 - [ ] T009 [P] Contract test POST /api/intent/feedback in tests/domains/intent/api/test_feedback_contract.test.ts
 - [ ] T010 [P] Contract test POST /api/supervisor/inventory/add in tests/domains/supervisor/api/test_inventory_add_contract.test.ts
 - [ ] T011 [P] Contract test POST /api/supervisor/jobs/create in tests/domains/supervisor/api/test_jobs_create_contract.test.ts

@@ -38,6 +38,7 @@ export default function JobLoadChecklistStartPage() {
   ]);
   const [detections, setDetections] = useState<Detection[]>([]);
   const [showFlash, setShowFlash] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -377,8 +378,12 @@ export default function JobLoadChecklistStartPage() {
       setDetectionStatus('✅ LIST COMPLETED!');
       setIsAnalyzing(false);
       
-      // Play success sound
+      // Play success sound and show confetti
       playSuccessSound();
+      setShowConfetti(true);
+      
+      // Stop confetti after 3 seconds
+      setTimeout(() => setShowConfetti(false), 3000);
       
       // Stop the interval immediately
       if (analysisIntervalRef.current) {
@@ -656,8 +661,60 @@ export default function JobLoadChecklistStartPage() {
           50% { opacity: 1; }
           100% { opacity: 0; }
         }
+
+        .confetti-container {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          overflow: hidden;
+          z-index: 10000;
+        }
+
+        .confetti {
+          position: absolute;
+          width: 10px;
+          height: 10px;
+          background: #f0f;
+          animation: confetti-fall 3s linear forwards;
+        }
+
+        .confetti:nth-child(2n) { background: #0ff; width: 8px; height: 8px; }
+        .confetti:nth-child(3n) { background: #ff0; width: 6px; height: 6px; }
+        .confetti:nth-child(4n) { background: #0f0; }
+        .confetti:nth-child(5n) { background: #f00; width: 12px; height: 12px; }
+        .confetti:nth-child(6n) { background: #00f; }
+        .confetti:nth-child(7n) { background: #fff; width: 7px; height: 7px; }
+
+        @keyframes confetti-fall {
+          0% {
+            transform: translateY(-100vh) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(100vh) rotate(720deg);
+            opacity: 0;
+          }
+        }
       `}</style>
       {showFlash && <div className="flash-overlay" />}
+      {showConfetti && (
+        <div className="confetti-container">
+          {[...Array(50)].map((_, i) => (
+            <div
+              key={i}
+              className="confetti"
+              style={{
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${2 + Math.random() * 2}s`
+              }}
+            />
+          ))}
+        </div>
+      )}
       <div className="mobile-screen">
         <div className="container-1">
           <div className="company-name">Evergold Landscaping</div>
