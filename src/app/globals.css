@@ -17,6 +17,61 @@ body {
     )
     rgb(var(--background-start-rgb));
   font-family: system-ui, -apple-system, sans-serif;
+  cursor: crosshair;
+}
+
+/* Custom golden cursor with glow effect */
+html {
+  /* Golden cursor as CSS property for better browser support */
+  --golden-cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="%23FFD700" stroke-width="2"/><circle cx="12" cy="12" r="6" fill="%23FFD700" opacity="0.9"/><circle cx="12" cy="12" r="2" fill="%23FFFFFF"/></svg>') 12 12, crosshair;
+  
+  --golden-pointer: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7 2 L7 18 L11 14 L14 20 L17 19 L14 13 L19 13 Z" fill="%23FFD700" stroke="%23FFA500" stroke-width="1"/></svg>') 7 2, pointer;
+}
+
+body, * {
+  cursor: var(--golden-cursor);
+}
+
+/* Interactive elements with pointer cursor */
+button, 
+a, 
+input[type="button"], 
+input[type="submit"], 
+select, 
+[role="button"], 
+.cursor-pointer,
+.btn-primary,
+.btn-secondary {
+  cursor: var(--golden-pointer) !important;
+}
+
+/* Text inputs and textareas keep text cursor */
+input[type="text"], 
+input[type="email"], 
+input[type="password"], 
+input[type="tel"], 
+input[type="number"], 
+input[type="date"], 
+input[type="time"], 
+textarea {
+  cursor: text;
+}
+
+/* Add glow effect to the entire page for visibility */
+@media (prefers-color-scheme: dark) {
+  body::after {
+    content: '';
+    position: fixed;
+    top: var(--mouse-y, -100px);
+    left: var(--mouse-x, -100px);
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    mix-blend-mode: screen;
+  }
 }
 
 /* Control Tower specific styles */
