@@ -148,27 +148,40 @@ export default function SignInPage() {
       priority: 'critical',
       disabled: authState.isLoading || !authState.email || !authState.password,
       onClick: handleSignIn,
-      className: 'bg-emerald-600 text-white hover:bg-emerald-700'
+      className: 'bg-emerald-600 text-white hover:bg-emerald-700 text-lg py-4'
     });
 
-    if (authState.email && authState.password) {
-      addAction({
-        id: 'demo-crew',
-        label: 'Demo as Crew',
-        priority: 'medium',
-        onClick: () => handleDemoLogin('crew'),
-        className: 'bg-blue-600 text-white hover:bg-blue-700'
-      });
+    // Always show demo buttons for easy access
+    addAction({
+      id: 'demo-crew',
+      label: 'Demo: Crew Member',
+      priority: 'high',
+      disabled: authState.isLoading,
+      onClick: () => handleDemoLogin('crew'),
+      className: 'bg-blue-600 text-white hover:bg-blue-700 text-lg py-4',
+      icon: Wrench
+    });
 
-      addAction({
-        id: 'demo-supervisor',
-        label: 'Demo as Supervisor',
-        priority: 'medium',
-        onClick: () => handleDemoLogin('supervisor'),
-        className: 'bg-purple-600 text-white hover:bg-purple-700'
-      });
-    }
-  }, [authState.email, authState.password, authState.isLoading, addAction, clearActions]);
+    addAction({
+      id: 'demo-supervisor',
+      label: 'Demo: Supervisor',
+      priority: 'high',
+      disabled: authState.isLoading,
+      onClick: () => handleDemoLogin('supervisor'),
+      className: 'bg-purple-600 text-white hover:bg-purple-700 text-lg py-4',
+      icon: Shield
+    });
+
+    addAction({
+      id: 'demo-admin',
+      label: 'Demo: Admin',
+      priority: 'medium',
+      disabled: authState.isLoading,
+      onClick: () => handleDemoLogin('admin'),
+      className: 'bg-orange-600 text-white hover:bg-orange-700 text-lg py-4',
+      icon: Crown
+    });
+  }, [authState.isLoading, addAction, clearActions]);
 
   const handleInputChange = (field: keyof Pick<AuthState, 'email' | 'password'>) => 
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -214,30 +227,22 @@ export default function SignInPage() {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // Demo credentials (in a real app, these would be from environment)
-      const demoCredentials = {
-        crew: { email: 'crew@demo.com', password: 'demo123' },
-        supervisor: { email: 'supervisor@demo.com', password: 'demo123' },
-        admin: { email: 'admin@demo.com', password: 'demo123' }
-      };
-
-      const { email, password } = demoCredentials[role];
+      // For demo purposes, we'll bypass authentication by setting cookies
+      setDetectedRole(role);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        throw error;
+      // Set demo cookies for middleware
+      if (typeof window !== 'undefined') {
+        document.cookie = `demoRole=${role}; path=/; max-age=3600`; // 1 hour
+        document.cookie = `isDemo=true; path=/; max-age=3600`; // 1 hour
       }
 
-      if (data.user) {
-        setDetectedRole(role);
-        setTimeout(() => {
-          router.push(roleRoutes[role]);
-        }, 1500);
-      }
+      // Simulate authentication delay
+      setTimeout(() => {
+        // Navigate to the appropriate dashboard
+        const targetRoute = roleRoutes[role as keyof typeof roleRoutes] || '/crew';
+        router.push(targetRoute);
+      }, 1500);
+
     } catch (error) {
       setAuthState(prev => ({
         ...prev,
@@ -376,9 +381,9 @@ export default function SignInPage() {
           <div className="pt-4">
             <ButtonLimiter
               actions={actions}
-              maxVisibleButtons={4}
+              maxVisibleButtons={5}
               showVoiceButton={false} // Disabled for security on auth pages
-              layout="grid"
+              layout="stack"
               buttonSize="lg"
               className="w-full"
             />

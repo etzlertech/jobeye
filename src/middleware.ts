@@ -128,19 +128,33 @@ export async function middleware(request: NextRequest) {
       return res;
     }
 
-    // Get session
-    const { data: { session }, error } = await supabase.auth.getSession();
+    // Check for demo mode first
+    const demoRole = request.cookies.get('demoRole')?.value;
+    const isDemo = request.cookies.get('isDemo')?.value === 'true';
 
-    if (error || !session) {
-      // Redirect to sign-in for protected routes
-      const signInUrl = new URL('/sign-in', request.url);
-      signInUrl.searchParams.set('redirectTo', pathname);
-      return NextResponse.redirect(signInUrl);
+    let userRole: string;
+    let userId: string;
+    let session: any = null;
+
+    if (isDemo && demoRole) {
+      // Demo mode - bypass authentication
+      userRole = demoRole;
+      userId = `demo-${demoRole}-user`;
+    } else {
+      // Normal authentication flow
+      const { data: { session: authSession }, error } = await supabase.auth.getSession();
+
+      if (error || !authSession) {
+        // Redirect to sign-in for protected routes
+        const signInUrl = new URL('/sign-in', request.url);
+        signInUrl.searchParams.set('redirectTo', pathname);
+        return NextResponse.redirect(signInUrl);
+      }
+
+      session = authSession;
+      userRole = session.user.app_metadata?.role as string;
+      userId = session.user.id;
     }
-
-    // Get user role from session
-    const userRole = session.user.app_metadata?.role as string;
-    const userId = session.user.id;
 
     if (!userRole) {
       // User has no role assigned - redirect to sign-in
@@ -165,7 +179,8 @@ export async function middleware(request: NextRequest) {
       const requestHeaders = new Headers(request.headers);
       requestHeaders.set('x-user-id', userId);
       requestHeaders.set('x-user-role', userRole);
-      requestHeaders.set('x-tenant-id', session.user.app_metadata?.company_id || '');
+      requestHeaders.set('x-tenant-id', session?.user?.app_metadata?.company_id || 'demo-company');
+      requestHeaders.set('x-is-demo', isDemo ? 'true' : 'false');
       
       return NextResponse.next({
         request: {
