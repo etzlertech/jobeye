@@ -1,7 +1,7 @@
 {
-  "name": "JobEye Field Service",
+  "name": "JobEye MVP Intent-Driven",
   "short_name": "JobEye",
-  "description": "Voice-first field service management for supervisors and crew members",
+  "description": "Voice-first field service management with AI intent recognition for supervisors and crew members",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -47,11 +47,25 @@
   ],
   "shortcuts": [
     {
-      "name": "Add Inventory",
-      "short_name": "Add Item",
-      "description": "Quickly add new inventory using camera",
-      "url": "/supervisor/inventory?action=add",
-      "icons": [{ "src": "/icons/add-inventory.png", "sizes": "96x96" }]
+      "name": "Camera Intent",
+      "short_name": "Camera",
+      "description": "Open camera with AI intent recognition",
+      "url": "/supervisor/inventory?camera=true",
+      "icons": [{ "src": "/icons/camera-intent.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Voice Command",
+      "short_name": "Voice",
+      "description": "Start voice command mode",
+      "url": "/?voice=true",
+      "icons": [{ "src": "/icons/voice-command.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Load Verify",
+      "short_name": "Verify",
+      "description": "Verify equipment load with AI vision",
+      "url": "/crew/load-verify",
+      "icons": [{ "src": "/icons/load-verify.png", "sizes": "96x96" }]
     },
     {
       "name": "My Jobs",
@@ -63,13 +77,62 @@
   ],
   "features": [
     "screen-wake-lock",
-    "idle-detection",
-    "web-share"
+    "idle-detection", 
+    "web-share",
+    "camera",
+    "microphone",
+    "geolocation",
+    "background-sync"
+  ],
+  "permissions": [
+    "camera",
+    "microphone",
+    "geolocation",
+    "background-sync",
+    "screen-wake-lock"
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "jobeye",
+      "url": "/?intent=%s"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/upload",
+      "accept": {
+        "image/*": [".jpg", ".jpeg", ".png", ".webp"],
+        "audio/*": [".wav", ".mp3", ".m4a"]
+      }
+    }
   ],
   "capture_links": "existing_client_event",
   "launch_handler": {
     "client_mode": "focus-existing"
   },
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
   "prefer_related_applications": false,
-  "related_applications": []
+  "related_applications": [],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "photo",
+          "accept": ["image/*"]
+        },
+        {
+          "name": "voice",
+          "accept": ["audio/*"]
+        }
+      ]
+    }
+  }
 }

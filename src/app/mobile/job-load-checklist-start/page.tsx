@@ -53,6 +53,9 @@ export default function JobLoadChecklistStartPage() {
   const successAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const inputRefs = useRef<HTMLInputElement[]>([]);
+  const analysisQueue = useRef<Set<number>>(new Set()); // Track frames in flight
+  const sessionStartTime = useRef<number>(0); // Track session duration
+  const frameCount = useRef<number>(0); // Track total frames sent
 
   const startCamera = async () => {
     try {
@@ -97,8 +100,22 @@ export default function JobLoadChecklistStartPage() {
       return;
     }
 
+    // Generate unique frame ID for tracking
+    const frameId = Date.now();
+    
+    // Check if we have too many concurrent requests (limit to 3)
+    if (analysisQueue.current.size >= 3) {
+      console.log(`[VLM] Skipping frame ${frameId} - too many concurrent analyses (${analysisQueue.current.size})`);
+      return;
+    }
+
+    // Add to queue and increment frame count
+    analysisQueue.current.add(frameId);
+    frameCount.current++;
+    
     const timestamp = new Date().toISOString();
-    console.log(`[VLM] ${timestamp} - Starting analysis`);
+    const elapsed = (Date.now() - sessionStartTime.current) / 1000;
+    console.log(`[VLM] ${timestamp} - Starting analysis #${frameId} (${analysisQueue.current.size} in flight, ${frameCount.current} total, ${elapsed.toFixed(1)}s elapsed)`);
 
     try {
       // Only look for unchecked items
@@ -122,12 +139,15 @@ export default function JobLoadChecklistStartPage() {
           setStream(null);
         }
 
+        // Clear queue
+        analysisQueue.current.clear();
         return;
       }
 
       const expectedItems = uncheckedItems.map(item => item.name);
+      const estimatedCost = (frameCount.current * 0.039).toFixed(3);
 
-      setDetectionStatus(`🔍 Analyzing (${uncheckedItems.length} remaining)...`);
+      setDetectionStatus(`🔍 Analyzing (${uncheckedItems.length} remaining, ${analysisQueue.current.size} frames processing, ~$${estimatedCost})...`);
       console.log(`[VLM] Unchecked items remaining (${uncheckedItems.length}):`, expectedItems);
       console.log(`[VLM] Already detected (${checklist.length - uncheckedItems.length}):`, checklist.filter(item => item.checked).map(item => item.name));
 
@@ -144,16 +164,16 @@ export default function JobLoadChecklistStartPage() {
       });
       const requestDuration = performance.now() - requestStart;
 
-      console.log(`[VLM] API Response: ${response.status} ${response.statusText} (${requestDuration.toFixed(0)}ms)`);
+      console.log(`[VLM] Frame #${frameId} API Response: ${response.status} ${response.statusText} (${requestDuration.toFixed(0)}ms)`);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[VLM] API Error Response:`, errorText);
+        console.error(`[VLM] Frame #${frameId} API Error:`, errorText);
         throw new Error(`API error: ${response.statusText}`);
       }
 
       const result = await response.json();
-      console.log(`[VLM] Success - Detections:`, {
+      console.log(`[VLM] Frame #${frameId} Success - Detections:`, {
         count: result.detections?.length || 0,
         detections: result.detections,
         winner: result.winner,
@@ -217,18 +237,20 @@ export default function JobLoadChecklistStartPage() {
           return sorted;
         });
       } else {
-        console.log('[VLM] No detections in response');
+        console.log(`[VLM] Frame #${frameId} - No detections in response`);
         setDetections([]);
-        setDetectionStatus('🔍 No items detected');
       }
     } catch (error: any) {
-      console.error('[VLM] Detection error:', {
+      console.error(`[VLM] Frame #${frameId} Detection error:`, {
         message: error.message,
         stack: error.stack,
         timestamp: new Date().toISOString()
       });
-      setDetectionStatus('❌ Detection failed');
-      setDetections([]);
+      setDetectionStatus(`❌ Frame #${frameId} failed`);
+    } finally {
+      // Remove from queue when done
+      analysisQueue.current.delete(frameId);
+      console.log(`[VLM] Frame #${frameId} completed. ${analysisQueue.current.size} still processing.`);
     }
   };
 
@@ -236,15 +258,33 @@ export default function JobLoadChecklistStartPage() {
     setIsAnalyzing(true);
     setDetectionStatus('Starting analysis...');
 
-    // Wait for video to be fully ready (fixes initial frame capture error)
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Reset session tracking
+    sessionStartTime.current = Date.now();
+    frameCount.current = 0;
+    analysisQueue.current.clear();
 
-    // Run VLM detection every 2.5 seconds to stay under Gemini's 10 req/min rate limit
-    // 2.5s = ~24 requests/min (safely under 10/min per model limit)
-    analyzeFrame(); // Initial analysis
+    // Minimal delay for video to initialize (reduced from 500ms to 100ms)
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Send first frame immediately for quick initial capture
+    console.log('[VLM] Sending initial frame immediately...');
+    analyzeFrame();
+
+    // Set aggressive capture interval: 0.5 seconds = 2 fps
+    // This allows 3-4 frames in 2 seconds as requested
+    // Cost: ~$0.039 per frame, max 30 frames in 15 seconds = $1.17 max
     analysisIntervalRef.current = setInterval(() => {
+      // Check 15-second safety limit
+      const elapsed = (Date.now() - sessionStartTime.current) / 1000;
+      if (elapsed >= 15) {
+        console.log(`[VLM] 🔒 15-second safety limit reached. Stopping analysis. Frames sent: ${frameCount.current}, Est. cost: $${(frameCount.current * 0.039).toFixed(3)}`);
+        setDetectionStatus(`🔒 15s limit reached (${frameCount.current} frames, ~$${(frameCount.current * 0.039).toFixed(2)})`);
+        stopCamera();
+        return;
+      }
+      
       analyzeFrame();
-    }, 2500); // 0.4 fps to avoid rate limits
+    }, 500); // 2 fps for responsive detection
   };
 
   const stopCamera = () => {
@@ -256,7 +296,14 @@ export default function JobLoadChecklistStartPage() {
       clearInterval(analysisIntervalRef.current);
       analysisIntervalRef.current = null;
     }
+    
+    // Show final session statistics
+    const elapsed = (Date.now() - sessionStartTime.current) / 1000;
+    const finalCost = (frameCount.current * 0.039).toFixed(3);
+    console.log(`[VLM] 📊 Session ended: ${frameCount.current} frames in ${elapsed.toFixed(1)}s, Est. cost: $${finalCost}`);
+    
     setIsAnalyzing(false);
+    analysisQueue.current.clear();
   };
 
   const toggleChecklistItem = (id: string) => {

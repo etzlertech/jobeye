@@ -1,14 +1,105 @@
 /**
- * @file /src/lib/offline/offline-db.ts
- * @purpose IndexedDB wrapper for offline storage and sync
- * @phase 3
- * @domain Core Infrastructure
- * @complexity_budget 300
- * @test_coverage 80%
+ * AGENT DIRECTIVE BLOCK
+ * 
+ * file: /src/lib/offline/offline-db.ts
+ * phase: 3
+ * domain: offline
+ * purpose: Enhanced IndexedDB wrapper for offline data storage and sync queue management
+ * spec_ref: 007-mvp-intent-driven/contracts/offline-db.md
+ * complexity_budget: 350
+ * migrations_touched: []
+ * state_machine: {
+ *   states: ['connecting', 'connected', 'syncing', 'error'],
+ *   transitions: [
+ *     'connecting->connected: dbOpened()',
+ *     'connected->syncing: startSync()',
+ *     'syncing->connected: syncComplete()',
+ *     'connected->error: dbError()'
+ *   ]
+ * }
+ * estimated_llm_cost: {
+ *   "offlineDb": "$0.00 (no AI operations)"
+ * }
+ * offline_capability: CORE
+ * dependencies: {
+ *   internal: ['@/core/errors/error-types'],
+ *   external: [],
+ *   supabase: []
+ * }
+ * exports: ['OfflineDatabase', 'SyncQueueItem', 'OfflineEntity']
+ * voice_considerations: Store voice recordings and transcripts for offline access
+ * test_requirements: {
+ *   coverage: 90,
+ *   unit_tests: 'tests/lib/offline/offline-db.test.ts'
+ * }
+ * tasks: [
+ *   'Enhance IndexedDB schema for MVP features',
+ *   'Add voice and image blob storage',
+ *   'Implement priority-based sync queue',
+ *   'Add conflict resolution strategies'
+ * ]
  */
 
 import type { Job, EquipmentItem } from '@/types/database';
+import { AppError } from '@/core/errors/error-types';
 
+export interface SyncQueueItem {
+  id?: string;
+  operation: 'create' | 'update' | 'delete';
+  entity: string;
+  entityId?: string;
+  data: any;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  timestamp: number;
+  retryCount?: number;
+  maxRetries?: number;
+  conflictResolution?: 'overwrite' | 'merge' | 'skip';
+  syncStatus?: 'pending' | 'syncing' | 'completed' | 'failed';
+  error?: string;
+}
+
+export interface OfflineEntity {
+  id: string;
+  entity: string;
+  data: any;
+  timestamp: number;
+  syncStatus: 'pending' | 'synced' | 'error';
+  lastModified: number;
+}
+
+export interface VoiceRecording {
+  id: string;
+  blob: Blob;
+  transcript?: string;
+  duration?: number;
+  timestamp: number;
+  jobId?: string;
+  syncStatus: 'pending' | 'synced' | 'error';
+}
+
+export interface ImageData {
+  id: string;
+  blob: Blob;
+  thumbnailBlob?: Blob;
+  metadata: {
+    width?: number;
+    height?: number;
+    type: string;
+    size: number;
+  };
+  timestamp: number;
+  jobId?: string;
+  syncStatus: 'pending' | 'synced' | 'error';
+}
+
+export interface CachedEntity<T = any> {
+  id: string;
+  data: T;
+  timestamp: number;
+  expiresAt?: number;
+}
+
+// Legacy interface for backward compatibility
 export interface OfflineQueueItem {
   id?: number;
   timestamp: number;
@@ -21,18 +112,11 @@ export interface OfflineQueueItem {
   error?: string;
 }
 
-export interface CachedEntity<T = any> {
-  id: string;
-  data: T;
-  timestamp: number;
-  expiresAt?: number;
-}
-
 export class OfflineDatabase {
   private static instance: OfflineDatabase;
   private db: IDBDatabase | null = null;
   private readonly DB_NAME = 'jobeye_offline';
-  private readonly DB_VERSION = 1;
+  private readonly DB_VERSION = 2;
 
   private constructor() {}
 
@@ -58,7 +142,7 @@ export class OfflineDatabase {
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         
-        // Offline sync queue
+        // Enhanced sync queue with priority support
         if (!db.objectStoreNames.contains('sync_queue')) {
           const syncStore = db.createObjectStore('sync_queue', {
             keyPath: 'id',
@@ -67,6 +151,27 @@ export class OfflineDatabase {
           syncStore.createIndex('syncStatus', 'syncStatus', { unique: false });
           syncStore.createIndex('timestamp', 'timestamp', { unique: false });
           syncStore.createIndex('entity', 'entity', { unique: false });
+          syncStore.createIndex('priority', 'priority', { unique: false });
+        }
+
+        // Voice recordings with blob storage
+        if (!db.objectStoreNames.contains('voice_recordings')) {
+          const voiceStore = db.createObjectStore('voice_recordings', {
+            keyPath: 'id'
+          });
+          voiceStore.createIndex('timestamp', 'timestamp', { unique: false });
+          voiceStore.createIndex('jobId', 'jobId', { unique: false });
+          voiceStore.createIndex('syncStatus', 'syncStatus', { unique: false });
+        }
+
+        // Image data with blob storage and thumbnails
+        if (!db.objectStoreNames.contains('image_data')) {
+          const imageStore = db.createObjectStore('image_data', {
+            keyPath: 'id'
+          });
+          imageStore.createIndex('timestamp', 'timestamp', { unique: false });
+          imageStore.createIndex('jobId', 'jobId', { unique: false });
+          imageStore.createIndex('syncStatus', 'syncStatus', { unique: false });
         }
 
         // Cached jobs
@@ -101,6 +206,16 @@ export class OfflineDatabase {
             keyPath: 'imageHash'
           });
           intentStore.createIndex('timestamp', 'timestamp', { unique: false });
+        }
+
+        // Offline entities for general purpose storage
+        if (!db.objectStoreNames.contains('offline_entities')) {
+          const entityStore = db.createObjectStore('offline_entities', {
+            keyPath: 'id'
+          });
+          entityStore.createIndex('entity', 'entity', { unique: false });
+          entityStore.createIndex('timestamp', 'timestamp', { unique: false });
+          entityStore.createIndex('syncStatus', 'syncStatus', { unique: false });
         }
       };
     });
@@ -312,6 +427,341 @@ export class OfflineDatabase {
       };
       
       request.onerror = () => reject(new Error('Failed to clear old sync items'));
+    });
+  }
+
+  // Enhanced sync queue methods with priority support
+  async queuePriorityOperation(operation: Omit<SyncQueueItem, 'id' | 'timestamp'>): Promise<void> {
+    await this.ensureInitialized();
+    
+    const item: SyncQueueItem = {
+      ...operation,
+      id: `sync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      syncStatus: 'pending',
+      retryCount: 0,
+      maxRetries: operation.maxRetries || 3
+    };
+
+    const tx = this.db!.transaction(['sync_queue'], 'readwrite');
+    const store = tx.objectStore('sync_queue');
+    
+    return new Promise((resolve, reject) => {
+      const request = store.add(item);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(new Error('Failed to queue priority operation'));
+    });
+  }
+
+  async getPriorityOperations(limit = 50): Promise<SyncQueueItem[]> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['sync_queue'], 'readonly');
+    const store = tx.objectStore('sync_queue');
+    
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => {
+        const items = request.result as SyncQueueItem[];
+        // Sort by priority (critical > high > medium > low) then by timestamp
+        const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+        const sorted = items
+          .filter(item => item.syncStatus === 'pending')
+          .sort((a, b) => {
+            const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+            if (priorityDiff !== 0) return priorityDiff;
+            return a.timestamp - b.timestamp;
+          })
+          .slice(0, limit);
+        resolve(sorted);
+      };
+      request.onerror = () => reject(new Error('Failed to get priority operations'));
+    });
+  }
+
+  // Voice recording methods
+  async storeVoiceRecording(recording: VoiceRecording): Promise<void> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['voice_recordings'], 'readwrite');
+    const store = tx.objectStore('voice_recordings');
+    
+    return new Promise((resolve, reject) => {
+      const request = store.put(recording);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(new Error('Failed to store voice recording'));
+    });
+  }
+
+  async getVoiceRecording(id: string): Promise<VoiceRecording | null> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['voice_recordings'], 'readonly');
+    const store = tx.objectStore('voice_recordings');
+    
+    return new Promise((resolve, reject) => {
+      const request = store.get(id);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(new Error('Failed to get voice recording'));
+    });
+  }
+
+  async getVoiceRecordingsByJob(jobId: string): Promise<VoiceRecording[]> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['voice_recordings'], 'readonly');
+    const store = tx.objectStore('voice_recordings');
+    const index = store.index('jobId');
+    
+    return new Promise((resolve, reject) => {
+      const request = index.getAll(jobId);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(new Error('Failed to get voice recordings by job'));
+    });
+  }
+
+  async getPendingVoiceRecordings(): Promise<VoiceRecording[]> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['voice_recordings'], 'readonly');
+    const store = tx.objectStore('voice_recordings');
+    const index = store.index('syncStatus');
+    
+    return new Promise((resolve, reject) => {
+      const request = index.getAll('pending');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(new Error('Failed to get pending voice recordings'));
+    });
+  }
+
+  async updateVoiceRecordingStatus(id: string, syncStatus: VoiceRecording['syncStatus']): Promise<void> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['voice_recordings'], 'readwrite');
+    const store = tx.objectStore('voice_recordings');
+    
+    return new Promise((resolve, reject) => {
+      const getRequest = store.get(id);
+      
+      getRequest.onsuccess = () => {
+        const recording = getRequest.result;
+        if (!recording) {
+          reject(new Error('Voice recording not found'));
+          return;
+        }
+        
+        recording.syncStatus = syncStatus;
+        
+        const updateRequest = store.put(recording);
+        updateRequest.onsuccess = () => resolve();
+        updateRequest.onerror = () => reject(new Error('Failed to update voice recording status'));
+      };
+      
+      getRequest.onerror = () => reject(new Error('Failed to get voice recording'));
+    });
+  }
+
+  // Image data methods
+  async storeImageData(imageData: ImageData): Promise<void> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['image_data'], 'readwrite');
+    const store = tx.objectStore('image_data');
+    
+    return new Promise((resolve, reject) => {
+      const request = store.put(imageData);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(new Error('Failed to store image data'));
+    });
+  }
+
+  async getImageData(id: string): Promise<ImageData | null> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['image_data'], 'readonly');
+    const store = tx.objectStore('image_data');
+    
+    return new Promise((resolve, reject) => {
+      const request = store.get(id);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(new Error('Failed to get image data'));
+    });
+  }
+
+  async getImageDataByJob(jobId: string): Promise<ImageData[]> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['image_data'], 'readonly');
+    const store = tx.objectStore('image_data');
+    const index = store.index('jobId');
+    
+    return new Promise((resolve, reject) => {
+      const request = index.getAll(jobId);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(new Error('Failed to get image data by job'));
+    });
+  }
+
+  async getPendingImageData(): Promise<ImageData[]> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['image_data'], 'readonly');
+    const store = tx.objectStore('image_data');
+    const index = store.index('syncStatus');
+    
+    return new Promise((resolve, reject) => {
+      const request = index.getAll('pending');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(new Error('Failed to get pending image data'));
+    });
+  }
+
+  async updateImageDataStatus(id: string, syncStatus: ImageData['syncStatus']): Promise<void> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['image_data'], 'readwrite');
+    const store = tx.objectStore('image_data');
+    
+    return new Promise((resolve, reject) => {
+      const getRequest = store.get(id);
+      
+      getRequest.onsuccess = () => {
+        const imageData = getRequest.result;
+        if (!imageData) {
+          reject(new Error('Image data not found'));
+          return;
+        }
+        
+        imageData.syncStatus = syncStatus;
+        
+        const updateRequest = store.put(imageData);
+        updateRequest.onsuccess = () => resolve();
+        updateRequest.onerror = () => reject(new Error('Failed to update image data status'));
+      };
+      
+      getRequest.onerror = () => reject(new Error('Failed to get image data'));
+    });
+  }
+
+  // Generic offline entity methods
+  async storeOfflineEntity(entity: OfflineEntity): Promise<void> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['offline_entities'], 'readwrite');
+    const store = tx.objectStore('offline_entities');
+    
+    return new Promise((resolve, reject) => {
+      const request = store.put(entity);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(new Error('Failed to store offline entity'));
+    });
+  }
+
+  async getOfflineEntity(id: string): Promise<OfflineEntity | null> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['offline_entities'], 'readonly');
+    const store = tx.objectStore('offline_entities');
+    
+    return new Promise((resolve, reject) => {
+      const request = store.get(id);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(new Error('Failed to get offline entity'));
+    });
+  }
+
+  async getOfflineEntitiesByType(entity: string): Promise<OfflineEntity[]> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['offline_entities'], 'readonly');
+    const store = tx.objectStore('offline_entities');
+    const index = store.index('entity');
+    
+    return new Promise((resolve, reject) => {
+      const request = index.getAll(entity);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(new Error('Failed to get offline entities by type'));
+    });
+  }
+
+  async getPendingOfflineEntities(): Promise<OfflineEntity[]> {
+    await this.ensureInitialized();
+    
+    const tx = this.db!.transaction(['offline_entities'], 'readonly');
+    const store = tx.objectStore('offline_entities');
+    const index = store.index('syncStatus');
+    
+    return new Promise((resolve, reject) => {
+      const request = index.getAll('pending');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(new Error('Failed to get pending offline entities'));
+    });
+  }
+
+  // Cleanup methods for storage management
+  async cleanupExpiredData(maxAge = 7 * 24 * 60 * 60 * 1000): Promise<void> {
+    await this.ensureInitialized();
+    
+    const cutoff = Date.now() - maxAge;
+    const stores = ['voice_recordings', 'image_data', 'offline_entities'];
+    
+    for (const storeName of stores) {
+      const tx = this.db!.transaction([storeName], 'readwrite');
+      const store = tx.objectStore(storeName);
+      const index = store.index('timestamp');
+      
+      await new Promise<void>((resolve, reject) => {
+        const request = index.openCursor();
+        
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (cursor) {
+            const item = cursor.value;
+            if (item.timestamp < cutoff && item.syncStatus === 'synced') {
+              cursor.delete();
+            }
+            cursor.continue();
+          } else {
+            resolve();
+          }
+        };
+        
+        request.onerror = () => reject(new Error(`Failed to cleanup ${storeName}`));
+      });
+    }
+  }
+
+  async getStorageStats(): Promise<{
+    voiceRecordings: number;
+    imageData: number;
+    offlineEntities: number;
+    pendingSync: number;
+  }> {
+    await this.ensureInitialized();
+    
+    const [voiceCount, imageCount, entityCount, syncCount] = await Promise.all([
+      this.getStoreCount('voice_recordings'),
+      this.getStoreCount('image_data'),
+      this.getStoreCount('offline_entities'),
+      this.getStoreCount('sync_queue')
+    ]);
+    
+    return {
+      voiceRecordings: voiceCount,
+      imageData: imageCount,
+      offlineEntities: entityCount,
+      pendingSync: syncCount
+    };
+  }
+
+  private async getStoreCount(storeName: string): Promise<number> {
+    const tx = this.db!.transaction([storeName], 'readonly');
+    const store = tx.objectStore(storeName);
+    
+    return new Promise((resolve, reject) => {
+      const request = store.count();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(new Error(`Failed to count ${storeName}`));
     });
   }
 
