@@ -257,10 +257,31 @@ Every TypeScript/JavaScript file MUST start with an AGENT DIRECTIVE BLOCK contai
    ```
 
 3. **Analyze Production Failures**
-   - API routes returning 404 = Missing dependencies/build failures
-   - Database connection issues = Environment variables or RLS problems
-   - Storage access issues = Missing buckets or permissions
-   - Security header issues = Middleware or Next.js configuration
+   - **API Route Response Errors**:
+     ```
+     Error: No response is returned from route handler '/app/src/app/api/*/route.ts'
+     ```
+     - Fix: Ensure all route handlers return NextResponse in all code paths
+     - Common cause: Wrapper functions not properly returning responses
+   
+   - **Static Generation Errors**:
+     ```
+     ReferenceError: navigator is not defined
+     ```
+     - Fix: Move browser-only code into useEffect or client components
+     - Use typeof checks: `if (typeof window !== 'undefined')`
+   
+   - **Import/Export Errors**:
+     ```
+     Attempted import error: 'X' is not exported from '@/path/to/module'
+     ```
+     - Fix: Check export statements match import expectations
+     - Common with service classes and utility functions
+   
+   - **Other Common Issues**:
+     - API routes returning 404 = Missing dependencies/build failures
+     - Database connection issues = Environment variables or RLS problems
+     - Storage access issues = Missing buckets or permissions
 
 4. **Benefits of This Approach**
    - **Real Production Environment**: Tests actual deployment, not just local dev
