@@ -44,7 +44,6 @@ export async function GET() {
         zip: '12345'
       },
       is_active: true,
-      created_by: 'api-demo-crud',
       metadata: {
         source: 'Railway CRUD Demo',
         timestamp: new Date().toISOString()
@@ -107,8 +106,7 @@ export async function GET() {
       status: 'scheduled',
       priority: 'medium',
       job_type: 'maintenance',
-      description: 'Demo job created via CRUD test',
-      created_by: 'api-demo-crud'
+      description: 'Demo job created via CRUD test'
     };
 
     const { data: job, error: jobError } = await supabase
