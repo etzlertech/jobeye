@@ -16,11 +16,14 @@ export default function Home() {
         }
 
         .mobile-screen {
-          width: 100vw;
+          width: 100%;
           max-width: 375px;
+          height: 100vh;
+          max-height: 812px;
           margin: 0 auto;
           background: #000;
-          min-height: 100vh;
+          color: white;
+          overflow: hidden;
           display: flex;
           flex-direction: column;
           padding: 10px;
@@ -214,24 +217,24 @@ export default function Home() {
 
         @media (min-width: 768px) {
           .mobile-screen {
-            max-width: 768px;
-            padding: 20px;
+            max-width: 375px;
+            padding: 10px;
           }
 
           .demo-grid {
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
           }
 
           .card-title {
-            font-size: 16px;
+            font-size: 14px;
           }
 
           .card-description {
-            font-size: 13px;
+            font-size: 11px;
           }
 
           .card-features {
-            font-size: 11px;
+            font-size: 9px;
           }
         }
       `}</style>

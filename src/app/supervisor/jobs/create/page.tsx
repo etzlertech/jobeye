@@ -599,53 +599,53 @@ export default function SupervisorJobCreatePage() {
             </div>
 
             {/* Schedule */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Schedule</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-white mb-4">Schedule</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
                     Date *
                   </label>
                   <input
                     type="date"
                     value={formData.scheduledDate}
                     onChange={(e) => setFormData(prev => ({ ...prev, scheduledDate: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
                     min={new Date().toISOString().split('T')[0]}
                     required
                   />
                   {validationErrors.scheduledDate && (
-                    <p className="text-red-600 text-sm mt-1">{validationErrors.scheduledDate}</p>
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.scheduledDate}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
                     Time *
                   </label>
                   <input
                     type="time"
                     value={formData.scheduledTime}
                     onChange={(e) => setFormData(prev => ({ ...prev, scheduledTime: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
                     required
                   />
                   {validationErrors.scheduledTime && (
-                    <p className="text-red-600 text-sm mt-1">{validationErrors.scheduledTime}</p>
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.scheduledTime}</p>
                   )}
                 </div>
               </div>
             </div>
 
             {/* Job Template */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Job Template (Optional)</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-white mb-4">Job Template (Optional)</h2>
               
               <select
                 value={formData.templateId}
                 onChange={(e) => setFormData(prev => ({ ...prev, templateId: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
               >
                 <option value="">No template</option>
                 {templates.map(template => (
@@ -657,14 +657,14 @@ export default function SupervisorJobCreatePage() {
             </div>
 
             {/* Special Instructions */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Special Instructions</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-white mb-4">Special Instructions</h2>
               
               <textarea
                 value={formData.specialInstructions}
                 onChange={(e) => setFormData(prev => ({ ...prev, specialInstructions: e.target.value }))}
                 placeholder="Any special instructions or notes for the crew..."
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
                 rows={4}
               />
             </div>

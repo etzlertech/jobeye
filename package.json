@@ -74,7 +74,10 @@
     "003:seed": "dotenv -e .env.local -- node scripts/seed-003.mjs",
     "003:preflight": "dotenv -e .env.local -- tsx scripts/preflight-003.ts",
     "003:full": "dotenv -e .env.local -- sh -c \"npm run 003:seed && npm run 003:preflight && jest --runTestsByPath tests/integration/scheduling-kits/kitRepo.int.test.ts tests/integration/scheduling-kits/kitService.int.test.ts tests/api/scheduling-kits.api.test.ts\"",
-    "003:rls": "dotenv -e .env.local -- tsx scripts/ci/rls-lint.ts"
+    "003:rls": "dotenv -e .env.local -- tsx scripts/ci/rls-lint.ts",
+    "ui:review": "tsx scripts/ui-review/browser-service.ts",
+    "ui:test": "tsx scripts/ui-review/railway-ui-test.ts",
+    "ui:capture": "tsx scripts/ui-review/browser-service.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.65.0",
@@ -145,6 +148,7 @@
     "lint-staged": "^15.0.0",
     "node-fetch": "^2.7.0",
     "node-mocks-http": "^1.17.2",
+    "playwright-core": "^1.55.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11",
     "ts-jest": "^29.1.0",

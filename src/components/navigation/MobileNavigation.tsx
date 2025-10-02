@@ -223,7 +223,8 @@ export function MobileNavigation({
         .nav-trigger {
           position: fixed;
           top: 1rem;
-          left: 1rem;
+          left: 50%;
+          transform: translateX(calc(-187.5px + 1rem));
           z-index: 1000;
         }
 
