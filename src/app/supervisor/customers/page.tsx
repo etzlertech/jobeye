@@ -45,6 +45,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import { createPortal } from 'react-dom';
 import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
 import { voiceProcessor } from '@/lib/voice/voice-processor';
@@ -267,6 +268,12 @@ export default function SupervisorCustomersPage() {
   if (view === 'list') {
     return (
       <div className="mobile-container">
+        {/* Mobile Navigation */}
+        <MobileNavigation 
+          currentRole="supervisor" 
+          onLogout={() => router.push('/sign-in')}
+        />
+
         {/* Header */}
         <div className="header-bar">
           <div className="flex items-center gap-3">

@@ -45,6 +45,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import {
   Plus,
   Search,
@@ -339,6 +340,12 @@ export default function SupervisorPropertiesPage() {
   if (view === 'list') {
     return (
       <div className="mobile-container">
+        {/* Mobile Navigation */}
+        <MobileNavigation 
+          currentRole="supervisor" 
+          onLogout={() => router.push('/sign-in')}
+        />
+
         {/* Header */}
         <div className="header-bar">
           <div>
@@ -670,6 +677,14 @@ export default function SupervisorPropertiesPage() {
   // Create/Edit Form View
   return (
     <div className="mobile-container">
+      {/* Mobile Navigation */}
+      <MobileNavigation 
+        currentRole="supervisor" 
+        onLogout={() => router.push('/sign-in')}
+        showBackButton={true}
+        backTo="/supervisor/properties"
+      />
+
       {/* Header */}
       <div className="header-bar">
         <div>

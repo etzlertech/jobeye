@@ -8,6 +8,7 @@ import { ReportGeneratorService } from './report-generator.service';
 import { FileScanner } from '../lib/file-scanner';
 import { MetricsCalculator } from '../lib/metrics-calculator';
 import { ErrorHandler, AnalysisError, ErrorCode } from '../lib/error-handler';
+import { StateManager } from '../lib/state-manager';
 import type { AnalysisOptions, AnalysisRequest } from '../types/api';
 import type { ProgressUpdate } from '../cli/progress';
 import type { AnalysisReport } from '../models/analysis-report.model';
@@ -45,6 +46,7 @@ export class RedundancyAnalyzer extends EventEmitter {
   private fileScanner: FileScanner;
   private metricsCalculator: MetricsCalculator;
   private errorHandler: ErrorHandler;
+  private stateManager: StateManager;
 
   constructor() {
     super();
@@ -55,6 +57,7 @@ export class RedundancyAnalyzer extends EventEmitter {
     this.fileScanner = new FileScanner();
     this.metricsCalculator = new MetricsCalculator();
     this.errorHandler = ErrorHandler.getInstance();
+    this.stateManager = new StateManager();
   }
 
   async initialize(): Promise<void> {
@@ -62,6 +65,9 @@ export class RedundancyAnalyzer extends EventEmitter {
     await this.databaseMapper.initialize({
       projectRoot: process.cwd(),
     });
+    
+    // Initialize state manager
+    await this.stateManager.initialize();
   }
 
   async startAnalysis(request: AnalysisRequest): Promise<string> {
@@ -87,7 +93,7 @@ export class RedundancyAnalyzer extends EventEmitter {
     return analysisId;
   }
 
-  private async runAnalysis(analysisId: string, request: AnalysisRequest): Promise<void> {
+  private async runAnalysis(analysisId: string, request: AnalysisRequest, checkpoint?: any): Promise<void> {
     const status = this.analyses.get(analysisId)!;
     
     try {
@@ -120,12 +126,22 @@ export class RedundancyAnalyzer extends EventEmitter {
         const fullPath = path.join(request.projectPath, file.path);
         
         try {
-          const module = await this.astParser.parseFile(fullPath);
-          if (module && module.metrics.linesOfCode >= request.options.minModuleSize) {
-            modules.push(module);
-          }
+          const parsedModules = await this.astParser.parseFile(fullPath);
+          parsedModules.forEach(module => {
+            if (module.metrics.linesOfCode >= request.options.minModuleSize) {
+              modules.push(module);
+            }
+          });
           
           processedFiles++;
+          
+          // Check memory usage periodically
+          if (processedFiles % 50 === 0) {
+            const memInfo = this.errorHandler.checkMemoryUsage();
+            if (memInfo.percentage > 85) {
+              this.errorHandler.logWarning(`High memory usage during parsing: ${memInfo.percentage.toFixed(1)}%`);
+            }
+          }
           
           if (processedFiles % 10 === 0) {
             const progress = 15 + (processedFiles / files.length) * 30;
@@ -138,7 +154,12 @@ export class RedundancyAnalyzer extends EventEmitter {
             });
           }
         } catch (error) {
-          console.warn(`Failed to parse ${file.path}:`, error);
+          if (error instanceof AnalysisError) {
+            this.errorHandler.logError(error);
+          } else {
+            const analysisError = this.errorHandler.handleFileError(error, file.path);
+            this.errorHandler.logError(analysisError);
+          }
         }
       }
 
@@ -228,16 +249,36 @@ export class RedundancyAnalyzer extends EventEmitter {
     }
   }
 
-  private updateStatus(
+  private async updateStatus(
     analysisId: string,
     newStatus: AnalysisStatus['status'],
     progress: number
-  ): void {
+  ): Promise<void> {
     const status = this.analyses.get(analysisId);
     if (status) {
       status.status = newStatus;
       status.progress = progress;
       status.currentPhase = newStatus;
+      
+      // Save state
+      try {
+        await this.stateManager.saveState({
+          id: analysisId,
+          status: newStatus,
+          progress,
+          currentPhase: newStatus,
+          filesScanned: status.filesScanned,
+          totalFiles: status.totalFiles,
+          findingsCount: status.findingsCount,
+          error: status.error,
+          startTime: status.startTime,
+          endTime: status.endTime,
+          projectPath: '', // Will be set during analysis
+          options: {}, // Will be set during analysis
+        });
+      } catch (error) {
+        this.errorHandler.logWarning('Failed to save analysis state', { error: String(error) });
+      }
     }
   }
 
@@ -245,8 +286,20 @@ export class RedundancyAnalyzer extends EventEmitter {
     const status = this.analyses.get(analysisId);
     if (status) {
       status.status = 'failed';
-      status.error = error instanceof Error ? error.message : String(error);
+      
+      // Use error handler to process the error
+      const analysisError = error instanceof AnalysisError 
+        ? error 
+        : AnalysisError.fromError(error);
+      
+      status.error = analysisError.message;
       status.endTime = Date.now();
+      
+      // Log the error with context
+      this.errorHandler.logError(analysisError, true);
+      
+      // Clean up resources
+      this.errorHandler.cleanup();
     }
     
     this.emit('progress', {
@@ -343,14 +396,77 @@ export class RedundancyAnalyzer extends EventEmitter {
     return null;
   }
 
-  // Cleanup methods
-  clearAnalysis(analysisId: string): void {
-    this.analyses.delete(analysisId);
-    this.reports.delete(analysisId);
+  // Resume analysis from saved state
+  async resumeAnalysis(analysisId: string): Promise<void> {
+    const resumeData = await this.stateManager.resumeAnalysis(analysisId);
+    if (!resumeData) {
+      throw new AnalysisError(ErrorCode.INVALID_OPTIONS, `No saved state found for analysis: ${analysisId}`);
+    }
+
+    const { state, checkpoint } = resumeData;
+    
+    // Restore analysis status
+    this.analyses.set(analysisId, {
+      id: state.id,
+      status: state.status,
+      progress: state.progress,
+      currentPhase: state.currentPhase,
+      filesScanned: state.filesScanned,
+      totalFiles: state.totalFiles,
+      findingsCount: state.findingsCount,
+      error: state.error,
+      startTime: state.startTime,
+      endTime: state.endTime,
+    });
+
+    // Continue analysis from checkpoint if available
+    if (checkpoint && state.status !== 'completed' && state.status !== 'failed') {
+      this.emit('progress', {
+        phase: 'resuming',
+        progress: checkpoint.progress,
+        message: `Resuming analysis from ${checkpoint.phase}`,
+      });
+      
+      // Resume the analysis
+      const request: AnalysisRequest = {
+        projectPath: state.projectPath,
+        options: state.options,
+      };
+      
+      this.runAnalysis(analysisId, request, checkpoint).catch(error => {
+        this.handleAnalysisError(analysisId, error);
+      });
+    }
   }
 
-  clearAllAnalyses(): void {
+  async listActiveAnalyses(): Promise<AnalysisStatus[]> {
+    const activeStates = await this.stateManager.listActiveAnalyses();
+    return activeStates.map(state => ({
+      id: state.id,
+      status: state.status,
+      progress: state.progress,
+      currentPhase: state.currentPhase,
+      filesScanned: state.filesScanned,
+      totalFiles: state.totalFiles,
+      findingsCount: state.findingsCount,
+      error: state.error,
+      startTime: state.startTime,
+      endTime: state.endTime,
+    }));
+  }
+
+  // Cleanup methods
+  async clearAnalysis(analysisId: string): Promise<void> {
+    this.analyses.delete(analysisId);
+    this.reports.delete(analysisId);
+    await this.stateManager.deleteAnalysisState(analysisId);
+  }
+
+  async clearAllAnalyses(): Promise<void> {
     this.analyses.clear();
     this.reports.clear();
+    
+    // Clean up old state files
+    await this.stateManager.cleanupCompletedAnalyses(0); // Clean all
   }
 }
