@@ -201,37 +201,8 @@ export default function JobLoadChecklistStartPage() {
           // Flash animation and sound on detection
           if (hasChanges) {
             setShowFlash(true);
-            // Play sound with user gesture context
-            if (audioRef.current) {
-              // Use Web Audio API for better Safari compatibility
-            try {
-              const audioContext = (window as any).audioContext || new (window.AudioContext || (window as any).webkitAudioContext)();
-              
-              // Resume if suspended
-              if (audioContext.state === 'suspended') {
-                audioContext.resume();
-              }
-              
-              const oscillator = audioContext.createOscillator();
-              const gainNode = audioContext.createGain();
-              
-              oscillator.connect(gainNode);
-              gainNode.connect(audioContext.destination);
-              
-              oscillator.frequency.value = 880; // A5 note
-              oscillator.type = 'sine';
-              
-              // Quick fade in/out for cleaner sound
-              gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-              gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
-              gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.08);
-              
-              oscillator.start(audioContext.currentTime);
-              oscillator.stop(audioContext.currentTime + 0.1);
-            } catch (e) {
-              console.log('[Audio] Beep failed:', e);
-            }
-            }
+            // Simple beep sound
+            playBeep();
             setTimeout(() => setShowFlash(false), 300);
           }
 
@@ -288,6 +259,44 @@ export default function JobLoadChecklistStartPage() {
     );
   };
 
+  const playBeep = () => {
+    try {
+      // Get or create audio context
+      let audioContext = (window as any).audioContext;
+      if (!audioContext) {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        audioContext = new AudioContext();
+        (window as any).audioContext = audioContext;
+      }
+      
+      // Resume if needed
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+          console.log('[Audio] Context resumed');
+        });
+      }
+      
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+      
+      console.log('[Audio] Beep played');
+    } catch (err) {
+      console.error('[Audio] Beep error:', err);
+    }
+  };
+
   const playSuccessSound = () => {
     try {
       // Use existing audio context or create new one
@@ -335,6 +344,18 @@ export default function JobLoadChecklistStartPage() {
   };
 
   const handleStart = () => {
+    // Initialize audio context on user interaction (Safari requirement)
+    if (!(window as any).audioContext) {
+      try {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        const ctx = new AudioContext();
+        (window as any).audioContext = ctx;
+        console.log('[Audio] Context created on START button press');
+      } catch (e) {
+        console.error('[Audio] Failed to create context:', e);
+      }
+    }
+    
     if (!stream) {
       // Camera not started yet - start it
       startCamera();
@@ -410,8 +431,8 @@ export default function JobLoadChecklistStartPage() {
       playSuccessSound();
       setShowConfetti(true);
       
-      // Stop confetti after 5 seconds
-      setTimeout(() => setShowConfetti(false), 5000);
+      // Stop confetti after 8 seconds
+      setTimeout(() => setShowConfetti(false), 8000);
       
       // Stop the interval immediately
       if (analysisIntervalRef.current) {
@@ -712,37 +733,37 @@ export default function JobLoadChecklistStartPage() {
           width: 13px; 
           height: 13px; 
           background: linear-gradient(45deg, #ff0080, #ff8c00);
-          animation: confetti-fall-1 5s linear forwards;
+          animation: confetti-fall-1 8s linear forwards;
         }
         .confetti-2 { 
           width: 10px; 
           height: 16px; 
           background: linear-gradient(45deg, #00ff88, #00ffff);
-          animation: confetti-fall-2 5s linear forwards;
+          animation: confetti-fall-2 8s linear forwards;
         }
         .confetti-3 { 
           width: 11px; 
           height: 11px; 
           background: linear-gradient(45deg, #ffff00, #ffaa00);
-          animation: confetti-fall-3 5s linear forwards;
+          animation: confetti-fall-3 8s linear forwards;
         }
         .confetti-4 { 
           width: 9px; 
           height: 14px; 
           background: linear-gradient(45deg, #ff00ff, #ff0080);
-          animation: confetti-fall-1 5s linear forwards;
+          animation: confetti-fall-1 8s linear forwards;
         }
         .confetti-5 { 
           width: 15px; 
           height: 8px; 
           background: linear-gradient(45deg, #00ff00, #00ff88);
-          animation: confetti-fall-2 5s linear forwards;
+          animation: confetti-fall-2 8s linear forwards;
         }
         .confetti-6 { 
           width: 12px; 
           height: 12px; 
           background: linear-gradient(45deg, #4169e1, #00bfff);
-          animation: confetti-fall-3 5s linear forwards;
+          animation: confetti-fall-3 8s linear forwards;
         }
 
         @keyframes confetti-fall-1 {
@@ -823,7 +844,7 @@ export default function JobLoadChecklistStartPage() {
               className={`confetti-${(i % 6) + 1}`}
               style={{
                 left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 2}s`,
+                animationDelay: `${Math.random() * 4}s`,
                 borderRadius: i % 3 === 0 ? '50%' : i % 3 === 1 ? '20%' : '0'
               }}
             />
