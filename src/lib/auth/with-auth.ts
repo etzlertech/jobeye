@@ -35,40 +35,38 @@ export type AuthenticatedHandler = (
  * For now, this is a stub that passes through all requests
  * In production, this would validate JWT tokens, check permissions, etc.
  */
-export function withAuth(
+export async function withAuth(
   req: NextRequest,
   handler: AuthenticatedHandler
-) {
-  return async () => {
-    try {
-      // For now, create a mock user
-      // In production, this would:
-      // 1. Extract JWT from Authorization header
-      // 2. Validate token with Supabase
-      // 3. Get user info and permissions
-      // 4. Extract tenant ID from user context
-      
-      const mockUser: User = {
-        id: 'mock-user-id',
-        email: 'demo@jobeye.com',
-        app_metadata: {
-          role: 'crew',
-          crew_id: 'mock-crew-id',
-          company_id: 'mock-company-id'
-        }
-      };
+): Promise<NextResponse> {
+  try {
+    // For now, create a mock user
+    // In production, this would:
+    // 1. Extract JWT from Authorization header
+    // 2. Validate token with Supabase
+    // 3. Get user info and permissions
+    // 4. Extract tenant ID from user context
+    
+    const mockUser: User = {
+      id: 'mock-user-id',
+      email: 'demo@jobeye.com',
+      app_metadata: {
+        role: 'crew',
+        crew_id: 'mock-crew-id',
+        company_id: 'mock-company-id'
+      }
+    };
 
-      const tenantId = mockUser.app_metadata?.company_id || 'mock-company-id';
+    const tenantId = mockUser.app_metadata?.company_id || 'mock-company-id';
 
-      return await handler(mockUser, tenantId);
-    } catch (error) {
-      console.error('[Auth] Error in withAuth wrapper:', error);
-      return NextResponse.json(
-        { error: 'Authentication failed' },
-        { status: 401 }
-      );
-    }
-  };
+    return await handler(mockUser, tenantId);
+  } catch (error) {
+    console.error('[Auth] Error in withAuth wrapper:', error);
+    return NextResponse.json(
+      { error: 'Authentication failed' },
+      { status: 401 }
+    );
+  }
 }
 
 /**
