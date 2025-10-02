@@ -9,6 +9,7 @@ import { FileScanner } from '../lib/file-scanner';
 import { MetricsCalculator } from '../lib/metrics-calculator';
 import { ErrorHandler, AnalysisError, ErrorCode } from '../lib/error-handler';
 import { StateManager } from '../lib/state-manager';
+import { StreamingProcessor } from '../lib/streaming-processor';
 import type { AnalysisOptions, AnalysisRequest } from '../types/api';
 import type { ProgressUpdate } from '../cli/progress';
 import type { AnalysisReport } from '../models/analysis-report.model';
@@ -47,6 +48,7 @@ export class RedundancyAnalyzer extends EventEmitter {
   private metricsCalculator: MetricsCalculator;
   private errorHandler: ErrorHandler;
   private stateManager: StateManager;
+  private streamingProcessor: StreamingProcessor;
 
   constructor() {
     super();
@@ -58,6 +60,12 @@ export class RedundancyAnalyzer extends EventEmitter {
     this.metricsCalculator = new MetricsCalculator();
     this.errorHandler = ErrorHandler.getInstance();
     this.stateManager = new StateManager();
+    this.streamingProcessor = new StreamingProcessor({
+      maxConcurrency: 3,
+      batchSize: 25,
+      memoryThreshold: 256, // 256MB
+      pauseOnHighMemory: true,
+    });
   }
 
   async initialize(): Promise<void> {
@@ -98,7 +106,7 @@ export class RedundancyAnalyzer extends EventEmitter {
     
     try {
       // Phase 1: Initialize and scan files
-      this.updateStatus(analysisId, 'scanning', 5);
+      await this.updateStatus(analysisId, 'scanning', 5);
       this.emit('phase', 'scanning');
       
       const files = await this.fileScanner.scanDirectory(request.projectPath, {
@@ -116,55 +124,104 @@ export class RedundancyAnalyzer extends EventEmitter {
       });
 
       // Phase 2: Parse code modules
-      this.updateStatus(analysisId, 'analyzing', 15);
+      await this.updateStatus(analysisId, 'analyzing', 15);
       this.emit('phase', 'analyzing');
       
       const modules: CodeModule[] = [];
       let processedFiles = 0;
       
-      for (const file of files) {
-        const fullPath = path.join(request.projectPath, file.path);
+      // Use streaming processor for large codebases (>1000 files)
+      if (files.length > 1000) {
+        this.emit('progress', {
+          phase: 'analyzing',
+          progress: 15,
+          message: `Using streaming processor for ${files.length} files`,
+        });
         
-        try {
-          const parsedModules = await this.astParser.parseFile(fullPath);
-          parsedModules.forEach(module => {
-            if (module.metrics.linesOfCode >= request.options.minModuleSize) {
-              modules.push(module);
-            }
-          });
-          
-          processedFiles++;
-          
-          // Check memory usage periodically
-          if (processedFiles % 50 === 0) {
-            const memInfo = this.errorHandler.checkMemoryUsage();
-            if (memInfo.percentage > 85) {
-              this.errorHandler.logWarning(`High memory usage during parsing: ${memInfo.percentage.toFixed(1)}%`);
-            }
-          }
-          
-          if (processedFiles % 10 === 0) {
-            const progress = 15 + (processedFiles / files.length) * 30;
-            this.emit('progress', {
-              phase: 'analyzing',
-              progress: Math.round(progress),
-              filesScanned: processedFiles,
-              totalFiles: files.length,
-              currentFile: file.path,
+        await this.streamingProcessor.processFiles(
+          request.projectPath,
+          {
+            excludePatterns: request.options.excludePatterns,
+            includeTests: request.options.includeTests,
+            includeDocs: request.options.includeDocs,
+          },
+          async (batch) => {
+            // Process each batch of modules
+            batch.modules.forEach(module => {
+              if (module.metrics.linesOfCode >= request.options.minModuleSize) {
+                modules.push(module);
+              }
             });
+            
+            // Save checkpoint periodically
+            if (batch.batchId % 10 === 0) {
+              await this.stateManager.saveCheckpoint(analysisId, {
+                phase: 'analyzing',
+                processedFiles: modules.map(m => m.filePath),
+                findings: [], // Will be populated later
+                progress: 15 + (batch.processedCount / files.length) * 30,
+              });
+            }
+          },
+          (processed, total) => {
+            processedFiles = processed;
+            if (processed % 50 === 0) {
+              const progress = 15 + (processed / (total || files.length)) * 30;
+              this.emit('progress', {
+                phase: 'analyzing',
+                progress: Math.round(progress),
+                filesScanned: processed,
+                totalFiles: total || files.length,
+              });
+            }
           }
-        } catch (error) {
-          if (error instanceof AnalysisError) {
-            this.errorHandler.logError(error);
-          } else {
-            const analysisError = this.errorHandler.handleFileError(error, file.path);
-            this.errorHandler.logError(analysisError);
+        );
+      } else {
+        // Use traditional processing for smaller codebases
+        for (const file of files) {
+          const fullPath = path.join(request.projectPath, file.path);
+          
+          try {
+            const parsedModules = await this.astParser.parseFile(fullPath);
+            parsedModules.forEach(module => {
+              if (module.metrics.linesOfCode >= request.options.minModuleSize) {
+                modules.push(module);
+              }
+            });
+            
+            processedFiles++;
+            
+            // Check memory usage periodically
+            if (processedFiles % 50 === 0) {
+              const memInfo = this.errorHandler.checkMemoryUsage();
+              if (memInfo.percentage > 85) {
+                this.errorHandler.logWarning(`High memory usage during parsing: ${memInfo.percentage.toFixed(1)}%`);
+              }
+            }
+            
+            if (processedFiles % 10 === 0) {
+              const progress = 15 + (processedFiles / files.length) * 30;
+              this.emit('progress', {
+                phase: 'analyzing',
+                progress: Math.round(progress),
+                filesScanned: processedFiles,
+                totalFiles: files.length,
+                currentFile: file.path,
+              });
+            }
+          } catch (error) {
+            if (error instanceof AnalysisError) {
+              this.errorHandler.logError(error);
+            } else {
+              const analysisError = this.errorHandler.handleFileError(error, file.path);
+              this.errorHandler.logError(analysisError);
+            }
           }
         }
       }
 
       // Phase 3: Detect redundancy
-      this.updateStatus(analysisId, 'analyzing', 50);
+      await this.updateStatus(analysisId, 'analyzing', 50);
       this.emit('progress', {
         phase: 'analyzing',
         progress: 50,
@@ -216,7 +273,7 @@ export class RedundancyAnalyzer extends EventEmitter {
       });
 
       // Phase 4: Generate report
-      this.updateStatus(analysisId, 'generating_report', 90);
+      await this.updateStatus(analysisId, 'generating_report', 90);
       this.emit('phase', 'generating_report');
       
       const report = await this.reportGenerator.generateReport({
@@ -233,7 +290,7 @@ export class RedundancyAnalyzer extends EventEmitter {
 
       // Complete analysis
       this.reports.set(analysisId, report);
-      this.updateStatus(analysisId, 'completed', 100);
+      await this.updateStatus(analysisId, 'completed', 100);
       status.endTime = Date.now();
       status.findingsCount = findings.length;
       

@@ -54,10 +54,17 @@ import {
   Shield,
   Settings,
   UserPlus,
-  BarChart3,
-  DollarSign,
-  Briefcase,
+  Edit,
+  Trash2,
+  Eye,
+  AlertTriangle,
   CheckCircle,
+  Crown,
+  Briefcase,
+  Wrench,
+  BarChart3,
+  Clock,
+  DollarSign,
   Loader2
 } from 'lucide-react';
 
@@ -70,6 +77,8 @@ interface User {
   companyName: string;
   lastActive: string;
   status: 'active' | 'inactive' | 'pending';
+  crewId?: string;
+  jobsCompleted?: number;
 }
 
 interface Company {
@@ -173,11 +182,13 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="mobile-container">
+      {/* Mobile Navigation */}
       <MobileNavigation 
         currentRole="admin" 
         onLogout={() => router.push('/sign-in')}
       />
 
+      {/* Header */}
       <div className="header-bar">
         <div>
           <h1 className="text-xl font-semibold">Super Admin</h1>
@@ -194,6 +205,7 @@ export default function AdminDashboardPage() {
         <Shield className="w-6 h-6 text-golden" />
       </div>
 
+      {/* Tab Navigation */}
       <div className="px-4 py-2 border-b border-gray-800">
         <div className="flex space-x-1">
           {[
@@ -222,8 +234,10 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4">
+        {/* Overview Tab */}
         {activeTab === 'overview' && stats && (
           <div className="space-y-6">
+            {/* Stats Cards */}
             <div className="stats-grid">
               <div className="stat-card">
                 <div className="stat-header">
@@ -271,6 +285,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {/* Users Tab */}
         {activeTab === 'users' && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-golden">Users ({users.length})</h2>
@@ -295,6 +310,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {/* Companies Tab */}
         {activeTab === 'companies' && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-golden">Companies ({companies.length})</h2>
@@ -321,6 +337,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {/* Settings Tab */}
         {activeTab === 'settings' && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-golden">System Settings</h2>
@@ -348,6 +365,7 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
+      {/* Bottom Action */}
       <div className="bottom-actions">
         <button
           onClick={() => alert('User creation feature coming soon!')}
@@ -358,6 +376,7 @@ export default function AdminDashboardPage() {
         </button>
       </div>
 
+      {/* Styled JSX */}
       <style jsx>{`
         .mobile-container {
           width: 100%;
