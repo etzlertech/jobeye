@@ -55,7 +55,8 @@ const ROUTE_CONFIG = {
     '/reset-password',
     '/api/health',
     '/api/webhook',
-    '/api/debug/auth'
+    '/api/debug/auth',
+    '/api/test-crud'
   ],
 
   // Role-based protected routes
