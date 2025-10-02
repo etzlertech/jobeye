@@ -145,7 +145,7 @@ export default function JobLoadChecklistStartPage() {
       }
 
       const expectedItems = uncheckedItems.map(item => item.name);
-      const estimatedCost = (frameCount.current * 0.039).toFixed(3);
+      const estimatedCost = (frameCount.current * 0.004).toFixed(3);
 
       setDetectionStatus(`🔍 Analyzing (${uncheckedItems.length} remaining, ${analysisQueue.current.size} frames processing, ~$${estimatedCost})...`);
       console.log(`[VLM] Unchecked items remaining (${uncheckedItems.length}):`, expectedItems);
@@ -272,13 +272,13 @@ export default function JobLoadChecklistStartPage() {
 
     // Set aggressive capture interval: 0.5 seconds = 2 fps
     // This allows 3-4 frames in 2 seconds as requested
-    // Cost: ~$0.039 per frame, max 30 frames in 15 seconds = $1.17 max
+    // Cost: ~$0.003-$0.005 per frame, max 30 frames in 15 seconds = $0.09-$0.15 max
     analysisIntervalRef.current = setInterval(() => {
       // Check 15-second safety limit
       const elapsed = (Date.now() - sessionStartTime.current) / 1000;
       if (elapsed >= 15) {
-        console.log(`[VLM] 🔒 15-second safety limit reached. Stopping analysis. Frames sent: ${frameCount.current}, Est. cost: $${(frameCount.current * 0.039).toFixed(3)}`);
-        setDetectionStatus(`🔒 15s limit reached (${frameCount.current} frames, ~$${(frameCount.current * 0.039).toFixed(2)})`);
+        console.log(`[VLM] 🔒 15-second safety limit reached. Stopping analysis. Frames sent: ${frameCount.current}, Est. cost: $${(frameCount.current * 0.004).toFixed(3)}`);
+        setDetectionStatus(`🔒 15s limit reached (${frameCount.current} frames, ~$${(frameCount.current * 0.004).toFixed(3)})`);
         stopCamera();
         return;
       }
@@ -299,7 +299,7 @@ export default function JobLoadChecklistStartPage() {
     
     // Show final session statistics
     const elapsed = (Date.now() - sessionStartTime.current) / 1000;
-    const finalCost = (frameCount.current * 0.039).toFixed(3);
+    const finalCost = (frameCount.current * 0.004).toFixed(3);
     console.log(`[VLM] 📊 Session ended: ${frameCount.current} frames in ${elapsed.toFixed(1)}s, Est. cost: $${finalCost}`);
     
     setIsAnalyzing(false);
