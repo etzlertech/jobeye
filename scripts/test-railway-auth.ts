@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Railway's Supabase configuration from environment
 const RAILWAY_SUPABASE_URL = 'https://rtwigjwqufozqfwozpvo.supabase.co';
-const RAILWAY_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d2lnand3cWt4a2ZjYXBhc3Z3YSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzM3MDM1MDQ1LCJleHAiOjIwNTI2MTEwNDV9.oDCDf6Ys3-LCaI1oI8-W4P3h0rA7M-V0xQwMbYf-fXE';
+const RAILWAY_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 async function testRailwayAuth() {
   console.log('🚂 Testing Railway Supabase Authentication...\n');

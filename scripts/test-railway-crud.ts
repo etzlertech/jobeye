@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Use exact Railway environment variables
 const supabaseUrl = 'https://rtwigjwqufozqfwozpvo.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d2lnand3cWt4a2ZjYXBhc3Z3YSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzM3MDM1MDQ1LCJleHAiOjIwNTI2MTEwNDV9.oDCDf6Ys3-LCaI1oI8-W4P3h0rA7M-V0xQwMbYf-fXE';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 async function testRailwayCRUD() {
   console.log('🚂 Testing Railway CRUD Operations...\n');

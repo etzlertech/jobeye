@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Railway's Supabase configuration
 const RAILWAY_SUPABASE_URL = 'https://rtwigjwqufozqfwozpvo.supabase.co';
-const RAILWAY_SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d2lnand3cWt4a2ZjYXBhc3Z3YSIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJpYXQiOjE3MzcwMzUwNDUsImV4cCI6MjA1MjYxMTA0NX0.K5GJ8hJbSazHJdJOtBrbnwOJjVOgEJQV9BFn7ZGQxYM';
+const RAILWAY_SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 // Railway's demo tenant ID
 const RAILWAY_DEMO_TENANT_ID = '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e';
