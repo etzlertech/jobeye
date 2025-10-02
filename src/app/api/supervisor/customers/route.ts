@@ -48,7 +48,13 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Get tenant ID (no more demo mode - all users use live database)
-    const companyId = request.headers.get('x-tenant-id');
+    let companyId = request.headers.get('x-tenant-id');
+    
+    // Allow demo mode override
+    const isDemoParam = searchParams.get('demo') === 'true';
+    if (isDemoParam && !companyId) {
+      companyId = '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'; // Demo tenant ID
+    }
 
     // Build query - map billing_address to address for UI compatibility
     let query = supabase
@@ -122,7 +128,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get tenant ID from headers
-    const tenantId = request.headers.get('x-tenant-id');
+    let tenantId = request.headers.get('x-tenant-id');
+    
+    // Allow demo mode override
+    const isDemoBody = body.demo === true;
+    if (isDemoBody && !tenantId) {
+      tenantId = '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'; // Demo tenant ID
+    }
+    
     if (!tenantId) {
       return validationError('Tenant ID required');
     }
