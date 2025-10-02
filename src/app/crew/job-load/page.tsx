@@ -176,6 +176,17 @@ export default function CrewJobLoadPage() {
 
   const selectJob = (job: Job) => {
     setSelectedJob(job);
+    // Initialize checklist from job equipment
+    const icons = ['🪜', '🪔', '🌳', '🛡️', '⛽', '🔧', '🚧', '🎲', '🚨', '💊', '💧', '🌿'];
+    const jobChecklist = (job.kit_items || []).map((item, index) => ({
+      id: (index + 1).toString(),
+      name: item,
+      icon: icons[index] || '📦',
+      checked: job.verified_items?.includes(item) || false,
+      detectedBy: undefined
+    }));
+    setChecklist(jobChecklist);
+    setEditableItems(job.kit_items || []);
     setView('camera');
   };
 
@@ -340,10 +351,25 @@ export default function CrewJobLoadPage() {
             if (item.checked) return item;
 
             // Check if this item matches any detection
-            const matchingDetection = result.detections.find((d: Detection) =>
-              d.label.toLowerCase().includes(item.name.toLowerCase()) ||
-              item.name.toLowerCase().includes(d.label.toLowerCase())
-            );
+            const matchingDetection = result.detections.find((d: Detection) => {
+              const itemLower = item.name.toLowerCase().replace(/[\s-_()]/g, '');
+              const detectedLower = d.label.toLowerCase().replace(/[\s-_()]/g, '');
+              
+              return (
+                detectedLower.includes(itemLower) ||
+                itemLower.includes(detectedLower) ||
+                (itemLower.includes('mower') && detectedLower.includes('mower')) ||
+                (itemLower.includes('trimmer') && detectedLower.includes('trimmer')) ||
+                (itemLower.includes('blower') && detectedLower.includes('blower')) ||
+                (itemLower.includes('safety') && (detectedLower.includes('safety') || detectedLower.includes('gear') || detectedLower.includes('glasses') || detectedLower.includes('protection'))) ||
+                (itemLower.includes('fuel') && detectedLower.includes('gas')) ||
+                (itemLower.includes('gas') && (detectedLower.includes('fuel') || detectedLower.includes('gas'))) ||
+                (itemLower.includes('edger') && detectedLower.includes('edg')) ||
+                (itemLower.includes('cycle') && detectedLower.includes('oil')) ||
+                (itemLower.includes('water') && detectedLower.includes('water')) ||
+                (itemLower.includes('cooler') && detectedLower.includes('cooler'))
+              );
+            });
 
             if (matchingDetection) {
               console.log(`[VLM] Match found: "${matchingDetection.label}" → "${item.name}" (source: ${matchingDetection.source}, confidence: ${Math.round(matchingDetection.confidence * 100)}%)`);
