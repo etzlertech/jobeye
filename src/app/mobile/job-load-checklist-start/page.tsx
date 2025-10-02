@@ -261,19 +261,10 @@ export default function JobLoadChecklistStartPage() {
 
   const playBeep = () => {
     try {
-      // Get or create audio context
-      let audioContext = (window as any).audioContext;
-      if (!audioContext) {
-        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-        audioContext = new AudioContext();
-        (window as any).audioContext = audioContext;
-      }
-      
-      // Resume if needed
-      if (audioContext.state === 'suspended') {
-        audioContext.resume().then(() => {
-          console.log('[Audio] Context resumed');
-        });
+      const audioContext = (window as any).audioContext;
+      if (!audioContext || audioContext.state !== 'running') {
+        console.warn('[Audio] Context not ready, skipping beep');
+        return;
       }
       
       const oscillator = audioContext.createOscillator();
@@ -285,13 +276,14 @@ export default function JobLoadChecklistStartPage() {
       oscillator.frequency.value = 800;
       oscillator.type = 'sine';
       
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
       
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.1);
       
-      console.log('[Audio] Beep played');
+      console.log('[Audio] Beep played at', new Date().toISOString());
     } catch (err) {
       console.error('[Audio] Beep error:', err);
     }
@@ -299,12 +291,10 @@ export default function JobLoadChecklistStartPage() {
 
   const playSuccessSound = () => {
     try {
-      // Use existing audio context or create new one
-      const audioContext = (window as any).audioContext || new (window.AudioContext || (window as any).webkitAudioContext)();
-      
-      // Resume if suspended (Safari requirement)
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
+      const audioContext = (window as any).audioContext;
+      if (!audioContext || audioContext.state !== 'running') {
+        console.warn('[Audio] Context not ready for success sound');
+        return;
       }
       
       const now = audioContext.currentTime;
@@ -343,17 +333,38 @@ export default function JobLoadChecklistStartPage() {
     }
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     // Initialize audio context on user interaction (Safari requirement)
-    if (!(window as any).audioContext) {
-      try {
-        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-        const ctx = new AudioContext();
-        (window as any).audioContext = ctx;
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      let audioContext = (window as any).audioContext;
+      
+      if (!audioContext) {
+        audioContext = new AudioContext();
+        (window as any).audioContext = audioContext;
         console.log('[Audio] Context created on START button press');
-      } catch (e) {
-        console.error('[Audio] Failed to create context:', e);
       }
+      
+      // CRITICAL for Safari: Must resume on user gesture
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+        console.log('[Audio] Context resumed successfully');
+      }
+      
+      // Test beep to verify audio is working
+      if (audioContext.state === 'running') {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        gain.gain.value = 0.1;
+        osc.frequency.value = 440;
+        osc.start();
+        osc.stop(audioContext.currentTime + 0.05);
+        console.log('[Audio] Test beep played');
+      }
+    } catch (e) {
+      console.error('[Audio] Failed to initialize:', e);
     }
     
     if (!stream) {
@@ -382,31 +393,6 @@ export default function JobLoadChecklistStartPage() {
   useEffect(() => {
     // Camera start disabled - use manual button instead
     console.log('Page loaded - click button to start camera');
-    
-    // Create audio context on first user interaction (required for Safari)
-    const initAudio = () => {
-      if (!window.AudioContext && !(window as any).webkitAudioContext) {
-        console.log('[Audio] Web Audio API not supported');
-        return;
-      }
-      
-      // Create or resume audio context
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      const audioContext = new AudioContext();
-      
-      // Resume if suspended (Safari requirement)
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
-      }
-      
-      // Store audio context for later use
-      (window as any).audioContext = audioContext;
-      console.log('[Audio] Audio context initialized');
-    };
-    
-    // Initialize audio on first click/touch
-    document.addEventListener('click', initAudio, { once: true });
-    document.addEventListener('touchstart', initAudio, { once: true });
     
     return () => {
       if (stream) {
@@ -715,8 +701,10 @@ export default function JobLoadChecklistStartPage() {
           position: fixed;
           top: 0;
           left: 0;
-          width: 100%;
-          height: 100%;
+          right: 0;
+          bottom: 0;
+          width: 100vw;
+          height: 100vh;
           pointer-events: none;
           overflow: hidden;
           z-index: 10000;
