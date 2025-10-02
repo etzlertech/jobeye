@@ -56,7 +56,8 @@ const ROUTE_CONFIG = {
     '/api/health',
     '/api/webhook',
     '/api/debug/auth',
-    '/api/test-crud'
+    '/api/test-crud',
+    '/api/demo-crud'
   ],
 
   // Role-based protected routes
