@@ -45,13 +45,21 @@ export default function Home() {
 
         <div className="mt-8 bg-tower-gray rounded-lg p-8 border border-tower-border">
           <h2 className="text-2xl font-semibold text-white mb-4">
-            📱 Mobile Interfaces
+            🚀 Demo Hub
           </h2>
           <p className="text-gray-300 mb-6">
-            Test our AI-powered mobile interfaces for field service management.
+            Explore comprehensive UI/UX demos with role-based interfaces, AI features, and workflow testing.
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link 
+            href="/demo-hub"
+            className="inline-flex items-center space-x-3 bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg font-semibold transition-colors text-lg"
+          >
+            <span>🎭</span>
+            <span>Enter Demo Hub</span>
+          </Link>
+          
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link 
               href="/mobile/job-load-checklist-start"
               className="block bg-gray-800 hover:bg-gray-700 text-white p-4 rounded-lg transition-colors"
