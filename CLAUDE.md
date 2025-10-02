@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+<!-- Last updated: 2025-10-02 for testing git workflow -->
+
 ## Project Overview
 
 JobEye is a Voice-First Field Service Management System built with Architecture-as-Code (AaC) methodology. The project uses Next.js 14 with TypeScript, Supabase for the backend, and follows a strict directive-based development approach.
