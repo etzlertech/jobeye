@@ -53,6 +53,7 @@ const ROUTE_CONFIG = {
     '/simple-signin',
     '/sign-up', 
     '/reset-password',
+    '/demo-crud',
     '/api/health',
     '/api/webhook',
     '/api/debug/auth',
