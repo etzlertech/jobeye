@@ -186,15 +186,60 @@ export default function SupervisorInventoryPage() {
   const loadInventory = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setItems(mockItems);
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (selectedCategory && selectedCategory !== 'all') {
+        params.append('category', selectedCategory);
+      }
+      if (searchQuery) {
+        params.append('search', searchQuery);
+      }
+
+      const response = await fetch(`/api/supervisor/inventory?${params}`, {
+        headers: {
+          'x-is-demo': 'false',
+          'x-tenant-id': '123e4567-e89b-12d3-a456-426614174000'
+        }
+      });
+      const data = await response.json();
+      
+      if (!response.ok) throw new Error(data.message);
+      
+      // Transform API response to component format
+      const transformedItems = (data.items || []).map((item: any) => {
+        // Calculate status based on quantity and reorder level
+        let status = 'in_stock';
+        if (item.current_quantity !== null) {
+          if (item.current_quantity === 0) {
+            status = 'out_of_stock';
+          } else if (item.reorder_level && item.current_quantity <= item.reorder_level) {
+            status = 'low_stock';
+          }
+        }
+        
+        return {
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          quantity: item.current_quantity || 0,
+          minQuantity: item.reorder_level || 5,
+          thumbnailUrl: item.thumbnail_url,
+          container: item.specifications?.container || 'Unknown',
+          lastUpdated: item.updated_at || item.created_at,
+          status: status
+        };
+      });
+      
+      setItems(transformedItems);
     } catch (err) {
-      setError('Failed to load inventory');
+      setError(err instanceof Error ? err.message : 'Failed to load inventory');
+      // Fallback to mock data if API fails
+      console.warn('API failed, using mock data:', err);
+      setItems(mockItems);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedCategory, searchQuery]);
 
   // Filter items
   useEffect(() => {
@@ -313,16 +358,26 @@ export default function SupervisorInventoryPage() {
     
     setIsSaving(true);
     try {
-      const response = await fetch('/api/supervisor/inventory/add', {
+      const response = await fetch('/api/supervisor/inventory', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newItem)
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-is-demo': 'false',
+          'x-tenant-id': '123e4567-e89b-12d3-a456-426614174000'
+        },
+        body: JSON.stringify({
+          name: newItem.name,
+          category: newItem.category,
+          quantity: newItem.quantity,
+          min_quantity: newItem.minQuantity,
+          container: newItem.container
+        })
       });
       
       const data = await response.json();
       if (!response.ok) throw new Error(data.message);
       
-      setSuccess(data.message || 'Item added successfully');
+      setSuccess(data.message || 'Item added successfully and saved to database');
       setTimeout(() => setSuccess(null), 5000);
       
       // Reset form and return to list
