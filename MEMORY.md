@@ -102,11 +102,37 @@ mcp__browsermcp__browser_type({ element: "Email field", ref: "s1e24", text: "tes
 mcp__browsermcp__browser_wait({ time: 3 })
 ```
 
-### Railway Deployment Timing
-- **5 MINUTE RULE**: Always wait 5 minutes after `git push` before testing via Browser MCP
-- **DEPLOYMENT STAGES**: Code push → Build → Deploy → Live (5 min total)
-- **PATIENCE REQUIRED**: Don't test immediately after push - deployment takes time
-- **VERIFY COMPLETION**: Use railway monitor commands or check deployment logs
+### Railway Deployment Monitoring (Updated Strategy)
+- **NEVER BLINDLY WAIT 5 MINUTES**: Use active monitoring instead of passive waiting
+- **DEPLOYMENT RANGE**: Typically 2-5 minutes, but can finish earlier
+- **ACTIVE MONITORING WORKFLOW**:
+  1. Push code: `git push`
+  2. **IMMEDIATELY start monitoring**: `npm run railway:check` to get deployment ID
+  3. **Monitor every 30 seconds**: `npm run railway:monitor <deployment-id>`
+  4. **Test as soon as deployment succeeds** (don't wait the full 5 minutes)
+  5. If deployment fails, logs are automatically shown for debugging
+
+### Railway Monitoring Commands (Use These!)
+```bash
+# Get latest deployment ID immediately after push
+npm run railway:check
+
+# Monitor specific deployment with 5-second polling
+npm run railway:monitor <deployment-id>
+
+# View build logs if needed
+npm run railway:build-logs <deployment-id>
+
+# View runtime logs if needed  
+npm run railway:deploy-logs <deployment-id>
+```
+
+### Efficient Railway Workflow
+- **STEP 1**: `git push` 
+- **STEP 2**: `npm run railway:check` (get deployment ID)
+- **STEP 3**: `npm run railway:monitor <id>` (watch real-time status)
+- **STEP 4**: Test via Browser MCP as soon as status shows "SUCCESS"
+- **RESULT**: Test in 2-3 minutes instead of waiting full 5 minutes
 
 ## 🔧 CRITICAL DEVELOPMENT PATTERNS
 
@@ -143,8 +169,9 @@ mcp__browsermcp__browser_wait({ time: 3 })
 - Multiple agents can work simultaneously without branch conflicts
 
 ### Railway Monitoring & Browser MCP Integration
-- **POST-PUSH MONITORING**: After every `git push`, WAIT 5 minutes for Railway deployment
-- Use `npm run railway:monitor <deployment-id>` for 5-second polling
+- **POST-PUSH MONITORING**: After every `git push`, ACTIVELY MONITOR deployment (don't wait blindly)
+- **IMMEDIATE ACTION**: Run `npm run railway:check` then `npm run railway:monitor <deployment-id>`
+- **SMART TIMING**: Test as soon as deployment succeeds (usually 2-4 minutes, not always 5)
 - Auto-fetch error logs on failure
 - **BROWSER MCP AVAILABLE**: Can control user's browser in real-time via Browser MCP tools:
   - `mcp__browsermcp__browser_navigate` - Navigate to URLs
