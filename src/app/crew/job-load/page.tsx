@@ -140,18 +140,48 @@ export default function CrewJobLoadPage() {
 
       if (!response.ok) throw new Error(data.message);
 
-      // Mock kit items for demo
-      const jobsWithKits = (data.jobs || []).map((job: any) => ({
-        ...job,
-        kit_items: ['Lawn Mower', 'String Trimmer', 'Leaf Blower', 'Safety Gear', 'Fuel Can', 'Hand Tools', 'Safety Cones', 'First Aid Kit'],
-        verified_items: []
+      // Load actual equipment for each job from the database
+      const jobsWithKits = await Promise.all((data.jobs || []).map(async (job: any) => {
+        try {
+          // Fetch the equipment list for this job
+          const equipmentResponse = await fetch(`/api/crew/jobs/${job.id}/equipment`, {
+            headers: { 'x-is-demo': 'true' }
+          });
+          
+          if (equipmentResponse.ok) {
+            const equipmentData = await equipmentResponse.json();
+            const equipment = equipmentData.equipment || [];
+            
+            return {
+              ...job,
+              kit_items: equipment.map((item: any) => item.name),
+              verified_items: equipment.filter((item: any) => item.checked).map((item: any) => item.name)
+            };
+          } else {
+            // Fallback to default items if equipment fetch fails
+            console.warn(`Failed to load equipment for job ${job.id}, using defaults`);
+            return {
+              ...job,
+              kit_items: ['Lawn Mower', 'String Trimmer', 'Leaf Blower', 'Safety Gear', 'Fuel Can', 'Hand Tools', 'Safety Cones', 'First Aid Kit'],
+              verified_items: []
+            };
+          }
+        } catch (err) {
+          console.error(`Error loading equipment for job ${job.id}:`, err);
+          // Fallback to default items
+          return {
+            ...job,
+            kit_items: ['Lawn Mower', 'String Trimmer', 'Leaf Blower', 'Safety Gear', 'Fuel Can', 'Hand Tools', 'Safety Cones', 'First Aid Kit'],
+            verified_items: []
+          };
+        }
       }));
 
       setJobs(jobsWithKits);
     } catch (err) {
       console.error('Failed to load jobs:', err);
-      // Use demo data on error
-      setJobs([
+      // Use demo data on error - try to load equipment for each job
+      const demoJobs = [
         {
           id: '1',
           customer_name: 'Johnson Family',
@@ -170,7 +200,37 @@ export default function CrewJobLoadPage() {
           kit_items: ['Lawn Mower', 'String Trimmer', 'Leaf Blower', 'Safety Gear', 'Fuel Can', 'Hand Tools', 'Safety Cones', 'First Aid Kit'],
           verified_items: []
         }
-      ]);
+      ];
+
+      // Try to load equipment for demo jobs
+      try {
+        const jobsWithEquipment = await Promise.all(demoJobs.map(async (job) => {
+          try {
+            const equipmentResponse = await fetch(`/api/crew/jobs/${job.id}/equipment`, {
+              headers: { 'x-is-demo': 'true' }
+            });
+            
+            if (equipmentResponse.ok) {
+              const equipmentData = await equipmentResponse.json();
+              const equipment = equipmentData.equipment || [];
+              
+              return {
+                ...job,
+                kit_items: equipment.map((item: any) => item.name),
+                verified_items: equipment.filter((item: any) => item.checked).map((item: any) => item.name)
+              };
+            }
+          } catch (equipErr) {
+            console.warn(`Failed to load equipment for demo job ${job.id}:`, equipErr);
+          }
+          return job; // Return original job if equipment loading fails
+        }));
+
+        setJobs(jobsWithEquipment);
+      } catch (equipErr) {
+        console.error('Failed to load equipment for demo jobs:', equipErr);
+        setJobs(demoJobs); // Fallback to original demo jobs
+      }
     }
   };
 
