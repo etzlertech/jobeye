@@ -6,7 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 JobEye is a Voice-First Field Service Management System built with Architecture-as-Code (AaC) methodology. The project uses Next.js 14 with TypeScript, Supabase for the backend, and follows a strict directive-based development approach.
 
-**Current Feature Development**: MVP Intent-Driven Mobile App (Feature 007)
+**Current Feature Development**: Codebase Redundancy Analysis (Feature 008)
+- Automated detection of duplicate code implementations across domains
+- Database table to repository mapping analysis
+- Impact scoring using scale, risk, and code quality metrics
+- Markdown report generation with actionable recommendations
+- CLI tool using TypeScript AST parsing and Supabase schema queries
+
+**Previous Feature**: MVP Intent-Driven Mobile App (Feature 007)
 - Camera-based intent recognition for inventory, job loads, receipts, and maintenance
 - Voice-driven workflows (STT→LLM→TTS) with max 4 buttons per screen
 - Role-based access: Super Admin, Supervisor, Crew Member
@@ -409,6 +416,13 @@ console.log(result.cost); // 0.00 (used local YOLO)
 ---
 
 ## Recent Changes
+
+### Feature 008: Codebase Redundancy Analysis (2025-01-02)
+- Created redundancy analyzer tool specifications
+- Designed data model for tracking duplicate code and abandoned tables
+- Established CLI interface for running analysis
+- Planned TypeScript AST parsing approach with ts-morph
+- Defined three-factor impact scoring: scale, risk, quality
 
 ### Feature 007: MVP Intent-Driven Mobile App (2025-01-27)
 - Added intent recognition layer on top of existing VLM services

@@ -623,18 +623,69 @@ export default function CrewJobLoadPage() {
     setShowSettings(false);
   };
 
-  const saveSettings = () => {
-    const icons = ['🪜', '🪔', '🌳', '🛡️', '⛽', '🔧', '🚧', '🎲']; // Default icons
-    const updatedChecklist = editableItems.map((name, index) => ({
-      id: (index + 1).toString(),
-      name: name.trim() || `Item ${index + 1}`,
-      icon: icons[index] || '📦',
-      checked: false,
-      detectedBy: undefined
-    }));
-    
-    setChecklist(updatedChecklist);
-    setShowSettings(false);
+  const saveSettings = async () => {
+    if (!selectedJob) {
+      setShowSettings(false);
+      return;
+    }
+
+    try {
+      const icons = ['🪜', '🪔', '🌳', '🛡️', '⛽', '🔧', '🚧', '🎲']; // Default icons
+      
+      // Preserve checked status from current checklist
+      const checkedItems = new Set(checklist.filter(item => item.checked).map(item => item.name));
+      
+      const updatedChecklist = editableItems
+        .filter(name => name.trim()) // Remove empty items
+        .map((name, index) => ({
+          id: (index + 1).toString(),
+          name: name.trim(),
+          icon: icons[index] || '📦',
+          checked: checkedItems.has(name.trim()),
+          detectedBy: undefined
+        }));
+      
+      setChecklist(updatedChecklist);
+      
+      // Update the equipment list in the database
+      const updatedEquipment = updatedChecklist.map(item => ({
+        name: item.name,
+        checked: item.checked,
+        icon: item.icon,
+        category: item.name.toLowerCase().includes('mower') || item.name.toLowerCase().includes('trimmer') || item.name.toLowerCase().includes('blower') || item.name.toLowerCase().includes('edger') ? 'primary' :
+                  item.name.toLowerCase().includes('safety') || item.name.toLowerCase().includes('glasses') || item.name.toLowerCase().includes('protection') || item.name.toLowerCase().includes('first aid') ? 'safety' :
+                  item.name.toLowerCase().includes('gas') || item.name.toLowerCase().includes('oil') || item.name.toLowerCase().includes('fuel') || item.name.toLowerCase().includes('water') || item.name.toLowerCase().includes('tools') ? 'support' : 'materials'
+      }));
+      
+      const response = await fetch(`/api/crew/jobs/${selectedJob.id}/equipment`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-is-demo': 'true'
+        },
+        body: JSON.stringify({
+          equipment: updatedEquipment
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save equipment list');
+      }
+
+      // Update the job in the local state
+      const updatedJob = {
+        ...selectedJob,
+        kit_items: updatedChecklist.map(item => item.name)
+      };
+      setJobs(jobs.map(j => j.id === selectedJob.id ? updatedJob : j));
+      setSelectedJob(updatedJob);
+      
+      setShowSettings(false);
+      console.log('[Settings] Saved checklist items to database:', updatedEquipment);
+    } catch (err) {
+      console.error('Failed to save equipment changes:', err);
+      alert('Failed to save changes. Please try again.');
+    }
   };
 
   const updateEditableItem = (index: number, value: string) => {

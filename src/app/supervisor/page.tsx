@@ -259,243 +259,435 @@ export default function SupervisorDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="mobile-container flex items-center justify-center">
         <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading dashboard...</p>
+          <RefreshCw className="w-12 h-12 animate-spin text-golden mx-auto mb-4" />
+          <p className="text-gray-400 text-lg">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="mobile-container">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Supervisor Dashboard</h1>
-              <p className="text-sm text-gray-600">
-                Last updated: {lastRefresh.toLocaleTimeString()}
-              </p>
-            </div>
-            
-            {/* Offline indicator */}
-            {isOffline && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-orange-100 rounded-full">
-                <WifiOff className="w-4 h-4 text-orange-600" />
-                <span className="text-orange-800 text-sm">Offline</span>
-              </div>
-            )}
-          </div>
+      <div className="header-bar">
+        <div>
+          <h1 className="text-xl font-semibold">Supervisor Dashboard</h1>
+          <p className="text-xs text-gray-500 mt-1">
+            {lastRefresh.toLocaleTimeString()}
+          </p>
         </div>
+        
+        {/* Offline indicator */}
+        {isOffline && (
+          <div className="flex items-center gap-2">
+            <WifiOff className="w-5 h-5 text-orange-500" />
+          </div>
+        )}
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex-1 overflow-y-auto">
         {/* Voice Response */}
         {voiceResponse && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Bell className="w-5 h-5 text-blue-600" />
-              <span className="text-blue-800">{voiceResponse}</span>
-            </div>
+          <div className="notification-bar">
+            <Bell className="w-5 h-5 text-golden" />
+            <span className="text-sm">{voiceResponse}</span>
           </div>
         )}
 
         {/* Stats Overview */}
-        {dashboardData && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatCard
-              title="Today's Jobs"
-              value={dashboardData.todayJobs.total}
-              icon={Calendar}
-              color="bg-blue-500"
-              subtitle={`${dashboardData.todayJobs.completed} completed`}
-            />
-            <StatCard
-              title="Active Crews"
-              value={dashboardData.crewStatus.length}
-              icon={Users}
-              color="bg-emerald-500"
-              subtitle={`${dashboardData.crewStatus.filter(c => c.currentJob).length} working`}
-            />
-            <StatCard
-              title="Inventory Alerts"
-              value={dashboardData.inventoryAlerts.length}
-              icon={Package}
-              color="bg-orange-500"
-              subtitle={`${dashboardData.inventoryAlerts.filter(a => a.severity === 'high').length} urgent`}
-            />
-            <StatCard
-              title="Completion Rate"
-              value={`${Math.round((dashboardData.todayJobs.completed / Math.max(dashboardData.todayJobs.total, 1)) * 100)}%`}
-              icon={TrendingUp}
-              color="bg-purple-500"
-              subtitle="Today's progress"
-            />
-          </div>
-        )}
+        <div className="px-4 py-4">
+          {dashboardData && (
+            <div className="stats-grid mb-6">
+              <div className="stat-card">
+                <div className="stat-header">
+                  <Calendar className="w-5 h-5 text-golden" />
+                  <span>Jobs</span>
+                </div>
+                <div className="stat-content">
+                  <p className="stat-value">{dashboardData.todayJobs.total}</p>
+                  <p className="stat-label">{dashboardData.todayJobs.completed} done</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-header">
+                  <Users className="w-5 h-5 text-golden" />
+                  <span>Crews</span>
+                </div>
+                <div className="stat-content">
+                  <p className="stat-value">{dashboardData.crewStatus.length}</p>
+                  <p className="stat-label">{dashboardData.crewStatus.filter(c => c.currentJob).length} working</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-header">
+                  <Package className={`w-5 h-5 ${dashboardData.inventoryAlerts.length > 0 ? 'text-orange-500' : 'text-golden'}`} />
+                  <span>Alerts</span>
+                </div>
+                <div className="stat-content">
+                  <p className="stat-value">{dashboardData.inventoryAlerts.length}</p>
+                  <p className="stat-label">{dashboardData.inventoryAlerts.filter(a => a.severity === 'high').length} urgent</p>
+                </div>
+              </div>
+            </div>
+          )}
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Today's Jobs */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Today's Jobs</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  {todayJobs.length} jobs scheduled
-                </p>
-              </div>
-              <div className="p-6">
-                {todayJobs.length > 0 ? (
-                  <div className="space-y-4">
-                    {todayJobs.map((job) => (
-                      <JobCard
-                        key={job.id}
-                        job={job}
-                        isOffline={isOffline}
-                        onJobClick={handleJobClick}
-                        onVoiceCommand={handleJobVoiceCommand}
-                        compact={true}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No jobs scheduled for today</p>
-                  </div>
-                )}
-              </div>
-            </div>
+          <div className="section-header">
+            <h2>Today's Jobs</h2>
+            <span className="text-gray-500">{todayJobs.length}</span>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-              <ButtonLimiter
-                actions={actions}
-                maxVisibleButtons={4}
-                showVoiceButton={true}
-                onVoiceCommand={() => {}}
-                layout="grid"
-                className="w-full"
-              />
-            </div>
-
-            {/* Voice Command */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Voice Assistant</h3>
-              <div className="text-center">
-                <VoiceCommandButton
-                  onTranscript={handleVoiceCommand}
-                  responseText={voiceResponse}
-                  size="lg"
-                  className="mx-auto"
-                />
-                <p className="text-sm text-gray-600 mt-2">
-                  Try: "Create a new job", "Show inventory", "What's the status?"
-                </p>
+          <div className="job-list">
+            {todayJobs.length > 0 ? (
+              todayJobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="job-card"
+                  onClick={() => handleJobClick(job.id)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`status-badge ${job.status}`}>
+                          {job.status.replace('_', ' ')}
+                        </span>
+                        {job.priority === 'high' && (
+                          <span className="text-xs text-orange-500">High Priority</span>
+                        )}
+                      </div>
+                      <h3 className="font-semibold text-white">
+                        {job.customerName}
+                      </h3>
+                      <p className="text-sm text-gray-400 mt-1">
+                        {job.propertyAddress}
+                      </p>
+                      <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          <span>{job.scheduledTime}</span>
+                        </div>
+                        {!job.loadVerified && (
+                          <div className="flex items-center gap-1 text-orange-500">
+                            <AlertTriangle className="w-3 h-3" />
+                            <span>Verify load</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state">
+                <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                <p className="text-gray-500">No jobs scheduled for today</p>
               </div>
-            </div>
+            )}
+          </div>
 
-            {/* Crew Status */}
-            {dashboardData?.crewStatus && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Crew Status</h3>
-                <div className="space-y-3">
-                  {dashboardData.crewStatus.slice(0, 5).map((crew) => (
-                    <div key={crew.id} className="flex items-center justify-between">
+          {/* Crew Status */}
+          {dashboardData?.crewStatus && dashboardData.crewStatus.length > 0 && (
+            <>
+              <div className="section-header">
+                <h2>Crew Status</h2>
+                <span className="text-gray-500">{dashboardData.crewStatus.length}</span>
+              </div>
+              <div className="crew-list">
+                {dashboardData.crewStatus.slice(0, 3).map((crew) => (
+                  <div key={crew.id} className="crew-card">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">{crew.name}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="font-medium text-white">{crew.name}</p>
+                        <p className="text-xs text-gray-400 mt-1">
                           {crew.currentJob ? 'Working' : 'Available'}
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className="flex items-center gap-1">
-                          <CheckCircle className="w-4 h-4 text-emerald-500" />
-                          <span className="text-sm text-gray-600">
-                            {crew.jobsCompleted}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4 text-blue-500" />
-                          <span className="text-sm text-gray-600">
-                            {crew.jobsRemaining}
-                          </span>
-                        </div>
+                        <p className="text-sm text-golden">{crew.jobsCompleted} done</p>
+                        <p className="text-xs text-gray-500">{crew.jobsRemaining} remain</p>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </>
+          )}
 
-            {/* Inventory Alerts */}
-            {dashboardData?.inventoryAlerts && dashboardData.inventoryAlerts.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Inventory Alerts</h3>
-                <div className="space-y-3">
-                  {dashboardData.inventoryAlerts.slice(0, 3).map((alert) => (
-                    <div key={alert.itemId} className="flex items-center gap-3">
-                      <AlertTriangle className={`w-5 h-5 ${
-                        alert.severity === 'high' ? 'text-red-500' :
-                        alert.severity === 'medium' ? 'text-orange-500' :
-                        'text-yellow-500'
-                      }`} />
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{alert.itemName}</p>
-                        <p className="text-sm text-gray-600 capitalize">
-                          {alert.alertType.replace('_', ' ')}
-                        </p>
-                      </div>
+          {/* Inventory Alerts */}
+          {dashboardData?.inventoryAlerts && dashboardData.inventoryAlerts.length > 0 && (
+            <>
+              <div className="section-header">
+                <h2>Inventory Alerts</h2>
+                <span className="text-orange-500">{dashboardData.inventoryAlerts.length}</span>
+              </div>
+              <div className="alert-list mb-20">
+                {dashboardData.inventoryAlerts.slice(0, 3).map((alert) => (
+                  <div key={alert.itemId} className="alert-card">
+                    <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${
+                      alert.severity === 'high' ? 'text-red-500' :
+                      alert.severity === 'medium' ? 'text-orange-500' :
+                      'text-yellow-500'
+                    }`} />
+                    <div className="flex-1">
+                      <p className="font-medium text-white">{alert.itemName}</p>
+                      <p className="text-xs text-gray-400 capitalize mt-1">
+                        {alert.alertType.replace('_', ' ')}
+                      </p>
                     </div>
-                  ))}
-                </div>
-                <button
-                  onClick={() => router.push('/supervisor/inventory')}
-                  className="mt-4 w-full text-sm text-blue-600 hover:text-blue-800"
-                >
-                  View all alerts →
-                </button>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Stats card component
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  icon: React.ComponentType<any>;
-  color: string;
-  subtitle?: string;
-}
-
-function StatCard({ title, value, icon: Icon, color, subtitle }: StatCardProps) {
-  return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center">
-        <div className={`p-3 rounded-lg ${color}`}>
-          <Icon className="w-6 h-6 text-white" />
-        </div>
-        <div className="ml-4">
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-          {subtitle && (
-            <p className="text-sm text-gray-500">{subtitle}</p>
+            </>
           )}
         </div>
       </div>
+
+      {/* Voice Command FAB */}
+      <div className="voice-fab">
+        <VoiceCommandButton
+          onTranscript={handleVoiceCommand}
+          responseText={voiceResponse}
+          size="lg"
+          autoSpeak={true}
+        />
+      </div>
+
+      {/* Bottom Actions */}
+      <div className="bottom-actions">
+        <button
+          onClick={() => router.push('/supervisor/jobs/create')}
+          className="btn-primary flex-1"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          Create Job
+        </button>
+        <button
+          onClick={() => router.push('/supervisor/inventory')}
+          className="btn-secondary flex-1"
+        >
+          <Package className="w-5 h-5 mr-2" />
+          Inventory
+        </button>
+      </div>
+
+      {/* Styled JSX */}
+      <style jsx>{`
+        .mobile-container {
+          width: 100%;
+          max-width: 375px;
+          height: 100vh;
+          max-height: 812px;
+          margin: 0 auto;
+          background: #000;
+          color: white;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .header-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem;
+          border-bottom: 1px solid #333;
+          background: rgba(0, 0, 0, 0.9);
+        }
+
+        .notification-bar {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1rem;
+          margin: 0.5rem 1rem;
+          background: rgba(255, 215, 0, 0.1);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          border-radius: 0.5rem;
+        }
+
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 0.75rem;
+        }
+
+        .stat-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.5rem;
+          padding: 1rem;
+        }
+
+        .stat-header {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.75rem;
+          color: #999;
+          margin-bottom: 0.5rem;
+        }
+
+        .stat-content {
+          text-align: center;
+        }
+
+        .stat-value {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #FFD700;
+          margin: 0;
+        }
+
+        .stat-label {
+          font-size: 0.75rem;
+          color: #666;
+          margin: 0;
+        }
+
+        .section-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin: 1.5rem 0 1rem;
+          padding: 0 1rem;
+        }
+
+        .section-header h2 {
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: #FFD700;
+          margin: 0;
+        }
+
+        .job-list,
+        .crew-list,
+        .alert-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          padding: 0 1rem;
+        }
+
+        .job-card,
+        .crew-card,
+        .alert-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.75rem;
+          padding: 1rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .job-card:hover,
+        .crew-card:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 215, 0, 0.4);
+          transform: translateX(2px);
+        }
+
+        .alert-card {
+          display: flex;
+          align-items: start;
+          gap: 0.75rem;
+          cursor: default;
+        }
+
+        .status-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 0.125rem 0.5rem;
+          font-size: 0.7rem;
+          font-weight: 500;
+          border-radius: 9999px;
+          text-transform: uppercase;
+        }
+
+        .status-badge.assigned {
+          background: rgba(59, 130, 246, 0.2);
+          color: #60a5fa;
+        }
+
+        .status-badge.in_progress {
+          background: rgba(34, 197, 94, 0.2);
+          color: #22c55e;
+        }
+
+        .status-badge.completed {
+          background: rgba(156, 163, 175, 0.2);
+          color: #9ca3af;
+        }
+
+        .empty-state {
+          text-align: center;
+          padding: 3rem 1rem;
+        }
+
+        .voice-fab {
+          position: fixed;
+          bottom: 5.5rem;
+          right: 50%;
+          transform: translateX(50%);
+          z-index: 1000;
+        }
+
+        .bottom-actions {
+          position: fixed;
+          bottom: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 100%;
+          max-width: 375px;
+          display: flex;
+          gap: 0.75rem;
+          padding: 1rem;
+          background: rgba(0, 0, 0, 0.9);
+          border-top: 1px solid #333;
+        }
+
+        .btn-primary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem 1rem;
+          background: #FFD700;
+          color: #000;
+          font-weight: 600;
+          border-radius: 0.5rem;
+          border: none;
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+          background: #FFC700;
+        }
+
+        .btn-secondary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem 1rem;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          font-weight: 600;
+          border-radius: 0.5rem;
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+          background: rgba(255, 255, 255, 0.15);
+          border-color: #FFD700;
+        }
+
+        .golden { color: #FFD700; }
+      `}</style>
     </div>
   );
 }

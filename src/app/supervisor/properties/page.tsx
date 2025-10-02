@@ -326,10 +326,10 @@ export default function SupervisorPropertiesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="mobile-container flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-emerald-600 mx-auto mb-4" />
-          <p className="text-gray-600 text-lg">Loading properties...</p>
+          <Loader2 className="w-12 h-12 animate-spin text-golden mx-auto mb-4" />
+          <p className="text-gray-400 text-lg">Loading properties...</p>
         </div>
       </div>
     );
@@ -338,381 +338,567 @@ export default function SupervisorPropertiesPage() {
   // List View
   if (view === 'list') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="mobile-container">
         {/* Header */}
-        <div className="bg-white shadow-lg border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-3">
-                <Building className="w-8 h-8 text-emerald-600" />
-                <h1 className="text-2xl font-bold text-gray-900">Property Management</h1>
-              </div>
-              <div className="text-sm text-gray-500">
-                {filteredProperties.length} properties
-              </div>
-            </div>
+        <div className="header-bar">
+          <div>
+            <h1 className="text-xl font-semibold">Property Management</h1>
+            <p className="text-xs text-gray-500 mt-1">{filteredProperties.length} properties</p>
           </div>
+          <Building className="w-6 h-6 text-golden" />
         </div>
 
         {/* Notifications */}
         {error && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-              <span className="text-red-800">{error}</span>
-              <button 
-                onClick={() => setError(null)}
-                className="ml-auto text-red-600 hover:text-red-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+          <div className="notification-bar error">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            <span className="text-sm">{error}</span>
+            <button 
+              onClick={() => setError(null)}
+              className="ml-auto text-red-500"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         )}
 
         {success && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-              <span className="text-emerald-800">{success}</span>
-            </div>
+          <div className="notification-bar success">
+            <CheckCircle className="w-5 h-5 text-golden flex-shrink-0" />
+            <span className="text-sm">{success}</span>
           </div>
         )}
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Search and Filters */}
-              <div className="bg-white rounded-xl shadow-md p-6">
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      placeholder="Search properties by address or customer..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Filter by Customer
-                      </label>
-                      <select
-                        value={filterCustomerId}
-                        onChange={(e) => setFilterCustomerId(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      >
-                        <option value="">All Customers</option>
-                        {customers.map((customer) => (
-                          <option key={customer.id} value={customer.id}>
-                            {customer.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Filter by Type
-                      </label>
-                      <select
-                        value={filterType}
-                        onChange={(e) => setFilterType(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      >
-                        <option value="">All Types</option>
-                        <option value="residential">Residential</option>
-                        <option value="commercial">Commercial</option>
-                        <option value="industrial">Industrial</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Property List */}
-              <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                {filteredProperties.length === 0 ? (
-                  <div className="p-12 text-center">
-                    <Building className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No properties found</h3>
-                    <p className="text-gray-500">
-                      {searchQuery || filterCustomerId || filterType
-                        ? 'Try adjusting your filters'
-                        : 'Add your first property to get started'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-200">
-                    {filteredProperties.map((property) => {
-                      const TypeIcon = propertyTypeIcons[property.type];
-                      return (
-                        <div
-                          key={property.id}
-                          className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
-                          onClick={() => handleEdit(property)}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-start gap-3 mb-2">
-                                <TypeIcon className="w-6 h-6 text-emerald-600 mt-0.5" />
-                                <div className="flex-1">
-                                  <h3 className="text-lg font-semibold text-gray-900">
-                                    {property.address}
-                                  </h3>
-                                  <div className="flex items-center gap-3 mt-1">
-                                    <span className="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-medium rounded-full">
-                                      {propertyTypeLabels[property.type]}
-                                    </span>
-                                    {property.size && (
-                                      <span className="text-sm text-gray-600 flex items-center gap-1">
-                                        <Ruler className="w-4 h-4" />
-                                        {property.size}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              <div className="ml-9 space-y-1 text-sm">
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <Users className="w-4 h-4" />
-                                  <span>{property.customer?.name || 'Unknown Customer'}</span>
-                                </div>
-                                
-                                {property.notes && (
-                                  <div className="flex items-start gap-2 text-gray-600">
-                                    <FileText className="w-4 h-4 mt-0.5" />
-                                    <span className="line-clamp-2">{property.notes}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 ml-4">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEdit(property);
-                                }}
-                                className="p-2 text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                              >
-                                <Edit className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(property.id);
-                                }}
-                                className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              >
-                                <Trash2 className="w-5 h-5" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+        <div className="flex-1 overflow-y-auto">
+          {/* Search and Filters */}
+          <div className="px-4 py-4 space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search properties..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+              />
             </div>
 
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Actions */}
-              <div className="bg-white rounded-xl shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
-                <ButtonLimiter
-                  actions={actions}
-                  maxVisibleButtons={4}
-                  showVoiceButton={false}
-                  layout="stack"
-                  buttonSize="md"
-                  className="w-full"
-                />
-              </div>
-
-              {/* Quick Stats */}
-              <div className="bg-white rounded-xl shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Overview</h3>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Total Properties</p>
-                    <p className="text-2xl font-bold text-gray-900">{properties.length}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Residential</span>
-                      <span className="font-semibold">
-                        {properties.filter(p => p.type === 'residential').length}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Commercial</span>
-                      <span className="font-semibold">
-                        {properties.filter(p => p.type === 'commercial').length}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Industrial</span>
-                      <span className="font-semibold">
-                        {properties.filter(p => p.type === 'industrial').length}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Create/Edit Form View
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow-lg border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3 h-16">
-            <Building className="w-8 h-8 text-emerald-600" />
-            <h1 className="text-2xl font-bold text-gray-900">
-              {view === 'edit' ? 'Edit Property' : 'Add New Property'}
-            </h1>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-md p-8">
-          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
-            {/* Customer Field */}
-            <div>
-              <label htmlFor="customer" className="block text-sm font-medium text-gray-700 mb-2">
-                Customer *
-              </label>
+            <div className="grid grid-cols-2 gap-3">
               <select
-                id="customer"
-                value={formData.customer_id}
-                onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
-                  formErrors.customer_id 
-                    ? 'border-red-300 focus:ring-red-500' 
-                    : 'border-gray-300 focus:ring-emerald-500'
-                }`}
+                value={filterCustomerId}
+                onChange={(e) => setFilterCustomerId(e.target.value)}
+                className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-golden"
               >
-                <option value="">Select a customer...</option>
+                <option value="">All Customers</option>
                 {customers.map((customer) => (
                   <option key={customer.id} value={customer.id}>
                     {customer.name}
                   </option>
                 ))}
               </select>
-              {formErrors.customer_id && (
-                <p className="mt-1 text-sm text-red-600">{formErrors.customer_id}</p>
-              )}
-            </div>
 
-            {/* Address Field */}
-            <div>
-              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-                Property Address *
-              </label>
-              <textarea
-                id="address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                rows={3}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
-                  formErrors.address 
-                    ? 'border-red-300 focus:ring-red-500' 
-                    : 'border-gray-300 focus:ring-emerald-500'
-                }`}
-                placeholder="Enter the full property address"
-              />
-              {formErrors.address && (
-                <p className="mt-1 text-sm text-red-600">{formErrors.address}</p>
-              )}
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-golden"
+              >
+                <option value="">All Types</option>
+                <option value="residential">Residential</option>
+                <option value="commercial">Commercial</option>
+                <option value="industrial">Industrial</option>
+              </select>
             </div>
+          </div>
 
-            {/* Property Type Field */}
-            <div>
-              <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
-                Property Type *
-              </label>
-              <div className="grid grid-cols-3 gap-4">
-                {(['residential', 'commercial', 'industrial'] as const).map((type) => {
-                  const Icon = propertyTypeIcons[type];
+          {/* Property List */}
+          <div className="px-4">
+            {filteredProperties.length === 0 ? (
+              <div className="empty-state">
+                <Building className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                <p className="text-gray-500">
+                  {searchQuery || filterCustomerId || filterType
+                    ? 'Try adjusting your filters'
+                    : 'Add your first property to get started'}
+                </p>
+              </div>
+            ) : (
+              <div className="property-list">
+                {filteredProperties.map((property) => {
+                  const TypeIcon = propertyTypeIcons[property.type];
                   return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, type })}
-                      className={`p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-all ${
-                        formData.type === type
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                          : 'border-gray-200 hover:border-gray-300 text-gray-600'
-                      }`}
+                    <div
+                      key={property.id}
+                      className="property-card"
+                      onClick={() => handleEdit(property)}
                     >
-                      <Icon className="w-8 h-8" />
-                      <span className="text-sm font-medium">{propertyTypeLabels[type]}</span>
-                    </button>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-start gap-3 mb-2">
+                            <TypeIcon className="w-5 h-5 text-golden mt-0.5" />
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-white">
+                                {property.address}
+                              </h3>
+                              <div className="flex items-center gap-3 mt-1">
+                                <span className="property-type-badge">
+                                  {propertyTypeLabels[property.type]}
+                                </span>
+                                {property.size && (
+                                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                                    <Ruler className="w-3 h-3" />
+                                    {property.size}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="ml-8 space-y-1 text-xs">
+                            <div className="flex items-center gap-2 text-gray-400">
+                              <Users className="w-3 h-3" />
+                              <span>{property.customer?.name || 'Unknown Customer'}</span>
+                            </div>
+                            
+                            {property.notes && (
+                              <div className="flex items-start gap-2 text-gray-500">
+                                <FileText className="w-3 h-3 mt-0.5" />
+                                <span className="line-clamp-2">{property.notes}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(property);
+                            }}
+                            className="icon-button"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(property.id);
+                            }}
+                            className="icon-button text-red-500"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
-            </div>
-
-            {/* Size Field */}
-            <div>
-              <label htmlFor="size" className="block text-sm font-medium text-gray-700 mb-2">
-                Property Size
-              </label>
-              <input
-                id="size"
-                type="text"
-                value={formData.size}
-                onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="e.g., 0.25 acres, 2500 sq ft"
-              />
-            </div>
-
-            {/* Notes Field */}
-            <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                Notes
-              </label>
-              <textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={4}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="Additional notes about the property..."
-              />
-            </div>
-
-            {/* Form Actions */}
-            <div className="pt-4">
-              <ButtonLimiter
-                actions={actions}
-                maxVisibleButtons={4}
-                showVoiceButton={false}
-                layout="inline"
-                buttonSize="lg"
-                className="w-full justify-end"
-              />
-            </div>
-          </form>
+            )}
+          </div>
         </div>
+
+        {/* Bottom Actions */}
+        <div className="bottom-actions">
+          <button
+            onClick={() => router.push('/supervisor')}
+            className="btn-secondary flex-1"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back
+          </button>
+          <button
+            onClick={() => {
+              setView('create');
+              resetForm();
+            }}
+            className="btn-primary flex-1"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Add Property
+          </button>
+        </div>
+
+        {/* Styled JSX */}
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+            background: rgba(0, 0, 0, 0.9);
+          }
+
+          .notification-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 1rem;
+            border-radius: 0.5rem;
+          }
+
+          .notification-bar.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+          }
+
+          .notification-bar.success {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+          }
+
+          .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+          }
+
+          .property-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+          }
+
+          .property-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .property-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 215, 0, 0.4);
+            transform: translateX(2px);
+          }
+
+          .property-type-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.125rem 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+            background: rgba(255, 215, 0, 0.2);
+            color: #FFD700;
+            border-radius: 9999px;
+            text-transform: uppercase;
+          }
+
+          .icon-button {
+            padding: 0.375rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .icon-button:hover {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: #FFD700;
+          }
+
+          .bottom-actions {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.9);
+            border-top: 1px solid #333;
+          }
+
+          .btn-primary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            background: #FFD700;
+            color: #000;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            border: none;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .btn-primary:hover {
+            background: #FFC700;
+          }
+
+          .btn-secondary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #FFD700;
+          }
+
+          .golden { color: #FFD700; }
+        `}</style>
       </div>
+    );
+  }
+
+  // Create/Edit Form View
+  return (
+    <div className="mobile-container">
+      {/* Header */}
+      <div className="header-bar">
+        <div>
+          <h1 className="text-xl font-semibold">
+            {view === 'edit' ? 'Edit Property' : 'Add New Property'}
+          </h1>
+        </div>
+        <Building className="w-6 h-6 text-golden" />
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
+          {/* Customer Field */}
+          <div>
+            <label htmlFor="customer" className="block text-sm font-medium text-gray-400 mb-2">
+              Customer *
+            </label>
+            <select
+              id="customer"
+              value={formData.customer_id}
+              onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
+              className={`w-full px-4 py-3 bg-gray-900 border rounded-lg text-white focus:outline-none focus:ring-2 ${
+                formErrors.customer_id 
+                  ? 'border-red-500 focus:ring-red-500' 
+                  : 'border-gray-800 focus:ring-golden focus:border-golden'
+              }`}
+            >
+              <option value="">Select a customer...</option>
+              {customers.map((customer) => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.name}
+                </option>
+              ))}
+            </select>
+            {formErrors.customer_id && (
+              <p className="mt-1 text-sm text-red-500">{formErrors.customer_id}</p>
+            )}
+          </div>
+
+          {/* Address Field */}
+          <div>
+            <label htmlFor="address" className="block text-sm font-medium text-gray-400 mb-2">
+              Property Address *
+            </label>
+            <textarea
+              id="address"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              rows={3}
+              className={`w-full px-4 py-3 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 ${
+                formErrors.address 
+                  ? 'border-red-500 focus:ring-red-500' 
+                  : 'border-gray-800 focus:ring-golden focus:border-golden'
+              }`}
+              placeholder="Enter the full property address"
+            />
+            {formErrors.address && (
+              <p className="mt-1 text-sm text-red-500">{formErrors.address}</p>
+            )}
+          </div>
+
+          {/* Property Type Field */}
+          <div>
+            <label htmlFor="type" className="block text-sm font-medium text-gray-400 mb-2">
+              Property Type *
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              {(['residential', 'commercial', 'industrial'] as const).map((type) => {
+                const Icon = propertyTypeIcons[type];
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, type })}
+                    className={`p-3 border-2 rounded-lg flex flex-col items-center gap-1 transition-all ${
+                      formData.type === type
+                        ? 'border-golden bg-golden/20 text-golden'
+                        : 'border-gray-800 bg-gray-900 text-gray-400 hover:border-gray-600'
+                    }`}
+                  >
+                    <Icon className="w-6 h-6" />
+                    <span className="text-xs font-medium">{propertyTypeLabels[type]}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Size Field */}
+          <div>
+            <label htmlFor="size" className="block text-sm font-medium text-gray-400 mb-2">
+              Property Size
+            </label>
+            <input
+              id="size"
+              type="text"
+              value={formData.size}
+              onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+              placeholder="e.g., 0.25 acres, 2500 sq ft"
+            />
+          </div>
+
+          {/* Notes Field */}
+          <div>
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-400 mb-2">
+              Notes
+            </label>
+            <textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              rows={4}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+              placeholder="Additional notes about the property..."
+            />
+          </div>
+        </form>
+      </div>
+
+      {/* Bottom Actions */}
+      <div className="bottom-actions">
+        <button
+          onClick={() => {
+            setView('list');
+            resetForm();
+          }}
+          className="btn-secondary flex-1"
+        >
+          <X className="w-5 h-5 mr-2" />
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={isSaving}
+          className="btn-primary flex-1"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="w-5 h-5 mr-2" />
+              Save
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Styled JSX */}
+      <style jsx>{`
+        .mobile-container {
+          width: 100%;
+          max-width: 375px;
+          height: 100vh;
+          max-height: 812px;
+          margin: 0 auto;
+          background: #000;
+          color: white;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .header-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem;
+          border-bottom: 1px solid #333;
+          background: rgba(0, 0, 0, 0.9);
+        }
+
+        .bottom-actions {
+          display: flex;
+          gap: 0.75rem;
+          padding: 1rem;
+          background: rgba(0, 0, 0, 0.9);
+          border-top: 1px solid #333;
+        }
+
+        .btn-primary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem 1rem;
+          background: #FFD700;
+          color: #000;
+          font-weight: 600;
+          border-radius: 0.5rem;
+          border: none;
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+          background: #FFC700;
+        }
+
+        .btn-primary:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .btn-secondary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem 1rem;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          font-weight: 600;
+          border-radius: 0.5rem;
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+          background: rgba(255, 255, 255, 0.15);
+          border-color: #FFD700;
+        }
+
+        .golden { color: #FFD700; }
+      `}</style>
     </div>
   );
 }
