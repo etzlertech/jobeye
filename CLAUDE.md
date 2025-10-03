@@ -8,14 +8,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 JobEye is a Voice-First Field Service Management System built with Architecture-as-Code (AaC) methodology. The project uses Next.js 14 with TypeScript, Supabase for the backend, and follows a strict directive-based development approach.
 
-**Current Feature Development**: Codebase Redundancy Analysis (Feature 008)
-- Automated detection of duplicate code implementations across domains
-- Database table to repository mapping analysis
-- Impact scoring using scale, risk, and code quality metrics
-- Markdown report generation with actionable recommendations
-- CLI tool using TypeScript AST parsing and Supabase schema queries
+**Latest Completed Feature**: Codebase Cleanup and Refactoring (Feature 009) ✅
+- Standardized tenant_id across all tables and code (was mix of company_id/tenant_id)
+- Reduced database from 157 to ~30 tables by removing orphaned tables
+- Converted repositories to class-based pattern extending BaseRepository
+- Created unified inventory model with items and item_transactions tables
+- Implemented cleanup verification scripts and fast pre-commit hooks
 
-**Previous Feature**: MVP Intent-Driven Mobile App (Feature 007)
+**Previous Features**:
+- Feature 008: Codebase Redundancy Analysis - Analysis tools for finding duplicate code
+- Feature 007: MVP Intent-Driven Mobile App
 - Camera-based intent recognition for inventory, job loads, receipts, and maintenance
 - Voice-driven workflows (STT→LLM→TTS) with max 4 buttons per screen
 - Role-based access: Super Admin, Supervisor, Crew Member
@@ -162,6 +164,9 @@ npm run edge:deploy     # Deploy edge functions to production
 npm run check:complexity   # List 20 largest files by line count
 npm run check:security    # Security audit of dependencies
 npm run check:context     # Check file context limits
+npm run verify:cleanup    # Verify Feature 009 cleanup was applied correctly
+npm run pre-commit        # Run fast pre-commit checks
+npm run pre-commit:full   # Run comprehensive pre-commit validation
 ```
 
 ## Architecture Overview
@@ -438,6 +443,9 @@ console.log(result.cost); // 0.00 (used local YOLO)
 6. **Logging**: Use voice-aware logger from `@/core/logger/voice-logger`
 7. **Database Access**: Always use repositories pattern, never direct Supabase calls outside repos
 8. **Vision Integration**: Use `VisionVerificationService` for kit verification, respects budget caps and offline capability
+9. **Multi-Tenant Fields**: ALWAYS use `tenant_id` (never `company_id`) for multi-tenant isolation
+10. **Repository Pattern**: New repositories must extend `BaseRepository` and use class-based pattern
+11. **RLS Policies**: Use standardized JWT path: `current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'`
 
 ## Environment Variables
 

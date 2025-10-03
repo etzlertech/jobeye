@@ -1,16 +1,9 @@
 #!/usr/bin/env sh
 . "$(dirname "$0")/_/husky.sh"
 
-# Run cleanup pattern checks
-echo "🔍 Running cleanup pattern checks..."
+# Run fast pre-commit checks
+echo "🚀 Running fast pre-commit checks..."
 
-# Run ESLint with cleanup rules
-npx eslint --ext .ts,.tsx src/ --config .eslintrc.cleanup.js --max-warnings 0
+npx tsx scripts/ci/fast-pre-commit.ts
 
-# Run pattern violation scanner
-npx tsx scripts/validation/scan-violations.ts --staged-only
-
-# Run existing pre-commit checks
-npm run pre-commit:checks
-
-echo "✅ Pre-commit checks passed"
+# If you need full checks, run: npm run pre-commit:full

@@ -1,0 +1,104 @@
+digraph Dependencies {
+  rankdir=LR;
+  node [shape=box, style=rounded];
+
+  subgraph cluster_phase0 {
+    label="Phase 0";
+    style=filled;
+    color=lightgrey;
+    _src_domains_company_types_company_settings_ts [label="types/company-settings.ts\nunknown"];
+  }
+
+  subgraph cluster_phase1 {
+    label="Phase 1";
+    style=filled;
+    color=lightgrey;
+    _src_core_logger_voice_logger_ts [label="logger/voice-logger.ts\ncore-infrastructure"];
+    _src_core_logger_logger_ts [label="logger/logger.ts\ncore-infrastructure"];
+    _src_core_monitoring_health_check_ts [label="monitoring/health-check.ts\ncore-infrastructure"];
+    _src_core_events_event_bus_ts [label="events/event-bus.ts\ncore-infrastructure"];
+    _src_core_errors_error_types_ts [label="errors/error-types.ts\ncore-infrastructure"];
+    _src_core_errors_error_handler_ts [label="errors/error-handler.ts\ncore-infrastructure"];
+    _src_core_database_transaction_manager_ts [label="database/transaction-manager.ts\ncore-infrastructure"];
+    _src_core_database_connection_ts [label="database/connection.ts\ncore-infrastructure"];
+    _src_core_config_environment_ts [label="config/environment.ts\ncore-infrastructure"];
+    _src_domains_tenant_types_tenant_types_ts [label="types/tenant-types.ts\ntenant"];
+    _src_domains_tenant_services_tenant_service_ts [label="services/tenant-service.ts\ntenant"];
+    _src_domains_tenant_services_subscription_service_ts [label="services/subscription-service.ts\ntenant"];
+    _src_domains_tenant_repositories_tenant_repository_ts [label="repositories/tenant-repository.ts\ntenant"];
+    _src_domains_auth_repositories_user_repository_ts [label="repositories/user-repository.ts\nauthentication"];
+    _src_domains_auth_repositories_session_repository_ts [label="repositories/session-repository.ts\nauthentication"];
+    _src_domains_auth_utils_auth_validators_ts [label="utils/auth-validators.ts\nauthentication"];
+    _src_domains_auth_utils_auth_helpers_ts [label="utils/auth-helpers.ts\nauthentication"];
+    _src_domains_auth_services_permission_service_ts [label="services/permission-service.ts\nauthentication"];
+    _src_domains_auth_services_mfa_service_ts [label="services/mfa-service.ts\nauthentication"];
+    _src_domains_auth_services_auth_service_ts [label="services/auth-service.ts\nauthentication"];
+    _src_domains_auth_types_auth_types_ts [label="types/auth-types.ts\nauthentication"];
+    _src_domains_auth_guards_auth_guard_tsx [label="guards/auth-guard.tsx\nauthentication"];
+    _src_app_api_auth_register_route_ts [label="register/route.ts\nauthentication"];
+    _src_app_api_auth_refresh_route_ts [label="refresh/route.ts\nauthentication"];
+    _src_app_api_auth_logout_route_ts [label="logout/route.ts\nauthentication"];
+    _src_app_api_auth_login_route_ts [label="login/route.ts\nauthentication"];
+  }
+
+  subgraph cluster_phase2 {
+    label="Phase 2";
+    style=filled;
+    color=lightgrey;
+    _src_domains_property_validators_property_validators_ts [label="validators/property-validators.ts\nproperty-management"];
+    _src_domains_property_types_property_types_ts [label="types/property-types.ts\nproperty-management"];
+    _src_domains_property_services_property_voice_commands_ts [label="services/property-voice-commands.ts\nproperty-management"];
+    _src_domains_property_services_property_service_ts [label="services/property-service.ts\nproperty-management"];
+    _src_domains_property_services_property_search_service_ts [label="services/property-search-service.ts\nproperty-management"];
+    _src_domains_property_services_property_offline_sync_ts [label="services/property-offline-sync.ts\nproperty-management"];
+    _src_domains_property_repositories_service_location_repository_ts [label="repositories/service-location-repository.ts\nproperty-management"];
+    _src_domains_property_repositories_property_repository_ts [label="repositories/property-repository.ts\nproperty-management"];
+    _src_domains_material_types_material_types_ts [label="types/material-types.ts\nmaterial-catalog"];
+    _src_domains_material_services_material_service_ts [label="services/material-service.ts\nmaterial-catalog"];
+    _src_domains_material_repositories_material_repository_ts [label="repositories/material-repository.ts\nmaterial-catalog"];
+    _src_domains_equipment_types_equipment_types_ts [label="types/equipment-types.ts\nequipment-tracking"];
+    _src_domains_equipment_services_equipment_service_ts [label="services/equipment-service.ts\nequipment-tracking"];
+    _src_domains_equipment_repositories_equipment_repository_ts [label="repositories/equipment-repository.ts\nequipment-tracking"];
+    _src_domains_customer_services_customer_voice_commands_ts [label="services/customer-voice-commands.ts\ncustomer-management"];
+    _src_domains_customer_services_customer_service_ts [label="services/customer-service.ts\ncustomer-management"];
+    _src_domains_customer_services_customer_search_service_ts [label="services/customer-search-service.ts\ncustomer-management"];
+    _src_domains_customer_services_customer_offline_sync_ts [label="services/customer-offline-sync.ts\ncustomer-management"];
+    _src_domains_customer_validators_customer_validators_ts [label="validators/customer-validators.ts\ncustomer-management"];
+    _src_domains_customer_repositories_contact_repository_ts [label="repositories/contact-repository.ts\ncustomer-management"];
+    _src_domains_customer_types_customer_types_ts [label="types/customer-types.ts\ncustomer-management"];
+  }
+
+  subgraph cluster_phase3 {
+    label="Phase 3";
+    style=filled;
+    color=lightgrey;
+    _src_core_config_feature_flags_ts [label="config/feature-flags.ts\nscheduling-kits"];
+    _src_domains_voice_services_voice_intake_service_ts [label="services/voice-intake-service.ts\nvoice-pipeline"];
+    _src_domains_voice_services_text_to_speech_service_ts [label="services/text-to-speech-service.ts\nvoice-pipeline"];
+    _src_domains_voice_services_speech_to_text_service_ts [label="services/speech-to-text-service.ts\nvoice-pipeline"];
+    _src_domains_voice_services_intent_recognition_service_ts [label="services/intent-recognition-service.ts\nvoice-pipeline"];
+    _src_domains_voice_types_voice_types_ts [label="types/voice-types.ts\nvoice-pipeline"];
+    _src_domains_vision_types_vision_types_ts [label="types/vision-types.ts\nvision-pipeline"];
+    _src_domains_vision_types_vision_context_types_ts [label="types/vision-context-types.ts\nvision-pipeline"];
+    _src_domains_vision_services_vision_analysis_service_ts [label="services/vision-analysis-service.ts\nvision-pipeline"];
+    _src_app_api_voice_intake_route_ts [label="intake/route.ts\nvoice-pipeline"];
+  }
+
+  subgraph cluster_phase4 {
+    label="Phase 4";
+    style=filled;
+    color=lightgrey;
+    _src_domains_vision_services_multi_object_vision_service_ts [label="services/multi-object-vision-service.ts\njob-execution"];
+    _src_domains_job_templates_types_job_template_types_ts [label="types/job-template-types.ts\njob-execution"];
+    _src_domains_job_templates_repositories_job_template_repository_ts [label="repositories/job-template-repository.ts\njob-execution"];
+    _src_domains_job_services_job_service_ts [label="services/job-service.ts\njob-execution"];
+    _src_domains_job_types_job_types_ts [label="types/job-types.ts\njob-execution"];
+    _src_domains_job_repositories_job_repository_ts [label="repositories/job-repository.ts\njob-execution"];
+    _src_domains_irrigation_types_irrigation_types_ts [label="types/irrigation-types.ts\nirrigation"];
+    _src_domains_equipment_types_container_types_ts [label="types/container-types.ts\nequipment-tracking"];
+    _src_domains_equipment_services_container_service_ts [label="services/container-service.ts\nequipment-tracking"];
+    _src_domains_equipment_repositories_container_repository_ts [label="repositories/container-repository.ts\nequipment-tracking"];
+    _src_domains_equipment_repositories_container_repository_enhanced_ts [label="repositories/container-repository-enhanced.ts\nequipment-tracking"];
+  }
+
+}

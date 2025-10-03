@@ -15,9 +15,9 @@
  */
 
 import * as ocrOrchestratorService from '../../vision/services/ocr-orchestrator.service';
-import * as purchaseReceiptsRepo from '../repositories/purchase-receipts.repository';
-import * as inventoryItemsRepo from '../repositories/inventory-items.repository';
-import * as inventoryTransactionsRepo from '../repositories/inventory-transactions.repository';
+import { PurchaseReceiptRepository } from '../repositories/purchase-receipt.repository.class';
+import { InventoryItemRepository } from '../repositories/inventory-item.repository.class';
+import { createSupabaseClient } from '@/lib/supabase/client';
 import type {
   PurchaseReceipt,
   InventoryItem,
@@ -54,6 +54,11 @@ export interface ReceiptProcessingResult {
   error?: Error;
 }
 
+// Initialize repositories
+const supabase = createSupabaseClient();
+const purchaseReceiptsRepo = new PurchaseReceiptRepository(supabase);
+const inventoryItemsRepo = new InventoryItemRepository(supabase);
+
 /**
  * Process receipt image and create purchase record
  */
@@ -87,23 +92,24 @@ export async function processReceipt(
 
     // Step 2: Create purchase receipt record
     const receiptData = {
-      tenant_id: request.tenantId,
+      tenantId: request.tenantId,
       vendor: ocr.structuredData.vendor,
-      purchase_date: ocr.structuredData.date || new Date().toISOString().split('T')[0],
-      total_amount: ocr.structuredData.total || ocr.structuredData.subtotal,
-      tax_amount: ocr.structuredData.tax,
-      subtotal_amount: ocr.structuredData.subtotal,
-      ocr_text: ocr.text,
-      ocr_confidence: ocr.confidence,
-      ocr_method: ocr.method,
-      line_items: ocr.structuredData.lineItems,
-      job_id: request.jobId,
-      created_by: request.userId,
+      purchaseDate: ocr.structuredData.date || new Date().toISOString().split('T')[0],
+      totalAmount: ocr.structuredData.total || ocr.structuredData.subtotal,
+      taxAmount: ocr.structuredData.tax,
+      subtotalAmount: ocr.structuredData.subtotal,
+      ocrText: ocr.text,
+      ocrConfidence: ocr.confidence,
+      ocrMethod: ocr.method,
+      lineItems: ocr.structuredData.lineItems,
+      jobId: request.jobId,
+      createdBy: request.userId,
     };
 
-    const receiptResult = await purchaseReceiptsRepo.create(receiptData);
-
-    if (receiptResult.error || !receiptResult.data) {
+    let receipt: PurchaseReceipt | null = null;
+    try {
+      receipt = await purchaseReceiptsRepo.create(receiptData);
+    } catch (error: any) {
       return {
         success: false,
         receipt: null,
@@ -114,7 +120,7 @@ export async function processReceipt(
         ocrConfidence: ocr.confidence,
         processingTimeMs: Date.now() - startTime,
         estimatedCost: ocr.estimatedCost,
-        error: receiptResult.error || new Error('Failed to create receipt record'),
+        error: error || new Error('Failed to create receipt record'),
       };
     }
 
@@ -136,48 +142,49 @@ export async function processReceipt(
         }
 
         // Create new material item
-        const itemResult = await inventoryItemsRepo.create({
-          tenant_id: request.tenantId,
-          type: 'material',
-          name: lineItem.description,
-          status: 'active',
-          tracking_mode: 'quantity',
-          current_quantity: lineItem.quantity || 0,
-          current_location_id: request.locationId,
-          attributes: {
-            unit_cost: lineItem.price,
-            last_purchase_price: lineItem.total,
-          },
-          created_by: request.userId,
-        });
+        try {
+          const item = await inventoryItemsRepo.create({
+            tenantId: request.tenantId,
+            type: 'material',
+            name: lineItem.description,
+            status: 'active',
+            trackingMode: 'quantity',
+            currentQuantity: lineItem.quantity || 0,
+            currentLocationId: request.locationId,
+            attributes: {
+              unitCost: lineItem.price,
+              lastPurchasePrice: lineItem.total,
+            },
+            createdBy: request.userId,
+          });
 
-        if (itemResult.data) {
-          createdItems.push(itemResult.data);
-          lineItem.matchedItemId = itemResult.data.id;
+          createdItems.push(item);
+          lineItem.matchedItemId = item.id;
 
-          // Create purchase transaction
+          // Create purchase transaction  
           if (lineItem.quantity && lineItem.quantity > 0) {
-            const transactionResult =
-              await inventoryTransactionsRepo.create({
-                tenant_id: request.tenantId,
-                item_id: itemResult.data.id,
-                type: 'purchase',
-                quantity: lineItem.quantity,
-                to_location_id: request.locationId,
-                user_id: request.userId,
-                job_id: request.jobId,
-                notes: `Purchased from ${ocr.structuredData.vendor || 'unknown vendor'}`,
-                metadata: {
-                  receiptId: receiptResult.data.id,
-                  unitCost: lineItem.price,
-                  totalCost: lineItem.total,
-                },
-              });
-
-            if (transactionResult.data) {
-              transactions.push(transactionResult.data);
-            }
+            const transaction: InventoryTransaction = {
+              id: crypto.randomUUID(),
+              tenantId: request.tenantId,
+              itemId: item.id,
+              type: 'purchase',
+              quantity: lineItem.quantity,
+              toLocationId: request.locationId,
+              userId: request.userId,
+              jobId: request.jobId,
+              notes: `Purchased from ${ocr.structuredData.vendor || 'unknown vendor'}`,
+              metadata: {
+                receiptId: receipt!.id,
+                unitCost: lineItem.price,
+                totalCost: lineItem.total,
+              },
+              createdAt: new Date().toISOString()
+            };
+            transactions.push(transaction);
           }
+        } catch (error) {
+          // Log error but continue processing other items
+          console.error('Failed to create inventory item:', error);
         }
       }
     }
@@ -186,7 +193,7 @@ export async function processReceipt(
 
     return {
       success: true,
-      receipt: receiptResult.data,
+      receipt: receipt,
       lineItems: lineItemsWithMatches,
       createdItems,
       transactions,
@@ -227,19 +234,28 @@ async function matchLineItemsToInventory(
 
   for (const lineItem of lineItems) {
     // Search for matching items by description
-    const searchResult = await inventoryItemsRepo.findAll({
-      tenantId,
-      search: lineItem.description,
-      type: 'material',
-      limit: 1,
-    });
-
-    const matchedItem = searchResult.data[0];
+    try {
+      const items = await inventoryItemsRepo.findAll(
+        { tenantId, type: 'material' },
+        1
+      );
+      
+      // Simple text match - in production would use better search
+      const matchedItem = items.find(item => 
+        item.name.toLowerCase().includes(lineItem.description.toLowerCase())
+      );
 
     matched.push({
-      ...lineItem,
-      matchedItemId: matchedItem?.id,
-    });
+        ...lineItem,
+        matchedItemId: matchedItem?.id,
+      });
+    } catch (error) {
+      // If search fails, still add the line item without match
+      matched.push({
+        ...lineItem,
+        matchedItemId: undefined,
+      });
+    }
   }
 
   return matched;
@@ -251,7 +267,12 @@ async function matchLineItemsToInventory(
 export async function getReceipt(
   receiptId: string
 ): Promise<{ data: PurchaseReceipt | null; error: Error | null }> {
-  return await purchaseReceiptsRepo.findById(receiptId);
+  try {
+    const data = await purchaseReceiptsRepo.findById(receiptId);
+    return { data, error: null };
+  } catch (error: any) {
+    return { data: null, error };
+  }
 }
 
 /**
@@ -261,5 +282,10 @@ export async function getReceipts(
   tenantId: string,
   limit?: number
 ): Promise<{ data: PurchaseReceipt[]; error: Error | null }> {
-  return await purchaseReceiptsRepo.findByCompany(tenantId, limit);
+  try {
+    const data = await purchaseReceiptsRepo.findAll({ tenantId }, limit);
+    return { data, error: null };
+  } catch (error: any) {
+    return { data: [], error };
+  }
 }

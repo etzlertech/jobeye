@@ -8,8 +8,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import * as verificationRepo from '@/domains/vision/repositories/vision-verification.repository';
-import * as detectedItemRepo from '@/domains/vision/repositories/detected-item.repository';
+import { VisionVerificationRepository } from '@/domains/vision/repositories/vision-verification.repository.class';
+import { DetectedItemRepository } from '@/domains/vision/repositories/detected-item.repository.class';
+import { createSupabaseClient } from '@/lib/supabase/client';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -31,17 +32,15 @@ export async function GET(
 
     const verificationId = params.id;
 
+    // Initialize repositories
+    const supabase = createSupabaseClient();
+    const verificationRepo = new VisionVerificationRepository(supabase);
+    const detectedItemRepo = new DetectedItemRepository(supabase);
+
     // Get verification
-    const verificationResult = await verificationRepo.findVerificationById(verificationId);
+    const verification = await verificationRepo.findById(verificationId);
 
-    if (verificationResult.error) {
-      return NextResponse.json(
-        { error: 'Failed to fetch verification', details: verificationResult.error.message },
-        { status: 500 }
-      );
-    }
-
-    if (!verificationResult.data) {
+    if (!verification) {
       return NextResponse.json(
         { error: 'Verification not found' },
         { status: 404 }
@@ -49,25 +48,18 @@ export async function GET(
     }
 
     // Get detected items for this verification
-    const itemsResult = await detectedItemRepo.findItemsForVerification(verificationId);
-
-    if (itemsResult.error) {
-      return NextResponse.json(
-        { error: 'Failed to fetch detected items', details: itemsResult.error.message },
-        { status: 500 }
-      );
-    }
+    const items = await detectedItemRepo.findByVerification(verificationId);
 
     // Get item statistics
-    const statsResult = await detectedItemRepo.getItemStatsForVerification(verificationId);
+    const stats = await detectedItemRepo.getVerificationStats(verificationId);
 
     return NextResponse.json(
       {
         success: true,
         data: {
-          verification: verificationResult.data,
-          detectedItems: itemsResult.data || [],
-          statistics: statsResult.data || {
+          verification,
+          detectedItems: items,
+          statistics: stats || {
             total: 0,
             matched: 0,
             unmatched: 0,

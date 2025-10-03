@@ -13,7 +13,8 @@
  * 4. Export for model fine-tuning
  */
 
-import * as trainingDataRepo from '../repositories/training-data.repository';
+import { TrainingDataRepository } from '../repositories/training-data.repository.class';
+import { createSupabaseClient } from '@/lib/supabase/client';
 import type { TrainingDataRecord } from '../types/inventory-types';
 
 export interface TrainingDataRequest {
@@ -41,6 +42,10 @@ export interface TrainingDataResult {
   error?: Error;
 }
 
+// Initialize repository
+const supabase = createSupabaseClient();
+const trainingDataRepo = new TrainingDataRepository(supabase);
+
 /**
  * Create training data record from user correction
  */
@@ -49,36 +54,28 @@ export async function recordCorrection(
 ): Promise<TrainingDataResult> {
   try {
     const recordData = {
-      tenant_id: request.tenantId,
-      detection_session_id: request.detectionSessionId,
-      image_url: request.imageUrl,
-      crop_url: request.cropUrl,
+      tenantId: request.tenantId,
+      detectionSessionId: request.detectionSessionId,
+      imageUrl: request.imageUrl,
+      cropUrl: request.cropUrl,
       bbox: request.bbox,
-      detected_label: request.detectedLabel,
-      detected_confidence: request.detectedConfidence,
-      corrected_label: request.correctedLabel,
-      corrected_item_id: request.correctedItemId,
-      detection_method: request.detectionMethod,
-      created_by: request.userId,
+      detectedLabel: request.detectedLabel,
+      detectedConfidence: request.detectedConfidence,
+      correctedLabel: request.correctedLabel,
+      correctedItemId: request.correctedItemId,
+      detectionMethod: request.detectionMethod,
+      createdBy: request.userId,
       metadata: {
         wasCorrection: request.detectedLabel !== request.correctedLabel,
         confidenceGap: Math.abs(request.detectedConfidence - 1.0),
       },
     };
 
-    const result = await trainingDataRepo.create(recordData);
-
-    if (result.error || !result.data) {
-      return {
-        success: false,
-        record: null,
-        error: result.error || new Error('Failed to create training data record'),
-      };
-    }
+    const record = await trainingDataRepo.create(recordData);
 
     return {
       success: true,
-      record: result.data,
+      record,
     };
   } catch (err: any) {
     return {
@@ -139,7 +136,12 @@ export async function getTrainingData(
   tenantId: string,
   limit?: number
 ): Promise<{ data: TrainingDataRecord[]; error: Error | null }> {
-  return await trainingDataRepo.findByCompany(tenantId, limit);
+  try {
+    const data = await trainingDataRepo.findAll({ tenantId }, limit);
+    return { data, error: null };
+  } catch (error: any) {
+    return { data: [], error };
+  }
 }
 
 /**
@@ -148,7 +150,12 @@ export async function getTrainingData(
 export async function getTrainingDataBySession(
   sessionId: string
 ): Promise<{ data: TrainingDataRecord | null; error: Error | null }> {
-  return await trainingDataRepo.findById(sessionId);
+  try {
+    const data = await trainingDataRepo.findById(sessionId);
+    return { data, error: null };
+  } catch (error: any) {
+    return { data: null, error };
+  }
 }
 
 /**
@@ -169,13 +176,7 @@ export async function calculateAccuracyMetrics(
   error: Error | null;
 }> {
   try {
-    const result = await trainingDataRepo.findByCompany(tenantId, 1000);
-
-    if (result.error) {
-      return { data: null, error: result.error };
-    }
-
-    const records = result.data;
+    const records = await trainingDataRepo.findAll({ tenantId }, 1000);
     const totalDetections = records.length;
 
     if (totalDetections === 0) {

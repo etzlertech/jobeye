@@ -8,7 +8,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import * as verificationRepo from '@/domains/vision/repositories/vision-verification.repository';
+import { VisionVerificationRepository } from '@/domains/vision/repositories/vision-verification.repository.class';
+import { createSupabaseClient } from '@/lib/supabase/client';
 
 export const dynamic = "force-dynamic";
 
@@ -42,34 +43,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Initialize repository
+    const supabase = createSupabaseClient();
+    const verificationRepo = new VisionVerificationRepository(supabase);
+
     // Query verifications
-    const result = await verificationRepo.findVerifications({
+    const filters = {
       tenantId,
       kitId: kitId || undefined,
       verificationResult: verificationResult || undefined,
       processingMethod: processingMethod || undefined,
       verifiedAfter: verifiedAfter || undefined,
-      verifiedBefore: verifiedBefore || undefined,
-      limit,
-      offset
-    });
+      verifiedBefore: verifiedBefore || undefined
+    };
 
-    if (result.error) {
-      return NextResponse.json(
-        { error: 'Failed to fetch verifications', details: result.error.message },
-        { status: 500 }
-      );
-    }
+    const verifications = await verificationRepo.findAll(filters, limit, offset);
+    const count = await verificationRepo.count(filters);
 
     return NextResponse.json(
       {
         success: true,
-        data: result.data || [],
-        count: result.count || 0,
+        data: verifications,
+        count: count,
         pagination: {
           limit,
           offset,
-          hasMore: (result.count || 0) > offset + limit
+          hasMore: count > offset + limit
         }
       },
       { status: 200 }

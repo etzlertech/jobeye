@@ -11,9 +11,10 @@ import { runYoloInference, YoloInferenceResult } from '../lib/yolo-inference';
 import { evaluateFallbackNeed, VlmRequest, VlmResult } from '../lib/vlm-fallback-router';
 import { callOpenAIVision } from '../lib/openai-vision-adapter';
 import { estimateCost } from '../lib/cost-estimator';
-import * as verificationRepo from '../repositories/vision-verification.repository';
-import * as detectedItemRepo from '../repositories/detected-item.repository';
-import * as costRecordRepo from '../repositories/cost-record.repository';
+import { VisionVerificationRepository } from '../repositories/vision-verification.repository.class';
+import { DetectedItemRepository } from '../repositories/detected-item.repository.class';
+import { CostRecordRepository } from '../repositories/cost-record.repository.class';
+import { createSupabaseClient } from '@/lib/supabase/client';
 
 export interface VerifyKitRequest {
   kitId: string;
@@ -55,6 +56,17 @@ export interface VerificationError {
  * Main verification service - orchestrates YOLO, VLM, and repository operations
  */
 export class VisionVerificationService {
+  private verificationRepo: VisionVerificationRepository;
+  private detectedItemRepo: DetectedItemRepository;
+  private costRecordRepo: CostRecordRepository;
+
+  constructor() {
+    const supabase = createSupabaseClient();
+    this.verificationRepo = new VisionVerificationRepository(supabase);
+    this.detectedItemRepo = new DetectedItemRepository(supabase);
+    this.costRecordRepo = new CostRecordRepository(supabase);
+  }
+
   /**
    * Verify kit contents using YOLO + optional VLM fallback
    */
@@ -95,29 +107,19 @@ export class VisionVerificationService {
       // Step 3: If fallback needed, check budget and call VLM
       if (fallbackDecision.shouldUseFallback) {
         // Check budget
-        const budgetCheck = await costRecordRepo.canMakeVlmRequest(
-          tenantId,
-          maxBudgetUsd,
-          maxRequestsPerDay
-        );
+        try {
+          const budgetCheck = await this.costRecordRepo.canMakeVlmRequest(
+            tenantId,
+            maxBudgetUsd || 10.0,
+            maxRequestsPerDay || 100
+          );
 
-        if (budgetCheck.error) {
-          return {
-            data: null,
-            error: {
-              code: 'UNKNOWN',
-              message: 'Failed to check budget',
-              details: budgetCheck.error
-            }
-          };
-        }
-
-        if (!budgetCheck.data?.allowed) {
-          // Budget exceeded - use YOLO results only
-          console.warn(`VLM fallback blocked: ${budgetCheck.data?.reason}`);
-        } else {
-          // Budget OK - call VLM
-          const vlmRequest: VlmRequest = {
+          if (!budgetCheck.allowed) {
+            // Budget exceeded - use YOLO results only
+            console.warn(`VLM fallback blocked: ${budgetCheck.reason}`);
+          } else {
+            // Budget OK - call VLM
+            const vlmRequest: VlmRequest = {
             imageData,
             kitId,
             expectedItems,
@@ -133,16 +135,23 @@ export class VisionVerificationService {
             totalCost = vlmResult.estimatedCostUsd;
 
             // Record cost
-            await costRecordRepo.createCostRecord({
-              tenant_id: tenantId,
-              verification_id: '', // Will update after creating verification
-              cost_usd: vlmResult.estimatedCostUsd,
+            await this.costRecordRepo.create({
+              tenantId: tenantId,
+              verificationId: undefined, // Will update after creating verification
               provider: 'openai-gpt4-vision',
-              model_version: vlmResult.modelVersion,
-              tokens_used: vlmResult.tokensUsed,
-              image_size_bytes: this.getImageSize(imageData)
+              model: vlmResult.modelVersion,
+              operation: 'vision_verification',
+              tokenCount: vlmResult.tokensUsed,
+              costUsd: vlmResult.estimatedCostUsd,
+              metadata: {
+                imageSizeBytes: this.getImageSize(imageData)
+              }
             });
+            }
           }
+        } catch (budgetError) {
+          console.error('Budget check error:', budgetError);
+          // Continue with YOLO results only
         }
       }
 
@@ -159,46 +168,51 @@ export class VisionVerificationService {
       const confidenceScore = this.calculateOverallConfidence(matchingResult.detectedItems);
 
       // Step 7: Save verification record
-      const verification = await verificationRepo.createVerification({
-        tenant_id: tenantId,
-        kit_id: kitId,
-        verification_result: verificationResult,
-        processing_method: processingMethod,
-        confidence_score: confidenceScore,
-        processing_time_ms: Date.now() - startTime,
-        verified_at: new Date().toISOString()
-      });
+      let verificationId: string;
+      try {
+        const verification = await this.verificationRepo.create({
+          tenantId: tenantId,
+          kitId: kitId,
+          verificationResult: verificationResult,
+          processingMethod: processingMethod,
+          confidenceScore: confidenceScore,
+          detectionCount: matchingResult.detectedItems.length,
+          expectedCount: expectedItems.length,
+          processingTimeMs: Date.now() - startTime,
+          costUsd: totalCost,
+          verifiedAt: new Date().toISOString()
+        });
 
-      if (verification.error || !verification.data) {
+        verificationId = verification.id;
+
+        // Step 8: Save detected items
+        const itemsToSave = matchingResult.detectedItems.map(item => ({
+          verificationId: verificationId,
+          itemType: item.itemType,
+          itemName: item.itemType, // Use type as name for now
+          confidenceScore: item.confidence,
+          matchStatus: item.matchStatus,
+          expectedItemId: item.matchStatus === 'matched' ? kitId : undefined
+        }));
+
+        if (itemsToSave.length > 0) {
+          await this.detectedItemRepo.createMany(itemsToSave);
+        }
+      } catch (error) {
         return {
           data: null,
           error: {
             code: 'UNKNOWN',
             message: 'Failed to save verification record',
-            details: verification.error
+            details: error
           }
         };
-      }
-
-      const verificationId = verification.data.id;
-
-      // Step 8: Save detected items
-      const itemsToSave = matchingResult.detectedItems.map(item => ({
-        verification_id: verificationId,
-        item_type: item.itemType,
-        confidence_score: item.confidence,
-        match_status: item.matchStatus,
-        matched_kit_item_id: item.matchStatus === 'matched' ? kitId : undefined
-      }));
-
-      if (itemsToSave.length > 0) {
-        await detectedItemRepo.createDetectedItems(itemsToSave);
       }
 
       // Step 9: Build and return result
       const processingTimeMs = Date.now() - startTime;
 
-      const budgetCheck = await costRecordRepo.canMakeVlmRequest(
+      const budgetCheck = await this.costRecordRepo.canMakeVlmRequest(
         tenantId,
         maxBudgetUsd,
         maxRequestsPerDay

@@ -7,7 +7,8 @@
  * @test_coverage ≥80%
  */
 
-import * as costRecordRepo from '../repositories/cost-record.repository';
+import { CostRecordRepository } from '../repositories/cost-record.repository.class';
+import { createSupabaseClient } from '@/lib/supabase/client';
 
 export interface CostAlert {
   type: 'warning' | 'critical';
@@ -44,6 +45,12 @@ export interface BudgetCheckResult {
 export class CostTrackingService {
   private readonly WARNING_THRESHOLD = 0.8; // 80% of budget
   private readonly CRITICAL_THRESHOLD = 0.95; // 95% of budget
+  private costRecordRepo: CostRecordRepository;
+
+  constructor() {
+    const supabase = createSupabaseClient();
+    this.costRecordRepo = new CostRecordRepository(supabase);
+  }
 
   /**
    * Check if a VLM request is within budget
@@ -53,35 +60,35 @@ export class CostTrackingService {
     dailyBudgetUsd?: number,
     dailyRequestLimit?: number
   ): Promise<BudgetCheckResult> {
-    const budgetCheck = await costRecordRepo.canMakeVlmRequest(
-      tenantId,
-      dailyBudgetUsd,
-      dailyRequestLimit
-    );
+    try {
+      const budgetCheck = await this.costRecordRepo.canMakeVlmRequest(
+        tenantId,
+        dailyBudgetUsd,
+        dailyRequestLimit
+      );
 
-    if (budgetCheck.error || !budgetCheck.data) {
-      throw new Error(`Failed to check budget: ${budgetCheck.error?.message}`);
+      const { allowed, currentCost, currentRequests, remainingBudget, remainingRequests, reason } = budgetCheck;
+
+      // Generate alerts based on usage
+      const alerts = this.generateAlerts(
+        currentCost,
+        currentRequests,
+        dailyBudgetUsd || 10.0,
+        dailyRequestLimit || 100
+      );
+
+      return {
+        allowed,
+        reason,
+        currentCost,
+        currentRequests,
+        remainingBudget,
+        remainingRequests,
+        alerts
+      };
+    } catch (error) {
+      throw new Error(`Failed to check budget: ${error}`);
     }
-
-    const { allowed, currentCost, currentRequests, remainingBudget, remainingRequests, reason } = budgetCheck.data;
-
-    // Generate alerts based on usage
-    const alerts = this.generateAlerts(
-      currentCost,
-      currentRequests,
-      dailyBudgetUsd || 10.0,
-      dailyRequestLimit || 100
-    );
-
-    return {
-      allowed,
-      reason,
-      currentCost,
-      currentRequests,
-      remainingBudget,
-      remainingRequests,
-      alerts
-    };
   }
 
   /**
@@ -96,54 +103,53 @@ export class CostTrackingService {
     tokensUsed?: number,
     imageSizeBytes?: number
   ): Promise<{ success: boolean; error?: string }> {
-    const result = await costRecordRepo.createCostRecord({
-      tenant_id: tenantId,
-      verification_id: verificationId,
-      cost_usd: costUsd,
-      provider,
-      model_version: modelVersion,
-      tokens_used: tokensUsed,
-      image_size_bytes: imageSizeBytes
-    });
+    try {
+      await this.costRecordRepo.create({
+        tenantId: tenantId,
+        verificationId: verificationId,
+        provider,
+        model: modelVersion,
+        operation: 'vision_verification',
+        tokenCount: tokensUsed || 0,
+        costUsd: costUsd,
+        metadata: {
+          imageSizeBytes
+        }
+      });
 
-    if (result.error) {
+      return { success: true };
+    } catch (error) {
       return {
         success: false,
-        error: result.error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
-
-    return { success: true };
   }
 
   /**
    * Get today's cost summary
    */
   async getTodayCostSummary(tenantId: string): Promise<CostSummary> {
-    const todayResult = await costRecordRepo.getTodaysCost(tenantId);
-    const totalResult = await costRecordRepo.getTotalCost(tenantId);
+    try {
+      const todayResult = await this.costRecordRepo.getTodaysCost(tenantId);
+      const totalResult = await this.costRecordRepo.getTotalCost(tenantId);
 
-    if (todayResult.error || !todayResult.data) {
-      throw new Error(`Failed to get today's cost: ${todayResult.error?.message}`);
+      const averageCostPerRequest =
+        totalResult.requestCount > 0
+          ? totalResult.totalCost / totalResult.requestCount
+          : 0;
+
+      return {
+        tenantId,
+        todayCost: todayResult.totalCost,
+        todayRequests: todayResult.requestCount,
+        totalCost: totalResult.totalCost,
+        totalRequests: totalResult.requestCount,
+        averageCostPerRequest
+      };
+    } catch (error) {
+      throw new Error(`Failed to get cost summary: ${error}`);
     }
-
-    if (totalResult.error || !totalResult.data) {
-      throw new Error(`Failed to get total cost: ${totalResult.error?.message}`);
-    }
-
-    const averageCostPerRequest =
-      totalResult.data.requestCount > 0
-        ? totalResult.data.totalCost / totalResult.data.requestCount
-        : 0;
-
-    return {
-      tenantId,
-      todayCost: todayResult.data.totalCost,
-      todayRequests: todayResult.data.requestCount,
-      totalCost: totalResult.data.totalCost,
-      totalRequests: totalResult.data.requestCount,
-      averageCostPerRequest
-    };
   }
 
   /**
@@ -159,10 +165,10 @@ export class CostTrackingService {
     requestCount: number;
     avgCost: number;
   }>> {
-    const result = await costRecordRepo.getCostStatsByProvider(tenantId, startDate, endDate);
-
-    if (result.error || !result.data) {
-      throw new Error(`Failed to get cost breakdown: ${result.error?.message}`);
+    try {
+      return await this.costRecordRepo.getCostStatsByProvider(tenantId, startDate, endDate);
+    } catch (error) {
+      throw new Error(`Failed to get cost breakdown: ${error}`);
     }
 
     return result.data;
@@ -251,49 +257,6 @@ export class CostTrackingService {
     return alerts.some(alert => alert.type === 'critical');
   }
 
-  /**
-   * Get daily cost summaries for date range
-   */
-  async getDailyCostSummaries(
-    tenantId: string,
-    startDate: string,
-    endDate: string
-  ): Promise<Array<{
-    date: string;
-    totalCost: number;
-    requestCount: number;
-  }>> {
-    const result = await costRecordRepo.findCostRecords({
-      tenantId: tenantId,
-      startDate,
-      endDate,
-      limit: 1000
-    });
-
-    if (result.error || !result.data) {
-      return [];
-    }
-
-    // Group by date
-    const dateMap = new Map<string, { cost: number; count: number }>();
-
-    // Initialize all dates in range
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const dateStr = d.toISOString().split('T')[0];
-      dateMap.set(dateStr, { cost: 0, count: 0 });
-    }
-
-    // Fill in actual data
-    // Note: This is a simplified version - in production you'd aggregate from cost_records table
-    // For now, return the initialized map
-    return Array.from(dateMap.entries()).map(([date, data]) => ({
-      date,
-      totalCost: data.cost,
-      requestCount: data.count
-    }));
-  }
 }
 
 /**
