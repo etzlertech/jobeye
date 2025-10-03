@@ -1,0 +1,75 @@
+analyzed_at: '2025-10-03T14:16:00.881Z'
+buckets:
+  - name: verification-photos
+    id: verification-photos
+    is_public: false
+    created_at: '2025-10-01T12:48:21.012Z'
+    updated_at: '2025-10-01T12:48:21.012Z'
+    allowed_mime_types:
+      - image/jpeg
+      - image/png
+      - image/webp
+    file_size_limit: 10485760
+    folders: []
+    total_files: 0
+    total_size: 0
+    rls_policies: []
+  - name: job-photos
+    id: job-photos
+    is_public: true
+    created_at: '2025-10-02T02:56:55.814Z'
+    updated_at: '2025-10-02T02:56:55.814Z'
+    allowed_mime_types:
+      - image/jpeg
+      - image/png
+      - image/webp
+    file_size_limit: 52428800
+    folders: []
+    total_files: 0
+    total_size: 0
+    rls_policies: []
+  - name: voice-recordings
+    id: voice-recordings
+    is_public: false
+    created_at: '2025-10-02T02:56:55.970Z'
+    updated_at: '2025-10-02T02:56:55.970Z'
+    allowed_mime_types:
+      - audio/wav
+      - audio/mp3
+      - audio/mpeg
+      - audio/ogg
+    file_size_limit: 10485760
+    folders: []
+    total_files: 0
+    total_size: 0
+    rls_policies: []
+  - name: equipment-images
+    id: equipment-images
+    is_public: true
+    created_at: '2025-10-02T02:56:56.106Z'
+    updated_at: '2025-10-02T02:56:56.106Z'
+    allowed_mime_types:
+      - image/jpeg
+      - image/png
+      - image/webp
+    file_size_limit: 52428800
+    folders: []
+    total_files: 0
+    total_size: 0
+    rls_policies: []
+total_buckets: 4
+total_files: 0
+total_size: 0
+public_buckets:
+  - job-photos
+  - equipment-images
+empty_buckets:
+  - verification-photos
+  - job-photos
+  - voice-recordings
+  - equipment-images
+large_files: []
+file_type_distribution: {}
+recommendations:
+  - 'Remove 4 unused buckets: verification-photos, job-photos, voice-recordings, equipment-images'
+  - Add RLS policies to 4 buckets without access control

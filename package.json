@@ -41,6 +41,11 @@
     "check:security": "tsx scripts/security/check-dependencies.sh",
     "check:context": "tsx scripts/dev/context-check.sh",
     "check:db-actual": "tsx scripts/check-actual-db.ts",
+    "analyze:supabase": "tsx supabase-analysis/scripts/analyze-supabase-live.ts",
+    "analyze:supabase:migrations": "tsx supabase-analysis/scripts/analyze-supabase-complete.ts",
+    "analyze:supabase:simple": "tsx supabase-analysis/scripts/analyze-supabase.ts",
+    "analyze:supabase:enhanced": "tsx supabase-analysis/scripts/analyze-supabase-enhanced.ts",
+    "analyze:db-mapping": "tsx supabase-analysis/scripts/analyze-db-code-mapping.ts",
     "report:skeleton-status": "tsx scripts/dev/skeleton-status.ts",
     "report:api-surface": "tsx scripts/dev/report-api-surface.ts",
     "report:voice-coverage": "grep -rn \"voice_considerations:\" src --include=\"*.ts\" --include=\"*.tsx\" | wc -l",
@@ -111,7 +116,8 @@
     "uuid": "^13.0.0",
     "wav": "^1.0.2",
     "workbox-core": "^7.3.0",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "js-yaml": "^4.1.0"
   },
   "optionalDependencies": {
     "speaker": "^0.5.5"
@@ -127,7 +133,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/glob": "^8.1.0",
     "@types/jest": "^29.5.0",
-    "@types/js-yaml": "^4.0.5",
+    "@types/js-yaml": "^4.0.9",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",

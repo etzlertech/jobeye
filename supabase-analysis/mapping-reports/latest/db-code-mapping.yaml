@@ -1,0 +1,5802 @@
+analyzedAt: '2025-10-03T14:31:52.564Z'
+codebasePath: /mnt/c/Users/tetzler.KWW/OneDrive - Kaspar Companies/Documents/GitHub/jobeye
+totalTables: 157
+mappedTables: 49
+unmappedTables: 108
+tableMappings:
+  tenants:
+    tableName: tenants
+    totalReferences: 24
+    locations:
+      - file: src/app/api/auth/register/route.ts
+        line: 385
+        type: api_route
+        operations:
+          - select
+      - file: src/app/api/auth/register/route.ts
+        line: 409
+        type: api_route
+        operations:
+          - select
+      - file: src/app/api/auth/register/route.ts
+        line: 426
+        type: api_route
+        operations:
+          - select
+      - file: src/domains/tenant/services/subscription-service.ts
+        line: 629
+        type: service
+        operations:
+          - update
+      - file: src/domains/tenant/services/tenant-service.ts
+        line: 109
+        type: service
+        operations:
+          - insert
+      - file: src/domains/tenant/services/tenant-service.ts
+        line: 173
+        type: service
+        operations:
+          - select
+      - file: src/domains/tenant/services/tenant-service.ts
+        line: 206
+        type: service
+        operations:
+          - select
+      - file: src/domains/tenant/services/tenant-service.ts
+        line: 261
+        type: service
+        operations:
+          - update
+      - file: src/domains/tenant/services/tenant-service.ts
+        line: 297
+        type: service
+        operations:
+          - update
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 22
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 68
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 107
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/check-railway-schema.ts
+        line: 63
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-role-enum.ts
+        line: 47
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-role-enum.ts
+        line: 58
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/create-railway-demo-users.ts
+        line: 49
+        type: client_call
+        operations:
+          - select
+      - file: scripts/create-railway-demo-users.ts
+        line: 57
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/create-test-tenant.ts
+        line: 16
+        type: client_call
+        operations:
+          - select
+      - file: scripts/create-test-tenant.ts
+        line: 22
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-test-tenant.ts
+        line: 42
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/create-uuid-tenant.ts
+        line: 20
+        type: client_call
+        operations:
+          - select
+      - file: scripts/create-uuid-tenant.ts
+        line: 36
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-railway-auth.ts
+        line: 26
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-sql-connection.ts
+        line: 16
+        type: client_call
+        operations:
+          - select
+    operations:
+      - select
+      - update
+      - insert
+      - rpc:exec_sql
+      - upsert
+    accessPatterns:
+      - pattern: api
+        count: 1
+        files:
+          - src/app/api/auth/register/route.ts
+      - pattern: service
+        count: 2
+        files:
+          - src/domains/tenant/services/subscription-service.ts
+          - src/domains/tenant/services/tenant-service.ts
+      - pattern: direct
+        count: 8
+        files:
+          - scripts/apply-mvp-tables-migration.ts
+          - scripts/check-railway-schema.ts
+          - scripts/check-role-enum.ts
+          - scripts/create-railway-demo-users.ts
+          - scripts/create-test-tenant.ts
+    relationships:
+      references: []
+      referencedBy:
+        - audit_logs
+        - companies
+        - customers
+        - invoices
+        - jobs
+        - kit_items
+        - kit_variants
+        - kits
+        - properties
+        - role_permissions
+        - users_extended
+  jobs:
+    tableName: jobs
+    totalReferences: 83
+    locations:
+      - file: src/app/api/crew/jobs/[jobId]/equipment/route.ts
+        line: 107
+        type: api_route
+        operations:
+          - select
+      - file: src/app/api/crew/jobs/[jobId]/equipment/route.ts
+        line: 158
+        type: api_route
+        operations:
+          - update
+      - file: src/app/api/crew/jobs/[jobId]/verify-load/route.ts
+        line: 96
+        type: api_route
+        operations:
+          - update
+      - file: src/app/api/demo-crud/route.ts
+        line: 112
+        type: api_route
+        operations:
+          - insert
+      - file: src/app/api/vision/load-verifications/route.ts
+        line: 70
+        type: api_route
+        operations:
+          - select
+      - file: src/domains/crew/services/crew-workflow.service.ts
+        line: 203
+        type: service
+        operations:
+          - update
+      - file: src/domains/crew/services/crew-workflow.service.ts
+        line: 310
+        type: service
+        operations:
+          - update
+      - file: src/domains/crew/services/crew-workflow.service.ts
+        line: 523
+        type: service
+        operations:
+          - update
+      - file: src/domains/job/repositories/job-repository.ts
+        line: 126
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/job/repositories/job-repository.ts
+        line: 216
+        type: repository
+        operations:
+          - update
+      - file: src/domains/job/repositories/job-repository.ts
+        line: 254
+        type: repository
+        operations:
+          - select
+      - file: src/domains/job/repositories/job-repository.ts
+        line: 299
+        type: repository
+        operations:
+          - select
+      - file: src/domains/job/repositories/job-repository.ts
+        line: 365
+        type: repository
+        operations:
+          - select
+      - file: src/domains/job/repositories/job-repository.ts
+        line: 397
+        type: repository
+        operations:
+          - select
+      - file: src/domains/job/repositories/job-repository.ts
+        line: 430
+        type: repository
+        operations:
+          - select
+      - file: src/domains/job/repositories/job-repository.ts
+        line: 469
+        type: repository
+        operations:
+          - select
+      - file: src/domains/job/repositories/job-repository.ts
+        line: 506
+        type: repository
+        operations:
+          - select
+      - file: src/domains/job/repositories/job-repository.ts
+        line: 534
+        type: repository
+        operations:
+          - update
+      - file: src/domains/job/repositories/job-repository.ts
+        line: 567
+        type: repository
+        operations:
+          - select
+      - file: src/domains/job/services/job-from-voice-service.ts
+        line: 168
+        type: service
+        operations:
+          - insert
+      - file: src/domains/job/services/job-load-list-service.ts
+        line: 154
+        type: service
+        operations:
+          - select
+      - file: src/domains/supervisor/services/supervisor-workflow.service.ts
+        line: 226
+        type: service
+        operations:
+          - insert
+      - file: src/domains/supervisor/services/supervisor-workflow.service.ts
+        line: 296
+        type: service
+        operations:
+          - select
+      - file: src/domains/supervisor/services/supervisor-workflow.service.ts
+        line: 348
+        type: service
+        operations:
+          - update
+      - file: src/domains/supervisor/services/supervisor-workflow.service.ts
+        line: 377
+        type: service
+        operations:
+          - select
+      - file: src/lib/offline/sync-manager.ts
+        line: 230
+        type: client_call
+        operations:
+          - insert
+      - file: src/lib/offline/sync-manager.ts
+        line: 237
+        type: client_call
+        operations:
+          - update
+      - file: src/lib/offline/sync-manager.ts
+        line: 245
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/apply-extend-jobs-migration.ts
+        line: 79
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 148
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 149
+        type: migration
+        operations:
+          - sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 152
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 153
+        type: migration
+        operations:
+          - sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 156
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 157
+        type: migration
+        operations:
+          - sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 160
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 161
+        type: migration
+        operations:
+          - sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 164
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 165
+        type: migration
+        operations:
+          - sql
+      - file: scripts/check-database-direct.ts
+        line: 29
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-database-direct.ts
+        line: 120
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-equipment-table-detail.ts
+        line: 55
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-existing-equipment-structure.ts
+        line: 47
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-existing-equipment-structure.ts
+        line: 66
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-jobs-schema.ts
+        line: 15
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-jobs-schema.ts
+        line: 25
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-mvp-tables.ts
+        line: 16
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/check-mvp-tables.ts
+        line: 35
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/check-rls-status.ts
+        line: 17
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-rls-status.ts
+        line: 43
+        type: client_call
+        operations:
+          - select
+      - file: scripts/create-demo-data.ts
+        line: 139
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/create-demo-data.ts
+        line: 164
+        type: client_call
+        operations:
+          - select
+      - file: scripts/create-demo-jobs.ts
+        line: 33
+        type: client_call
+        operations:
+          - select
+      - file: scripts/create-demo-jobs.ts
+        line: 98
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/create-demo-jobs.ts
+        line: 117
+        type: client_call
+        operations:
+          - select
+      - file: scripts/create-missing-tables.ts
+        line: 52
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 104
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 215
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 372
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-test-fixtures.ts
+        line: 110
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/create-uuid-fixtures.ts
+        line: 142
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/fix-double-booking.ts
+        line: 50
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/fix-double-booking.ts
+        line: 51
+        type: migration
+        operations:
+          - sql
+      - file: scripts/get-jobs-columns.ts
+        line: 15
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/initialize-job-equipment.ts
+        line: 68
+        type: client_call
+        operations:
+          - select
+      - file: scripts/initialize-job-equipment.ts
+        line: 102
+        type: client_call
+        operations:
+          - update
+      - file: scripts/initialize-job-equipment.ts
+        line: 119
+        type: client_call
+        operations:
+          - select
+      - file: scripts/migrations/005-all-tables.ts
+        line: 95
+        type: migration
+        operations:
+          - sql
+      - file: scripts/migrations/005-all-tables.ts
+        line: 96
+        type: migration
+        operations:
+          - sql
+      - file: scripts/migrations/005-all-tables.ts
+        line: 97
+        type: migration
+        operations:
+          - sql
+      - file: scripts/migrations/005-all-tables.ts
+        line: 98
+        type: migration
+        operations:
+          - sql
+      - file: scripts/prove-live-crud.ts
+        line: 49
+        type: client_call
+        operations:
+          - select
+      - file: scripts/query-rls-policies.ts
+        line: 16
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/seed-e2e-test-data.ts
+        line: 212
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/seed-minimal-e2e-data.ts
+        line: 72
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/simple-table-list.ts
+        line: 14
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-db-connection.ts
+        line: 18
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-jobs-insert.ts
+        line: 16
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-service-role-direct.ts
+        line: 23
+        type: client_call
+        operations:
+          - select
+      - file: scripts/update-demo-job-variety.ts
+        line: 28
+        type: client_call
+        operations:
+          - select
+      - file: scripts/update-demo-job-variety.ts
+        line: 42
+        type: client_call
+        operations:
+          - update
+      - file: scripts/update-demo-job-variety.ts
+        line: 71
+        type: client_call
+        operations:
+          - update
+      - file: scripts/update-demo-job-variety.ts
+        line: 102
+        type: client_call
+        operations:
+          - update
+    operations:
+      - select
+      - update
+      - insert
+      - delete
+      - rpc:exec_sql
+      - sql
+      - upsert
+    accessPatterns:
+      - pattern: api
+        count: 4
+        files:
+          - src/app/api/crew/jobs/[jobId]/equipment/route.ts
+          - src/app/api/crew/jobs/[jobId]/verify-load/route.ts
+          - src/app/api/demo-crud/route.ts
+          - src/app/api/vision/load-verifications/route.ts
+      - pattern: service
+        count: 4
+        files:
+          - src/domains/crew/services/crew-workflow.service.ts
+          - src/domains/job/services/job-from-voice-service.ts
+          - src/domains/job/services/job-load-list-service.ts
+          - src/domains/supervisor/services/supervisor-workflow.service.ts
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/job/repositories/job-repository.ts
+      - pattern: direct
+        count: 27
+        files:
+          - src/lib/offline/sync-manager.ts
+          - scripts/apply-extend-jobs-migration.ts
+          - scripts/apply-mvp-tables-migration.ts
+          - scripts/check-database-direct.ts
+          - scripts/check-equipment-table-detail.ts
+    relationships:
+      references:
+        - tenants
+        - templates
+        - customers
+        - properties
+        - voice_sessions
+        - arrival_photos
+      referencedBy:
+        - invoices
+  job_assignments:
+    tableName: job_assignments
+    totalReferences: 7
+    locations:
+      - file: src/app/api/crew/jobs/today/route.ts
+        line: 94
+        type: api_route
+        operations:
+          - select
+      - file: src/app/api/crew/status/route.ts
+        line: 65
+        type: api_route
+        operations:
+          - select
+      - file: src/domains/crew/services/crew-workflow.service.ts
+        line: 110
+        type: service
+        operations:
+          - select
+      - file: src/domains/crew/services/crew-workflow.service.ts
+        line: 187
+        type: service
+        operations:
+          - select
+      - file: src/domains/supervisor/services/supervisor-workflow.service.ts
+        line: 265
+        type: service
+        operations:
+          - insert
+      - file: src/domains/supervisor/services/supervisor-workflow.service.ts
+        line: 336
+        type: service
+        operations:
+          - insert
+      - file: src/domains/supervisor/services/supervisor-workflow.service.ts
+        line: 570
+        type: service
+        operations:
+          - select
+    operations:
+      - select
+      - insert
+    accessPatterns:
+      - pattern: api
+        count: 2
+        files:
+          - src/app/api/crew/jobs/today/route.ts
+          - src/app/api/crew/status/route.ts
+      - pattern: service
+        count: 2
+        files:
+          - src/domains/crew/services/crew-workflow.service.ts
+          - src/domains/supervisor/services/supervisor-workflow.service.ts
+    relationships:
+      references: []
+      referencedBy: []
+  customers:
+    tableName: customers
+    totalReferences: 85
+    locations:
+      - file: src/app/api/demo-crud/route.ts
+        line: 19
+        type: api_route
+        operations:
+          - select
+      - file: src/app/api/demo-crud/route.ts
+        line: 53
+        type: api_route
+        operations:
+          - insert
+      - file: src/app/api/demo-crud/route.ts
+        line: 68
+        type: api_route
+        operations:
+          - update
+      - file: src/app/api/demo-crud/route.ts
+        line: 85
+        type: api_route
+        operations:
+          - select
+      - file: src/app/api/supervisor/customers/route.ts
+        line: 60
+        type: api_route
+        operations:
+          - select
+      - file: src/app/api/supervisor/customers/route.ts
+        line: 169
+        type: api_route
+        operations:
+          - insert
+      - file: src/app/api/test-crud/route.ts
+        line: 19
+        type: api_route
+        operations:
+          - select
+      - file: src/app/api/test-crud/route.ts
+        line: 37
+        type: api_route
+        operations:
+          - insert
+      - file: src/domains/customer/services/customer-search-service.ts
+        line: 221
+        type: service
+        operations:
+          - select
+      - file: src/domains/job/services/job-from-voice-service.ts
+        line: 390
+        type: service
+        operations:
+          - select
+      - file: src/domains/job/services/job-from-voice-service.ts
+        line: 401
+        type: service
+        operations:
+          - select
+      - file: src/domains/job/services/job-from-voice-service.ts
+        line: 416
+        type: service
+        operations:
+          - select
+      - file: src/lib/repositories/customer.repository.ts
+        line: 48
+        type: repository
+        operations:
+          - select
+      - file: src/lib/repositories/customer.repository.ts
+        line: 69
+        type: repository
+        operations:
+          - select
+      - file: src/lib/repositories/customer.repository.ts
+        line: 93
+        type: repository
+        operations:
+          - select
+      - file: src/lib/repositories/customer.repository.ts
+        line: 125
+        type: repository
+        operations:
+          - select
+      - file: src/lib/repositories/customer.repository.ts
+        line: 207
+        type: repository
+        operations:
+          - select
+      - file: scripts/check-customers-schema.ts
+        line: 15
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-customers-schema.ts
+        line: 37
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/check-demo-customers.ts
+        line: 16
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-demo-customers.ts
+        line: 42
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-direct-crud.ts
+        line: 23
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/check-live-demo-customer.ts
+        line: 15
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-railway-schema.ts
+        line: 23
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-railway-schema.ts
+        line: 33
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/check-schema.ts
+        line: 17
+        type: client_call
+        operations:
+          - select
+      - file: scripts/ci/rls-test-harness.ts
+        line: 161
+        type: client_call
+        operations:
+          - select
+      - file: scripts/ci/rls-test-harness.ts
+        line: 170
+        type: client_call
+        operations:
+          - select
+      - file: scripts/ci/rls-test-harness.ts
+        line: 215
+        type: client_call
+        operations:
+          - select
+      - file: scripts/ci/rls-test-harness.ts
+        line: 240
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/comprehensive-test-suite.ts
+        line: 73
+        type: client_call
+        operations:
+          - select
+      - file: scripts/connect-to-railway-supabase.ts
+        line: 25
+        type: client_call
+        operations:
+          - select
+      - file: scripts/create-demo-data.ts
+        line: 79
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/create-demo-data.ts
+        line: 157
+        type: client_call
+        operations:
+          - select
+      - file: scripts/create-demo-jobs.ts
+        line: 41
+        type: client_call
+        operations:
+          - select
+      - file: scripts/create-demo-tenant-record.ts
+        line: 37
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-demo-tenant-record.ts
+        line: 106
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/create-demo-tenant-record.ts
+        line: 121
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/create-test-fixtures.ts
+        line: 31
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/create-ui-demo-customer.ts
+        line: 39
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/create-ui-demo-customer.ts
+        line: 59
+        type: client_call
+        operations:
+          - select
+      - file: scripts/create-uuid-fixtures.ts
+        line: 33
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/direct-crud-test.ts
+        line: 24
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/direct-crud-test.ts
+        line: 36
+        type: client_call
+        operations:
+          - select
+      - file: scripts/drop-customers-company-id.ts
+        line: 18
+        type: client_call
+        operations:
+          - select
+      - file: scripts/drop-customers-company-id.ts
+        line: 52
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/drop-customers-company-id.ts
+        line: 66
+        type: client_call
+        operations:
+          - select
+      - file: scripts/final-crud-proof.ts
+        line: 28
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/final-crud-proof.ts
+        line: 57
+        type: client_call
+        operations:
+          - select
+      - file: scripts/final-crud-proof.ts
+        line: 72
+        type: client_call
+        operations:
+          - update
+      - file: scripts/final-crud-proof.ts
+        line: 91
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/final-crud-proof.ts
+        line: 104
+        type: client_call
+        operations:
+          - select
+      - file: scripts/fix-demo-tenant-uuid.ts
+        line: 71
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/fix-demo-tenant-uuid.ts
+        line: 85
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/force-drop-customers-company-id.ts
+        line: 18
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/force-drop-customers-company-id.ts
+        line: 32
+        type: client_call
+        operations:
+          - select
+      - file: scripts/migrations/005-all-tables.ts
+        line: 112
+        type: migration
+        operations:
+          - sql
+      - file: scripts/prove-live-crud.ts
+        line: 21
+        type: client_call
+        operations:
+          - select
+      - file: scripts/prove-live-crud.ts
+        line: 105
+        type: client_call
+        operations:
+          - select
+      - file: scripts/prove-live-crud.ts
+        line: 110
+        type: client_call
+        operations:
+          - select
+      - file: scripts/prove-live-crud.ts
+        line: 128
+        type: client_call
+        operations:
+          - update
+      - file: scripts/prove-live-crud.ts
+        line: 144
+        type: client_call
+        operations:
+          - update
+      - file: scripts/seed-e2e-test-data.ts
+        line: 133
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/simple-table-list.ts
+        line: 26
+        type: client_call
+        operations:
+          - select
+      - file: scripts/successful-crud-test.ts
+        line: 32
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/successful-crud-test.ts
+        line: 47
+        type: client_call
+        operations:
+          - select
+      - file: scripts/successful-crud-test.ts
+        line: 60
+        type: client_call
+        operations:
+          - update
+      - file: scripts/successful-crud-test.ts
+        line: 74
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-api-route.ts
+        line: 49
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-api-route.ts
+        line: 64
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-api-route.ts
+        line: 94
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-crud-verification.ts
+        line: 16
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-crud-verification.ts
+        line: 52
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/test-demo-users.ts
+        line: 80
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-demo-users.ts
+        line: 95
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-railway-crud.ts
+        line: 16
+        type: client_call
+        operations:
+          - select
+      - file: scripts/use-existing-tenant.ts
+        line: 16
+        type: client_call
+        operations:
+          - select
+      - file: scripts/use-existing-tenant.ts
+        line: 74
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/verify-railway-crud-direct.ts
+        line: 23
+        type: client_call
+        operations:
+          - select
+      - file: scripts/verify-railway-crud-direct.ts
+        line: 57
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/verify-railway-crud-direct.ts
+        line: 74
+        type: client_call
+        operations:
+          - update
+      - file: scripts/verify-railway-crud-direct.ts
+        line: 95
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/verify-railway-crud-direct.ts
+        line: 109
+        type: client_call
+        operations:
+          - select
+      - file: scripts/verify-railway-crud.ts
+        line: 15
+        type: client_call
+        operations:
+          - select
+      - file: scripts/verify-railway-crud.ts
+        line: 49
+        type: client_call
+        operations:
+          - select
+    operations:
+      - select
+      - insert
+      - update
+      - rpc:exec_sql
+      - delete
+      - upsert
+      - sql
+    accessPatterns:
+      - pattern: api
+        count: 3
+        files:
+          - src/app/api/demo-crud/route.ts
+          - src/app/api/supervisor/customers/route.ts
+          - src/app/api/test-crud/route.ts
+      - pattern: service
+        count: 2
+        files:
+          - src/domains/customer/services/customer-search-service.ts
+          - src/domains/job/services/job-from-voice-service.ts
+      - pattern: repository
+        count: 1
+        files:
+          - src/lib/repositories/customer.repository.ts
+      - pattern: direct
+        count: 32
+        files:
+          - scripts/check-customers-schema.ts
+          - scripts/check-demo-customers.ts
+          - scripts/check-direct-crud.ts
+          - scripts/check-live-demo-customer.ts
+          - scripts/check-railway-schema.ts
+    relationships:
+      references:
+        - tenants
+        - intake_sessions
+      referencedBy:
+        - invoices
+        - jobs
+        - properties
+  inventory_items:
+    tableName: inventory_items
+    totalReferences: 15
+    locations:
+      - file: src/app/api/supervisor/inventory/route.ts
+        line: 150
+        type: api_route
+        operations:
+          - select
+      - file: src/app/api/supervisor/inventory/route.ts
+        line: 192
+        type: api_route
+        operations:
+          - select
+      - file: src/app/api/supervisor/inventory/route.ts
+        line: 291
+        type: api_route
+        operations:
+          - insert
+      - file: src/domains/inventory/repositories/inventory-items.repository.ts
+        line: 39
+        type: repository
+        operations:
+          - select
+      - file: src/domains/inventory/repositories/inventory-items.repository.ts
+        line: 58
+        type: repository
+        operations:
+          - select
+      - file: src/domains/inventory/repositories/inventory-items.repository.ts
+        line: 111
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/inventory/repositories/inventory-items.repository.ts
+        line: 131
+        type: repository
+        operations:
+          - update
+      - file: src/domains/inventory/repositories/inventory-items.repository.ts
+        line: 151
+        type: repository
+        operations:
+          - delete
+      - file: scripts/analyze-db-structure.ts
+        line: 94
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-database-direct.ts
+        line: 80
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-equipment-table-detail.ts
+        line: 88
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-equipment-table-detail.ts
+        line: 95
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/check-equipment-table-detail.ts
+        line: 109
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/check-existing-equipment-structure.ts
+        line: 29
+        type: client_call
+        operations:
+          - select
+      - file: scripts/comprehensive-test-suite.ts
+        line: 105
+        type: client_call
+        operations:
+          - select
+    operations:
+      - select
+      - insert
+      - update
+      - delete
+    accessPatterns:
+      - pattern: api
+        count: 1
+        files:
+          - src/app/api/supervisor/inventory/route.ts
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/inventory/repositories/inventory-items.repository.ts
+      - pattern: direct
+        count: 5
+        files:
+          - scripts/analyze-db-structure.ts
+          - scripts/check-database-direct.ts
+          - scripts/check-equipment-table-detail.ts
+          - scripts/check-existing-equipment-structure.ts
+          - scripts/comprehensive-test-suite.ts
+    relationships:
+      references: []
+      referencedBy: []
+  properties:
+    tableName: properties
+    totalReferences: 28
+    locations:
+      - file: src/app/api/supervisor/properties/[id]/route.ts
+        line: 68
+        type: api_route
+        operations:
+          - select
+      - file: src/app/api/supervisor/properties/[id]/route.ts
+        line: 135
+        type: api_route
+        operations:
+          - update
+      - file: src/app/api/supervisor/properties/[id]/route.ts
+        line: 190
+        type: api_route
+        operations:
+          - delete
+      - file: src/app/api/supervisor/properties/route.ts
+        line: 98
+        type: api_route
+        operations:
+          - select
+      - file: src/app/api/supervisor/properties/route.ts
+        line: 171
+        type: api_route
+        operations:
+          - insert
+      - file: src/domains/job/services/job-from-voice-service.ts
+        line: 433
+        type: service
+        operations:
+          - select
+      - file: src/domains/job/services/job-from-voice-service.ts
+        line: 448
+        type: service
+        operations:
+          - select
+      - file: src/domains/job/services/job-from-voice-service.ts
+        line: 463
+        type: service
+        operations:
+          - select
+      - file: src/domains/property/repositories/property-repository.ts
+        line: 113
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/property/repositories/property-repository.ts
+        line: 169
+        type: repository
+        operations:
+          - select
+      - file: src/domains/property/repositories/property-repository.ts
+        line: 190
+        type: repository
+        operations:
+          - update
+      - file: src/domains/property/repositories/property-repository.ts
+        line: 226
+        type: repository
+        operations:
+          - select
+      - file: src/domains/property/repositories/property-repository.ts
+        line: 266
+        type: repository
+        operations:
+          - rpc:find_properties_nearby
+      - file: src/domains/property/repositories/property-repository.ts
+        line: 283
+        type: repository
+        operations:
+          - select
+      - file: src/domains/property/repositories/property-repository.ts
+        line: 311
+        type: repository
+        operations:
+          - select
+      - file: src/domains/property/repositories/property-repository.ts
+        line: 358
+        type: repository
+        operations:
+          - select
+      - file: src/domains/property/repositories/property-repository.ts
+        line: 390
+        type: repository
+        operations:
+          - select
+      - file: src/domains/property/repositories/property-repository.ts
+        line: 423
+        type: repository
+        operations:
+          - select
+      - file: src/domains/property/repositories/property-repository.ts
+        line: 460
+        type: repository
+        operations:
+          - delete
+      - file: src/domains/property/repositories/property-repository.ts
+        line: 489
+        type: repository
+        operations:
+          - select
+      - file: src/domains/property/repositories/property-repository.ts
+        line: 507
+        type: repository
+        operations:
+          - update
+      - file: scripts/check-schema.ts
+        line: 28
+        type: client_call
+        operations:
+          - select
+      - file: scripts/create-missing-tables.ts
+        line: 281
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-test-fixtures.ts
+        line: 55
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/create-uuid-fixtures.ts
+        line: 59
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/migrations/005-all-tables.ts
+        line: 108
+        type: migration
+        operations:
+          - sql
+      - file: scripts/migrations/005-all-tables.ts
+        line: 109
+        type: migration
+        operations:
+          - sql
+      - file: scripts/seed-e2e-test-data.ts
+        line: 77
+        type: client_call
+        operations:
+          - upsert
+    operations:
+      - select
+      - update
+      - delete
+      - insert
+      - rpc:find_properties_nearby
+      - rpc:exec_sql
+      - upsert
+      - sql
+    accessPatterns:
+      - pattern: api
+        count: 2
+        files:
+          - src/app/api/supervisor/properties/[id]/route.ts
+          - src/app/api/supervisor/properties/route.ts
+      - pattern: service
+        count: 1
+        files:
+          - src/domains/job/services/job-from-voice-service.ts
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/property/repositories/property-repository.ts
+      - pattern: direct
+        count: 6
+        files:
+          - scripts/check-schema.ts
+          - scripts/create-missing-tables.ts
+          - scripts/create-test-fixtures.ts
+          - scripts/create-uuid-fixtures.ts
+          - scripts/migrations/005-all-tables.ts
+    relationships:
+      references:
+        - tenants
+        - customers
+        - intake_sessions
+        - reference_images
+      referencedBy:
+        - jobs
+  containers:
+    tableName: containers
+    totalReferences: 8
+    locations:
+      - file: src/app/api/vision/load-verifications/route.ts
+        line: 124
+        type: api_route
+        operations:
+          - select
+      - file: src/app/api/vision/load-verifications/route.ts
+        line: 328
+        type: api_route
+        operations:
+          - select
+      - file: src/domains/job/services/job-from-voice-service.ts
+        line: 329
+        type: service
+        operations:
+          - select
+      - file: scripts/analyze-db-structure.ts
+        line: 85
+        type: client_call
+        operations:
+          - select
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 148
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/check-mvp-tables.ts
+        line: 16
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/check-mvp-tables.ts
+        line: 52
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/comprehensive-test-suite.ts
+        line: 89
+        type: client_call
+        operations:
+          - select
+    operations:
+      - select
+      - rpc:exec_sql
+    accessPatterns:
+      - pattern: api
+        count: 1
+        files:
+          - src/app/api/vision/load-verifications/route.ts
+      - pattern: service
+        count: 1
+        files:
+          - src/domains/job/services/job-from-voice-service.ts
+      - pattern: direct
+        count: 4
+        files:
+          - scripts/analyze-db-structure.ts
+          - scripts/apply-mvp-tables-migration.ts
+          - scripts/check-mvp-tables.ts
+          - scripts/comprehensive-test-suite.ts
+    relationships:
+      references: []
+      referencedBy: []
+  equipment:
+    tableName: equipment
+    totalReferences: 23
+    locations:
+      - file: src/app/api/vision/load-verifications/route.ts
+        line: 148
+        type: api_route
+        operations:
+          - select
+      - file: src/domains/equipment/repositories/equipment-repository.ts
+        line: 120
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/equipment/repositories/equipment-repository.ts
+        line: 145
+        type: type_definition
+        operations:
+          - type
+      - file: src/domains/equipment/repositories/equipment-repository.ts
+        line: 175
+        type: repository
+        operations:
+          - update
+      - file: src/domains/equipment/repositories/equipment-repository.ts
+        line: 208
+        type: repository
+        operations:
+          - select
+      - file: src/domains/equipment/repositories/equipment-repository.ts
+        line: 248
+        type: repository
+        operations:
+          - select
+      - file: src/domains/equipment/repositories/equipment-repository.ts
+        line: 305
+        type: repository
+        operations:
+          - select
+      - file: src/domains/equipment/repositories/equipment-repository.ts
+        line: 335
+        type: repository
+        operations:
+          - select
+      - file: src/domains/equipment/repositories/equipment-repository.ts
+        line: 371
+        type: repository
+        operations:
+          - update
+      - file: src/domains/equipment/repositories/equipment-repository.ts
+        line: 407
+        type: repository
+        operations:
+          - select
+      - file: src/domains/equipment/repositories/equipment-repository.ts
+        line: 441
+        type: repository
+        operations:
+          - select
+      - file: src/domains/equipment/repositories/equipment-repository.ts
+        line: 469
+        type: repository
+        operations:
+          - update
+      - file: src/domains/equipment/services/equipment-service.ts
+        line: 201
+        type: type_definition
+        operations:
+          - type
+      - file: scripts/analyze-db-structure.ts
+        line: 81
+        type: client_call
+        operations:
+          - select
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 148
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/check-actual-column-types.ts
+        line: 17
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/check-equipment-table-detail.ts
+        line: 29
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-equipment-table-detail.ts
+        line: 43
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-mvp-tables.ts
+        line: 16
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/check-mvp-tables.ts
+        line: 52
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 160
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 281
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/seed-e2e-test-data.ts
+        line: 404
+        type: client_call
+        operations:
+          - upsert
+    operations:
+      - select
+      - insert
+      - type
+      - update
+      - rpc:exec_sql
+      - upsert
+    accessPatterns:
+      - pattern: api
+        count: 1
+        files:
+          - src/app/api/vision/load-verifications/route.ts
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/equipment/repositories/equipment-repository.ts
+      - pattern: direct
+        count: 9
+        files:
+          - src/domains/equipment/repositories/equipment-repository.ts
+          - src/domains/equipment/services/equipment-service.ts
+          - scripts/analyze-db-structure.ts
+          - scripts/apply-mvp-tables-migration.ts
+          - scripts/check-actual-column-types.ts
+    relationships:
+      references: []
+      referencedBy:
+        - equipment_maintenance
+  materials:
+    tableName: materials
+    totalReferences: 11
+    locations:
+      - file: src/app/api/vision/load-verifications/route.ts
+        line: 172
+        type: api_route
+        operations:
+          - select
+      - file: src/domains/material/repositories/material-repository.ts
+        line: 134
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/material/repositories/material-repository.ts
+        line: 185
+        type: repository
+        operations:
+          - update
+      - file: src/domains/material/repositories/material-repository.ts
+        line: 218
+        type: repository
+        operations:
+          - select
+      - file: src/domains/material/repositories/material-repository.ts
+        line: 258
+        type: repository
+        operations:
+          - select
+      - file: src/domains/material/repositories/material-repository.ts
+        line: 321
+        type: repository
+        operations:
+          - select
+      - file: src/domains/material/repositories/material-repository.ts
+        line: 351
+        type: repository
+        operations:
+          - select
+      - file: src/domains/material/repositories/material-repository.ts
+        line: 385
+        type: repository
+        operations:
+          - select
+      - file: src/domains/material/repositories/material-repository.ts
+        line: 451
+        type: repository
+        operations:
+          - update
+      - file: src/domains/material/repositories/material-repository.ts
+        line: 503
+        type: repository
+        operations:
+          - update
+      - file: scripts/check-actual-column-types.ts
+        line: 17
+        type: client_call
+        operations:
+          - rpc:exec_sql
+    operations:
+      - select
+      - insert
+      - update
+      - rpc:exec_sql
+    accessPatterns:
+      - pattern: api
+        count: 1
+        files:
+          - src/app/api/vision/load-verifications/route.ts
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/material/repositories/material-repository.ts
+      - pattern: direct
+        count: 1
+        files:
+          - scripts/check-actual-column-types.ts
+    relationships:
+      references: []
+      referencedBy: []
+  conversation_sessions:
+    tableName: conversation_sessions
+    totalReferences: 2
+    locations:
+      - file: src/app/api/voice/intake/route.ts
+        line: 94
+        type: api_route
+        operations:
+          - select
+      - file: src/domains/voice/services/voice-intake-service.ts
+        line: 93
+        type: service
+        operations:
+          - select
+    operations:
+      - select
+    accessPatterns:
+      - pattern: api
+        count: 1
+        files:
+          - src/app/api/voice/intake/route.ts
+      - pattern: service
+        count: 1
+        files:
+          - src/domains/voice/services/voice-intake-service.ts
+    relationships:
+      references: []
+      referencedBy: []
+  users:
+    tableName: users
+    totalReferences: 15
+    locations:
+      - file: src/domains/auth/guards/auth-guard.tsx
+        line: 136
+        type: client_call
+        operations:
+          - select
+      - file: src/domains/auth/guards/auth-guard.tsx
+        line: 430
+        type: client_call
+        operations:
+          - select
+      - file: src/domains/job/services/checklist-verification-service.ts
+        line: 590
+        type: service
+        operations:
+          - select
+      - file: src/domains/job/services/job-from-voice-service.ts
+        line: 135
+        type: service
+        operations:
+          - select
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 22
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 68
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 107
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 52
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 104
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 160
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 215
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 281
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 327
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 372
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/query-rls-policies.ts
+        line: 16
+        type: client_call
+        operations:
+          - rpc:exec_sql
+    operations:
+      - select
+      - rpc:exec_sql
+    accessPatterns:
+      - pattern: direct
+        count: 4
+        files:
+          - src/domains/auth/guards/auth-guard.tsx
+          - scripts/apply-mvp-tables-migration.ts
+          - scripts/create-missing-tables.ts
+          - scripts/query-rls-policies.ts
+      - pattern: service
+        count: 2
+        files:
+          - src/domains/job/services/checklist-verification-service.ts
+          - src/domains/job/services/job-from-voice-service.ts
+    relationships:
+      references: []
+      referencedBy:
+        - day_plans
+        - notifications
+  job_equipment:
+    tableName: job_equipment
+    totalReferences: 1
+    locations:
+      - file: src/domains/crew/services/crew-workflow.service.ts
+        line: 255
+        type: service
+        operations:
+          - select
+    operations:
+      - select
+    accessPatterns:
+      - pattern: service
+        count: 1
+        files:
+          - src/domains/crew/services/crew-workflow.service.ts
+    relationships:
+      references: []
+      referencedBy: []
+  ai_interaction_logs:
+    tableName: ai_interaction_logs
+    totalReferences: 11
+    locations:
+      - file: src/domains/intent/repositories/ai-interaction-log.repository.ts
+        line: 102
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/intent/repositories/ai-interaction-log.repository.ts
+        line: 180
+        type: repository
+        operations:
+          - select
+      - file: src/domains/intent/repositories/ai-interaction-log.repository.ts
+        line: 289
+        type: repository
+        operations:
+          - select
+      - file: src/lib/offline/sync-manager.ts
+        line: 292
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/apply-mvp-tables-direct.ts
+        line: 16
+        type: client_call
+        operations:
+          - select
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 22
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 49
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 53
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 57
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 68
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/check-mvp-tables.ts
+        line: 16
+        type: client_call
+        operations:
+          - rpc:exec_sql
+    operations:
+      - insert
+      - select
+      - rpc:exec_sql
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/intent/repositories/ai-interaction-log.repository.ts
+      - pattern: direct
+        count: 4
+        files:
+          - src/lib/offline/sync-manager.ts
+          - scripts/apply-mvp-tables-direct.ts
+          - scripts/apply-mvp-tables-migration.ts
+          - scripts/check-mvp-tables.ts
+    relationships:
+      references: []
+      referencedBy: []
+  intent_classifications:
+    tableName: intent_classifications
+    totalReferences: 12
+    locations:
+      - file: src/domains/intent/repositories/intent-classification.repository.ts
+        line: 116
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/intent/repositories/intent-classification.repository.ts
+        line: 189
+        type: repository
+        operations:
+          - update
+      - file: src/domains/intent/repositories/intent-classification.repository.ts
+        line: 250
+        type: repository
+        operations:
+          - select
+      - file: src/domains/intent/repositories/intent-classification.repository.ts
+        line: 307
+        type: repository
+        operations:
+          - select
+      - file: src/domains/intent/repositories/intent-classification.repository.ts
+        line: 354
+        type: repository
+        operations:
+          - select
+      - file: src/domains/intent/repositories/intent-classification.repository.ts
+        line: 436
+        type: repository
+        operations:
+          - update
+      - file: src/lib/offline/sync-manager.ts
+        line: 303
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/apply-mvp-tables-direct.ts
+        line: 21
+        type: client_call
+        operations:
+          - select
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 68
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 92
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 96
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/check-mvp-tables.ts
+        line: 16
+        type: client_call
+        operations:
+          - rpc:exec_sql
+    operations:
+      - insert
+      - update
+      - select
+      - rpc:exec_sql
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/intent/repositories/intent-classification.repository.ts
+      - pattern: direct
+        count: 4
+        files:
+          - src/lib/offline/sync-manager.ts
+          - scripts/apply-mvp-tables-direct.ts
+          - scripts/apply-mvp-tables-migration.ts
+          - scripts/check-mvp-tables.ts
+    relationships:
+      references: []
+      referencedBy: []
+  offline_sync_queue:
+    tableName: offline_sync_queue
+    totalReferences: 17
+    locations:
+      - file: src/domains/intent/repositories/offline-sync-queue.repository.ts
+        line: 109
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/intent/repositories/offline-sync-queue.repository.ts
+        line: 154
+        type: repository
+        operations:
+          - select
+      - file: src/domains/intent/repositories/offline-sync-queue.repository.ts
+        line: 190
+        type: repository
+        operations:
+          - update
+      - file: src/domains/intent/repositories/offline-sync-queue.repository.ts
+        line: 223
+        type: repository
+        operations:
+          - update
+      - file: src/domains/intent/repositories/offline-sync-queue.repository.ts
+        line: 257
+        type: repository
+        operations:
+          - update
+      - file: src/domains/intent/repositories/offline-sync-queue.repository.ts
+        line: 275
+        type: repository
+        operations:
+          - select
+      - file: src/domains/intent/repositories/offline-sync-queue.repository.ts
+        line: 283
+        type: repository
+        operations:
+          - update
+      - file: src/domains/intent/repositories/offline-sync-queue.repository.ts
+        line: 312
+        type: repository
+        operations:
+          - select
+      - file: src/domains/intent/repositories/offline-sync-queue.repository.ts
+        line: 341
+        type: repository
+        operations:
+          - select
+      - file: src/domains/intent/repositories/offline-sync-queue.repository.ts
+        line: 377
+        type: repository
+        operations:
+          - delete
+      - file: src/domains/intent/repositories/offline-sync-queue.repository.ts
+        line: 412
+        type: repository
+        operations:
+          - select
+      - file: src/domains/intent/repositories/offline-sync-queue.repository.ts
+        line: 463
+        type: repository
+        operations:
+          - update
+      - file: scripts/apply-mvp-tables-direct.ts
+        line: 26
+        type: client_call
+        operations:
+          - select
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 107
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 133
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 137
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/check-mvp-tables.ts
+        line: 16
+        type: client_call
+        operations:
+          - rpc:exec_sql
+    operations:
+      - insert
+      - select
+      - update
+      - delete
+      - rpc:exec_sql
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/intent/repositories/offline-sync-queue.repository.ts
+      - pattern: direct
+        count: 3
+        files:
+          - scripts/apply-mvp-tables-direct.ts
+          - scripts/apply-mvp-tables-migration.ts
+          - scripts/check-mvp-tables.ts
+    relationships:
+      references: []
+      referencedBy: []
+  container_assignments:
+    tableName: container_assignments
+    totalReferences: 3
+    locations:
+      - file: src/domains/inventory/repositories/container-assignments.repository.ts
+        line: 14
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/inventory/repositories/container-assignments.repository.ts
+        line: 30
+        type: repository
+        operations:
+          - select
+      - file: src/domains/inventory/repositories/container-assignments.repository.ts
+        line: 48
+        type: repository
+        operations:
+          - update
+    operations:
+      - insert
+      - select
+      - update
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/inventory/repositories/container-assignments.repository.ts
+    relationships:
+      references: []
+      referencedBy: []
+  inventory_images:
+    tableName: inventory_images
+    totalReferences: 6
+    locations:
+      - file: src/domains/inventory/repositories/inventory-image-repository.ts
+        line: 37
+        type: repository
+        operations:
+          - select
+      - file: src/domains/inventory/repositories/inventory-image-repository.ts
+        line: 69
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/inventory/repositories/inventory-image-repository.ts
+        line: 97
+        type: repository
+        operations:
+          - update
+      - file: src/domains/inventory/repositories/inventory-image-repository.ts
+        line: 113
+        type: repository
+        operations:
+          - update
+      - file: src/domains/inventory/repositories/inventory-image-repository.ts
+        line: 128
+        type: repository
+        operations:
+          - update
+      - file: src/domains/inventory/repositories/inventory-image-repository.ts
+        line: 143
+        type: repository
+        operations:
+          - delete
+    operations:
+      - select
+      - insert
+      - update
+      - delete
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/inventory/repositories/inventory-image-repository.ts
+    relationships:
+      references:
+        - companies
+        - medias
+      referencedBy: []
+  inventory_transactions:
+    tableName: inventory_transactions
+    totalReferences: 2
+    locations:
+      - file: src/domains/inventory/repositories/inventory-transactions.repository.ts
+        line: 14
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/inventory/repositories/inventory-transactions.repository.ts
+        line: 32
+        type: repository
+        operations:
+          - select
+    operations:
+      - insert
+      - select
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/inventory/repositories/inventory-transactions.repository.ts
+    relationships:
+      references: []
+      referencedBy: []
+  purchase_receipts:
+    tableName: purchase_receipts
+    totalReferences: 3
+    locations:
+      - file: src/domains/inventory/repositories/purchase-receipts.repository.ts
+        line: 14
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/inventory/repositories/purchase-receipts.repository.ts
+        line: 30
+        type: repository
+        operations:
+          - select
+      - file: src/domains/inventory/repositories/purchase-receipts.repository.ts
+        line: 47
+        type: repository
+        operations:
+          - select
+    operations:
+      - insert
+      - select
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/inventory/repositories/purchase-receipts.repository.ts
+    relationships:
+      references: []
+      referencedBy: []
+  training_data_records:
+    tableName: training_data_records
+    totalReferences: 3
+    locations:
+      - file: src/domains/inventory/repositories/training-data.repository.ts
+        line: 14
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/inventory/repositories/training-data.repository.ts
+        line: 30
+        type: repository
+        operations:
+          - select
+      - file: src/domains/inventory/repositories/training-data.repository.ts
+        line: 47
+        type: repository
+        operations:
+          - select
+    operations:
+      - insert
+      - select
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/inventory/repositories/training-data.repository.ts
+    relationships:
+      references: []
+      referencedBy: []
+  job_checklist_items:
+    tableName: job_checklist_items
+    totalReferences: 10
+    locations:
+      - file: src/domains/job/repositories/job-checklist-repository.ts
+        line: 61
+        type: repository
+        operations:
+          - select
+      - file: src/domains/job/repositories/job-checklist-repository.ts
+        line: 94
+        type: repository
+        operations:
+          - update
+      - file: src/domains/job/repositories/job-checklist-repository.ts
+        line: 127
+        type: repository
+        operations:
+          - update
+      - file: src/domains/job/services/checklist-verification-service.ts
+        line: 462
+        type: service
+        operations:
+          - update
+      - file: src/domains/job/services/checklist-verification-service.ts
+        line: 479
+        type: service
+        operations:
+          - update
+      - file: src/domains/job/services/job-from-voice-service.ts
+        line: 189
+        type: service
+        operations:
+          - insert
+      - file: src/domains/job/services/job-load-list-service.ts
+        line: 113
+        type: service
+        operations:
+          - select
+      - file: src/domains/job/services/job-load-list-service.ts
+        line: 219
+        type: service
+        operations:
+          - update
+      - file: src/domains/job/services/job-load-list-service.ts
+        line: 266
+        type: service
+        operations:
+          - update
+      - file: src/domains/job/services/job-load-list-service.ts
+        line: 344
+        type: service
+        operations:
+          - update
+    operations:
+      - select
+      - update
+      - insert
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/job/repositories/job-checklist-repository.ts
+      - pattern: service
+        count: 3
+        files:
+          - src/domains/job/services/checklist-verification-service.ts
+          - src/domains/job/services/job-from-voice-service.ts
+          - src/domains/job/services/job-load-list-service.ts
+    relationships:
+      references: []
+      referencedBy: []
+  media_assets:
+    tableName: media_assets
+    totalReferences: 12
+    locations:
+      - file: src/domains/job/services/checklist-verification-service.ts
+        line: 217
+        type: service
+        operations:
+          - insert
+      - file: src/domains/vision/services/media-asset.service.ts
+        line: 113
+        type: service
+        operations:
+          - insert
+      - file: src/domains/vision/services/media-asset.service.ts
+        line: 173
+        type: service
+        operations:
+          - select
+      - file: src/domains/vision/services/media-asset.service.ts
+        line: 194
+        type: service
+        operations:
+          - delete
+      - file: src/domains/vision/services/media-asset.service.ts
+        line: 221
+        type: service
+        operations:
+          - select
+      - file: src/domains/voice/services/voice-intake-service.ts
+        line: 118
+        type: service
+        operations:
+          - insert
+      - file: src/domains/voice/services/voice-intake-service.ts
+        line: 149
+        type: service
+        operations:
+          - delete
+      - file: src/domains/voice/services/voice-intake-service.ts
+        line: 182
+        type: service
+        operations:
+          - update
+      - file: src/domains/voice/services/voice-intake-service.ts
+        line: 207
+        type: service
+        operations:
+          - select
+      - file: scripts/ci/rls-test-harness.ts
+        line: 197
+        type: client_call
+        operations:
+          - select
+      - file: scripts/ci/rls-test-harness.ts
+        line: 206
+        type: client_call
+        operations:
+          - select
+      - file: scripts/ci/rls-test-harness.ts
+        line: 252
+        type: client_call
+        operations:
+          - delete
+    operations:
+      - insert
+      - select
+      - delete
+      - update
+    accessPatterns:
+      - pattern: service
+        count: 3
+        files:
+          - src/domains/job/services/checklist-verification-service.ts
+          - src/domains/vision/services/media-asset.service.ts
+          - src/domains/voice/services/voice-intake-service.ts
+      - pattern: direct
+        count: 1
+        files:
+          - scripts/ci/rls-test-harness.ts
+    relationships:
+      references: []
+      referencedBy: []
+  job_templates:
+    tableName: job_templates
+    totalReferences: 13
+    locations:
+      - file: src/domains/job/services/job-from-voice-service.ts
+        line: 362
+        type: service
+        operations:
+          - select
+      - file: src/domains/job/services/job-from-voice-service.ts
+        line: 373
+        type: service
+        operations:
+          - select
+      - file: src/domains/job/services/job-from-voice-service.ts
+        line: 473
+        type: service
+        operations:
+          - select
+      - file: src/domains/job-templates/repositories/job-template-repository.ts
+        line: 126
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/job-templates/repositories/job-template-repository.ts
+        line: 200
+        type: repository
+        operations:
+          - update
+      - file: src/domains/job-templates/repositories/job-template-repository.ts
+        line: 233
+        type: repository
+        operations:
+          - select
+      - file: src/domains/job-templates/repositories/job-template-repository.ts
+        line: 266
+        type: repository
+        operations:
+          - select
+      - file: src/domains/job-templates/repositories/job-template-repository.ts
+        line: 303
+        type: repository
+        operations:
+          - select
+      - file: src/domains/job-templates/repositories/job-template-repository.ts
+        line: 348
+        type: repository
+        operations:
+          - select
+      - file: src/domains/job-templates/repositories/job-template-repository.ts
+        line: 414
+        type: repository
+        operations:
+          - select
+      - file: src/domains/job-templates/repositories/job-template-repository.ts
+        line: 465
+        type: repository
+        operations:
+          - update
+      - file: scripts/check-database-direct.ts
+        line: 60
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-existing-equipment-structure.ts
+        line: 80
+        type: client_call
+        operations:
+          - select
+    operations:
+      - select
+      - insert
+      - update
+    accessPatterns:
+      - pattern: service
+        count: 1
+        files:
+          - src/domains/job/services/job-from-voice-service.ts
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/job-templates/repositories/job-template-repository.ts
+      - pattern: direct
+        count: 2
+        files:
+          - scripts/check-database-direct.ts
+          - scripts/check-existing-equipment-structure.ts
+    relationships:
+      references: []
+      referencedBy: []
+  kit_assignments:
+    tableName: kit_assignments
+    totalReferences: 2
+    locations:
+      - file: src/domains/repos/scheduling-kits/kit-assignment-repository.ts
+        line: 32
+        type: client_call
+        operations:
+          - insert
+      - file: src/domains/repos/scheduling-kits/kit-assignment-repository.ts
+        line: 46
+        type: client_call
+        operations:
+          - select
+    operations:
+      - insert
+      - select
+    accessPatterns:
+      - pattern: direct
+        count: 1
+        files:
+          - src/domains/repos/scheduling-kits/kit-assignment-repository.ts
+    relationships:
+      references:
+        - companies
+        - kits
+        - variants
+      referencedBy: []
+  kit_override_logs:
+    tableName: kit_override_logs
+    totalReferences: 9
+    locations:
+      - file: src/domains/repos/scheduling-kits/kit-override-log-repository.ts
+        line: 21
+        type: client_call
+        operations:
+          - insert
+      - file: src/scheduling/repositories/kit-override-log.repository.ts
+        line: 67
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit-override-log.repository.ts
+        line: 82
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit-override-log.repository.ts
+        line: 130
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/kit-override-log.repository.ts
+        line: 141
+        type: repository
+        operations:
+          - update
+      - file: src/scheduling/repositories/kit-override-log.repository.ts
+        line: 153
+        type: repository
+        operations:
+          - delete
+      - file: src/scheduling/repositories/kit-override-log.repository.ts
+        line: 206
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit-override-log.repository.ts
+        line: 217
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit-override-log.repository.ts
+        line: 262
+        type: repository
+        operations:
+          - select
+    operations:
+      - insert
+      - select
+      - update
+      - delete
+    accessPatterns:
+      - pattern: direct
+        count: 1
+        files:
+          - src/domains/repos/scheduling-kits/kit-override-log-repository.ts
+      - pattern: repository
+        count: 1
+        files:
+          - src/scheduling/repositories/kit-override-log.repository.ts
+    relationships:
+      references: []
+      referencedBy: []
+  kits:
+    tableName: kits
+    totalReferences: 20
+    locations:
+      - file: src/domains/repos/scheduling-kits/kit-repository.ts
+        line: 38
+        type: client_call
+        operations:
+          - select
+      - file: src/domains/repos/scheduling-kits/kit-repository.ts
+        line: 52
+        type: client_call
+        operations:
+          - select
+      - file: src/domains/repos/scheduling-kits/kit-repository.ts
+        line: 71
+        type: client_call
+        operations:
+          - select
+      - file: src/domains/repos/scheduling-kits/kit-repository.ts
+        line: 99
+        type: client_call
+        operations:
+          - insert
+      - file: src/domains/repos/scheduling-kits/kit-repository.ts
+        line: 116
+        type: client_call
+        operations:
+          - delete
+      - file: src/scheduling/repositories/kit.repository.ts
+        line: 55
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit.repository.ts
+        line: 70
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit.repository.ts
+        line: 88
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit.repository.ts
+        line: 104
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit.repository.ts
+        line: 137
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/kit.repository.ts
+        line: 148
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/kit.repository.ts
+        line: 158
+        type: repository
+        operations:
+          - update
+      - file: src/scheduling/repositories/kit.repository.ts
+        line: 170
+        type: repository
+        operations:
+          - delete
+      - file: src/scheduling/repositories/kit.repository.ts
+        line: 180
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit.repository.ts
+        line: 192
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit.repository.ts
+        line: 217
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit.repository.ts
+        line: 233
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit.repository.ts
+        line: 248
+        type: repository
+        operations:
+          - select
+      - file: scripts/comprehensive-test-suite.ts
+        line: 137
+        type: client_call
+        operations:
+          - select
+      - file: scripts/seed-e2e-test-data.ts
+        line: 258
+        type: client_call
+        operations:
+          - upsert
+    operations:
+      - select
+      - insert
+      - delete
+      - update
+      - upsert
+    accessPatterns:
+      - pattern: direct
+        count: 3
+        files:
+          - src/domains/repos/scheduling-kits/kit-repository.ts
+          - scripts/comprehensive-test-suite.ts
+          - scripts/seed-e2e-test-data.ts
+      - pattern: repository
+        count: 1
+        files:
+          - src/scheduling/repositories/kit.repository.ts
+    relationships:
+      references:
+        - tenants
+      referencedBy:
+        - kit_assignments
+        - kit_items
+        - kit_variants
+  kit_items:
+    tableName: kit_items
+    totalReferences: 18
+    locations:
+      - file: src/domains/repos/scheduling-kits/kit-repository.ts
+        line: 113
+        type: client_call
+        operations:
+          - insert
+      - file: src/scheduling/repositories/kit-item.repository.ts
+        line: 50
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit-item.repository.ts
+        line: 65
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit-item.repository.ts
+        line: 97
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/kit-item.repository.ts
+        line: 108
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/kit-item.repository.ts
+        line: 118
+        type: repository
+        operations:
+          - update
+      - file: src/scheduling/repositories/kit-item.repository.ts
+        line: 130
+        type: repository
+        operations:
+          - delete
+      - file: src/scheduling/repositories/kit-item.repository.ts
+        line: 140
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit-item.repository.ts
+        line: 152
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit-item.repository.ts
+        line: 172
+        type: repository
+        operations:
+          - delete
+      - file: src/scheduling/repositories/kit-item.repository.ts
+        line: 192
+        type: repository
+        operations:
+          - select
+      - file: scripts/comprehensive-test-suite.ts
+        line: 41
+        type: client_call
+        operations:
+          - select
+      - file: scripts/comprehensive-test-suite.ts
+        line: 57
+        type: client_call
+        operations:
+          - select
+      - file: scripts/fix-kit-items-migration.ts
+        line: 18
+        type: client_call
+        operations:
+          - select
+      - file: scripts/fix-kit-items-migration.ts
+        line: 31
+        type: client_call
+        operations:
+          - select
+      - file: scripts/fix-kit-items-migration.ts
+        line: 47
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/fix-kit-items-migration.ts
+        line: 61
+        type: client_call
+        operations:
+          - select
+      - file: scripts/seed-e2e-test-data.ts
+        line: 344
+        type: client_call
+        operations:
+          - upsert
+    operations:
+      - insert
+      - select
+      - update
+      - delete
+      - rpc:exec_sql
+      - upsert
+    accessPatterns:
+      - pattern: direct
+        count: 4
+        files:
+          - src/domains/repos/scheduling-kits/kit-repository.ts
+          - scripts/comprehensive-test-suite.ts
+          - scripts/fix-kit-items-migration.ts
+          - scripts/seed-e2e-test-data.ts
+      - pattern: repository
+        count: 1
+        files:
+          - src/scheduling/repositories/kit-item.repository.ts
+    relationships:
+      references:
+        - tenants
+        - kits
+      referencedBy: []
+  kit_variants:
+    tableName: kit_variants
+    totalReferences: 15
+    locations:
+      - file: src/domains/repos/scheduling-kits/kit-variant-repository.ts
+        line: 18
+        type: client_call
+        operations:
+          - select
+      - file: src/domains/repos/scheduling-kits/kit-variant-repository.ts
+        line: 43
+        type: client_call
+        operations:
+          - insert
+      - file: src/scheduling/repositories/kit-variant.repository.ts
+        line: 50
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit-variant.repository.ts
+        line: 65
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit-variant.repository.ts
+        line: 104
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/kit-variant.repository.ts
+        line: 115
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/kit-variant.repository.ts
+        line: 133
+        type: repository
+        operations:
+          - update
+      - file: src/scheduling/repositories/kit-variant.repository.ts
+        line: 145
+        type: repository
+        operations:
+          - delete
+      - file: src/scheduling/repositories/kit-variant.repository.ts
+        line: 155
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit-variant.repository.ts
+        line: 167
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit-variant.repository.ts
+        line: 183
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit-variant.repository.ts
+        line: 203
+        type: repository
+        operations:
+          - update
+      - file: src/scheduling/repositories/kit-variant.repository.ts
+        line: 213
+        type: repository
+        operations:
+          - delete
+      - file: src/scheduling/repositories/kit-variant.repository.ts
+        line: 223
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/kit-variant.repository.ts
+        line: 241
+        type: repository
+        operations:
+          - select
+    operations:
+      - select
+      - insert
+      - update
+      - delete
+    accessPatterns:
+      - pattern: direct
+        count: 1
+        files:
+          - src/domains/repos/scheduling-kits/kit-variant-repository.ts
+      - pattern: repository
+        count: 1
+        files:
+          - src/scheduling/repositories/kit-variant.repository.ts
+    relationships:
+      references:
+        - tenants
+        - kits
+      referencedBy: []
+  settings:
+    tableName: settings
+    totalReferences: 2
+    locations:
+      - file: src/domains/tenant/services/subscription-service.ts
+        line: 632
+        type: service
+        operations:
+          - rpc:jsonb_merge
+      - file: src/domains/tenant/services/subscription-service.ts
+        line: 633
+        type: service
+        operations:
+          - rpc:get_tenant_settings
+    operations:
+      - rpc:jsonb_merge
+      - rpc:get_tenant_settings
+    accessPatterns:
+      - pattern: service
+        count: 1
+        files:
+          - src/domains/tenant/services/subscription-service.ts
+    relationships:
+      references: []
+      referencedBy: []
+  users_extended:
+    tableName: users_extended
+    totalReferences: 25
+    locations:
+      - file: src/domains/tenant/services/tenant-service.ts
+        line: 568
+        type: service
+        operations:
+          - update
+      - file: scripts/check-rls-status.ts
+        line: 30
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-schema.ts
+        line: 39
+        type: client_call
+        operations:
+          - select
+      - file: scripts/create-missing-tables.ts
+        line: 52
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 53
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-missing-tables.ts
+        line: 53
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-missing-tables.ts
+        line: 104
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 105
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-missing-tables.ts
+        line: 105
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-missing-tables.ts
+        line: 160
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 161
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-missing-tables.ts
+        line: 161
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-missing-tables.ts
+        line: 215
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 216
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-missing-tables.ts
+        line: 216
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-missing-tables.ts
+        line: 216
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-missing-tables.ts
+        line: 281
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 282
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-missing-tables.ts
+        line: 327
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 328
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-missing-tables.ts
+        line: 372
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 373
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-missing-tables.ts
+        line: 373
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-users-extended.ts
+        line: 31
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/query-rls-policies.ts
+        line: 16
+        type: client_call
+        operations:
+          - rpc:exec_sql
+    operations:
+      - update
+      - select
+      - rpc:exec_sql
+      - sql
+      - upsert
+    accessPatterns:
+      - pattern: service
+        count: 1
+        files:
+          - src/domains/tenant/services/tenant-service.ts
+      - pattern: direct
+        count: 5
+        files:
+          - scripts/check-rls-status.ts
+          - scripts/check-schema.ts
+          - scripts/create-missing-tables.ts
+          - scripts/create-users-extended.ts
+          - scripts/query-rls-policies.ts
+    relationships:
+      references:
+        - tenants
+      referencedBy: []
+  time_entries:
+    tableName: time_entries
+    totalReferences: 16
+    locations:
+      - file: src/domains/time-tracking/repositories/time-entry.repository.ts
+        line: 37
+        type: repository
+        operations:
+          - select
+      - file: src/domains/time-tracking/repositories/time-entry.repository.ts
+        line: 57
+        type: repository
+        operations:
+          - select
+      - file: src/domains/time-tracking/repositories/time-entry.repository.ts
+        line: 90
+        type: repository
+        operations:
+          - select
+      - file: src/domains/time-tracking/repositories/time-entry.repository.ts
+        line: 101
+        type: repository
+        operations:
+          - select
+      - file: src/domains/time-tracking/repositories/time-entry.repository.ts
+        line: 112
+        type: repository
+        operations:
+          - select
+      - file: src/domains/time-tracking/repositories/time-entry.repository.ts
+        line: 126
+        type: repository
+        operations:
+          - select
+      - file: src/domains/time-tracking/repositories/time-entry.repository.ts
+        line: 149
+        type: repository
+        operations:
+          - select
+      - file: src/domains/time-tracking/repositories/time-entry.repository.ts
+        line: 181
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/time-tracking/repositories/time-entry.repository.ts
+        line: 192
+        type: repository
+        operations:
+          - update
+      - file: src/domains/time-tracking/repositories/time-entry.repository.ts
+        line: 255
+        type: repository
+        operations:
+          - delete
+      - file: src/domains/time-tracking/repositories/time-entry.repository.ts
+        line: 302
+        type: repository
+        operations:
+          - select
+      - file: scripts/migrations/005-all-tables.ts
+        line: 101
+        type: migration
+        operations:
+          - sql
+      - file: scripts/migrations/005-all-tables.ts
+        line: 102
+        type: migration
+        operations:
+          - sql
+      - file: scripts/migrations/005-all-tables.ts
+        line: 103
+        type: migration
+        operations:
+          - sql
+      - file: scripts/migrations/005-all-tables.ts
+        line: 104
+        type: migration
+        operations:
+          - sql
+      - file: scripts/migrations/005-all-tables.ts
+        line: 105
+        type: migration
+        operations:
+          - sql
+    operations:
+      - select
+      - insert
+      - update
+      - delete
+      - sql
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/time-tracking/repositories/time-entry.repository.ts
+      - pattern: direct
+        count: 1
+        files:
+          - scripts/migrations/005-all-tables.ts
+    relationships:
+      references: []
+      referencedBy: []
+  vision_cost_records:
+    tableName: vision_cost_records
+    totalReferences: 17
+    locations:
+      - file: src/domains/vision/repositories/cost-record.repository.ts
+        line: 40
+        type: repository
+        operations:
+          - select
+      - file: src/domains/vision/repositories/cost-record.repository.ts
+        line: 59
+        type: repository
+        operations:
+          - select
+      - file: src/domains/vision/repositories/cost-record.repository.ts
+        line: 104
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/vision/repositories/cost-record.repository.ts
+        line: 128
+        type: repository
+        operations:
+          - select
+      - file: src/domains/vision/repositories/cost-record.repository.ts
+        line: 159
+        type: repository
+        operations:
+          - select
+      - file: src/domains/vision/repositories/cost-record.repository.ts
+        line: 212
+        type: repository
+        operations:
+          - select
+      - file: src/domains/vision/repositories/cost-record.repository.ts
+        line: 312
+        type: repository
+        operations:
+          - select
+      - file: scripts/apply-vision-cost-records-fixed.ts
+        line: 20
+        type: migration
+        operations:
+          - sql
+      - file: scripts/apply-vision-cost-records-fixed.ts
+        line: 78
+        type: client_call
+        operations:
+          - select
+      - file: scripts/apply-vision-migrations.ts
+        line: 48
+        type: client_call
+        operations:
+          - select
+      - file: scripts/apply-vision-migrations.ts
+        line: 127
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-missing-tables.ts
+        line: 31
+        type: client_call
+        operations:
+          - select
+      - file: scripts/comprehensive-test-suite.ts
+        line: 121
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-vision-tables-integration.ts
+        line: 66
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/verify-feature-001-007-schema.ts
+        line: 63
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/verify-vision-tables.ts
+        line: 40
+        type: client_call
+        operations:
+          - select
+      - file: scripts/verify-vision-tables.ts
+        line: 53
+        type: client_call
+        operations:
+          - insert
+    operations:
+      - select
+      - insert
+      - sql
+      - rpc:exec_sql
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/vision/repositories/cost-record.repository.ts
+      - pattern: direct
+        count: 7
+        files:
+          - scripts/apply-vision-cost-records-fixed.ts
+          - scripts/apply-vision-migrations.ts
+          - scripts/check-missing-tables.ts
+          - scripts/comprehensive-test-suite.ts
+          - scripts/test-vision-tables-integration.ts
+    relationships:
+      references: []
+      referencedBy: []
+  vision_detected_items:
+    tableName: vision_detected_items
+    totalReferences: 16
+    locations:
+      - file: src/domains/vision/repositories/detected-item.repository.ts
+        line: 33
+        type: repository
+        operations:
+          - select
+      - file: src/domains/vision/repositories/detected-item.repository.ts
+        line: 52
+        type: repository
+        operations:
+          - select
+      - file: src/domains/vision/repositories/detected-item.repository.ts
+        line: 97
+        type: repository
+        operations:
+          - select
+      - file: src/domains/vision/repositories/detected-item.repository.ts
+        line: 126
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/vision/repositories/detected-item.repository.ts
+        line: 145
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/vision/repositories/detected-item.repository.ts
+        line: 164
+        type: repository
+        operations:
+          - update
+      - file: src/domains/vision/repositories/detected-item.repository.ts
+        line: 184
+        type: repository
+        operations:
+          - delete
+      - file: src/domains/vision/repositories/detected-item.repository.ts
+        line: 201
+        type: repository
+        operations:
+          - delete
+      - file: scripts/apply-vision-migrations.ts
+        line: 43
+        type: client_call
+        operations:
+          - select
+      - file: scripts/apply-vision-migrations.ts
+        line: 122
+        type: client_call
+        operations:
+          - select
+      - file: scripts/check-missing-tables.ts
+        line: 16
+        type: client_call
+        operations:
+          - select
+      - file: scripts/comprehensive-test-suite.ts
+        line: 153
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-vision-tables-integration.ts
+        line: 39
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/verify-feature-001-007-schema.ts
+        line: 63
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/verify-vision-tables.ts
+        line: 17
+        type: client_call
+        operations:
+          - select
+      - file: scripts/verify-vision-tables.ts
+        line: 30
+        type: client_call
+        operations:
+          - insert
+    operations:
+      - select
+      - insert
+      - update
+      - delete
+      - rpc:exec_sql
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/vision/repositories/detected-item.repository.ts
+      - pattern: direct
+        count: 6
+        files:
+          - scripts/apply-vision-migrations.ts
+          - scripts/check-missing-tables.ts
+          - scripts/comprehensive-test-suite.ts
+          - scripts/test-vision-tables-integration.ts
+          - scripts/verify-feature-001-007-schema.ts
+    relationships:
+      references: []
+      referencedBy: []
+  vision_verifications:
+    tableName: vision_verifications
+    totalReferences: 17
+    locations:
+      - file: src/domains/vision/repositories/vision-verification.repository.ts
+        line: 37
+        type: repository
+        operations:
+          - select
+      - file: src/domains/vision/repositories/vision-verification.repository.ts
+        line: 89
+        type: repository
+        operations:
+          - select
+      - file: src/domains/vision/repositories/vision-verification.repository.ts
+        line: 146
+        type: repository
+        operations:
+          - insert
+      - file: src/domains/vision/repositories/vision-verification.repository.ts
+        line: 166
+        type: repository
+        operations:
+          - update
+      - file: src/domains/vision/repositories/vision-verification.repository.ts
+        line: 186
+        type: repository
+        operations:
+          - delete
+      - file: src/domains/vision/repositories/vision-verification.repository.ts
+        line: 216
+        type: repository
+        operations:
+          - select
+      - file: src/domains/vision/repositories/vision-verification.repository.ts
+        line: 273
+        type: repository
+        operations:
+          - select
+      - file: scripts/check-vision-verifications-schema.ts
+        line: 16
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/check-vision-verifications-schema.ts
+        line: 25
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-vision-tables-integration.ts
+        line: 18
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-vision-tables-integration.ts
+        line: 87
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-vision-tables-integration.ts
+        line: 119
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/verify-feature-001-007-schema.ts
+        line: 63
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/verify-vision-retention.ts
+        line: 45
+        type: migration
+        operations:
+          - sql
+      - file: scripts/verify-vision-retention.ts
+        line: 45
+        type: migration
+        operations:
+          - sql
+      - file: scripts/verify-vision-retention.ts
+        line: 55
+        type: client_call
+        operations:
+          - select
+      - file: scripts/verify-vision-retention.ts
+        line: 72
+        type: client_call
+        operations:
+          - select
+    operations:
+      - select
+      - insert
+      - update
+      - delete
+      - rpc:exec_sql
+      - sql
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/domains/vision/repositories/vision-verification.repository.ts
+      - pattern: direct
+        count: 4
+        files:
+          - scripts/check-vision-verifications-schema.ts
+          - scripts/test-vision-tables-integration.ts
+          - scripts/verify-feature-001-007-schema.ts
+          - scripts/verify-vision-retention.ts
+    relationships:
+      references: []
+      referencedBy: []
+  crew_assignments:
+    tableName: crew_assignments
+    totalReferences: 11
+    locations:
+      - file: src/scheduling/repositories/crew-assignment.repository.ts
+        line: 53
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/crew-assignment.repository.ts
+        line: 68
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/crew-assignment.repository.ts
+        line: 110
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/crew-assignment.repository.ts
+        line: 121
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/crew-assignment.repository.ts
+        line: 131
+        type: repository
+        operations:
+          - update
+      - file: src/scheduling/repositories/crew-assignment.repository.ts
+        line: 143
+        type: repository
+        operations:
+          - delete
+      - file: src/scheduling/repositories/crew-assignment.repository.ts
+        line: 153
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/crew-assignment.repository.ts
+        line: 164
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/crew-assignment.repository.ts
+        line: 182
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/crew-assignment.repository.ts
+        line: 198
+        type: repository
+        operations:
+          - delete
+      - file: src/scheduling/repositories/crew-assignment.repository.ts
+        line: 208
+        type: repository
+        operations:
+          - select
+    operations:
+      - select
+      - insert
+      - update
+      - delete
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/scheduling/repositories/crew-assignment.repository.ts
+    relationships:
+      references: []
+      referencedBy: []
+  day_plans:
+    tableName: day_plans
+    totalReferences: 57
+    locations:
+      - file: src/scheduling/repositories/day-plan.repository.ts
+        line: 57
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/day-plan.repository.ts
+        line: 72
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/day-plan.repository.ts
+        line: 90
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/day-plan.repository.ts
+        line: 136
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/day-plan.repository.ts
+        line: 147
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/day-plan.repository.ts
+        line: 157
+        type: repository
+        operations:
+          - update
+      - file: src/scheduling/repositories/day-plan.repository.ts
+        line: 169
+        type: repository
+        operations:
+          - delete
+      - file: src/scheduling/repositories/day-plan.repository.ts
+        line: 179
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/day-plan.repository.ts
+        line: 195
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/day-plan.repository.ts
+        line: 239
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/day-plan.repository.ts
+        line: 254
+        type: repository
+        operations:
+          - select
+      - file: scripts/test-rls-directly.ts
+        line: 60
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-rls-directly.ts
+        line: 82
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-rls-directly.ts
+        line: 95
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 118
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 160
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 179
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 192
+        type: client_call
+        operations:
+          - update
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 206
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 213
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 303
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 320
+        type: client_call
+        operations:
+          - update
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 333
+        type: client_call
+        operations:
+          - update
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 472
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 529
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 605
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 627
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 645
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 799
+        type: client_call
+        operations:
+          - update
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 821
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-e2e.ts
+        line: 202
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-e2e.ts
+        line: 508
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-e2e.ts
+        line: 513
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-interactive.ts
+        line: 335
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-interactive.ts
+        line: 375
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 154
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 371
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 710
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 754
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1218
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1259
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1271
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1290
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1366
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1401
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1423
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1438
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-simple.ts
+        line: 43
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-simple.ts
+        line: 132
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-simple.ts
+        line: 155
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-simple.ts
+        line: 227
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-voice-full.ts
+        line: 383
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-voice-full.ts
+        line: 492
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-voice-full.ts
+        line: 620
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-voice-llm.ts
+        line: 270
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-voice-llm.ts
+        line: 384
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-voice-llm.ts
+        line: 564
+        type: client_call
+        operations:
+          - delete
+    operations:
+      - select
+      - insert
+      - update
+      - delete
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/scheduling/repositories/day-plan.repository.ts
+      - pattern: direct
+        count: 8
+        files:
+          - scripts/test-rls-directly.ts
+          - scripts/test-scheduling-comprehensive.ts
+          - scripts/test-scheduling-e2e.ts
+          - scripts/test-scheduling-interactive.ts
+          - scripts/test-scheduling-scenarios.ts
+    relationships:
+      references:
+        - companies
+        - users
+        - voice_sessions
+      referencedBy: []
+  job_kits:
+    tableName: job_kits
+    totalReferences: 12
+    locations:
+      - file: src/scheduling/repositories/job-kit.repository.ts
+        line: 57
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/job-kit.repository.ts
+        line: 72
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/job-kit.repository.ts
+        line: 91
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/job-kit.repository.ts
+        line: 132
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/job-kit.repository.ts
+        line: 143
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/job-kit.repository.ts
+        line: 153
+        type: repository
+        operations:
+          - update
+      - file: src/scheduling/repositories/job-kit.repository.ts
+        line: 165
+        type: repository
+        operations:
+          - delete
+      - file: src/scheduling/repositories/job-kit.repository.ts
+        line: 175
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/job-kit.repository.ts
+        line: 186
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/job-kit.repository.ts
+        line: 214
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/job-kit.repository.ts
+        line: 226
+        type: repository
+        operations:
+          - delete
+      - file: src/scheduling/repositories/job-kit.repository.ts
+        line: 236
+        type: repository
+        operations:
+          - select
+    operations:
+      - select
+      - insert
+      - update
+      - delete
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/scheduling/repositories/job-kit.repository.ts
+    relationships:
+      references: []
+      referencedBy: []
+  schedule_events:
+    tableName: schedule_events
+    totalReferences: 78
+    locations:
+      - file: src/scheduling/repositories/schedule-event.repository.ts
+        line: 54
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/schedule-event.repository.ts
+        line: 69
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/schedule-event.repository.ts
+        line: 109
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/schedule-event.repository.ts
+        line: 120
+        type: repository
+        operations:
+          - insert
+      - file: src/scheduling/repositories/schedule-event.repository.ts
+        line: 131
+        type: repository
+        operations:
+          - update
+      - file: src/scheduling/repositories/schedule-event.repository.ts
+        line: 143
+        type: repository
+        operations:
+          - delete
+      - file: src/scheduling/repositories/schedule-event.repository.ts
+        line: 153
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/schedule-event.repository.ts
+        line: 164
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/schedule-event.repository.ts
+        line: 176
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/schedule-event.repository.ts
+        line: 215
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/schedule-event.repository.ts
+        line: 231
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/schedule-event.repository.ts
+        line: 264
+        type: repository
+        operations:
+          - select
+      - file: src/scheduling/repositories/schedule-event.repository.ts
+        line: 275
+        type: repository
+        operations:
+          - delete
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 137
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 159
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 237
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 263
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 306
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 368
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 391
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 414
+        type: client_call
+        operations:
+          - update
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 425
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 447
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 495
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 547
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 561
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 702
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 724
+        type: client_call
+        operations:
+          - update
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 744
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 769
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-comprehensive.ts
+        line: 788
+        type: client_call
+        operations:
+          - update
+      - file: scripts/test-scheduling-e2e.ts
+        line: 197
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-e2e.ts
+        line: 320
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-e2e.ts
+        line: 420
+        type: client_call
+        operations:
+          - update
+      - file: scripts/test-scheduling-e2e.ts
+        line: 442
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-e2e.ts
+        line: 450
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-e2e.ts
+        line: 498
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-e2e.ts
+        line: 503
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-interactive.ts
+        line: 371
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 153
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 257
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 279
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 458
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 488
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 830
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 839
+        type: client_call
+        operations:
+          - update
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 848
+        type: client_call
+        operations:
+          - update
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 875
+        type: client_call
+        operations:
+          - update
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 883
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1000
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1017
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1023
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1107
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1113
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1145
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1166
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1179
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1236
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1378
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 1443
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-simple.ts
+        line: 81
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-simple.ts
+        line: 112
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-simple.ts
+        line: 177
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-simple.ts
+        line: 192
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-voice-full.ts
+        line: 420
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-voice-full.ts
+        line: 432
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-voice-full.ts
+        line: 455
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-voice-full.ts
+        line: 503
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-voice-full.ts
+        line: 530
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-voice-full.ts
+        line: 578
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-voice-full.ts
+        line: 615
+        type: client_call
+        operations:
+          - delete
+      - file: scripts/test-scheduling-voice-llm.ts
+        line: 308
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-voice-llm.ts
+        line: 321
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-voice-llm.ts
+        line: 347
+        type: client_call
+        operations:
+          - insert
+      - file: scripts/test-scheduling-voice-llm.ts
+        line: 395
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-voice-llm.ts
+        line: 422
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-voice-llm.ts
+        line: 471
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-voice-llm.ts
+        line: 559
+        type: client_call
+        operations:
+          - delete
+    operations:
+      - select
+      - insert
+      - update
+      - delete
+    accessPatterns:
+      - pattern: repository
+        count: 1
+        files:
+          - src/scheduling/repositories/schedule-event.repository.ts
+      - pattern: direct
+        count: 7
+        files:
+          - scripts/test-scheduling-comprehensive.ts
+          - scripts/test-scheduling-e2e.ts
+          - scripts/test-scheduling-interactive.ts
+          - scripts/test-scheduling-scenarios.ts
+          - scripts/test-scheduling-simple.ts
+    relationships:
+      references: []
+      referencedBy: []
+  roles:
+    tableName: roles
+    totalReferences: 3
+    locations:
+      - file: scripts/analyze-tenancy-model.ts
+        line: 95
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/deep-database-analysis.ts
+        line: 110
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/query-rls-policies.ts
+        line: 16
+        type: client_call
+        operations:
+          - rpc:exec_sql
+    operations:
+      - rpc:exec_sql
+    accessPatterns:
+      - pattern: direct
+        count: 3
+        files:
+          - scripts/analyze-tenancy-model.ts
+          - scripts/deep-database-analysis.ts
+          - scripts/query-rls-policies.ts
+    relationships:
+      references: []
+      referencedBy: []
+  sync_queue:
+    tableName: sync_queue
+    totalReferences: 4
+    locations:
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 107
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 133
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/apply-mvp-tables-migration.ts
+        line: 137
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/check-mvp-tables.ts
+        line: 16
+        type: client_call
+        operations:
+          - rpc:exec_sql
+    operations:
+      - rpc:exec_sql
+    accessPatterns:
+      - pattern: direct
+        count: 2
+        files:
+          - scripts/apply-mvp-tables-migration.ts
+          - scripts/check-mvp-tables.ts
+    relationships:
+      references: []
+      referencedBy: []
+  companies:
+    tableName: companies
+    totalReferences: 13
+    locations:
+      - file: scripts/check-actual-column-types.ts
+        line: 17
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/check-companies-schema.ts
+        line: 16
+        type: client_call
+        operations:
+          - select
+      - file: scripts/ci/rls-test-harness.ts
+        line: 142
+        type: client_call
+        operations:
+          - select
+      - file: scripts/ci/rls-test-harness.ts
+        line: 152
+        type: client_call
+        operations:
+          - select
+      - file: scripts/create-uuid-tenant.ts
+        line: 49
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-uuid-tenant.ts
+        line: 50
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-uuid-tenant.ts
+        line: 50
+        type: migration
+        operations:
+          - sql
+      - file: scripts/setup-e2e-tests.ts
+        line: 34
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/test-scheduling-e2e.ts
+        line: 116
+        type: client_call
+        operations:
+          - select
+      - file: scripts/test-scheduling-e2e.ts
+        line: 124
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/test-scheduling-interactive.ts
+        line: 318
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/test-scheduling-scenarios.ts
+        line: 164
+        type: client_call
+        operations:
+          - upsert
+      - file: scripts/validate-mvp-deployment.ts
+        line: 344
+        type: client_call
+        operations:
+          - select
+    operations:
+      - rpc:exec_sql
+      - select
+      - sql
+      - upsert
+    accessPatterns:
+      - pattern: direct
+        count: 9
+        files:
+          - scripts/check-actual-column-types.ts
+          - scripts/check-companies-schema.ts
+          - scripts/ci/rls-test-harness.ts
+          - scripts/create-uuid-tenant.ts
+          - scripts/setup-e2e-tests.ts
+    relationships:
+      references:
+        - tenants
+      referencedBy:
+        - day_plans
+        - equipment_maintenance
+        - inventory_images
+        - kit_assignments
+        - notification_queue
+        - notifications
+        - ocr_documents
+        - ocr_jobs
+        - ocr_line_items
+        - ocr_note_entities
+        - vendor_aliases
+        - vendor_locations
+        - vendors
+  detected_items:
+    tableName: detected_items
+    totalReferences: 2
+    locations:
+      - file: scripts/check-database-direct.ts
+        line: 100
+        type: client_call
+        operations:
+          - select
+      - file: scripts/verify-feature-001-007-schema.ts
+        line: 63
+        type: client_call
+        operations:
+          - rpc:exec_sql
+    operations:
+      - select
+      - rpc:exec_sql
+    accessPatterns:
+      - pattern: direct
+        count: 2
+        files:
+          - scripts/check-database-direct.ts
+          - scripts/verify-feature-001-007-schema.ts
+    relationships:
+      references: []
+      referencedBy: []
+  voice_sessions:
+    tableName: voice_sessions
+    totalReferences: 2
+    locations:
+      - file: scripts/ci/rls-test-harness.ts
+        line: 179
+        type: client_call
+        operations:
+          - select
+      - file: scripts/ci/rls-test-harness.ts
+        line: 188
+        type: client_call
+        operations:
+          - select
+    operations:
+      - select
+    accessPatterns:
+      - pattern: direct
+        count: 1
+        files:
+          - scripts/ci/rls-test-harness.ts
+    relationships:
+      references: []
+      referencedBy:
+        - day_plans
+        - jobs
+  offline_queue:
+    tableName: offline_queue
+    totalReferences: 2
+    locations:
+      - file: scripts/create-missing-tables.ts
+        line: 17
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 18
+        type: migration
+        operations:
+          - sql
+    operations:
+      - rpc:exec_sql
+      - sql
+    accessPatterns:
+      - pattern: direct
+        count: 1
+        files:
+          - scripts/create-missing-tables.ts
+    relationships:
+      references: []
+      referencedBy: []
+  notes:
+    tableName: notes
+    totalReferences: 5
+    locations:
+      - file: scripts/create-missing-tables.ts
+        line: 52
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 104
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 160
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 215
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 281
+        type: client_call
+        operations:
+          - rpc:exec_sql
+    operations:
+      - rpc:exec_sql
+    accessPatterns:
+      - pattern: direct
+        count: 1
+        files:
+          - scripts/create-missing-tables.ts
+    relationships:
+      references: []
+      referencedBy: []
+  invoices:
+    tableName: invoices
+    totalReferences: 4
+    locations:
+      - file: scripts/create-missing-tables.ts
+        line: 215
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 216
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-missing-tables.ts
+        line: 216
+        type: migration
+        operations:
+          - sql
+      - file: scripts/create-missing-tables.ts
+        line: 216
+        type: migration
+        operations:
+          - sql
+    operations:
+      - rpc:exec_sql
+      - sql
+    accessPatterns:
+      - pattern: direct
+        count: 1
+        files:
+          - scripts/create-missing-tables.ts
+    relationships:
+      references:
+        - tenants
+        - customers
+        - jobs
+      referencedBy: []
+  audit_logs:
+    tableName: audit_logs
+    totalReferences: 2
+    locations:
+      - file: scripts/create-missing-tables.ts
+        line: 327
+        type: client_call
+        operations:
+          - rpc:exec_sql
+      - file: scripts/create-missing-tables.ts
+        line: 328
+        type: migration
+        operations:
+          - sql
+    operations:
+      - rpc:exec_sql
+      - sql
+    accessPatterns:
+      - pattern: direct
+        count: 1
+        files:
+          - scripts/create-missing-tables.ts
+    relationships:
+      references:
+        - tenants
+        - entitys
+      referencedBy: []
+  schedules:
+    tableName: schedules
+    totalReferences: 1
+    locations:
+      - file: scripts/create-missing-tables.ts
+        line: 372
+        type: client_call
+        operations:
+          - rpc:exec_sql
+    operations:
+      - rpc:exec_sql
+    accessPatterns:
+      - pattern: direct
+        count: 1
+        files:
+          - scripts/create-missing-tables.ts
+    relationships:
+      references: []
+      referencedBy: []
+  vendors:
+    tableName: vendors
+    totalReferences: 1
+    locations:
+      - file: scripts/migrations/005-all-tables.ts
+        line: 113
+        type: migration
+        operations:
+          - sql
+    operations:
+      - sql
+    accessPatterns:
+      - pattern: direct
+        count: 1
+        files:
+          - scripts/migrations/005-all-tables.ts
+    relationships:
+      references:
+        - companies
+        - intake_sessions
+      referencedBy:
+        - ocr_jobs
+        - vendor_aliases
+        - vendor_locations
+unmappedTableDetails:
+  - name: ai_cost_tracking
+    rowCount: 0
+    reason: migration_only
+  - name: ai_models
+    rowCount: 0
+    reason: migration_only
+  - name: ai_prompts
+    rowCount: 0
+    reason: migration_only
+  - name: attachments
+    rowCount: 0
+    reason: migration_only
+  - name: audit_log_entries
+    rowCount: 0
+    reason: migration_only
+  - name: background_filter_preferences
+    rowCount: 0
+    reason: migration_only
+  - name: batch_operations
+    rowCount: 0
+    reason: migration_only
+  - name: billing_accounts
+    rowCount: 0
+    reason: migration_only
+  - name: break_logs
+    rowCount: 0
+    reason: migration_only
+  - name: calendar_events
+    rowCount: 0
+    reason: migration_only
+  - name: comments
+    rowCount: 0
+    reason: migration_only
+  - name: company_settings
+    rowCount: 0
+    reason: migration_only
+  - name: configurations
+    rowCount: 0
+    reason: migration_only
+  - name: container_locations
+    rowCount: 0
+    reason: migration_only
+  - name: crew_schedules
+    rowCount: 0
+    reason: migration_only
+  - name: customer_contacts
+    rowCount: 0
+    reason: migration_only
+  - name: customer_notes
+    rowCount: 0
+    reason: migration_only
+  - name: detection_confidence_thresholds
+    rowCount: 0
+    reason: migration_only
+  - name: device_registrations
+    rowCount: 0
+    reason: migration_only
+  - name: document_versions
+    rowCount: 0
+    reason: migration_only
+  - name: documents
+    rowCount: 0
+    reason: migration_only
+  - name: email_queue
+    rowCount: 0
+    reason: migration_only
+  - name: employee_schedules
+    rowCount: 0
+    reason: migration_only
+  - name: equipment_assignments
+    rowCount: 0
+    reason: migration_only
+  - name: equipment_locations
+    rowCount: 0
+    reason: migration_only
+  - name: equipment_maintenance
+    rowCount: 33
+    reason: no_references
+  - name: estimates
+    rowCount: 0
+    reason: migration_only
+  - name: export_jobs
+    rowCount: 0
+    reason: migration_only
+  - name: feature_flags
+    rowCount: 0
+    reason: migration_only
+  - name: import_jobs
+    rowCount: 0
+    reason: migration_only
+  - name: intent_recognitions
+    rowCount: 0
+    reason: migration_only
+  - name: inventory_locations
+    rowCount: 0
+    reason: migration_only
+  - name: invoice_items
+    rowCount: 0
+    reason: migration_only
+  - name: irrigation_history
+    rowCount: 0
+    reason: migration_only
+  - name: irrigation_maintenance
+    rowCount: 0
+    reason: migration_only
+  - name: irrigation_runs
+    rowCount: 0
+    reason: migration_only
+  - name: irrigation_schedules
+    rowCount: 0
+    reason: migration_only
+  - name: irrigation_systems
+    rowCount: 0
+    reason: migration_only
+  - name: irrigation_zones
+    rowCount: 0
+    reason: migration_only
+  - name: item_relationships
+    rowCount: 0
+    reason: migration_only
+  - name: job_materials
+    rowCount: 0
+    reason: migration_only
+  - name: job_notes
+    rowCount: 0
+    reason: migration_only
+  - name: job_status_history
+    rowCount: 0
+    reason: migration_only
+  - name: maintenance_logs
+    rowCount: 0
+    reason: migration_only
+  - name: maintenance_schedules
+    rowCount: 0
+    reason: migration_only
+  - name: material_inventory
+    rowCount: 0
+    reason: migration_only
+  - name: material_usage
+    rowCount: 0
+    reason: migration_only
+  - name: media_metadata
+    rowCount: 0
+    reason: migration_only
+  - name: mobile_sessions
+    rowCount: 0
+    reason: migration_only
+  - name: notification_history
+    rowCount: 0
+    reason: migration_only
+  - name: notification_preferences
+    rowCount: 0
+    reason: migration_only
+  - name: notification_queue
+    rowCount: 209
+    reason: no_references
+  - name: notifications
+    rowCount: 6
+    reason: no_references
+  - name: ocr_documents
+    rowCount: 1
+    reason: no_references
+  - name: ocr_jobs
+    rowCount: 1
+    reason: no_references
+  - name: ocr_line_items
+    rowCount: 1
+    reason: no_references
+  - name: ocr_note_entities
+    rowCount: 1
+    reason: no_references
+  - name: overtime_records
+    rowCount: 0
+    reason: migration_only
+  - name: payment_methods
+    rowCount: 0
+    reason: migration_only
+  - name: payments
+    rowCount: 0
+    reason: migration_only
+  - name: permissions
+    rowCount: 11
+    reason: no_references
+  - name: profiles
+    rowCount: 0
+    reason: migration_only
+  - name: property_access_codes
+    rowCount: 0
+    reason: migration_only
+  - name: property_notes
+    rowCount: 0
+    reason: migration_only
+  - name: property_zones
+    rowCount: 0
+    reason: migration_only
+  - name: purchase_order_items
+    rowCount: 0
+    reason: migration_only
+  - name: purchase_orders
+    rowCount: 0
+    reason: migration_only
+  - name: push_tokens
+    rowCount: 0
+    reason: migration_only
+  - name: quotes
+    rowCount: 0
+    reason: migration_only
+  - name: receipts
+    rowCount: 0
+    reason: migration_only
+  - name: recurring_schedules
+    rowCount: 0
+    reason: migration_only
+  - name: request_deduplication
+    rowCount: 0
+    reason: migration_only
+  - name: role_permissions
+    rowCount: 25
+    reason: no_references
+  - name: route_history
+    rowCount: 0
+    reason: migration_only
+  - name: route_optimizations
+    rowCount: 0
+    reason: migration_only
+  - name: route_stops
+    rowCount: 0
+    reason: migration_only
+  - name: routes
+    rowCount: 0
+    reason: migration_only
+  - name: schedule_templates
+    rowCount: 0
+    reason: migration_only
+  - name: service_history
+    rowCount: 0
+    reason: migration_only
+  - name: service_tickets
+    rowCount: 0
+    reason: migration_only
+  - name: shift_patterns
+    rowCount: 0
+    reason: migration_only
+  - name: sms_queue
+    rowCount: 0
+    reason: migration_only
+  - name: storage_units
+    rowCount: 0
+    reason: migration_only
+  - name: sync_logs
+    rowCount: 0
+    reason: migration_only
+  - name: system_logs
+    rowCount: 0
+    reason: migration_only
+  - name: tag_assignments
+    rowCount: 0
+    reason: migration_only
+  - name: tags
+    rowCount: 0
+    reason: migration_only
+  - name: team_members
+    rowCount: 0
+    reason: migration_only
+  - name: teams
+    rowCount: 0
+    reason: migration_only
+  - name: time_clock_entries
+    rowCount: 0
+    reason: migration_only
+  - name: time_off_requests
+    rowCount: 0
+    reason: migration_only
+  - name: transactions
+    rowCount: 0
+    reason: migration_only
+  - name: user_permissions
+    rowCount: 0
+    reason: migration_only
+  - name: user_roles
+    rowCount: 0
+    reason: migration_only
+  - name: vendor_aliases
+    rowCount: 1
+    reason: no_references
+  - name: vendor_contacts
+    rowCount: 0
+    reason: migration_only
+  - name: vendor_invoices
+    rowCount: 0
+    reason: migration_only
+  - name: vendor_locations
+    rowCount: 1
+    reason: no_references
+  - name: vision_confidence_config
+    rowCount: 0
+    reason: migration_only
+  - name: vision_training_annotations
+    rowCount: 0
+    reason: migration_only
+  - name: vision_verification_records
+    rowCount: 0
+    reason: migration_only
+  - name: voice_commands
+    rowCount: 0
+    reason: migration_only
+  - name: voice_notes
+    rowCount: 0
+    reason: migration_only
+  - name: voice_transcripts
+    rowCount: 0
+    reason: migration_only
+  - name: webhook_logs
+    rowCount: 0
+    reason: migration_only
+  - name: webhooks
+    rowCount: 0
+    reason: migration_only
+  - name: week_plans
+    rowCount: 0
+    reason: migration_only
+  - name: work_orders
+    rowCount: 0
+    reason: migration_only
+codeQualityIssues:
+  - type: direct_access
+    severity: high
+    table: tenants
+    files:
+      - scripts/apply-mvp-tables-migration.ts
+      - scripts/check-railway-schema.ts
+      - scripts/check-role-enum.ts
+      - scripts/create-railway-demo-users.ts
+      - scripts/create-test-tenant.ts
+      - scripts/create-uuid-tenant.ts
+      - scripts/test-railway-auth.ts
+      - scripts/test-sql-connection.ts
+    description: Table "tenants" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: containers
+    files:
+      - scripts/analyze-db-structure.ts
+      - scripts/apply-mvp-tables-migration.ts
+      - scripts/check-mvp-tables.ts
+      - scripts/comprehensive-test-suite.ts
+    description: Table "containers" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: users
+    files:
+      - src/domains/auth/guards/auth-guard.tsx
+      - scripts/apply-mvp-tables-migration.ts
+      - scripts/create-missing-tables.ts
+      - scripts/query-rls-policies.ts
+    description: Table "users" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: media_assets
+    files:
+      - scripts/ci/rls-test-harness.ts
+    description: Table "media_assets" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: kit_assignments
+    files:
+      - src/domains/repos/scheduling-kits/kit-assignment-repository.ts
+    description: Table "kit_assignments" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: users_extended
+    files:
+      - scripts/check-rls-status.ts
+      - scripts/check-schema.ts
+      - scripts/create-missing-tables.ts
+      - scripts/create-users-extended.ts
+      - scripts/query-rls-policies.ts
+    description: Table "users_extended" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: roles
+    files:
+      - scripts/analyze-tenancy-model.ts
+      - scripts/deep-database-analysis.ts
+      - scripts/query-rls-policies.ts
+    description: Table "roles" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: sync_queue
+    files:
+      - scripts/apply-mvp-tables-migration.ts
+      - scripts/check-mvp-tables.ts
+    description: Table "sync_queue" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: companies
+    files:
+      - scripts/check-actual-column-types.ts
+      - scripts/check-companies-schema.ts
+      - scripts/ci/rls-test-harness.ts
+      - scripts/create-uuid-tenant.ts
+      - scripts/setup-e2e-tests.ts
+      - scripts/test-scheduling-e2e.ts
+      - scripts/test-scheduling-interactive.ts
+      - scripts/test-scheduling-scenarios.ts
+      - scripts/validate-mvp-deployment.ts
+    description: Table "companies" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: detected_items
+    files:
+      - scripts/check-database-direct.ts
+      - scripts/verify-feature-001-007-schema.ts
+    description: Table "detected_items" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: voice_sessions
+    files:
+      - scripts/ci/rls-test-harness.ts
+    description: Table "voice_sessions" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: offline_queue
+    files:
+      - scripts/create-missing-tables.ts
+    description: Table "offline_queue" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: notes
+    files:
+      - scripts/create-missing-tables.ts
+    description: Table "notes" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: invoices
+    files:
+      - scripts/create-missing-tables.ts
+    description: Table "invoices" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: audit_logs
+    files:
+      - scripts/create-missing-tables.ts
+    description: Table "audit_logs" has no repository and is accessed directly
+  - type: direct_access
+    severity: high
+    table: schedules
+    files:
+      - scripts/create-missing-tables.ts
+    description: Table "schedules" has no repository and is accessed directly
+  - type: missing_types
+    severity: medium
+    table: tenants
+    files: []
+    description: Table "tenants" has 24 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: jobs
+    files:
+      - src/lib/offline/sync-manager.ts
+      - scripts/apply-extend-jobs-migration.ts
+      - scripts/apply-mvp-tables-migration.ts
+      - scripts/check-database-direct.ts
+      - scripts/check-equipment-table-detail.ts
+      - scripts/check-existing-equipment-structure.ts
+      - scripts/check-jobs-schema.ts
+      - scripts/check-mvp-tables.ts
+      - scripts/check-rls-status.ts
+      - scripts/create-demo-data.ts
+      - scripts/create-demo-jobs.ts
+      - scripts/create-missing-tables.ts
+      - scripts/create-test-fixtures.ts
+      - scripts/create-uuid-fixtures.ts
+      - scripts/fix-double-booking.ts
+      - scripts/get-jobs-columns.ts
+      - scripts/initialize-job-equipment.ts
+      - scripts/prove-live-crud.ts
+      - scripts/query-rls-policies.ts
+      - scripts/seed-e2e-test-data.ts
+      - scripts/seed-minimal-e2e-data.ts
+      - scripts/simple-table-list.ts
+      - scripts/test-db-connection.ts
+      - scripts/test-jobs-insert.ts
+      - scripts/test-service-role-direct.ts
+      - scripts/update-demo-job-variety.ts
+    description: Table "jobs" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: jobs
+    files: []
+    description: Table "jobs" has 83 references but no TypeScript type definitions
+  - type: missing_types
+    severity: medium
+    table: job_assignments
+    files: []
+    description: Table "job_assignments" has 7 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: customers
+    files:
+      - scripts/check-customers-schema.ts
+      - scripts/check-demo-customers.ts
+      - scripts/check-direct-crud.ts
+      - scripts/check-live-demo-customer.ts
+      - scripts/check-railway-schema.ts
+      - scripts/check-schema.ts
+      - scripts/ci/rls-test-harness.ts
+      - scripts/comprehensive-test-suite.ts
+      - scripts/connect-to-railway-supabase.ts
+      - scripts/create-demo-data.ts
+      - scripts/create-demo-jobs.ts
+      - scripts/create-demo-tenant-record.ts
+      - scripts/create-test-fixtures.ts
+      - scripts/create-ui-demo-customer.ts
+      - scripts/create-uuid-fixtures.ts
+      - scripts/direct-crud-test.ts
+      - scripts/drop-customers-company-id.ts
+      - scripts/final-crud-proof.ts
+      - scripts/fix-demo-tenant-uuid.ts
+      - scripts/force-drop-customers-company-id.ts
+      - scripts/prove-live-crud.ts
+      - scripts/seed-e2e-test-data.ts
+      - scripts/simple-table-list.ts
+      - scripts/successful-crud-test.ts
+      - scripts/test-api-route.ts
+      - scripts/test-crud-verification.ts
+      - scripts/test-demo-users.ts
+      - scripts/test-railway-crud.ts
+      - scripts/use-existing-tenant.ts
+      - scripts/verify-railway-crud-direct.ts
+      - scripts/verify-railway-crud.ts
+    description: Table "customers" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: customers
+    files: []
+    description: Table "customers" has 85 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: inventory_items
+    files:
+      - scripts/analyze-db-structure.ts
+      - scripts/check-database-direct.ts
+      - scripts/check-equipment-table-detail.ts
+      - scripts/check-existing-equipment-structure.ts
+      - scripts/comprehensive-test-suite.ts
+    description: Table "inventory_items" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: inventory_items
+    files: []
+    description: Table "inventory_items" has 15 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: properties
+    files:
+      - scripts/check-schema.ts
+      - scripts/create-missing-tables.ts
+      - scripts/create-test-fixtures.ts
+      - scripts/create-uuid-fixtures.ts
+      - scripts/seed-e2e-test-data.ts
+    description: Table "properties" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: properties
+    files: []
+    description: Table "properties" has 28 references but no TypeScript type definitions
+  - type: missing_types
+    severity: medium
+    table: containers
+    files: []
+    description: Table "containers" has 8 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: equipment
+    files:
+      - scripts/analyze-db-structure.ts
+      - scripts/apply-mvp-tables-migration.ts
+      - scripts/check-actual-column-types.ts
+      - scripts/check-equipment-table-detail.ts
+      - scripts/check-mvp-tables.ts
+      - scripts/create-missing-tables.ts
+      - scripts/seed-e2e-test-data.ts
+    description: Table "equipment" is accessed directly outside its repository
+  - type: direct_access
+    severity: medium
+    table: materials
+    files:
+      - scripts/check-actual-column-types.ts
+    description: Table "materials" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: materials
+    files: []
+    description: Table "materials" has 11 references but no TypeScript type definitions
+  - type: missing_types
+    severity: medium
+    table: users
+    files: []
+    description: Table "users" has 15 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: ai_interaction_logs
+    files:
+      - src/lib/offline/sync-manager.ts
+      - scripts/apply-mvp-tables-direct.ts
+      - scripts/apply-mvp-tables-migration.ts
+      - scripts/check-mvp-tables.ts
+    description: Table "ai_interaction_logs" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: ai_interaction_logs
+    files: []
+    description: Table "ai_interaction_logs" has 11 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: intent_classifications
+    files:
+      - src/lib/offline/sync-manager.ts
+      - scripts/apply-mvp-tables-direct.ts
+      - scripts/apply-mvp-tables-migration.ts
+      - scripts/check-mvp-tables.ts
+    description: Table "intent_classifications" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: intent_classifications
+    files: []
+    description: Table "intent_classifications" has 12 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: offline_sync_queue
+    files:
+      - scripts/apply-mvp-tables-direct.ts
+      - scripts/apply-mvp-tables-migration.ts
+      - scripts/check-mvp-tables.ts
+    description: Table "offline_sync_queue" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: offline_sync_queue
+    files: []
+    description: Table "offline_sync_queue" has 17 references but no TypeScript type definitions
+  - type: missing_types
+    severity: medium
+    table: inventory_images
+    files: []
+    description: Table "inventory_images" has 6 references but no TypeScript type definitions
+  - type: missing_types
+    severity: medium
+    table: job_checklist_items
+    files: []
+    description: Table "job_checklist_items" has 10 references but no TypeScript type definitions
+  - type: missing_types
+    severity: medium
+    table: media_assets
+    files: []
+    description: Table "media_assets" has 12 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: job_templates
+    files:
+      - scripts/check-database-direct.ts
+      - scripts/check-existing-equipment-structure.ts
+    description: Table "job_templates" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: job_templates
+    files: []
+    description: Table "job_templates" has 13 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: kit_override_logs
+    files:
+      - src/domains/repos/scheduling-kits/kit-override-log-repository.ts
+    description: Table "kit_override_logs" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: kit_override_logs
+    files: []
+    description: Table "kit_override_logs" has 9 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: kits
+    files:
+      - src/domains/repos/scheduling-kits/kit-repository.ts
+      - scripts/comprehensive-test-suite.ts
+      - scripts/seed-e2e-test-data.ts
+    description: Table "kits" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: kits
+    files: []
+    description: Table "kits" has 20 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: kit_items
+    files:
+      - src/domains/repos/scheduling-kits/kit-repository.ts
+      - scripts/comprehensive-test-suite.ts
+      - scripts/fix-kit-items-migration.ts
+      - scripts/seed-e2e-test-data.ts
+    description: Table "kit_items" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: kit_items
+    files: []
+    description: Table "kit_items" has 18 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: kit_variants
+    files:
+      - src/domains/repos/scheduling-kits/kit-variant-repository.ts
+    description: Table "kit_variants" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: kit_variants
+    files: []
+    description: Table "kit_variants" has 15 references but no TypeScript type definitions
+  - type: missing_types
+    severity: medium
+    table: users_extended
+    files: []
+    description: Table "users_extended" has 25 references but no TypeScript type definitions
+  - type: missing_types
+    severity: medium
+    table: time_entries
+    files: []
+    description: Table "time_entries" has 16 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: vision_cost_records
+    files:
+      - scripts/apply-vision-cost-records-fixed.ts
+      - scripts/apply-vision-migrations.ts
+      - scripts/check-missing-tables.ts
+      - scripts/comprehensive-test-suite.ts
+      - scripts/test-vision-tables-integration.ts
+      - scripts/verify-feature-001-007-schema.ts
+      - scripts/verify-vision-tables.ts
+    description: Table "vision_cost_records" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: vision_cost_records
+    files: []
+    description: Table "vision_cost_records" has 17 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: vision_detected_items
+    files:
+      - scripts/apply-vision-migrations.ts
+      - scripts/check-missing-tables.ts
+      - scripts/comprehensive-test-suite.ts
+      - scripts/test-vision-tables-integration.ts
+      - scripts/verify-feature-001-007-schema.ts
+      - scripts/verify-vision-tables.ts
+    description: Table "vision_detected_items" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: vision_detected_items
+    files: []
+    description: Table "vision_detected_items" has 16 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: vision_verifications
+    files:
+      - scripts/check-vision-verifications-schema.ts
+      - scripts/test-vision-tables-integration.ts
+      - scripts/verify-feature-001-007-schema.ts
+      - scripts/verify-vision-retention.ts
+    description: Table "vision_verifications" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: vision_verifications
+    files: []
+    description: Table "vision_verifications" has 17 references but no TypeScript type definitions
+  - type: missing_types
+    severity: medium
+    table: crew_assignments
+    files: []
+    description: Table "crew_assignments" has 11 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: day_plans
+    files:
+      - scripts/test-rls-directly.ts
+      - scripts/test-scheduling-comprehensive.ts
+      - scripts/test-scheduling-e2e.ts
+      - scripts/test-scheduling-interactive.ts
+      - scripts/test-scheduling-scenarios.ts
+      - scripts/test-scheduling-simple.ts
+      - scripts/test-scheduling-voice-full.ts
+      - scripts/test-scheduling-voice-llm.ts
+    description: Table "day_plans" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: day_plans
+    files: []
+    description: Table "day_plans" has 57 references but no TypeScript type definitions
+  - type: missing_types
+    severity: medium
+    table: job_kits
+    files: []
+    description: Table "job_kits" has 12 references but no TypeScript type definitions
+  - type: direct_access
+    severity: medium
+    table: schedule_events
+    files:
+      - scripts/test-scheduling-comprehensive.ts
+      - scripts/test-scheduling-e2e.ts
+      - scripts/test-scheduling-interactive.ts
+      - scripts/test-scheduling-scenarios.ts
+      - scripts/test-scheduling-simple.ts
+      - scripts/test-scheduling-voice-full.ts
+      - scripts/test-scheduling-voice-llm.ts
+    description: Table "schedule_events" is accessed directly outside its repository
+  - type: missing_types
+    severity: medium
+    table: schedule_events
+    files: []
+    description: Table "schedule_events" has 78 references but no TypeScript type definitions
+  - type: missing_types
+    severity: medium
+    table: companies
+    files: []
+    description: Table "companies" has 13 references but no TypeScript type definitions
+  - type: inconsistent_pattern
+    severity: low
+    table: tenants
+    files:
+      - src/app/api/auth/register/route.ts
+      - src/app/api/auth/register/route.ts
+      - src/app/api/auth/register/route.ts
+      - src/domains/tenant/services/subscription-service.ts
+      - src/domains/tenant/services/tenant-service.ts
+    description: Table "tenants" is accessed through 3 different patterns
+  - type: inconsistent_pattern
+    severity: low
+    table: jobs
+    files:
+      - src/app/api/crew/jobs/[jobId]/equipment/route.ts
+      - src/app/api/crew/jobs/[jobId]/equipment/route.ts
+      - src/app/api/crew/jobs/[jobId]/verify-load/route.ts
+      - src/app/api/demo-crud/route.ts
+      - src/app/api/vision/load-verifications/route.ts
+    description: Table "jobs" is accessed through 4 different patterns
+  - type: inconsistent_pattern
+    severity: low
+    table: customers
+    files:
+      - src/app/api/demo-crud/route.ts
+      - src/app/api/demo-crud/route.ts
+      - src/app/api/demo-crud/route.ts
+      - src/app/api/demo-crud/route.ts
+      - src/app/api/supervisor/customers/route.ts
+    description: Table "customers" is accessed through 4 different patterns
+  - type: inconsistent_pattern
+    severity: low
+    table: inventory_items
+    files:
+      - src/app/api/supervisor/inventory/route.ts
+      - src/app/api/supervisor/inventory/route.ts
+      - src/app/api/supervisor/inventory/route.ts
+      - src/domains/inventory/repositories/inventory-items.repository.ts
+      - src/domains/inventory/repositories/inventory-items.repository.ts
+    description: Table "inventory_items" is accessed through 3 different patterns
+  - type: inconsistent_pattern
+    severity: low
+    table: properties
+    files:
+      - src/app/api/supervisor/properties/[id]/route.ts
+      - src/app/api/supervisor/properties/[id]/route.ts
+      - src/app/api/supervisor/properties/[id]/route.ts
+      - src/app/api/supervisor/properties/route.ts
+      - src/app/api/supervisor/properties/route.ts
+    description: Table "properties" is accessed through 4 different patterns
+  - type: inconsistent_pattern
+    severity: low
+    table: containers
+    files:
+      - src/app/api/vision/load-verifications/route.ts
+      - src/app/api/vision/load-verifications/route.ts
+      - src/domains/job/services/job-from-voice-service.ts
+      - scripts/analyze-db-structure.ts
+      - scripts/apply-mvp-tables-migration.ts
+    description: Table "containers" is accessed through 3 different patterns
+  - type: inconsistent_pattern
+    severity: low
+    table: equipment
+    files:
+      - src/app/api/vision/load-verifications/route.ts
+      - src/domains/equipment/repositories/equipment-repository.ts
+      - src/domains/equipment/repositories/equipment-repository.ts
+      - src/domains/equipment/repositories/equipment-repository.ts
+      - src/domains/equipment/repositories/equipment-repository.ts
+    description: Table "equipment" is accessed through 3 different patterns
+  - type: inconsistent_pattern
+    severity: low
+    table: materials
+    files:
+      - src/app/api/vision/load-verifications/route.ts
+      - src/domains/material/repositories/material-repository.ts
+      - src/domains/material/repositories/material-repository.ts
+      - src/domains/material/repositories/material-repository.ts
+      - src/domains/material/repositories/material-repository.ts
+    description: Table "materials" is accessed through 3 different patterns
+  - type: inconsistent_pattern
+    severity: low
+    table: job_templates
+    files:
+      - src/domains/job/services/job-from-voice-service.ts
+      - src/domains/job/services/job-from-voice-service.ts
+      - src/domains/job/services/job-from-voice-service.ts
+      - src/domains/job-templates/repositories/job-template-repository.ts
+      - src/domains/job-templates/repositories/job-template-repository.ts
+    description: Table "job_templates" is accessed through 3 different patterns
+recommendations:
+  - >-
+    Review 11 tables with data but no code references: equipment_maintenance, notification_queue, notifications,
+    ocr_documents, ocr_jobs...
+  - Remove 97 empty tables with no code references
+  - Create repositories for 16 tables with direct database access
+  - Generate TypeScript types for 30 frequently used tables
+  - >-
+    Optimize access patterns for high-traffic tables: customers (85 refs), jobs (83 refs), schedule_events (78 refs),
+    day_plans (57 refs), properties (28 refs)
+  - Implement repository pattern for 21 tables currently using direct access

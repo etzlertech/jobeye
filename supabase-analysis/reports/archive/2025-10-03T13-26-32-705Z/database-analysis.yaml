@@ -1,0 +1,2648 @@
+analyzed_at: '2025-10-03T13:26:27.567Z'
+database_url: https://rtwigjwqufozqfwozpvo.supabase.co
+tables:
+  - name: companies
+    schema: public
+    row_count: 5
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 2
+      - name: name
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: 255
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 3
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 4
+      - name: updated_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 5
+      - name: domain
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 6
+      - name: is_active
+        data_type: boolean
+        udt_name: boolean
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 7
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: companies_tenant_id_fkey
+        table_name: companies
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: audit_logs
+    schema: public
+    row_count: 11
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 2
+      - name: entity_type
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 3
+      - name: entity_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 4
+      - name: action
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 5
+      - name: performed_by
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 6
+      - name: details
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 7
+      - name: ip_address
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 8
+      - name: user_agent
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 9
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 10
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: audit_logs_tenant_id_fkey
+        table_name: audit_logs
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: audit_logs_entity_id_fkey
+        table_name: audit_logs
+        column_name: entity_id
+        foreign_table_name: entitys
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: audit_logs_tenant_id_fkey
+        table_name: audit_logs
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: role_permissions
+    schema: public
+    row_count: 25
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 1
+      - name: role
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 2
+      - name: permission_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 3
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 4
+      - name: granted_by
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 5
+      - name: granted_at
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 6
+      - name: expires_at
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 7
+      - name: is_active
+        data_type: boolean
+        udt_name: boolean
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 8
+      - name: conditions
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 9
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: role_permissions_permission_id_fkey
+        table_name: role_permissions
+        column_name: permission_id
+        foreign_table_name: permissions
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: role_permissions_tenant_id_fkey
+        table_name: role_permissions
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: role_permissions_tenant_id_fkey
+        table_name: role_permissions
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: customers
+    schema: public
+    row_count: 84
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 2
+      - name: customer_number
+        data_type: integer
+        udt_name: integer
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 3
+      - name: name
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: 255
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 4
+      - name: email
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 5
+      - name: phone
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 6
+      - name: mobile_phone
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 7
+      - name: billing_address
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 8
+      - name: service_address
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 9
+      - name: notes
+        data_type: text
+        udt_name: text
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 10
+      - name: tags
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 11
+      - name: voice_notes
+        data_type: text
+        udt_name: text
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 12
+      - name: is_active
+        data_type: boolean
+        udt_name: boolean
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 13
+      - name: metadata
+        data_type: jsonb
+        udt_name: jsonb
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 14
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 15
+      - name: updated_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 16
+      - name: created_by
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 17
+      - name: version
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 18
+      - name: intake_session_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 19
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: customers_tenant_id_fkey
+        table_name: customers
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: customers_intake_session_id_fkey
+        table_name: customers
+        column_name: intake_session_id
+        foreign_table_name: intake_sessions
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: customers_tenant_id_fkey
+        table_name: customers
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: properties
+    schema: public
+    row_count: 35
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 2
+      - name: customer_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 3
+      - name: property_number
+        data_type: integer
+        udt_name: integer
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 4
+      - name: name
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: 255
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 5
+      - name: address
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 6
+      - name: location
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 7
+      - name: property_type
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 8
+      - name: size_sqft
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 9
+      - name: lot_size_acres
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 10
+      - name: zones
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 11
+      - name: access_notes
+        data_type: text
+        udt_name: text
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 12
+      - name: gate_code
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 13
+      - name: special_instructions
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 14
+      - name: voice_navigation_notes
+        data_type: text
+        udt_name: text
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 15
+      - name: photos
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 16
+      - name: is_active
+        data_type: boolean
+        udt_name: boolean
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 17
+      - name: metadata
+        data_type: jsonb
+        udt_name: jsonb
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 18
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 19
+      - name: updated_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 20
+      - name: intake_session_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 21
+      - name: reference_image_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 22
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: properties_tenant_id_fkey
+        table_name: properties
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: properties_customer_id_fkey
+        table_name: properties
+        column_name: customer_id
+        foreign_table_name: customers
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: properties_intake_session_id_fkey
+        table_name: properties
+        column_name: intake_session_id
+        foreign_table_name: intake_sessions
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: properties_reference_image_id_fkey
+        table_name: properties
+        column_name: reference_image_id
+        foreign_table_name: reference_images
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: properties_tenant_id_fkey
+        table_name: properties
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: equipment
+    schema: public
+    row_count: 0
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: gen_random_uuid()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: true
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: equipment_tenant_id_fkey
+        table_name: equipment
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: equipment_tenant_id_fkey
+        table_name: equipment
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: equipment_maintenance
+    schema: public
+    row_count: 33
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 1
+      - name: company_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 2
+      - name: equipment_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 3
+      - name: performed_by
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 4
+      - name: maintenance_type
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 5
+      - name: maintenance_date
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 6
+      - name: actions_performed
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 7
+      - name: pre_maintenance_verification_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 8
+      - name: post_maintenance_verification_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 9
+      - name: status
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 10
+      - name: completion_date
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 11
+      - name: notes
+        data_type: text
+        udt_name: text
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 12
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 13
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: equipment_maintenance_company_id_fkey
+        table_name: equipment_maintenance
+        column_name: company_id
+        foreign_table_name: companys
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: equipment_maintenance_equipment_id_fkey
+        table_name: equipment_maintenance
+        column_name: equipment_id
+        foreign_table_name: equipments
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: equipment_maintenance_pre_maintenance_verification_id_fkey
+        table_name: equipment_maintenance
+        column_name: pre_maintenance_verification_id
+        foreign_table_name: pre_maintenance_verifications
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: equipment_maintenance_post_maintenance_verification_id_fkey
+        table_name: equipment_maintenance
+        column_name: post_maintenance_verification_id
+        foreign_table_name: post_maintenance_verifications
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: materials
+    schema: public
+    row_count: 0
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: gen_random_uuid()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: true
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: materials_tenant_id_fkey
+        table_name: materials
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: materials_tenant_id_fkey
+        table_name: materials
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: voice_sessions
+    schema: public
+    row_count: 0
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: gen_random_uuid()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: true
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: voice_sessions_tenant_id_fkey
+        table_name: voice_sessions
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: voice_sessions_tenant_id_fkey
+        table_name: voice_sessions
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: voice_transcripts
+    schema: public
+    row_count: 0
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: gen_random_uuid()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: true
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: voice_transcripts_tenant_id_fkey
+        table_name: voice_transcripts
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: voice_transcripts_tenant_id_fkey
+        table_name: voice_transcripts
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: vision_cost_records
+    schema: public
+    row_count: 0
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: gen_random_uuid()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: true
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: vision_cost_records_tenant_id_fkey
+        table_name: vision_cost_records
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: vision_cost_records_tenant_id_fkey
+        table_name: vision_cost_records
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: detection_confidence_thresholds
+    schema: public
+    row_count: 0
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: gen_random_uuid()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: true
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: detection_confidence_thresholds_tenant_id_fkey
+        table_name: detection_confidence_thresholds
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: detection_confidence_thresholds_tenant_id_fkey
+        table_name: detection_confidence_thresholds
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: job_templates
+    schema: public
+    row_count: 0
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: gen_random_uuid()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: true
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: job_templates_tenant_id_fkey
+        table_name: job_templates
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: job_templates_tenant_id_fkey
+        table_name: job_templates
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: jobs
+    schema: public
+    row_count: 50
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 2
+      - name: job_number
+        data_type: integer
+        udt_name: integer
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 3
+      - name: template_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 4
+      - name: customer_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 5
+      - name: property_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 6
+      - name: title
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 7
+      - name: description
+        data_type: text
+        udt_name: text
+        is_nullable: true
+        column_default: null
+        character_maximum_length: 255
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 8
+      - name: status
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 9
+      - name: priority
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 10
+      - name: scheduled_start
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 11
+      - name: scheduled_end
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 12
+      - name: actual_start
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 13
+      - name: actual_end
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 14
+      - name: assigned_to
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 15
+      - name: assigned_team
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 16
+      - name: estimated_duration
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 17
+      - name: actual_duration
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 18
+      - name: completion_notes
+        data_type: text
+        udt_name: text
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 19
+      - name: voice_notes
+        data_type: text
+        udt_name: text
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 20
+      - name: voice_created
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 21
+      - name: voice_session_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 22
+      - name: checklist_items
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 23
+      - name: materials_used
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 24
+      - name: equipment_used
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 25
+      - name: photos_before
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 26
+      - name: photos_after
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 27
+      - name: signature_required
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 28
+      - name: signature_data
+        data_type: jsonb
+        udt_name: jsonb
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 29
+      - name: billing_info
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 30
+      - name: metadata
+        data_type: jsonb
+        udt_name: jsonb
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 31
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 32
+      - name: updated_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 33
+      - name: created_by
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 34
+      - name: arrival_photo_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 35
+      - name: arrival_confirmed_at
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 36
+      - name: completion_quality_score
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 37
+      - name: requires_supervisor_review
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 38
+      - name: arrival_timestamp
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 39
+      - name: arrival_gps_coords
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 40
+      - name: arrival_method
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 41
+      - name: arrival_confidence
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 42
+      - name: completion_timestamp
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 43
+      - name: completion_photo_url
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 44
+      - name: tool_reload_verified
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 45
+      - name: offline_modified_at
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 46
+      - name: offline_modified_by
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 47
+      - name: special_instructions_audio
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 48
+      - name: estimated_duration_minutes
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 49
+      - name: actual_duration_minutes
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 50
+      - name: completion_photo_urls
+        data_type: varchar
+        udt_name: varchar
+        is_nullable: true
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: true
+        ordinal_position: 51
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: jobs_tenant_id_fkey
+        table_name: jobs
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: jobs_template_id_fkey
+        table_name: jobs
+        column_name: template_id
+        foreign_table_name: templates
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: jobs_customer_id_fkey
+        table_name: jobs
+        column_name: customer_id
+        foreign_table_name: customers
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: jobs_property_id_fkey
+        table_name: jobs
+        column_name: property_id
+        foreign_table_name: propertys
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: jobs_voice_session_id_fkey
+        table_name: jobs
+        column_name: voice_session_id
+        foreign_table_name: voice_sessions
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: jobs_arrival_photo_id_fkey
+        table_name: jobs
+        column_name: arrival_photo_id
+        foreign_table_name: arrival_photos
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: jobs_tenant_id_fkey
+        table_name: jobs
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: mobile_sessions
+    schema: public
+    row_count: 0
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: gen_random_uuid()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: true
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: mobile_sessions_tenant_id_fkey
+        table_name: mobile_sessions
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: mobile_sessions_tenant_id_fkey
+        table_name: mobile_sessions
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: offline_queue
+    schema: public
+    row_count: 0
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: gen_random_uuid()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: true
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: offline_queue_tenant_id_fkey
+        table_name: offline_queue
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: offline_queue_tenant_id_fkey
+        table_name: offline_queue
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+  - name: media_assets
+    schema: public
+    row_count: 0
+    columns:
+      - name: id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: gen_random_uuid()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: true
+        is_generated: true
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 1
+      - name: tenant_id
+        data_type: uuid
+        udt_name: uuid
+        is_nullable: false
+        column_default: null
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+      - name: created_at
+        data_type: timestamp
+        udt_name: timestamp
+        is_nullable: false
+        column_default: now()
+        character_maximum_length: null
+        numeric_precision: null
+        numeric_scale: null
+        is_identity: false
+        is_generated: false
+        generation_expression: null
+        is_updatable: false
+        ordinal_position: 2
+    primary_keys:
+      - id
+    foreign_keys:
+      - constraint_name: media_assets_tenant_id_fkey
+        table_name: media_assets
+        column_name: tenant_id
+        foreign_table_name: tenants
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: RESTRICT
+      - constraint_name: media_assets_tenant_id_fkey
+        table_name: media_assets
+        column_name: tenant_id
+        foreign_table_name: companies
+        foreign_column_name: id
+        update_rule: CASCADE
+        delete_rule: CASCADE
+    indexes: []
+    rls_enabled: false
+    rls_policies: []
+    triggers: []
+views: []
+functions: []
+enums: []
+total_tables: 17
+total_rows: 243
+orphaned_tables:
+  - equipment
+  - materials
+  - voice_transcripts
+  - vision_cost_records
+  - detection_confidence_thresholds
+  - job_templates
+  - mobile_sessions
+  - offline_queue
+  - media_assets
+missing_rls_tables:
+  - companies
+  - audit_logs
+  - role_permissions
+  - customers
+  - properties
+  - equipment
+  - equipment_maintenance
+  - materials
+  - voice_sessions
+  - voice_transcripts
+  - vision_cost_records
+  - detection_confidence_thresholds
+  - job_templates
+  - jobs
+  - mobile_sessions
+  - offline_queue
+  - media_assets
+recommendations:
+  - >-
+    Enable RLS on the following tables for security: audit_logs, role_permissions, customers, properties, equipment,
+    equipment_maintenance, materials, voice_sessions, voice_transcripts, vision_cost_records,
+    detection_confidence_thresholds, job_templates, jobs, mobile_sessions, offline_queue, media_assets
+  - >-
+    10 tables have no data. Consider removing unused tables: equipment, materials, voice_sessions, voice_transcripts,
+    vision_cost_records, ...
+  - 'The following tables may need tenant_id for multi-tenancy: equipment_maintenance'
+  - 'The following tables are missing created_at timestamp: role_permissions'

@@ -1,0 +1,242 @@
+[
+  {
+    "name": "companies",
+    "accessible": true,
+    "sampleColumns": [
+      "id",
+      "tenant_id",
+      "name",
+      "created_at",
+      "updated_at",
+      "domain",
+      "is_active"
+    ],
+    "rowCount": 5
+  },
+  {
+    "name": "audit_logs",
+    "accessible": true,
+    "sampleColumns": [
+      "id",
+      "tenant_id",
+      "entity_type",
+      "entity_id",
+      "action",
+      "performed_by",
+      "details",
+      "ip_address",
+      "user_agent",
+      "created_at"
+    ],
+    "rowCount": 11
+  },
+  {
+    "name": "role_permissions",
+    "accessible": true,
+    "sampleColumns": [
+      "id",
+      "role",
+      "permission_id",
+      "tenant_id",
+      "granted_by",
+      "granted_at",
+      "expires_at",
+      "is_active",
+      "conditions"
+    ],
+    "rowCount": 25
+  },
+  {
+    "name": "customers",
+    "accessible": true,
+    "sampleColumns": [
+      "id",
+      "tenant_id",
+      "customer_number",
+      "name",
+      "email",
+      "phone",
+      "mobile_phone",
+      "billing_address",
+      "service_address",
+      "notes",
+      "tags",
+      "voice_notes",
+      "is_active",
+      "metadata",
+      "created_at",
+      "updated_at",
+      "created_by",
+      "version",
+      "intake_session_id"
+    ],
+    "rowCount": 84
+  },
+  {
+    "name": "properties",
+    "accessible": true,
+    "sampleColumns": [
+      "id",
+      "tenant_id",
+      "customer_id",
+      "property_number",
+      "name",
+      "address",
+      "location",
+      "property_type",
+      "size_sqft",
+      "lot_size_acres",
+      "zones",
+      "access_notes",
+      "gate_code",
+      "special_instructions",
+      "voice_navigation_notes",
+      "photos",
+      "is_active",
+      "metadata",
+      "created_at",
+      "updated_at",
+      "intake_session_id",
+      "reference_image_id"
+    ],
+    "rowCount": 35
+  },
+  {
+    "name": "equipment",
+    "accessible": true,
+    "sampleColumns": [],
+    "rowCount": 0
+  },
+  {
+    "name": "equipment_maintenance",
+    "accessible": true,
+    "sampleColumns": [
+      "id",
+      "company_id",
+      "equipment_id",
+      "performed_by",
+      "maintenance_type",
+      "maintenance_date",
+      "actions_performed",
+      "pre_maintenance_verification_id",
+      "post_maintenance_verification_id",
+      "status",
+      "completion_date",
+      "notes",
+      "created_at"
+    ],
+    "rowCount": 33
+  },
+  {
+    "name": "materials",
+    "accessible": true,
+    "sampleColumns": [],
+    "rowCount": 0
+  },
+  {
+    "name": "voice_sessions",
+    "accessible": true,
+    "sampleColumns": [],
+    "rowCount": 0
+  },
+  {
+    "name": "voice_transcripts",
+    "accessible": true,
+    "sampleColumns": [],
+    "rowCount": 0
+  },
+  {
+    "name": "vision_cost_records",
+    "accessible": true,
+    "sampleColumns": [],
+    "rowCount": 0
+  },
+  {
+    "name": "detection_confidence_thresholds",
+    "accessible": true,
+    "sampleColumns": [],
+    "rowCount": 0
+  },
+  {
+    "name": "job_templates",
+    "accessible": true,
+    "sampleColumns": [],
+    "rowCount": 0
+  },
+  {
+    "name": "jobs",
+    "accessible": true,
+    "sampleColumns": [
+      "id",
+      "tenant_id",
+      "job_number",
+      "template_id",
+      "customer_id",
+      "property_id",
+      "title",
+      "description",
+      "status",
+      "priority",
+      "scheduled_start",
+      "scheduled_end",
+      "actual_start",
+      "actual_end",
+      "assigned_to",
+      "assigned_team",
+      "estimated_duration",
+      "actual_duration",
+      "completion_notes",
+      "voice_notes",
+      "voice_created",
+      "voice_session_id",
+      "checklist_items",
+      "materials_used",
+      "equipment_used",
+      "photos_before",
+      "photos_after",
+      "signature_required",
+      "signature_data",
+      "billing_info",
+      "metadata",
+      "created_at",
+      "updated_at",
+      "created_by",
+      "arrival_photo_id",
+      "arrival_confirmed_at",
+      "completion_quality_score",
+      "requires_supervisor_review",
+      "arrival_timestamp",
+      "arrival_gps_coords",
+      "arrival_method",
+      "arrival_confidence",
+      "completion_timestamp",
+      "completion_photo_url",
+      "tool_reload_verified",
+      "offline_modified_at",
+      "offline_modified_by",
+      "special_instructions_audio",
+      "estimated_duration_minutes",
+      "actual_duration_minutes",
+      "completion_photo_urls"
+    ],
+    "rowCount": 50
+  },
+  {
+    "name": "mobile_sessions",
+    "accessible": true,
+    "sampleColumns": [],
+    "rowCount": 0
+  },
+  {
+    "name": "offline_queue",
+    "accessible": true,
+    "sampleColumns": [],
+    "rowCount": 0
+  },
+  {
+    "name": "media_assets",
+    "accessible": true,
+    "sampleColumns": [],
+    "rowCount": 0
+  }
+]
