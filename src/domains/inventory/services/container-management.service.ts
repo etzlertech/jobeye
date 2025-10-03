@@ -13,14 +13,14 @@
  * 4. Location-based queries
  */
 
-import * as containersRepo from '../adapters/container-repository-adapter';
-import * as containerAssignmentsRepo from '../repositories/container-assignments.repository';
+import { ContainerRepository } from '@/domains/equipment/repositories/container-repository-enhanced';
+import { createSupabaseClient } from '@/lib/supabase/client';
 import * as inventoryItemsRepo from '../repositories/inventory-items.repository';
 import type {
   Container,
-  ContainerAssignment,
   InventoryItem,
 } from '../types/inventory-types';
+import type { ContainerAssignment } from '@/domains/equipment/repositories/container-repository-enhanced';
 
 export interface ContainerWithContents {
   container: Container;
@@ -42,16 +42,41 @@ export async function createContainer(
     attributes?: Record<string, any>;
   }
 ): Promise<{ data: Container | null; error: Error | null }> {
-  return await containersRepo.create({
-    tenant_id: tenantId,
-    name: data.name,
-    type: data.type,
-    status: 'active',
-    current_location_id: data.locationId,
-    capacity: data.capacity,
-    attributes: data.attributes,
-    created_by: userId,
-  });
+  try {
+    const supabase = createSupabaseClient();
+    const containerRepo = new ContainerRepository(supabase);
+    
+    const container = await containerRepo.create({
+      tenantId,
+      name: data.name,
+      identifier: `${data.type}-${Date.now()}`,
+      containerType: data.type,
+      metadata: data.attributes,
+      isActive: true,
+    });
+    
+    return {
+      data: {
+        id: container.id,
+        tenant_id: container.tenantId,
+        name: container.name,
+        type: container.containerType as any,
+        status: 'active',
+        current_location_id: data.locationId || null,
+        capacity: data.capacity || null,
+        attributes: container.metadata,
+        created_by: userId,
+        created_at: container.createdAt,
+        updated_at: container.updatedAt,
+      } as Container,
+      error: null,
+    };
+  } catch (error: any) {
+    return {
+      data: null,
+      error: new Error(error.message || 'Failed to create container'),
+    };
+  }
 }
 
 /**
@@ -62,15 +87,30 @@ export async function getContainerWithContents(
 ): Promise<{ data: ContainerWithContents | null; error: Error | null }> {
   try {
     // Step 1: Get container details
-    const containerResult = await containersRepo.findById(containerId);
-    if (containerResult.error || !containerResult.data) {
+    const supabase = createSupabaseClient();
+    const containerRepo = new ContainerRepository(supabase);
+    const equipmentContainer = await containerRepo.findById(containerId);
+    
+    if (!equipmentContainer) {
       return {
         data: null,
-        error: containerResult.error || new Error('Container not found'),
+        error: new Error('Container not found'),
       };
     }
 
-    const container = containerResult.data;
+    const container: Container = {
+      id: equipmentContainer.id,
+      tenant_id: equipmentContainer.tenantId,
+      name: equipmentContainer.name,
+      type: equipmentContainer.containerType as any,
+      status: equipmentContainer.isActive ? 'active' : 'inactive',
+      current_location_id: null,
+      capacity: null,
+      attributes: equipmentContainer.metadata,
+      created_by: null,
+      created_at: equipmentContainer.createdAt,
+      updated_at: equipmentContainer.updatedAt,
+    } as Container;
 
     // Step 2: Get items in container
     const itemsResult = await inventoryItemsRepo.findAll({
@@ -112,7 +152,43 @@ export async function getContainers(
     limit?: number;
   } = {}
 ): Promise<{ data: Container[]; error: Error | null }> {
-  return await containersRepo.findByCompany(tenantId, options.limit);
+  try {
+    const supabase = createSupabaseClient();
+    const containerRepo = new ContainerRepository(supabase);
+    
+    const result = await containerRepo.findAll({
+      tenantId,
+      filters: {
+        containerType: options.type,
+        isActive: options.status === 'active',
+      },
+      limit: options.limit,
+    });
+    
+    const containers = result.data.map((c): Container => ({
+      id: c.id,
+      tenant_id: c.tenantId,
+      name: c.name,
+      type: c.containerType as any,
+      status: c.isActive ? 'active' : 'inactive',
+      current_location_id: null,
+      capacity: null,
+      attributes: c.metadata,
+      created_by: null,
+      created_at: c.createdAt,
+      updated_at: c.updatedAt,
+    }) as Container);
+    
+    return {
+      data: containers,
+      error: null,
+    };
+  } catch (error: any) {
+    return {
+      data: [],
+      error: new Error(error.message || 'Failed to get containers'),
+    };
+  }
 }
 
 /**
@@ -122,7 +198,49 @@ export async function updateContainer(
   containerId: string,
   updates: Partial<Container>
 ): Promise<{ data: Container | null; error: Error | null }> {
-  return await containersRepo.update(containerId, updates);
+  try {
+    const supabase = createSupabaseClient();
+    const containerRepo = new ContainerRepository(supabase);
+    
+    // Get existing container to get tenant ID
+    const existing = await containerRepo.findById(containerId);
+    if (!existing) {
+      return {
+        data: null,
+        error: new Error('Container not found'),
+      };
+    }
+    
+    const updateData: any = {};
+    if (updates.name !== undefined) updateData.name = updates.name;
+    if (updates.type !== undefined) updateData.containerType = updates.type;
+    if (updates.attributes !== undefined) updateData.metadata = updates.attributes;
+    if (updates.status !== undefined) updateData.isActive = updates.status === 'active';
+    
+    const updated = await containerRepo.update(containerId, updateData, existing.tenantId);
+    
+    return {
+      data: {
+        id: updated.id,
+        tenant_id: updated.tenantId,
+        name: updated.name,
+        type: updated.containerType as any,
+        status: updated.isActive ? 'active' : 'inactive',
+        current_location_id: updates.current_location_id || null,
+        capacity: updates.capacity || null,
+        attributes: updated.metadata,
+        created_by: null,
+        created_at: updated.createdAt,
+        updated_at: updated.updatedAt,
+      } as Container,
+      error: null,
+    };
+  } catch (error: any) {
+    return {
+      data: null,
+      error: new Error(error.message || 'Failed to update container'),
+    };
+  }
 }
 
 /**
@@ -136,6 +254,10 @@ export async function assignItemToContainer(
   jobId?: string
 ): Promise<{ data: ContainerAssignment | null; error: Error | null }> {
   try {
+    // Initialize container repository
+    const supabase = createSupabaseClient();
+    const containerRepo = new ContainerRepository(supabase);
+
     // Step 1: Validate item exists
     const itemResult = await inventoryItemsRepo.findById(itemId);
     if (itemResult.error || !itemResult.data) {
@@ -146,33 +268,24 @@ export async function assignItemToContainer(
     }
 
     // Step 2: Check for existing active assignment
-    const existingResult = await containerAssignmentsRepo.findActiveByItem(itemId);
-    if (existingResult.data) {
+    const existingAssignment = await containerRepo.findActiveAssignment(itemId, tenantId);
+    if (existingAssignment) {
       return {
         data: null,
         error: new Error(
-          `Item already assigned to container ${existingResult.data.container_id}`
+          `Item already assigned to container ${existingAssignment.container_id}`
         ),
       };
     }
 
     // Step 3: Create assignment
-    const assignmentResult = await containerAssignmentsRepo.create({
+    const assignment = await containerRepo.createAssignment({
       tenant_id: tenantId,
       container_id: containerId,
       item_id: itemId,
+      item_type: 'tool', // Assuming tools for inventory items
       assigned_by: userId,
-      job_id: jobId,
-      status: 'active',
     });
-
-    if (assignmentResult.error || !assignmentResult.data) {
-      return {
-        data: null,
-        error:
-          assignmentResult.error || new Error('Failed to create assignment'),
-      };
-    }
 
     // Step 4: Update item location
     await inventoryItemsRepo.update(itemId, {
@@ -181,7 +294,7 @@ export async function assignItemToContainer(
     });
 
     return {
-      data: assignmentResult.data,
+      data: assignment,
       error: null,
     };
   } catch (err: any) {
@@ -196,27 +309,29 @@ export async function assignItemToContainer(
  * Remove item from container
  */
 export async function removeItemFromContainer(
-  itemId: string
+  itemId: string,
+  tenantId: string
 ): Promise<{ error: Error | null }> {
   try {
-    // Find active assignment
-    const assignmentResult = await containerAssignmentsRepo.findActiveByItem(itemId);
+    // Initialize container repository
+    const supabase = createSupabaseClient();
+    const containerRepo = new ContainerRepository(supabase);
 
-    if (!assignmentResult.data) {
+    // Find active assignment
+    const assignment = await containerRepo.findActiveAssignment(itemId, tenantId);
+
+    if (!assignment) {
       return {
         error: new Error('No active assignment found for item'),
       };
     }
 
     // Check out assignment
-    const checkOutResult = await containerAssignmentsRepo.checkOut(
-      assignmentResult.data.id,
-      new Date().toISOString()
+    await containerRepo.checkOutAssignment(
+      assignment.id,
+      new Date().toISOString(),
+      tenantId
     );
-
-    if (checkOutResult.error) {
-      return checkOutResult;
-    }
 
     // Clear item location
     await inventoryItemsRepo.update(itemId, {

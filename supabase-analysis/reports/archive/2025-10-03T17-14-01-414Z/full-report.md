@@ -1,13 +1,13 @@
 # Supabase Analysis Report
 
-Generated: 2025-10-03T17:07:02.971Z
+Generated: 2025-10-03T17:13:01.009Z
 Database: https://rtwigjwqufozqfwozpvo.supabase.co
 
 ## Executive Summary
 
 ### Database Overview
 - **Total Tables**: 157
-- **Total Rows**: 694
+- **Total Rows**: 695
 - **Tables without RLS**: 0
 - **Orphaned Tables**: 127
 - **Views**: 0
@@ -54,7 +54,7 @@ This report provides comprehensive analysis of the Supabase database and storage
 | Table Name | Rows | Columns | RLS | Primary Key | Description |
 |------------|------|---------|-----|-------------|-------------|
 | notification_queue | 209 | 15 | ✅ | id | Domain data |
-| customers | 86 | 19 | ✅ | id | Customer data |
+| customers | 87 | 19 | ✅ | id | Customer data |
 | tenants | 85 | 5 | ✅ | id | Domain data |
 | invoices | 77 | 16 | ✅ | id | Voice interactions |
 | jobs | 50 | 51 | ✅ | id | Job tracking |
@@ -343,7 +343,7 @@ This report provides comprehensive analysis of the Supabase database and storage
 
 #### customers
 
-**Row Count**: 86 | **RLS**: Enabled
+**Row Count**: 87 | **RLS**: Enabled
 
 **Columns**:
 | Column | Type | Nullable | Default | Description |

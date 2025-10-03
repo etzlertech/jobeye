@@ -1,15 +1,15 @@
 # Enhanced Supabase Database Analysis Report
 
-Generated: 2025-10-03T17:15:18.905Z
+Generated: 2025-10-03T17:02:05.969Z
 Analysis Version: 2.0.0
-Total Analysis Time: 61.49s
+Total Analysis Time: 62.16s
 
 ## Executive Summary
 
 ### 🎯 Key Metrics
 - **Database Size**: NaN undefined
 - **Total Tables**: 157
-- **Total Rows**: 695
+- **Total Rows**: 694
 - **Storage Used**: N/A
 
 ### 🚨 Critical Issues Requiring Immediate Attention

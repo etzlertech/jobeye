@@ -16,7 +16,8 @@
 
 import * as inventoryItemsRepo from '../repositories/inventory-items.repository';
 import * as inventoryTransactionsRepo from '../repositories/inventory-transactions.repository';
-import * as containerAssignmentsRepo from '../repositories/container-assignments.repository';
+import { ContainerRepository } from '@/domains/equipment/repositories/container-repository-enhanced';
+import { createSupabaseClient } from '@/lib/supabase/client';
 import type {
   InventoryItem,
   InventoryTransaction,
@@ -86,6 +87,10 @@ export async function checkIn(
       error: new Error('Operation queued for sync when online'),
     };
   }
+
+  // Initialize container repository
+  const supabase = createSupabaseClient();
+  const containerRepo = new ContainerRepository(supabase);
 
   const transactions: InventoryTransaction[] = [];
   const updatedItems: InventoryItem[] = [];
@@ -168,17 +173,19 @@ export async function checkIn(
 
       // Step 6: Close container assignment if exists
       if (item.tracking_mode === 'individual') {
-        const assignmentResult =
-          await containerAssignmentsRepo.findActiveByItem(itemId);
+        const assignment = await containerRepo.findActiveAssignment(itemId, tenantId);
 
-        if (assignmentResult.data) {
-          const checkOutResult = await containerAssignmentsRepo.checkOut(
-            assignmentResult.data.id,
-            new Date().toISOString()
-          );
-
-          if (!checkOutResult.error) {
-            closedAssignments.push(assignmentResult.data.id);
+        if (assignment) {
+          try {
+            await containerRepo.checkOutAssignment(
+              assignment.id,
+              new Date().toISOString(),
+              tenantId
+            );
+            closedAssignments.push(assignment.id);
+          } catch (checkOutError) {
+            // Log error but don't fail the entire check-in
+            console.error('Failed to close container assignment:', checkOutError);
           }
         }
       }

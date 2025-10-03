@@ -15,12 +15,13 @@
 
 import * as inventoryItemsRepo from '../repositories/inventory-items.repository';
 import * as inventoryTransactionsRepo from '../repositories/inventory-transactions.repository';
-import * as containerAssignmentsRepo from '../repositories/container-assignments.repository';
+import { ContainerRepository } from '@/domains/equipment/repositories/container-repository-enhanced';
+import { createSupabaseClient } from '@/lib/supabase/client';
 import type {
   InventoryItem,
   InventoryTransaction,
-  ContainerAssignment,
 } from '../types/inventory-types';
+import type { ContainerAssignment } from '@/domains/equipment/repositories/container-repository-enhanced';
 import { getOfflineInventoryQueue } from './offline-queue.service';
 
 export interface TransferRequest {
@@ -92,6 +93,10 @@ export async function transfer(
       error: new Error('Operation queued for sync when online'),
     };
   }
+
+  // Initialize container repository
+  const supabase = createSupabaseClient();
+  const containerRepo = new ContainerRepository(supabase);
 
   const transactions: InventoryTransaction[] = [];
   const updatedItems: InventoryItem[] = [];
@@ -185,17 +190,19 @@ export async function transfer(
 
       // Step 7: Create new container assignment if transferring to a container
       if (item.tracking_mode === 'individual') {
-        const assignmentResult = await containerAssignmentsRepo.create({
-          tenant_id: tenantId,
-          container_id: toLocationId,
-          item_id: itemId,
-          assigned_by: userId,
-          job_id: jobId,
-          status: 'active',
-        });
+        try {
+          const assignment = await containerRepo.createAssignment({
+            tenant_id: tenantId,
+            container_id: toLocationId,
+            item_id: itemId,
+            item_type: 'tool', // Assuming tools for inventory items
+            assigned_by: userId,
+          });
 
-        if (assignmentResult.data) {
-          containerAssignments.push(assignmentResult.data);
+          containerAssignments.push(assignment);
+        } catch (assignmentError) {
+          // Log assignment error but don't fail the entire transfer
+          console.error('Failed to create container assignment:', assignmentError);
         }
       }
     } catch (err: any) {

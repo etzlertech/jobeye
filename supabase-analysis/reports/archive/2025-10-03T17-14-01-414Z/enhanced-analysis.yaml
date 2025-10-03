@@ -1,5 +1,5 @@
 basic:
-  analyzed_at: '2025-10-03T17:14:17.409Z'
+  analyzed_at: '2025-10-03T17:01:03.782Z'
   database_url: https://rtwigjwqufozqfwozpvo.supabase.co
   tables:
     - name: ai_cost_tracking
@@ -387,7 +387,7 @@ basic:
       description: Customer data
     - name: customers
       schema: public
-      row_count: 87
+      row_count: 86
       columns:
         - name: id
           data_type: uuid
@@ -3946,7 +3946,7 @@ basic:
   functions: []
   enums: []
   total_tables: 157
-  total_rows: 695
+  total_rows: 694
   orphaned_tables:
     - ai_cost_tracking
     - ai_interaction_logs
@@ -4082,7 +4082,7 @@ basic:
       Investigate 131 tables without clear primary keys: ai_cost_tracking, ai_interaction_logs, ai_models, ai_prompts,
       attachments
 storage:
-  analyzed_at: '2025-10-03T17:15:17.778Z'
+  analyzed_at: '2025-10-03T17:02:04.643Z'
   buckets:
     - name: verification-photos
       id: verification-photos
@@ -4403,7 +4403,7 @@ realtime:
   recommendations:
     - 📡 Set up monitoring for realtime connection counts and message rates
 metadata:
-  analyzed_at: '2025-10-03T17:15:18.905Z'
+  analyzed_at: '2025-10-03T17:02:05.969Z'
   analysis_version: 2.0.0
-  total_analysis_time: 61486
+  total_analysis_time: 62159
   warnings: []
