@@ -1,97 +1,100 @@
-#!/usr/bin/env npx tsx
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import { promises as fs } from 'fs';
-import path from 'path';
-import yaml from 'yaml';
-
-dotenv.config({ path: '.env.local' });
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('❌ Missing required environment variables');
-  console.error('Required: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY');
-  process.exit(1);
-}
+import { SupabaseClient } from '@supabase/supabase-js';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 interface TableDetails {
   name: string;
   row_count: number;
-  columns: any[];
-  foreign_keys: any[];
-  indexes: any[];
-  policies: any[];
-  triggers: any[];
-  has_primary_key: boolean;
-  primary_key_columns: string[];
+  columns: ColumnInfo[];
+  primary_key?: string[];
+  foreign_keys: ForeignKeyInfo[];
+  indexes: string[];
   rls_enabled: boolean;
+  rls_policies: any[];
   description?: string;
 }
 
-class DetailedDatabaseAnalyzer {
-  private client = createClient(supabaseUrl, supabaseServiceKey);
-  private tables: TableDetails[] = [];
+interface ColumnInfo {
+  name: string;
+  type: string;
+  nullable: boolean;
+  default?: string;
+  is_primary: boolean;
+  is_foreign: boolean;
+  references?: string;
+}
 
-  async analyze() {
-    console.log('🔍 Starting detailed database analysis...\n');
+interface ForeignKeyInfo {
+  column: string;
+  references_table: string;
+  references_column: string;
+}
 
-    // Step 1: Get all tables using REST API
-    const tableNames = await this.discoverTables();
-    console.log(`✅ Found ${tableNames.length} tables\n`);
-
-    // Step 2: For each table, gather detailed information
-    for (const tableName of tableNames) {
-      console.log(`📊 Analyzing table: ${tableName}`);
-      const details = await this.analyzeTable(tableName);
-      this.tables.push(details);
-    }
-
-    // Step 3: Generate comprehensive report
-    await this.generateReport();
+export class DetailedDatabaseAnalyzer {
+  private client: SupabaseClient;
+  private discoveredTables: string[] = [];
+  
+  constructor(client: SupabaseClient) {
+    this.client = client;
   }
 
-  private async discoverTables(): Promise<string[]> {
-    // Method 1: Try REST API OpenAPI spec - this is the most reliable
-    try {
-      const response = await fetch(`${supabaseUrl}/rest/v1/?apikey=${supabaseServiceKey}`);
-      if (response.ok) {
-        const openApiSpec = await response.json();
-        
-        if (openApiSpec.definitions) {
-          const tableNames = Object.keys(openApiSpec.definitions)
-            .filter(name => !name.includes('.'))
-            .sort();
+  async analyze(): Promise<any> {
+    console.log('🔍 Starting DETAILED database analysis...\n');
+    
+    // First discover tables
+    await this.discoverTables();
+    
+    console.log(`✅ Discovered ${this.discoveredTables.length} tables\n`);
+    
+    // Analyze each table in detail
+    const tableDetails: TableDetails[] = [];
+    
+    for (const tableName of this.discoveredTables) {
+      console.log(`📊 Analyzing ${tableName}...`);
+      const details = await this.analyzeTable(tableName);
+      tableDetails.push(details);
+    }
+    
+    // Sort by row count
+    tableDetails.sort((a, b) => b.row_count - a.row_count);
+    
+    // Generate comprehensive analysis
+    const analysis = {
+      analyzed_at: new Date().toISOString(),
+      database_url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      total_tables: tableDetails.length,
+      total_rows: tableDetails.reduce((sum, t) => sum + t.row_count, 0),
+      tables: tableDetails,
+      summary: this.generateSummary(tableDetails),
+      recommendations: this.generateRecommendations(tableDetails)
+    };
+    
+    return analysis;
+  }
+
+  private async discoverTables(): Promise<void> {
+    // Try REST API approach first
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (supabaseUrl && supabaseKey) {
+      try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/?apikey=${supabaseKey}`);
+        if (response.ok) {
+          const openApiSpec = await response.json();
           
-          if (tableNames.length > 0) {
-            console.log('✅ Retrieved table list from REST API OpenAPI spec');
-            return tableNames;
+          if (openApiSpec.definitions) {
+            this.discoveredTables = Object.keys(openApiSpec.definitions)
+              .filter(name => !name.includes('.'))
+              .sort();
+            return;
           }
         }
+      } catch (error) {
+        console.error('REST API discovery failed:', error);
       }
-    } catch (error) {
-      console.error('⚠️  REST API approach failed:', error);
     }
-
-    // Method 2: Try to query pg_tables
-    try {
-      const { data, error } = await this.client.rpc('exec_sql_query', {
-        query: `
-          SELECT tablename 
-          FROM pg_tables 
-          WHERE schemaname = 'public' 
-          ORDER BY tablename;
-        `
-      });
-
-      if (!error && data) {
-        return data.map((row: any) => row.tablename);
-      }
-    } catch (e) {
-      console.log('⚠️  exec_sql_query not available');
-    }
-
+    
     throw new Error('Could not discover tables');
   }
 
@@ -102,13 +105,10 @@ class DetailedDatabaseAnalyzer {
       columns: [],
       foreign_keys: [],
       indexes: [],
-      policies: [],
-      triggers: [],
-      has_primary_key: false,
-      primary_key_columns: [],
-      rls_enabled: false
+      rls_enabled: false,
+      rls_policies: []
     };
-
+    
     // Get row count
     try {
       const { count } = await this.client
@@ -116,265 +116,244 @@ class DetailedDatabaseAnalyzer {
         .select('*', { count: 'exact', head: true });
       
       details.row_count = count || 0;
-    } catch (e) {
-      console.log(`  ⚠️  Could not get row count for ${tableName}`);
+    } catch (error) {
+      console.error(`  ⚠️  Error counting rows for ${tableName}`);
     }
-
-    // Get table structure from REST API
-    try {
-      const response = await fetch(`${supabaseUrl}/rest/v1/${tableName}?limit=0`, {
-        headers: {
-          'apikey': supabaseServiceKey,
-          'Prefer': 'count=exact'
-        }
-      });
-
-      if (response.ok) {
-        // Parse OpenAPI schema for this specific table
-        const schemaResponse = await fetch(`${supabaseUrl}/rest/v1/?apikey=${supabaseServiceKey}`);
-        if (schemaResponse.ok) {
-          const openApiSpec = await schemaResponse.json();
-          const tableSchema = openApiSpec.definitions?.[tableName];
+    
+    // Try to get table structure from REST API
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (supabaseUrl && supabaseKey) {
+      try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/?apikey=${supabaseKey}`);
+        if (response.ok) {
+          const openApiSpec = await response.json();
+          const tableDef = openApiSpec.definitions?.[tableName];
           
-          if (tableSchema?.properties) {
-            details.columns = Object.entries(tableSchema.properties).map(([name, schema]: [string, any]) => ({
-              column_name: name,
-              data_type: schema.type || 'unknown',
-              format: schema.format,
-              description: schema.description,
-              maxLength: schema.maxLength,
-              default: schema.default,
-              enum: schema.enum
-            }));
-
-            // Check for ID column as primary key indicator
-            if (tableSchema.properties.id) {
-              details.has_primary_key = true;
-              details.primary_key_columns = ['id'];
+          if (tableDef?.properties) {
+            // Extract column information from OpenAPI schema
+            for (const [columnName, columnDef] of Object.entries(tableDef.properties as any)) {
+              const column: ColumnInfo = {
+                name: columnName,
+                type: this.mapOpenApiType(columnDef),
+                nullable: !tableDef.required?.includes(columnName),
+                is_primary: columnName === 'id' || columnName.endsWith('_id'),
+                is_foreign: columnName.endsWith('_id') && columnName !== 'id',
+                default: columnDef.default
+              };
+              
+              // Infer foreign key relationships
+              if (column.is_foreign) {
+                const referencedTable = columnName.replace(/_id$/, '');
+                if (this.discoveredTables.includes(referencedTable) || this.discoveredTables.includes(referencedTable + 's')) {
+                  column.references = referencedTable;
+                  details.foreign_keys.push({
+                    column: columnName,
+                    references_table: referencedTable,
+                    references_column: 'id'
+                  });
+                }
+              }
+              
+              details.columns.push(column);
+            }
+            
+            // Identify primary key
+            const pkColumn = details.columns.find(c => c.is_primary);
+            if (pkColumn) {
+              details.primary_key = [pkColumn.name];
             }
           }
         }
+      } catch (error) {
+        console.error(`  ⚠️  Error getting schema for ${tableName}`);
       }
-    } catch (e) {
-      console.log(`  ⚠️  Could not get schema for ${tableName}`);
     }
-
-    // Try to get RLS status by attempting to query with anon key
+    
+    // Try to get RLS policies
     try {
-      const anonClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-      const { error } = await anonClient.from(tableName).select('*', { head: true });
+      const { data: policies } = await this.client.rpc('get_policies_for_table', {
+        table_name: tableName
+      }).throwOnError();
       
-      // If we get a permission error, RLS is likely enabled
-      if (error && error.message.includes('permission')) {
+      if (policies && policies.length > 0) {
         details.rls_enabled = true;
+        details.rls_policies = policies;
       }
-    } catch (e) {
-      // Ignore errors here
+    } catch (error) {
+      // RLS check failed, assume not available
     }
-
-    // Look for foreign key relationships in column names
-    details.columns.forEach(col => {
-      if (col.column_name.endsWith('_id') && col.column_name !== 'id') {
-        const possibleTable = col.column_name.replace(/_id$/, 's');
-        details.foreign_keys.push({
-          column_name: col.column_name,
-          foreign_table_name: possibleTable,
-          foreign_column_name: 'id'
-        });
-      }
-    });
-
+    
     return details;
   }
 
-  private async generateReport() {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const reportDir = path.join(process.cwd(), 'supabase-analysis', 'reports', 'detailed', timestamp);
-    
-    await fs.mkdir(reportDir, { recursive: true });
-
-    // Generate detailed markdown report
-    const markdownReport = this.generateMarkdownReport();
-    await fs.writeFile(path.join(reportDir, 'detailed-analysis.md'), markdownReport);
-
-    // Generate YAML data dump
-    const yamlData = yaml.stringify({
-      analyzed_at: new Date().toISOString(),
-      database_url: supabaseUrl,
-      total_tables: this.tables.length,
-      total_rows: this.tables.reduce((sum, t) => sum + t.row_count, 0),
-      tables: this.tables
-    });
-    await fs.writeFile(path.join(reportDir, 'detailed-data.yaml'), yamlData);
-
-    // Generate SQL recreation script
-    const sqlScript = this.generateSQLScript();
-    await fs.writeFile(path.join(reportDir, 'table-definitions.sql'), sqlScript);
-
-    console.log(`\n✅ Reports generated in: ${reportDir}`);
-    console.log(`   - detailed-analysis.md: Comprehensive markdown report`);
-    console.log(`   - detailed-data.yaml: Structured data dump`);
-    console.log(`   - table-definitions.sql: SQL definitions based on discovered schema`);
+  private mapOpenApiType(columnDef: any): string {
+    if (columnDef.type === 'string') {
+      if (columnDef.format === 'uuid') return 'uuid';
+      if (columnDef.format === 'date-time') return 'timestamp';
+      if (columnDef.format === 'date') return 'date';
+      return columnDef.maxLength ? `varchar(${columnDef.maxLength})` : 'text';
+    }
+    if (columnDef.type === 'integer') return 'integer';
+    if (columnDef.type === 'number') return 'numeric';
+    if (columnDef.type === 'boolean') return 'boolean';
+    if (columnDef.type === 'array') return `${this.mapOpenApiType(columnDef.items)}[]`;
+    return 'unknown';
   }
 
-  private generateMarkdownReport(): string {
-    const report: string[] = [];
+  private generateSummary(tables: TableDetails[]): any {
+    const tablesWithData = tables.filter(t => t.row_count > 0);
+    const tablesWithPK = tables.filter(t => t.primary_key && t.primary_key.length > 0);
+    const tablesWithFK = tables.filter(t => t.foreign_keys.length > 0);
+    const tablesWithRLS = tables.filter(t => t.rls_enabled);
     
-    report.push('# Detailed Database Analysis Report');
-    report.push(`\nGenerated: ${new Date().toISOString()}`);
-    report.push(`\n## Summary`);
-    report.push(`- **Total Tables**: ${this.tables.length}`);
-    report.push(`- **Total Rows**: ${this.tables.reduce((sum, t) => sum + t.row_count, 0)}`);
-    report.push(`- **Tables with RLS**: ${this.tables.filter(t => t.rls_enabled).length}`);
-    report.push(`- **Tables with Primary Keys**: ${this.tables.filter(t => t.has_primary_key).length}`);
-    
-    report.push('\n## Table Details\n');
-    
-    // Sort tables by row count descending
-    const sortedTables = [...this.tables].sort((a, b) => b.row_count - a.row_count);
-    
-    for (const table of sortedTables) {
-      report.push(`### ${table.name}`);
-      report.push(`- **Row Count**: ${table.row_count.toLocaleString()}`);
-      report.push(`- **RLS Enabled**: ${table.rls_enabled ? '✅' : '❌'}`);
-      report.push(`- **Primary Key**: ${table.has_primary_key ? `✅ (${table.primary_key_columns.join(', ')})` : '❌'}`);
-      
-      if (table.columns.length > 0) {
-        report.push('\n#### Columns');
-        report.push('| Name | Type | Format | Description |');
-        report.push('|------|------|--------|-------------|');
-        
-        for (const col of table.columns) {
-          report.push(`| ${col.column_name} | ${col.data_type} | ${col.format || '-'} | ${col.description || '-'} |`);
-        }
-      }
-      
-      if (table.foreign_keys.length > 0) {
-        report.push('\n#### Foreign Keys (inferred)');
-        report.push('| Column | References |');
-        report.push('|--------|------------|');
-        
-        for (const fk of table.foreign_keys) {
-          report.push(`| ${fk.column_name} | ${fk.foreign_table_name}.${fk.foreign_column_name} |`);
-        }
-      }
-      
-      report.push('\n---\n');
-    }
-    
-    report.push('\n## Recommendations\n');
+    return {
+      total_tables: tables.length,
+      tables_with_data: tablesWithData.length,
+      empty_tables: tables.length - tablesWithData.length,
+      tables_with_primary_key: tablesWithPK.length,
+      tables_with_foreign_keys: tablesWithFK.length,
+      tables_with_rls: tablesWithRLS.length,
+      total_columns: tables.reduce((sum, t) => sum + t.columns.length, 0),
+      total_relationships: tables.reduce((sum, t) => sum + t.foreign_keys.length, 0)
+    };
+  }
+
+  private generateRecommendations(tables: TableDetails[]): string[] {
+    const recommendations: string[] = [];
     
     // Tables without primary keys
-    const noPkTables = this.tables.filter(t => !t.has_primary_key && t.row_count > 0);
-    if (noPkTables.length > 0) {
-      report.push(`### 🔑 Add Primary Keys`);
-      report.push(`The following ${noPkTables.length} tables don't have primary keys:`);
-      noPkTables.forEach(t => report.push(`- ${t.name} (${t.row_count} rows)`));
-      report.push('');
+    const noPK = tables.filter(t => !t.primary_key && t.row_count > 0);
+    if (noPK.length > 0) {
+      recommendations.push(
+        `Add primary keys to ${noPK.length} tables: ${noPK.slice(0, 5).map(t => t.name).join(', ')}${noPK.length > 5 ? '...' : ''}`
+      );
     }
     
     // Tables without RLS
-    const noRlsTables = this.tables.filter(t => !t.rls_enabled && t.row_count > 0);
-    if (noRlsTables.length > 0) {
-      report.push(`### 🔒 Enable Row Level Security`);
-      report.push(`The following ${noRlsTables.length} tables don't have RLS enabled:`);
-      noRlsTables.forEach(t => report.push(`- ${t.name} (${t.row_count} rows)`));
-      report.push('');
+    const noRLS = tables.filter(t => !t.rls_enabled && t.row_count > 0);
+    if (noRLS.length > 0) {
+      recommendations.push(
+        `Enable RLS on ${noRLS.length} tables containing data`
+      );
     }
     
     // Empty tables
-    const emptyTables = this.tables.filter(t => t.row_count === 0);
-    if (emptyTables.length > 0) {
-      report.push(`### 🗑️ Review Empty Tables`);
-      report.push(`The following ${emptyTables.length} tables have no data:`);
-      emptyTables.forEach(t => report.push(`- ${t.name}`));
-      report.push('');
+    const emptyTables = tables.filter(t => t.row_count === 0);
+    if (emptyTables.length > 5) {
+      recommendations.push(
+        `Review ${emptyTables.length} empty tables for potential removal`
+      );
     }
     
-    return report.join('\n');
-  }
-
-  private generateSQLScript(): string {
-    const sql: string[] = [];
-    
-    sql.push('-- Table definitions based on discovered schema');
-    sql.push('-- Note: These are inferred from the REST API and may not be complete\n');
-    
-    for (const table of this.tables) {
-      sql.push(`-- Table: ${table.name}`);
-      sql.push(`-- Rows: ${table.row_count}`);
-      sql.push(`CREATE TABLE IF NOT EXISTS ${table.name} (`);
-      
-      const columnDefs: string[] = [];
-      
-      for (const col of table.columns) {
-        let def = `  ${col.column_name} `;
-        
-        // Map JSON Schema types to PostgreSQL types
-        switch (col.data_type) {
-          case 'string':
-            if (col.format === 'uuid') {
-              def += 'UUID';
-            } else if (col.format === 'date-time') {
-              def += 'TIMESTAMPTZ';
-            } else if (col.maxLength) {
-              def += `VARCHAR(${col.maxLength})`;
-            } else {
-              def += 'TEXT';
-            }
-            break;
-          case 'integer':
-            def += 'INTEGER';
-            break;
-          case 'number':
-            def += 'NUMERIC';
-            break;
-          case 'boolean':
-            def += 'BOOLEAN';
-            break;
-          case 'object':
-            def += 'JSONB';
-            break;
-          case 'array':
-            def += 'JSONB';
-            break;
-          default:
-            def += 'TEXT';
-        }
-        
-        if (col.default) {
-          def += ` DEFAULT '${col.default}'`;
-        }
-        
-        columnDefs.push(def);
-      }
-      
-      if (table.has_primary_key) {
-        columnDefs.push(`  PRIMARY KEY (${table.primary_key_columns.join(', ')})`);
-      }
-      
-      sql.push(columnDefs.join(',\n'));
-      sql.push(');\n');
-      
-      if (table.rls_enabled) {
-        sql.push(`ALTER TABLE ${table.name} ENABLE ROW LEVEL SECURITY;\n`);
-      }
+    // Tables with many columns but no indexes
+    const largeTablesNoIndex = tables.filter(t => 
+      t.columns.length > 10 && t.indexes.length === 0 && t.row_count > 100
+    );
+    if (largeTablesNoIndex.length > 0) {
+      recommendations.push(
+        `Consider adding indexes to ${largeTablesNoIndex.length} large tables`
+      );
     }
     
-    return sql.join('\n');
+    return recommendations;
   }
 }
 
-// Run the analyzer
-async function main() {
-  const analyzer = new DetailedDatabaseAnalyzer();
-  
-  try {
-    await analyzer.analyze();
-  } catch (error) {
-    console.error('❌ Analysis failed:', error);
-    process.exit(1);
+// Report generator
+export class DetailedReportGenerator {
+  async generateReport(analysis: any, outputDir: string): Promise<void> {
+    await fs.mkdir(outputDir, { recursive: true });
+    
+    // Generate detailed markdown report
+    const markdown = this.buildMarkdownReport(analysis);
+    await fs.writeFile(path.join(outputDir, 'detailed-database-report.md'), markdown, 'utf8');
+    
+    // Generate YAML with full data
+    const yaml = await import('js-yaml');
+    const yamlContent = yaml.dump(analysis, {
+      indent: 2,
+      lineWidth: 120,
+      sortKeys: false
+    });
+    await fs.writeFile(path.join(outputDir, 'detailed-database-analysis.yaml'), yamlContent, 'utf8');
+    
+    console.log(`\n✅ Detailed reports generated in: ${outputDir}`);
+  }
+
+  private buildMarkdownReport(analysis: any): string {
+    const sections: string[] = [];
+    
+    sections.push(`# Detailed Database Analysis Report
+
+Generated: ${analysis.analyzed_at}
+Database: ${analysis.database_url}
+
+## Executive Summary
+
+- **Total Tables**: ${analysis.total_tables}
+- **Total Rows**: ${analysis.total_rows.toLocaleString()}
+- **Tables with Data**: ${analysis.summary.tables_with_data}
+- **Empty Tables**: ${analysis.summary.empty_tables}
+- **Tables with Primary Keys**: ${analysis.summary.tables_with_primary_key}
+- **Tables with Foreign Keys**: ${analysis.summary.tables_with_foreign_keys}
+- **Tables with RLS**: ${analysis.summary.tables_with_rls}
+- **Total Columns**: ${analysis.summary.total_columns}
+- **Total Relationships**: ${analysis.summary.total_relationships}
+
+## Table Details
+
+`);
+
+    // Add detailed information for each table
+    for (const table of analysis.tables) {
+      if (table.row_count === 0 && table.columns.length === 0) continue;
+      
+      sections.push(`### 📊 ${table.name}
+
+**Row Count**: ${table.row_count.toLocaleString()}
+**Primary Key**: ${table.primary_key ? table.primary_key.join(', ') : 'None'}
+**RLS Enabled**: ${table.rls_enabled ? '✅' : '❌'}
+
+#### Columns (${table.columns.length})
+
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|`);
+
+      for (const column of table.columns) {
+        const notes = [];
+        if (column.is_primary) notes.push('PK');
+        if (column.is_foreign) notes.push(`FK → ${column.references || '?'}`);
+        
+        sections.push(
+          `| ${column.name} | ${column.type} | ${column.nullable ? 'YES' : 'NO'} | ${column.default || '-'} | ${notes.join(', ') || '-'} |`
+        );
+      }
+
+      if (table.foreign_keys.length > 0) {
+        sections.push(`
+#### Foreign Key Relationships
+
+| Column | References Table | References Column |
+|--------|------------------|-------------------|`);
+
+        for (const fk of table.foreign_keys) {
+          sections.push(
+            `| ${fk.column} | ${fk.references_table} | ${fk.references_column} |`
+          );
+        }
+      }
+
+      sections.push('\n---\n');
+    }
+
+    // Add recommendations
+    sections.push(`## Recommendations
+
+${analysis.recommendations.map((rec: string, idx: number) => `${idx + 1}. ${rec}`).join('\n')}
+`);
+
+    return sections.join('\n');
   }
 }
-
-main();

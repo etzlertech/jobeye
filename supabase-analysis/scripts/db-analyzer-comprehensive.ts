@@ -1,557 +1,326 @@
-#!/usr/bin/env npx tsx
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import { promises as fs } from 'fs';
-import path from 'path';
-import yaml from 'yaml';
+import { SupabaseClient } from '@supabase/supabase-js';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import * as yaml from 'js-yaml';
 
-dotenv.config({ path: '.env.local' });
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('❌ Missing required environment variables');
-  process.exit(1);
-}
-
-interface TableInfo {
-  table_name: string;
+interface ComprehensiveTableInfo {
+  name: string;
+  schema: string;
   row_count: number;
+  table_size: string;
+  indexes_size: string;
   total_size: string;
-  has_indexes: boolean;
-  has_primary_key: boolean;
-  has_foreign_keys: boolean;
-  has_policies: boolean;
-  has_triggers: boolean;
-  rls_enabled: boolean;
+  has_rls: boolean;
+  columns: ColumnDetails[];
+  primary_keys: string[];
+  foreign_keys: ForeignKeyDetails[];
+  indexes: IndexDetails[];
+  rls_policies: RLSPolicyDetails[];
+  code_references?: number;
+  unused?: boolean;
 }
 
-interface ColumnInfo {
-  column_name: string;
-  data_type: string;
-  is_nullable: boolean;
-  column_default: string | null;
-  character_maximum_length: number | null;
-  is_primary_key: boolean;
-  foreign_table: string | null;
-  foreign_column: string | null;
+interface ColumnDetails {
+  name: string;
+  type: string;
+  nullable: boolean;
+  default: string | null;
+  max_length?: number;
+  numeric_precision?: number;
+  numeric_scale?: number;
+  is_identity: boolean;
+  identity_generation?: string;
 }
 
-interface IndexInfo {
-  index_name: string;
+interface ForeignKeyDetails {
+  constraint_name: string;
+  column: string;
+  references_table: string;
+  references_column: string;
+  on_update: string;
+  on_delete: string;
+}
+
+interface IndexDetails {
+  name: string;
+  type: string;
   is_unique: boolean;
   is_primary: boolean;
-  columns: string[];
-  index_size: string;
+  columns: string;
+  size: string;
 }
 
-interface PolicyInfo {
-  policy_name: string;
+interface RLSPolicyDetails {
+  name: string;
   command: string;
-  permissive: boolean;
+  permissive: string;
   roles: string[];
-  using_expression: string | null;
-  check_expression: string | null;
+  check_expression: string;
+  with_check?: string;
 }
 
-interface ComprehensiveTableDetails {
-  info: TableInfo;
-  columns: ColumnInfo[];
-  indexes: IndexInfo[];
-  policies: PolicyInfo[];
-}
-
-class ComprehensiveDatabaseAnalyzer {
-  private client = createClient(supabaseUrl, supabaseServiceKey);
-  private tables: ComprehensiveTableDetails[] = [];
-
-  async analyze() {
-    console.log('🔍 Starting comprehensive database analysis...\n');
-
-    // First check if our info functions exist
-    const functionsExist = await this.checkInfoFunctions();
-    if (!functionsExist) {
-      console.error('❌ Required info functions not found. Please run:');
-      console.error('   npx tsx scripts/create-db-info-functions.ts');
-      process.exit(1);
-    }
-
-    // Get table information
-    const tableInfos = await this.getTableInfos();
-    console.log(`✅ Found ${tableInfos.length} tables\n`);
-
-    // For each table, get detailed information
-    for (const tableInfo of tableInfos) {
-      console.log(`📊 Analyzing table: ${tableInfo.table_name}`);
-      
-      const columns = await this.getColumnInfo(tableInfo.table_name);
-      const indexes = await this.getIndexInfo(tableInfo.table_name);
-      const policies = await this.getPolicyInfo(tableInfo.table_name);
-
-      this.tables.push({
-        info: tableInfo,
-        columns,
-        indexes,
-        policies
-      });
-
-      console.log(`   - ${columns.length} columns`);
-      console.log(`   - ${indexes.length} indexes`);
-      console.log(`   - ${policies.length} policies`);
-    }
-
-    // Generate comprehensive reports
-    await this.generateReports();
-  }
-
-  private async checkInfoFunctions(): Promise<boolean> {
-    try {
-      // Try to call one of our functions
-      const { error } = await this.client.rpc('get_table_info');
-      return !error;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  private async getTableInfos(): Promise<TableInfo[]> {
-    const { data, error } = await this.client.rpc('get_table_info');
-    
-    if (error) {
-      throw new Error(`Failed to get table info: ${error.message}`);
-    }
-
-    return data || [];
-  }
-
-  private async getColumnInfo(tableName: string): Promise<ColumnInfo[]> {
-    const { data, error } = await this.client.rpc('get_column_info', {
-      p_table_name: tableName
-    });
-    
-    if (error) {
-      console.error(`  ⚠️  Failed to get columns for ${tableName}: ${error.message}`);
-      return [];
-    }
-
-    return data || [];
-  }
-
-  private async getIndexInfo(tableName: string): Promise<IndexInfo[]> {
-    const { data, error } = await this.client.rpc('get_index_info', {
-      p_table_name: tableName
-    });
-    
-    if (error) {
-      console.error(`  ⚠️  Failed to get indexes for ${tableName}: ${error.message}`);
-      return [];
-    }
-
-    return data || [];
-  }
-
-  private async getPolicyInfo(tableName: string): Promise<PolicyInfo[]> {
-    const { data, error } = await this.client.rpc('get_policy_info', {
-      p_table_name: tableName
-    });
-    
-    if (error) {
-      console.error(`  ⚠️  Failed to get policies for ${tableName}: ${error.message}`);
-      return [];
-    }
-
-    return data || [];
-  }
-
-  private async generateReports() {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const reportDir = path.join(process.cwd(), 'supabase-analysis', 'reports', 'comprehensive', timestamp);
-    
-    await fs.mkdir(reportDir, { recursive: true });
-
-    // Generate comprehensive markdown report
-    const markdownReport = this.generateMarkdownReport();
-    await fs.writeFile(path.join(reportDir, 'comprehensive-analysis.md'), markdownReport);
-
-    // Generate detailed YAML data dump
-    const yamlData = yaml.stringify({
-      analyzed_at: new Date().toISOString(),
-      database_url: supabaseUrl,
-      total_tables: this.tables.length,
-      total_rows: this.tables.reduce((sum, t) => sum + t.info.row_count, 0),
-      tables: this.tables
-    });
-    await fs.writeFile(path.join(reportDir, 'comprehensive-data.yaml'), yamlData);
-
-    // Generate complete SQL schema
-    const sqlSchema = this.generateSQLSchema();
-    await fs.writeFile(path.join(reportDir, 'complete-schema.sql'), sqlSchema);
-
-    // Generate migration recommendations
-    const migrations = this.generateMigrationRecommendations();
-    await fs.writeFile(path.join(reportDir, 'migration-recommendations.sql'), migrations);
-
-    // Create latest symlink
-    const latestDir = path.join(process.cwd(), 'supabase-analysis', 'reports', 'comprehensive', 'latest');
-    try {
-      await fs.unlink(latestDir);
-    } catch (e) {}
-    await fs.symlink(reportDir, latestDir);
-
-    console.log(`\n✅ Comprehensive reports generated in: ${reportDir}`);
-    console.log(`   - comprehensive-analysis.md: Full markdown report with all details`);
-    console.log(`   - comprehensive-data.yaml: Complete structured data`);
-    console.log(`   - complete-schema.sql: Full SQL schema definitions`);
-    console.log(`   - migration-recommendations.sql: Recommended schema improvements`);
-    console.log(`\n📁 Also available at: ${latestDir}`);
-  }
-
-  private generateMarkdownReport(): string {
-    const report: string[] = [];
-    
-    report.push('# Comprehensive Database Analysis Report');
-    report.push(`\nGenerated: ${new Date().toISOString()}`);
-    report.push(`Database: ${supabaseUrl}`);
-    
-    // Summary section
-    report.push(`\n## Executive Summary`);
-    report.push(`\n### Key Metrics`);
-    report.push(`- **Total Tables**: ${this.tables.length}`);
-    report.push(`- **Total Rows**: ${this.tables.reduce((sum, t) => sum + t.info.row_count, 0).toLocaleString()}`);
-    report.push(`- **Total Size**: ${this.calculateTotalSize()}`);
-    
-    const tablesWithRLS = this.tables.filter(t => t.info.rls_enabled).length;
-    const tablesWithPK = this.tables.filter(t => t.info.has_primary_key).length;
-    const tablesWithFK = this.tables.filter(t => t.info.has_foreign_keys).length;
-    const tablesWithIndexes = this.tables.filter(t => t.info.has_indexes).length;
-    const tablesWithPolicies = this.tables.filter(t => t.info.has_policies).length;
-    
-    report.push(`\n### Security & Performance Overview`);
-    report.push(`- **Tables with RLS**: ${tablesWithRLS}/${this.tables.length} (${Math.round(tablesWithRLS/this.tables.length*100)}%)`);
-    report.push(`- **Tables with Primary Keys**: ${tablesWithPK}/${this.tables.length} (${Math.round(tablesWithPK/this.tables.length*100)}%)`);
-    report.push(`- **Tables with Foreign Keys**: ${tablesWithFK}/${this.tables.length}`);
-    report.push(`- **Tables with Indexes**: ${tablesWithIndexes}/${this.tables.length}`);
-    report.push(`- **Tables with RLS Policies**: ${tablesWithPolicies}/${this.tables.length}`);
-    
-    // Detailed table analysis
-    report.push('\n## Detailed Table Analysis\n');
-    
-    const sortedTables = [...this.tables].sort((a, b) => b.info.row_count - a.info.row_count);
-    
-    for (const table of sortedTables) {
-      report.push(`### 📋 ${table.info.table_name}`);
-      report.push('');
-      report.push('#### Overview');
-      report.push(`- **Row Count**: ${table.info.row_count.toLocaleString()}`);
-      report.push(`- **Total Size**: ${table.info.total_size}`);
-      report.push(`- **RLS Enabled**: ${table.info.rls_enabled ? '✅ Yes' : '❌ No'}`);
-      report.push(`- **Has Primary Key**: ${table.info.has_primary_key ? '✅ Yes' : '❌ No'}`);
-      report.push(`- **Has Foreign Keys**: ${table.info.has_foreign_keys ? '✅ Yes' : '❌ No'}`);
-      report.push(`- **Has Indexes**: ${table.info.has_indexes ? '✅ Yes' : '❌ No'}`);
-      report.push(`- **Has RLS Policies**: ${table.info.has_policies ? '✅ Yes' : '❌ No'}`);
-      report.push(`- **Has Triggers**: ${table.info.has_triggers ? '✅ Yes' : '❌ No'}`);
-      
-      if (table.columns.length > 0) {
-        report.push('\n#### Columns');
-        report.push('| Column | Type | Nullable | Default | PK | FK Reference |');
-        report.push('|--------|------|----------|---------|----|--------------| ');
-        
-        for (const col of table.columns) {
-          const fkRef = col.foreign_table ? `${col.foreign_table}.${col.foreign_column}` : '-';
-          report.push(`| ${col.column_name} | ${col.data_type} | ${col.is_nullable ? 'Yes' : 'No'} | ${col.column_default || '-'} | ${col.is_primary_key ? '🔑' : '-'} | ${fkRef} |`);
-        }
-      }
-      
-      if (table.indexes.length > 0) {
-        report.push('\n#### Indexes');
-        report.push('| Index Name | Type | Columns | Size |');
-        report.push('|------------|------|---------|------|');
-        
-        for (const idx of table.indexes) {
-          const type = idx.is_primary ? 'PRIMARY' : (idx.is_unique ? 'UNIQUE' : 'BTREE');
-          report.push(`| ${idx.index_name} | ${type} | ${idx.columns.join(', ')} | ${idx.index_size} |`);
-        }
-      }
-      
-      if (table.policies.length > 0) {
-        report.push('\n#### RLS Policies');
-        report.push('| Policy | Command | Roles | Type |');
-        report.push('|--------|---------|-------|------|');
-        
-        for (const pol of table.policies) {
-          const type = pol.permissive ? 'PERMISSIVE' : 'RESTRICTIVE';
-          report.push(`| ${pol.policy_name} | ${pol.command} | ${pol.roles.join(', ') || 'PUBLIC'} | ${type} |`);
-          
-          if (pol.using_expression) {
-            report.push(`| | USING: \`${pol.using_expression}\` | | |`);
-          }
-          if (pol.check_expression) {
-            report.push(`| | CHECK: \`${pol.check_expression}\` | | |`);
-          }
-        }
-      }
-      
-      report.push('\n---\n');
-    }
-    
-    // Issues and recommendations
-    report.push('\n## 🚨 Critical Issues & Recommendations\n');
-    
-    const criticalIssues: string[] = [];
-    const warnings: string[] = [];
-    const suggestions: string[] = [];
-    
-    // Check for tables without primary keys that have data
-    const noPKWithData = this.tables.filter(t => !t.info.has_primary_key && t.info.row_count > 0);
-    if (noPKWithData.length > 0) {
-      criticalIssues.push(`**${noPKWithData.length} tables with data lack primary keys**: ${noPKWithData.map(t => t.info.table_name).join(', ')}`);
-    }
-    
-    // Check for tables without RLS that have data
-    const noRLSWithData = this.tables.filter(t => !t.info.rls_enabled && t.info.row_count > 0);
-    if (noRLSWithData.length > 0) {
-      warnings.push(`**${noRLSWithData.length} tables with data have RLS disabled**: ${noRLSWithData.map(t => t.info.table_name).join(', ')}`);
-    }
-    
-    // Check for tables with RLS enabled but no policies
-    const rlsNoPolicies = this.tables.filter(t => t.info.rls_enabled && !t.info.has_policies);
-    if (rlsNoPolicies.length > 0) {
-      criticalIssues.push(`**${rlsNoPolicies.length} tables have RLS enabled but NO policies** (blocking all access): ${rlsNoPolicies.map(t => t.info.table_name).join(', ')}`);
-    }
-    
-    // Check for missing indexes on foreign key columns
-    for (const table of this.tables) {
-      const fkColumns = table.columns.filter(c => c.foreign_table).map(c => c.column_name);
-      const indexedColumns = new Set(table.indexes.flatMap(idx => idx.columns));
-      const unindexedFKs = fkColumns.filter(col => !indexedColumns.has(col));
-      
-      if (unindexedFKs.length > 0) {
-        suggestions.push(`Table **${table.info.table_name}**: Add indexes on FK columns: ${unindexedFKs.join(', ')}`);
-      }
-    }
-    
-    if (criticalIssues.length > 0) {
-      report.push('### 🔴 Critical Issues');
-      criticalIssues.forEach(issue => report.push(`- ${issue}`));
-      report.push('');
-    }
-    
-    if (warnings.length > 0) {
-      report.push('### 🟡 Warnings');
-      warnings.forEach(warning => report.push(`- ${warning}`));
-      report.push('');
-    }
-    
-    if (suggestions.length > 0) {
-      report.push('### 💡 Performance Suggestions');
-      suggestions.forEach(suggestion => report.push(`- ${suggestion}`));
-      report.push('');
-    }
-    
-    return report.join('\n');
-  }
-
-  private generateSQLSchema(): string {
-    const sql: string[] = [];
-    
-    sql.push('-- Complete Database Schema');
-    sql.push('-- Generated from live Supabase database');
-    sql.push(`-- Date: ${new Date().toISOString()}`);
-    sql.push('');
-    
-    for (const table of this.tables) {
-      sql.push(`-- Table: ${table.info.table_name}`);
-      sql.push(`-- Rows: ${table.info.row_count}, Size: ${table.info.total_size}`);
-      sql.push(`CREATE TABLE ${table.info.table_name} (`);
-      
-      const columnDefs: string[] = [];
-      
-      for (const col of table.columns) {
-        let def = `    ${col.column_name} ${col.data_type}`;
-        
-        if (!col.is_nullable) {
-          def += ' NOT NULL';
-        }
-        
-        if (col.column_default) {
-          def += ` DEFAULT ${col.column_default}`;
-        }
-        
-        columnDefs.push(def);
-      }
-      
-      // Add primary key constraint
-      const pkColumns = table.columns.filter(c => c.is_primary_key);
-      if (pkColumns.length > 0) {
-        columnDefs.push(`    PRIMARY KEY (${pkColumns.map(c => c.column_name).join(', ')})`);
-      }
-      
-      sql.push(columnDefs.join(',\n'));
-      sql.push(');');
-      sql.push('');
-      
-      // Add foreign key constraints
-      const fkColumns = table.columns.filter(c => c.foreign_table);
-      for (const fk of fkColumns) {
-        sql.push(`ALTER TABLE ${table.info.table_name}`);
-        sql.push(`    ADD CONSTRAINT ${table.info.table_name}_${fk.column_name}_fkey`);
-        sql.push(`    FOREIGN KEY (${fk.column_name})`);
-        sql.push(`    REFERENCES ${fk.foreign_table}(${fk.foreign_column});`);
-        sql.push('');
-      }
-      
-      // Add indexes
-      for (const idx of table.indexes) {
-        if (!idx.is_primary) {
-          const unique = idx.is_unique ? 'UNIQUE ' : '';
-          sql.push(`CREATE ${unique}INDEX ${idx.index_name}`);
-          sql.push(`    ON ${table.info.table_name} (${idx.columns.join(', ')});`);
-          sql.push('');
-        }
-      }
-      
-      // Enable RLS if needed
-      if (table.info.rls_enabled) {
-        sql.push(`ALTER TABLE ${table.info.table_name} ENABLE ROW LEVEL SECURITY;`);
-        sql.push('');
-        
-        // Add policies
-        for (const pol of table.policies) {
-          sql.push(`CREATE POLICY ${pol.policy_name}`);
-          sql.push(`    ON ${table.info.table_name}`);
-          sql.push(`    FOR ${pol.command}`);
-          sql.push(`    TO ${pol.roles.join(', ') || 'PUBLIC'}`);
-          
-          if (pol.using_expression) {
-            sql.push(`    USING (${pol.using_expression})`);
-          }
-          if (pol.check_expression) {
-            sql.push(`    WITH CHECK (${pol.check_expression})`);
-          }
-          sql.push(';');
-          sql.push('');
-        }
-      }
-      
-      sql.push('');
-    }
-    
-    return sql.join('\n');
-  }
-
-  private generateMigrationRecommendations(): string {
-    const sql: string[] = [];
-    
-    sql.push('-- Migration Recommendations');
-    sql.push('-- Based on analysis of current schema');
-    sql.push(`-- Generated: ${new Date().toISOString()}`);
-    sql.push('');
-    sql.push('-- Run these commands to improve your schema:');
-    sql.push('');
-    
-    // Add primary keys
-    const noPK = this.tables.filter(t => !t.info.has_primary_key && t.info.row_count > 0);
-    if (noPK.length > 0) {
-      sql.push('-- 1. Add missing primary keys');
-      for (const table of noPK) {
-        // Check if there's an 'id' column
-        const idCol = table.columns.find(c => c.column_name === 'id');
-        if (idCol) {
-          sql.push(`ALTER TABLE ${table.info.table_name} ADD PRIMARY KEY (id);`);
-        } else {
-          sql.push(`-- TODO: Determine primary key for ${table.info.table_name}`);
-          sql.push(`-- ALTER TABLE ${table.info.table_name} ADD PRIMARY KEY (...);`);
-        }
-      }
-      sql.push('');
-    }
-    
-    // Enable RLS
-    const noRLS = this.tables.filter(t => !t.info.rls_enabled && t.info.row_count > 0);
-    if (noRLS.length > 0) {
-      sql.push('-- 2. Enable Row Level Security');
-      for (const table of noRLS) {
-        sql.push(`ALTER TABLE ${table.info.table_name} ENABLE ROW LEVEL SECURITY;`);
-        sql.push(`-- TODO: Add appropriate policies for ${table.info.table_name}`);
-      }
-      sql.push('');
-    }
-    
-    // Add missing indexes on foreign keys
-    sql.push('-- 3. Add missing indexes on foreign key columns');
-    for (const table of this.tables) {
-      const fkColumns = table.columns.filter(c => c.foreign_table);
-      const indexedColumns = new Set(table.indexes.flatMap(idx => idx.columns));
-      
-      for (const fk of fkColumns) {
-        if (!indexedColumns.has(fk.column_name)) {
-          sql.push(`CREATE INDEX idx_${table.info.table_name}_${fk.column_name}`);
-          sql.push(`    ON ${table.info.table_name} (${fk.column_name});`);
-        }
-      }
-    }
-    sql.push('');
-    
-    // Fix RLS enabled but no policies
-    const rlsNoPolicies = this.tables.filter(t => t.info.rls_enabled && !t.info.has_policies);
-    if (rlsNoPolicies.length > 0) {
-      sql.push('-- 4. CRITICAL: Tables with RLS enabled but NO policies (blocking all access)');
-      for (const table of rlsNoPolicies) {
-        sql.push(`-- Table: ${table.info.table_name}`);
-        sql.push(`-- Option 1: Add policies`);
-        sql.push(`-- CREATE POLICY "Enable read for authenticated users" ON ${table.info.table_name}`);
-        sql.push(`--     FOR SELECT TO authenticated USING (true);`);
-        sql.push(`-- Option 2: Disable RLS if not needed`);
-        sql.push(`-- ALTER TABLE ${table.info.table_name} DISABLE ROW LEVEL SECURITY;`);
-        sql.push('');
-      }
-    }
-    
-    return sql.join('\n');
-  }
-
-  private calculateTotalSize(): string {
-    let totalBytes = 0;
-    
-    for (const table of this.tables) {
-      const sizeMatch = table.info.total_size.match(/(\d+(?:\.\d+)?)\s*([KMGT]?B)/);
-      if (sizeMatch) {
-        const [, value, unit] = sizeMatch;
-        const multipliers: Record<string, number> = {
-          'B': 1,
-          'KB': 1024,
-          'MB': 1024 * 1024,
-          'GB': 1024 * 1024 * 1024,
-          'TB': 1024 * 1024 * 1024 * 1024
-        };
-        totalBytes += parseFloat(value) * (multipliers[unit] || 1);
-      }
-    }
-    
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let unitIndex = 0;
-    let size = totalBytes;
-    
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
-    
-    return `${size.toFixed(2)} ${units[unitIndex]}`;
-  }
-}
-
-// Run the analyzer
-async function main() {
-  const analyzer = new ComprehensiveDatabaseAnalyzer();
+export class ComprehensiveDatabaseAnalyzer {
+  private client: SupabaseClient;
   
-  try {
-    await analyzer.analyze();
-  } catch (error) {
-    console.error('❌ Analysis failed:', error);
-    process.exit(1);
+  constructor(client: SupabaseClient) {
+    this.client = client;
+  }
+
+  async analyze(): Promise<any> {
+    console.log('🚀 Starting COMPREHENSIVE database analysis...\n');
+    console.log('📌 This requires custom RPC functions. Run create-db-info-functions.ts first.\n');
+    
+    try {
+      // Get all tables with basic info
+      console.log('📊 Getting table information...');
+      const { data: tables, error } = await this.client.rpc('get_table_info');
+      
+      if (error) {
+        console.error('❌ Error getting table info:', error);
+        console.log('\n⚠️  Make sure to run: npx tsx scripts/create-db-info-functions.ts\n');
+        throw error;
+      }
+
+      if (!tables || tables.length === 0) {
+        throw new Error('No tables found in database');
+      }
+
+      console.log(`✅ Found ${tables.length} tables\n`);
+
+      // Get detailed info for each table
+      const detailedTables: ComprehensiveTableInfo[] = [];
+      let totalColumns = 0;
+      let totalIndexes = 0;
+      let totalForeignKeys = 0;
+      let totalPolicies = 0;
+
+      for (const table of tables) {
+        console.log(`📋 Analyzing ${table.table_name}...`);
+        
+        const tableInfo: ComprehensiveTableInfo = {
+          name: table.table_name,
+          schema: table.table_schema,
+          row_count: parseInt(table.row_count) || 0,
+          table_size: table.table_size,
+          indexes_size: table.indexes_size,
+          total_size: table.total_size,
+          has_rls: table.has_rls,
+          columns: [],
+          primary_keys: [],
+          foreign_keys: [],
+          indexes: [],
+          rls_policies: []
+        };
+
+        // Get columns
+        const { data: columns } = await this.client.rpc('get_column_info', {
+          p_table_name: table.table_name
+        });
+        if (columns) {
+          tableInfo.columns = columns.map((col: any) => ({
+            name: col.column_name,
+            type: col.data_type,
+            nullable: col.is_nullable === 'YES',
+            default: col.column_default,
+            max_length: col.character_maximum_length,
+            numeric_precision: col.numeric_precision,
+            numeric_scale: col.numeric_scale,
+            is_identity: col.is_identity === 'YES',
+            identity_generation: col.identity_generation
+          }));
+          totalColumns += columns.length;
+        }
+
+        // Get foreign keys
+        const { data: fkeys } = await this.client.rpc('get_foreign_keys', {
+          p_table_name: table.table_name
+        });
+        if (fkeys) {
+          tableInfo.foreign_keys = fkeys.map((fk: any) => ({
+            constraint_name: fk.constraint_name,
+            column: fk.column_name,
+            references_table: fk.foreign_table_name,
+            references_column: fk.foreign_column_name,
+            on_update: fk.on_update,
+            on_delete: fk.on_delete
+          }));
+          totalForeignKeys += fkeys.length;
+        }
+
+        // Get indexes
+        const { data: indexes } = await this.client.rpc('get_indexes', {
+          p_table_name: table.table_name
+        });
+        if (indexes) {
+          tableInfo.indexes = indexes.map((idx: any) => ({
+            name: idx.index_name,
+            type: idx.index_type,
+            is_unique: idx.is_unique,
+            is_primary: idx.is_primary,
+            columns: idx.columns,
+            size: idx.index_size
+          }));
+          
+          // Extract primary key columns
+          const pkIndex = indexes.find((idx: any) => idx.is_primary);
+          if (pkIndex) {
+            tableInfo.primary_keys = pkIndex.columns.split(', ');
+          }
+          totalIndexes += indexes.length;
+        }
+
+        // Get RLS policies
+        const { data: policies } = await this.client.rpc('get_rls_policies', {
+          p_table_name: table.table_name
+        });
+        if (policies) {
+          tableInfo.rls_policies = policies.map((pol: any) => ({
+            name: pol.policy_name,
+            command: pol.cmd,
+            permissive: pol.permissive,
+            roles: pol.roles || [],
+            check_expression: pol.qual || '',
+            with_check: pol.with_check
+          }));
+          totalPolicies += policies.length;
+        }
+
+        detailedTables.push(tableInfo);
+      }
+
+      console.log('\n✅ Analysis complete!\n');
+
+      // Generate comprehensive analysis
+      return {
+        metadata: {
+          analyzed_at: new Date().toISOString(),
+          database_url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+          analyzer_version: '2.0',
+          has_introspection_functions: true
+        },
+        summary: {
+          total_tables: detailedTables.length,
+          total_rows: detailedTables.reduce((sum, t) => sum + t.row_count, 0),
+          total_columns: totalColumns,
+          total_indexes: totalIndexes,
+          total_foreign_keys: totalForeignKeys,
+          total_policies: totalPolicies,
+          tables_with_data: detailedTables.filter(t => t.row_count > 0).length,
+          tables_with_rls: detailedTables.filter(t => t.has_rls).length,
+          tables_with_policies: detailedTables.filter(t => t.rls_policies.length > 0).length
+        },
+        tables: detailedTables,
+        insights: this.generateInsights(detailedTables),
+        recommendations: this.generateRecommendations(detailedTables)
+      };
+
+    } catch (error) {
+      console.error('❌ Analysis failed:', error);
+      throw error;
+    }
+  }
+
+  private generateInsights(tables: ComprehensiveTableInfo[]): any {
+    return {
+      largest_tables: tables
+        .filter(t => t.row_count > 0)
+        .sort((a, b) => b.row_count - a.row_count)
+        .slice(0, 10)
+        .map(t => ({ name: t.name, rows: t.row_count, size: t.total_size })),
+      
+      tables_without_primary_key: tables
+        .filter(t => t.primary_keys.length === 0)
+        .map(t => t.name),
+      
+      tables_without_indexes: tables
+        .filter(t => t.indexes.length === 0)
+        .map(t => t.name),
+      
+      tables_with_rls_but_no_policies: tables
+        .filter(t => t.has_rls && t.rls_policies.length === 0)
+        .map(t => t.name),
+      
+      orphaned_tables: tables
+        .filter(t => t.row_count === 0 && t.foreign_keys.length === 0)
+        .map(t => t.name),
+      
+      relationship_map: this.buildRelationshipMap(tables)
+    };
+  }
+
+  private buildRelationshipMap(tables: ComprehensiveTableInfo[]): any {
+    const map: Record<string, any> = {};
+    
+    for (const table of tables) {
+      if (table.foreign_keys.length > 0) {
+        map[table.name] = {
+          references: table.foreign_keys.map(fk => ({
+            table: fk.references_table,
+            via: `${fk.column} → ${fk.references_column}`
+          })),
+          referenced_by: []
+        };
+      }
+    }
+
+    // Build reverse references
+    for (const table of tables) {
+      for (const fk of table.foreign_keys) {
+        if (map[fk.references_table]) {
+          map[fk.references_table].referenced_by.push({
+            table: table.name,
+            via: `${fk.column} ← ${fk.references_column}`
+          });
+        }
+      }
+    }
+
+    return map;
+  }
+
+  private generateRecommendations(tables: ComprehensiveTableInfo[]): string[] {
+    const recommendations: string[] = [];
+
+    // Missing primary keys
+    const noPK = tables.filter(t => t.primary_keys.length === 0 && t.row_count > 0);
+    if (noPK.length > 0) {
+      recommendations.push(
+        `🔑 Add primary keys to ${noPK.length} tables: ${noPK.slice(0, 5).map(t => t.name).join(', ')}${noPK.length > 5 ? '...' : ''}`
+      );
+    }
+
+    // RLS without policies
+    const rlsNoPolicies = tables.filter(t => t.has_rls && t.rls_policies.length === 0);
+    if (rlsNoPolicies.length > 0) {
+      recommendations.push(
+        `🔒 Add RLS policies to ${rlsNoPolicies.length} tables with RLS enabled but no policies`
+      );
+    }
+
+    // Tables without RLS
+    const noRLS = tables.filter(t => !t.has_rls && t.row_count > 0);
+    if (noRLS.length > 0) {
+      recommendations.push(
+        `🛡️ Enable RLS on ${noRLS.length} tables containing data`
+      );
+    }
+
+    // Large tables without indexes
+    const largeNoIndex = tables.filter(t => t.row_count > 1000 && t.indexes.filter(i => !i.is_primary).length === 0);
+    if (largeNoIndex.length > 0) {
+      recommendations.push(
+        `📈 Add indexes to ${largeNoIndex.length} large tables with 1000+ rows`
+      );
+    }
+
+    // Orphaned tables
+    const orphaned = tables.filter(t => t.row_count === 0 && t.foreign_keys.length === 0);
+    if (orphaned.length > 5) {
+      recommendations.push(
+        `🗑️ Consider removing ${orphaned.length} empty orphaned tables`
+      );
+    }
+
+    return recommendations;
   }
 }
-
-main();

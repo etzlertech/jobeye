@@ -1,0 +1,4266 @@
+{
+  "metadata": {
+    "analyzed_at": "2025-10-03T22:32:56.180Z",
+    "database_url": "https://rtwigjwqufozqfwozpvo.supabase.co",
+    "analyzer_version": "2.0",
+    "has_introspection_functions": true
+  },
+  "summary": {
+    "total_tables": 65,
+    "total_rows": 10458,
+    "total_columns": 0,
+    "total_indexes": 240,
+    "total_foreign_keys": 62,
+    "total_policies": 0,
+    "tables_with_data": 19,
+    "tables_with_rls": 49,
+    "tables_with_policies": 0
+  },
+  "tables": [
+    {
+      "name": "spatial_ref_sys",
+      "schema": "public",
+      "row_count": 8500,
+      "table_size": "6896 kB",
+      "indexes_size": "208 kB",
+      "total_size": "7144 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "srid"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "spatial_ref_sys_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "srid",
+          "size": "208 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "gps_tracking_records",
+      "schema": "public",
+      "row_count": 1046,
+      "table_size": "264 kB",
+      "indexes_size": "192 kB",
+      "total_size": "488 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "gps_tracking_records_job_id_fkey",
+          "column": "job_id",
+          "references_table": "jobs",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "constraint_name": "gps_tracking_records_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        },
+        {
+          "constraint_name": "gps_tracking_records_user_id_fkey",
+          "column": "user_id",
+          "references_table": "users_extended",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "gps_tracking_records_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "80 kB"
+        },
+        {
+          "name": "idx_gps_tracking_job",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "job_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_gps_tracking_recorded",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "recorded_at",
+          "size": "48 kB"
+        },
+        {
+          "name": "idx_gps_tracking_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "32 kB"
+        },
+        {
+          "name": "idx_gps_tracking_user",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "user_id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "code_pattern_violations",
+      "schema": "public",
+      "row_count": 277,
+      "table_size": "72 kB",
+      "indexes_size": "64 kB",
+      "total_size": "168 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "code_pattern_violations_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_violation_file",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "file_path",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_violation_fixed",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "is_fixed",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_violation_type",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "pattern_type",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "notification_queue",
+      "schema": "public",
+      "row_count": 175,
+      "table_size": "184 kB",
+      "indexes_size": "48 kB",
+      "total_size": "264 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "notification_queue_company_id_fkey",
+          "column": "company_id",
+          "references_table": "companies",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_notification_queue_pending",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "status, created_at",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_notification_queue_recipient",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "recipient_id, created_at",
+          "size": "16 kB"
+        },
+        {
+          "name": "notification_queue_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "auth_audit_log",
+      "schema": "public",
+      "row_count": 138,
+      "table_size": "40 kB",
+      "indexes_size": "96 kB",
+      "total_size": "176 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "auth_audit_log_session_id_fkey",
+          "column": "session_id",
+          "references_table": "user_sessions",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "SET NULL"
+        },
+        {
+          "constraint_name": "auth_audit_log_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "SET NULL"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "auth_audit_log_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_auth_audit_log_created_at",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "created_at",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_auth_audit_log_event_type",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "event_type",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_auth_audit_log_ip_address",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "ip_address",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_auth_audit_log_risk_score",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "risk_score",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_auth_audit_log_success",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "success",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_auth_audit_log_user_id",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "user_id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "customers",
+      "schema": "public",
+      "row_count": 83,
+      "table_size": "24 kB",
+      "indexes_size": "64 kB",
+      "total_size": "128 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "customers_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "customers_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "customers_tenant_id_customer_number_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "tenant_id, customer_number",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_customers_name",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "name",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_customers_tenant_id",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "tenants",
+      "schema": "public",
+      "row_count": 71,
+      "table_size": "16 kB",
+      "indexes_size": "32 kB",
+      "total_size": "88 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "tenants_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "tenants_slug_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "slug",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "invoices",
+      "schema": "public",
+      "row_count": 57,
+      "table_size": "24 kB",
+      "indexes_size": "112 kB",
+      "total_size": "168 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "invoices_job_id_fkey",
+          "column": "job_id",
+          "references_table": "jobs",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "SET NULL"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_invoices_customer",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "customer_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_invoices_due_date",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "due_date",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_invoices_job",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "job_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_invoices_status",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "status",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_invoices_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "invoices_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "invoices_unique_number",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "tenant_id, invoice_number",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "jobs",
+      "schema": "public",
+      "row_count": 47,
+      "table_size": "40 kB",
+      "indexes_size": "120 kB",
+      "total_size": "200 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "jobs_assigned_to_fkey",
+          "column": "assigned_to",
+          "references_table": "users_extended",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "constraint_name": "jobs_customer_id_fkey",
+          "column": "customer_id",
+          "references_table": "customers",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "SET NULL"
+        },
+        {
+          "constraint_name": "jobs_property_id_fkey",
+          "column": "property_id",
+          "references_table": "properties",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "constraint_name": "jobs_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_jobs_arrival",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "arrival_timestamp",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_jobs_assigned_to",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "assigned_to",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_jobs_completion",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "completion_timestamp",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_jobs_customer_property",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "customer_id, property_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_jobs_offline_modified",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "offline_modified_at",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_jobs_scheduled_start",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "scheduled_start",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_jobs_tenant_status",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id, status",
+          "size": "16 kB"
+        },
+        {
+          "name": "jobs_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "jobs_tenant_id_job_number_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "tenant_id, job_number",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "equipment_maintenance",
+      "schema": "public",
+      "row_count": 26,
+      "table_size": "16 kB",
+      "indexes_size": "32 kB",
+      "total_size": "80 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "equipment_maintenance_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_equipment_maintenance_equipment",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "equipment_id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "users_extended",
+      "schema": "public",
+      "row_count": 21,
+      "table_size": "8192 bytes",
+      "indexes_size": "96 kB",
+      "total_size": "112 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "users_extended_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "RESTRICT"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_users_extended_active",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "is_active",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_users_extended_email_verified",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "email_verified_at",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_users_extended_last_login",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "last_login_at",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_users_extended_phone",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "phone",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_users_extended_role",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "role",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_users_extended_tenant_id",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "users_extended_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "training_sessions",
+      "schema": "public",
+      "row_count": 20,
+      "table_size": "8192 bytes",
+      "indexes_size": "32 kB",
+      "total_size": "48 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_training_sessions_company",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "company_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "training_sessions_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "kit_items",
+      "schema": "public",
+      "row_count": 13,
+      "table_size": "8192 bytes",
+      "indexes_size": "32 kB",
+      "total_size": "80 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "kit_items_company_id_fkey",
+          "column": "tenant_id",
+          "references_table": "companies",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        },
+        {
+          "constraint_name": "kit_items_kit_id_fkey",
+          "column": "kit_id",
+          "references_table": "kits",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "kit_items_kit_idx",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "kit_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "kit_items_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "properties",
+      "schema": "public",
+      "row_count": 11,
+      "table_size": "16 kB",
+      "indexes_size": "56 kB",
+      "total_size": "104 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "properties_customer_id_fkey",
+          "column": "customer_id",
+          "references_table": "customers",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "SET NULL"
+        },
+        {
+          "constraint_name": "properties_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_properties_location",
+          "type": "gist",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "location",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_properties_tenant_customer",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id, customer_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "properties_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "properties_tenant_id_property_number_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "tenant_id, property_number",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "kits",
+      "schema": "public",
+      "row_count": 6,
+      "table_size": "8192 bytes",
+      "indexes_size": "64 kB",
+      "total_size": "112 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "kits_company_id_fkey",
+          "column": "tenant_id",
+          "references_table": "companies",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "kits_company_id_kit_code_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "tenant_id, kit_code",
+          "size": "16 kB"
+        },
+        {
+          "name": "kits_company_name_idx",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id, name",
+          "size": "16 kB"
+        },
+        {
+          "name": "kits_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "uniq_kits_company_code",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "tenant_id, kit_code",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "companies",
+      "schema": "public",
+      "row_count": 5,
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "total_size": "64 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "companies_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "kit_variants",
+      "schema": "public",
+      "row_count": 2,
+      "table_size": "8192 bytes",
+      "indexes_size": "48 kB",
+      "total_size": "64 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "kit_variants_company_id_fkey",
+          "column": "tenant_id",
+          "references_table": "companies",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        },
+        {
+          "constraint_name": "kit_variants_kit_id_fkey",
+          "column": "kit_id",
+          "references_table": "kits",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "kit_variants_kit_id_variant_code_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "kit_id, variant_code",
+          "size": "16 kB"
+        },
+        {
+          "name": "kit_variants_kit_idx",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "kit_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "kit_variants_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "day_plans",
+      "schema": "public",
+      "row_count": 2,
+      "table_size": "8192 bytes",
+      "indexes_size": "32 kB",
+      "total_size": "64 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "day_plans_company_id_fkey",
+          "column": "company_id",
+          "references_table": "companies",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "day_plans_company_id_user_id_plan_date_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "company_id, user_id, plan_date",
+          "size": "16 kB"
+        },
+        {
+          "name": "day_plans_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "kit_assignments",
+      "schema": "public",
+      "row_count": 1,
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "total_size": "32 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "kit_assignments_kit_id_fkey",
+          "column": "kit_id",
+          "references_table": "kits",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        },
+        {
+          "constraint_name": "kit_assignments_variant_id_fkey",
+          "column": "variant_id",
+          "references_table": "kit_variants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "SET NULL"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "kit_assignments_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "workflow_tasks",
+      "schema": "public",
+      "row_count": 0,
+      "table_size": "0 bytes",
+      "indexes_size": "64 kB",
+      "total_size": "88 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "workflow_tasks_completed_by_fkey",
+          "column": "completed_by",
+          "references_table": "users_extended",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "constraint_name": "workflow_tasks_job_id_fkey",
+          "column": "job_id",
+          "references_table": "jobs",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        },
+        {
+          "constraint_name": "workflow_tasks_supervisor_id_fkey",
+          "column": "supervisor_id",
+          "references_table": "users_extended",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "constraint_name": "workflow_tasks_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        },
+        {
+          "constraint_name": "workflow_tasks_user_id_fkey",
+          "column": "user_id",
+          "references_table": "users_extended",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_workflow_tasks_job",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "job_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_workflow_tasks_status",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "status",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_workflow_tasks_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "workflow_tasks_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "geofences",
+      "schema": "public",
+      "row_count": 0,
+      "table_size": "8192 bytes",
+      "indexes_size": "48 kB",
+      "total_size": "64 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "geofences_job_id_fkey",
+          "column": "job_id",
+          "references_table": "jobs",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "constraint_name": "geofences_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "geofences_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_geofences_job",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "job_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_geofences_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "geofence_events",
+      "schema": "public",
+      "row_count": 0,
+      "table_size": "8192 bytes",
+      "indexes_size": "48 kB",
+      "total_size": "64 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "geofence_events_geofence_id_fkey",
+          "column": "geofence_id",
+          "references_table": "geofences",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        },
+        {
+          "constraint_name": "geofence_events_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        },
+        {
+          "constraint_name": "geofence_events_user_id_fkey",
+          "column": "user_id",
+          "references_table": "users_extended",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "geofence_events_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_geofence_events_geofence",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "geofence_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_geofence_events_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "inventory_images",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "total_size": "32 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "inventory_images_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "ocr_jobs",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "total_size": "32 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "ocr_jobs_vendor_id_fkey",
+          "column": "vendor_id",
+          "references_table": "vendors",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ocr_jobs_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "ocr_documents",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "total_size": "32 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "ocr_documents_ocr_job_id_fkey",
+          "column": "ocr_job_id",
+          "references_table": "ocr_jobs",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ocr_documents_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "ocr_line_items",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "total_size": "32 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "ocr_line_items_ocr_document_id_fkey",
+          "column": "ocr_document_id",
+          "references_table": "ocr_documents",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ocr_line_items_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "ocr_note_entities",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "total_size": "32 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "ocr_note_entities_ocr_document_id_fkey",
+          "column": "ocr_document_id",
+          "references_table": "ocr_documents",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ocr_note_entities_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "vendor_locations",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "total_size": "32 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "vendor_locations_vendor_id_fkey",
+          "column": "vendor_id",
+          "references_table": "vendors",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "vendor_locations_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "item_transactions",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "0 bytes",
+      "indexes_size": "40 kB",
+      "total_size": "48 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "item_transactions_item_id_fkey",
+          "column": "item_id",
+          "references_table": "items",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_transactions_job",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "job_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_transactions_tenant_item",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id, item_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_transactions_type_date",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "transaction_type, created_at",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_transactions_voice",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "voice_session_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "item_transactions_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "mfa_challenges",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "0 bytes",
+      "indexes_size": "40 kB",
+      "total_size": "48 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_mfa_challenges_challenge_id",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "challenge_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_mfa_challenges_expires_at",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "expires_at",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_mfa_challenges_user_id",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "user_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "mfa_challenges_challenge_id_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "challenge_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "mfa_challenges_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "mfa_challenges_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "mfa_settings",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "0 bytes",
+      "indexes_size": "32 kB",
+      "total_size": "40 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_mfa_settings_enabled",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "enabled",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_mfa_settings_user_id",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "user_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "mfa_settings_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "mfa_settings_user_id_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "user_id",
+          "size": "8192 bytes"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "migration_tracking",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "0 bytes",
+      "indexes_size": "32 kB",
+      "total_size": "40 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_migration_status",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "migration_status",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_migration_table",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "table_name",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "migration_tracking_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "migration_tracking_table_name_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "table_name",
+          "size": "8192 bytes"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "user_invitations",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "0 bytes",
+      "indexes_size": "56 kB",
+      "total_size": "64 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "user_invitations_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_user_invitations_code",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "invitation_code",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_user_invitations_email",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "email",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_user_invitations_expires_at",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "expires_at",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_user_invitations_tenant_id",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_user_invitations_used",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "is_used",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "user_invitations_invitation_code_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "invitation_code",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "user_invitations_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "table_inventory",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "0 bytes",
+      "indexes_size": "32 kB",
+      "total_size": "40 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_table_category",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "category",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_table_decision",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "decision",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "table_inventory_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "table_inventory_schema_name_table_name_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "schema_name, table_name",
+          "size": "8192 bytes"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "tenant_assignments",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "0 bytes",
+      "indexes_size": "56 kB",
+      "total_size": "64 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "tenant_assignments_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_tenant_assignments_active",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "is_active",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_tenant_assignments_primary",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "is_primary",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_tenant_assignments_role",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "role",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_tenant_assignments_tenant_id",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_tenant_assignments_user_id",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "user_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "tenant_assignments_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "tenant_assignments_user_id_tenant_id_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "user_id, tenant_id",
+          "size": "8192 bytes"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "repository_inventory",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "64 kB",
+      "total_size": "80 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_repo_pattern",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "pattern_type",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_repo_status",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "migration_status",
+          "size": "16 kB"
+        },
+        {
+          "name": "repository_inventory_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "unique_file_path",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "file_path",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "equipment_incidents",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "48 kB",
+      "total_size": "64 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "equipment_incidents_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_equipment_incidents_company",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "company_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_equipment_incidents_reported_by",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "reported_by",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "voice_profiles",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "0 bytes",
+      "indexes_size": "56 kB",
+      "total_size": "64 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_voice_profiles_language",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "language_code",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_voice_profiles_onboarding",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "onboarding_completed",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_voice_profiles_pattern_hash",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "voice_pattern_hash",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_voice_profiles_provider",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "preferred_tts_provider",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_voice_profiles_user_id",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "user_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "voice_profiles_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "voice_profiles_user_id_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "user_id",
+          "size": "8192 bytes"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "notifications",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "32 kB",
+      "total_size": "48 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_notifications_user",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "user_id, read_at",
+          "size": "16 kB"
+        },
+        {
+          "name": "notifications_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "quality_audits",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "32 kB",
+      "total_size": "48 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_quality_audits_company_date",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "company_id, audit_date",
+          "size": "16 kB"
+        },
+        {
+          "name": "quality_audits_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "role_permissions",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "72 kB",
+      "total_size": "88 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "role_permissions_permission_id_fkey",
+          "column": "permission_id",
+          "references_table": "permissions",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        },
+        {
+          "constraint_name": "role_permissions_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_role_permissions_active",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "is_active",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_role_permissions_role",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "role",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_role_permissions_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "role_permissions_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "role_permissions_role_permission_id_tenant_id_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "role, permission_id, tenant_id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "training_certificates",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "32 kB",
+      "total_size": "48 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_training_certificates_trainee",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "trainee_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "training_certificates_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "maintenance_schedule",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "48 kB",
+      "total_size": "64 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_maintenance_schedule_company",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "company_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_maintenance_schedule_date",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "scheduled_date",
+          "size": "16 kB"
+        },
+        {
+          "name": "maintenance_schedule_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "user_activity_logs",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "48 kB",
+      "total_size": "64 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_user_activity_logs_company",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "company_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_user_activity_logs_user_date",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "user_id, activity_date",
+          "size": "16 kB"
+        },
+        {
+          "name": "user_activity_logs_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "permissions",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "64 kB",
+      "total_size": "80 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_permissions_resource_action",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "resource, action",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_permissions_risk_level",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "risk_level",
+          "size": "16 kB"
+        },
+        {
+          "name": "permissions_name_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "name",
+          "size": "16 kB"
+        },
+        {
+          "name": "permissions_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "user_assignments",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "0 bytes",
+      "indexes_size": "32 kB",
+      "total_size": "40 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_user_assignments_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_user_assignments_user",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "user_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "user_assignments_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "user_assignments_user_id_tenant_id_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "user_id, tenant_id",
+          "size": "8192 bytes"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "daily_reports",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "total_size": "32 kB",
+      "has_rls": false,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "daily_reports_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "material_requests",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "64 kB",
+      "total_size": "80 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "material_requests_job_id_fkey",
+          "column": "job_id",
+          "references_table": "jobs",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_material_requests_job",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "job_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_material_requests_status",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "status",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_material_requests_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "material_requests_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "customer_feedback",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "80 kB",
+      "total_size": "96 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "customer_feedback_job_id_fkey",
+          "column": "job_id",
+          "references_table": "jobs",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "SET NULL"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "customer_feedback_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_customer_feedback_customer",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "customer_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_customer_feedback_job",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "job_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_customer_feedback_status",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "status",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_customer_feedback_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "maintenance_tickets",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "0 bytes",
+      "indexes_size": "32 kB",
+      "total_size": "40 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_maintenance_tickets_equipment",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "equipment_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_maintenance_tickets_status",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "status",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_maintenance_tickets_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "maintenance_tickets_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "user_sessions",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "0 bytes",
+      "indexes_size": "80 kB",
+      "total_size": "88 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "user_sessions_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_user_sessions_device_type",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "device_type",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_user_sessions_expires_at",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "expires_at",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_user_sessions_last_activity",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "last_activity_at",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_user_sessions_status",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "status",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_user_sessions_tenant_id",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_user_sessions_token",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "session_token",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_user_sessions_user_id",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "user_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_user_sessions_voice_active",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "voice_session_active",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "user_sessions_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "user_sessions_session_token_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "session_token",
+          "size": "8192 bytes"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "travel_logs",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "64 kB",
+      "total_size": "80 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "travel_logs_from_property_id_fkey",
+          "column": "from_property_id",
+          "references_table": "properties",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "SET NULL"
+        },
+        {
+          "constraint_name": "travel_logs_to_property_id_fkey",
+          "column": "to_property_id",
+          "references_table": "properties",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "SET NULL"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_travel_logs_departure",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "departure_time",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_travel_logs_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_travel_logs_user",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "user_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "travel_logs_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "audit_logs",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "80 kB",
+      "total_size": "96 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "audit_logs_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_audit_logs_created_at",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "created_at",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_audit_logs_entity",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "entity_type, entity_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_audit_logs_performed_by",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "performed_by",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_audit_logs_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "job_reschedules",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "64 kB",
+      "total_size": "80 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "job_reschedules_original_job_id_fkey",
+          "column": "original_job_id",
+          "references_table": "jobs",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_job_reschedules_job",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "original_job_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_job_reschedules_status",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "status",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_job_reschedules_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "job_reschedules_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "safety_checklist_completions",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "0 bytes",
+      "indexes_size": "32 kB",
+      "total_size": "40 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_safety_completions_checklist",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "checklist_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_safety_completions_job",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "job_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_safety_completions_user",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "user_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "safety_checklist_completions_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "conflict_logs",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "0 bytes",
+      "indexes_size": "40 kB",
+      "total_size": "48 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "conflict_logs_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_conflict_logs_company",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "company_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_conflict_logs_entity",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "entity_type, entity_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_conflict_logs_job",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "job_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_conflict_logs_review",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "requires_supervisor_review, reviewed_at",
+          "size": "8192 bytes"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "dev_manifest_history",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "0 bytes",
+      "indexes_size": "24 kB",
+      "total_size": "32 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "dev_manifest_history_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_dev_manifest_history_created_at",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "created_at",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_dev_manifest_history_generated_by",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "generated_by",
+          "size": "8192 bytes"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "items",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "168 kB",
+      "total_size": "184 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "idx_items_assigned_job",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "assigned_to_job_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_items_assigned_user",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "assigned_to_user_id",
+          "size": "8192 bytes"
+        },
+        {
+          "name": "idx_items_location",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "current_location_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_items_tenant_category",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id, category",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_items_tenant_status",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id, status",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_items_tenant_type",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id, item_type",
+          "size": "16 kB"
+        },
+        {
+          "name": "items_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "items_tenant_id_barcode_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "tenant_id, barcode",
+          "size": "16 kB"
+        },
+        {
+          "name": "items_tenant_id_serial_number_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "tenant_id, serial_number",
+          "size": "16 kB"
+        },
+        {
+          "name": "items_tenant_id_sku_key",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "tenant_id, sku",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "routing_schedules",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "64 kB",
+      "total_size": "80 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "routing_schedules_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        },
+        {
+          "constraint_name": "routing_schedules_user_id_fkey",
+          "column": "user_id",
+          "references_table": "users_extended",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_routing_schedules_date",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "scheduled_date",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_routing_schedules_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_routing_schedules_user",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "user_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "routing_schedules_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "intake_requests",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "64 kB",
+      "total_size": "80 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "intake_requests_assigned_to_fkey",
+          "column": "assigned_to",
+          "references_table": "users_extended",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "constraint_name": "intake_requests_converted_to_job_id_fkey",
+          "column": "converted_to_job_id",
+          "references_table": "jobs",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "constraint_name": "intake_requests_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_intake_requests_email",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "customer_email",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_intake_requests_phone",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "customer_phone",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_intake_requests_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "intake_requests_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "dev_project_standards",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "48 kB",
+      "total_size": "64 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "dev_project_standards_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_dev_project_standards_category",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "category",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_dev_project_standards_title",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": false,
+          "columns": "document_title",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "safety_checklists",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "48 kB",
+      "total_size": "64 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "safety_checklists_job_id_fkey",
+          "column": "job_id",
+          "references_table": "jobs",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "constraint_name": "safety_checklists_supervisor_id_fkey",
+          "column": "supervisor_id",
+          "references_table": "users_extended",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        },
+        {
+          "constraint_name": "safety_checklists_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        },
+        {
+          "constraint_name": "safety_checklists_user_id_fkey",
+          "column": "user_id",
+          "references_table": "users_extended",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_safety_checklists_job",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "job_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_safety_checklists_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "safety_checklists_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "intake_documents",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "48 kB",
+      "total_size": "64 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "intake_documents_intake_id_fkey",
+          "column": "intake_id",
+          "references_table": "intake_requests",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        },
+        {
+          "constraint_name": "intake_documents_intake_request_id_fkey",
+          "column": "intake_request_id",
+          "references_table": "intake_requests",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        },
+        {
+          "constraint_name": "intake_documents_tenant_id_fkey",
+          "column": "tenant_id",
+          "references_table": "tenants",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_intake_documents_request",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "intake_request_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "idx_intake_documents_tenant",
+          "type": "btree",
+          "is_unique": false,
+          "is_primary": false,
+          "columns": "tenant_id",
+          "size": "16 kB"
+        },
+        {
+          "name": "intake_documents_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "vendors",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "total_size": "32 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [],
+      "indexes": [
+        {
+          "name": "vendors_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    },
+    {
+      "name": "vendor_aliases",
+      "schema": "public",
+      "row_count": -1,
+      "table_size": "8192 bytes",
+      "indexes_size": "16 kB",
+      "total_size": "32 kB",
+      "has_rls": true,
+      "columns": [],
+      "primary_keys": [
+        "id"
+      ],
+      "foreign_keys": [
+        {
+          "constraint_name": "vendor_aliases_vendor_id_fkey",
+          "column": "vendor_id",
+          "references_table": "vendors",
+          "references_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "vendor_aliases_pkey",
+          "type": "btree",
+          "is_unique": true,
+          "is_primary": true,
+          "columns": "id",
+          "size": "16 kB"
+        }
+      ],
+      "rls_policies": []
+    }
+  ],
+  "insights": {
+    "largest_tables": [
+      {
+        "name": "spatial_ref_sys",
+        "rows": 8500,
+        "size": "7144 kB"
+      },
+      {
+        "name": "gps_tracking_records",
+        "rows": 1046,
+        "size": "488 kB"
+      },
+      {
+        "name": "code_pattern_violations",
+        "rows": 277,
+        "size": "168 kB"
+      },
+      {
+        "name": "notification_queue",
+        "rows": 175,
+        "size": "264 kB"
+      },
+      {
+        "name": "auth_audit_log",
+        "rows": 138,
+        "size": "176 kB"
+      },
+      {
+        "name": "customers",
+        "rows": 83,
+        "size": "128 kB"
+      },
+      {
+        "name": "tenants",
+        "rows": 71,
+        "size": "88 kB"
+      },
+      {
+        "name": "invoices",
+        "rows": 57,
+        "size": "168 kB"
+      },
+      {
+        "name": "jobs",
+        "rows": 47,
+        "size": "200 kB"
+      },
+      {
+        "name": "equipment_maintenance",
+        "rows": 26,
+        "size": "80 kB"
+      }
+    ],
+    "tables_without_primary_key": [],
+    "tables_without_indexes": [],
+    "tables_with_rls_but_no_policies": [
+      "gps_tracking_records",
+      "notification_queue",
+      "auth_audit_log",
+      "customers",
+      "tenants",
+      "invoices",
+      "jobs",
+      "users_extended",
+      "kit_items",
+      "properties",
+      "kits",
+      "companies",
+      "kit_variants",
+      "kit_assignments",
+      "workflow_tasks",
+      "geofences",
+      "geofence_events",
+      "inventory_images",
+      "ocr_jobs",
+      "ocr_documents",
+      "ocr_line_items",
+      "ocr_note_entities",
+      "vendor_locations",
+      "item_transactions",
+      "mfa_challenges",
+      "mfa_settings",
+      "user_invitations",
+      "tenant_assignments",
+      "voice_profiles",
+      "role_permissions",
+      "permissions",
+      "material_requests",
+      "customer_feedback",
+      "maintenance_tickets",
+      "user_sessions",
+      "travel_logs",
+      "audit_logs",
+      "job_reschedules",
+      "safety_checklist_completions",
+      "conflict_logs",
+      "dev_manifest_history",
+      "items",
+      "routing_schedules",
+      "intake_requests",
+      "dev_project_standards",
+      "safety_checklists",
+      "intake_documents",
+      "vendors",
+      "vendor_aliases"
+    ],
+    "orphaned_tables": [],
+    "relationship_map": {
+      "gps_tracking_records": {
+        "references": [
+          {
+            "table": "jobs",
+            "via": "job_id → id"
+          },
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          },
+          {
+            "table": "users_extended",
+            "via": "user_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "notification_queue": {
+        "references": [
+          {
+            "table": "companies",
+            "via": "company_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "auth_audit_log": {
+        "references": [
+          {
+            "table": "user_sessions",
+            "via": "session_id → id"
+          },
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "customers": {
+        "references": [
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          }
+        ],
+        "referenced_by": [
+          {
+            "table": "jobs",
+            "via": "customer_id ← id"
+          },
+          {
+            "table": "properties",
+            "via": "customer_id ← id"
+          }
+        ]
+      },
+      "invoices": {
+        "references": [
+          {
+            "table": "jobs",
+            "via": "job_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "jobs": {
+        "references": [
+          {
+            "table": "users_extended",
+            "via": "assigned_to → id"
+          },
+          {
+            "table": "customers",
+            "via": "customer_id → id"
+          },
+          {
+            "table": "properties",
+            "via": "property_id → id"
+          },
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          }
+        ],
+        "referenced_by": [
+          {
+            "table": "gps_tracking_records",
+            "via": "job_id ← id"
+          },
+          {
+            "table": "invoices",
+            "via": "job_id ← id"
+          },
+          {
+            "table": "workflow_tasks",
+            "via": "job_id ← id"
+          },
+          {
+            "table": "geofences",
+            "via": "job_id ← id"
+          },
+          {
+            "table": "material_requests",
+            "via": "job_id ← id"
+          },
+          {
+            "table": "customer_feedback",
+            "via": "job_id ← id"
+          },
+          {
+            "table": "job_reschedules",
+            "via": "original_job_id ← id"
+          },
+          {
+            "table": "intake_requests",
+            "via": "converted_to_job_id ← id"
+          },
+          {
+            "table": "safety_checklists",
+            "via": "job_id ← id"
+          }
+        ]
+      },
+      "users_extended": {
+        "references": [
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          }
+        ],
+        "referenced_by": [
+          {
+            "table": "gps_tracking_records",
+            "via": "user_id ← id"
+          },
+          {
+            "table": "jobs",
+            "via": "assigned_to ← id"
+          },
+          {
+            "table": "workflow_tasks",
+            "via": "completed_by ← id"
+          },
+          {
+            "table": "workflow_tasks",
+            "via": "supervisor_id ← id"
+          },
+          {
+            "table": "workflow_tasks",
+            "via": "user_id ← id"
+          },
+          {
+            "table": "geofence_events",
+            "via": "user_id ← id"
+          },
+          {
+            "table": "routing_schedules",
+            "via": "user_id ← id"
+          },
+          {
+            "table": "intake_requests",
+            "via": "assigned_to ← id"
+          },
+          {
+            "table": "safety_checklists",
+            "via": "supervisor_id ← id"
+          },
+          {
+            "table": "safety_checklists",
+            "via": "user_id ← id"
+          }
+        ]
+      },
+      "kit_items": {
+        "references": [
+          {
+            "table": "companies",
+            "via": "tenant_id → id"
+          },
+          {
+            "table": "kits",
+            "via": "kit_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "properties": {
+        "references": [
+          {
+            "table": "customers",
+            "via": "customer_id → id"
+          },
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          }
+        ],
+        "referenced_by": [
+          {
+            "table": "jobs",
+            "via": "property_id ← id"
+          },
+          {
+            "table": "travel_logs",
+            "via": "from_property_id ← id"
+          },
+          {
+            "table": "travel_logs",
+            "via": "to_property_id ← id"
+          }
+        ]
+      },
+      "kits": {
+        "references": [
+          {
+            "table": "companies",
+            "via": "tenant_id → id"
+          }
+        ],
+        "referenced_by": [
+          {
+            "table": "kit_items",
+            "via": "kit_id ← id"
+          },
+          {
+            "table": "kit_variants",
+            "via": "kit_id ← id"
+          },
+          {
+            "table": "kit_assignments",
+            "via": "kit_id ← id"
+          }
+        ]
+      },
+      "kit_variants": {
+        "references": [
+          {
+            "table": "companies",
+            "via": "tenant_id → id"
+          },
+          {
+            "table": "kits",
+            "via": "kit_id → id"
+          }
+        ],
+        "referenced_by": [
+          {
+            "table": "kit_assignments",
+            "via": "variant_id ← id"
+          }
+        ]
+      },
+      "day_plans": {
+        "references": [
+          {
+            "table": "companies",
+            "via": "company_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "kit_assignments": {
+        "references": [
+          {
+            "table": "kits",
+            "via": "kit_id → id"
+          },
+          {
+            "table": "kit_variants",
+            "via": "variant_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "workflow_tasks": {
+        "references": [
+          {
+            "table": "users_extended",
+            "via": "completed_by → id"
+          },
+          {
+            "table": "jobs",
+            "via": "job_id → id"
+          },
+          {
+            "table": "users_extended",
+            "via": "supervisor_id → id"
+          },
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          },
+          {
+            "table": "users_extended",
+            "via": "user_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "geofences": {
+        "references": [
+          {
+            "table": "jobs",
+            "via": "job_id → id"
+          },
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          }
+        ],
+        "referenced_by": [
+          {
+            "table": "geofence_events",
+            "via": "geofence_id ← id"
+          }
+        ]
+      },
+      "geofence_events": {
+        "references": [
+          {
+            "table": "geofences",
+            "via": "geofence_id → id"
+          },
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          },
+          {
+            "table": "users_extended",
+            "via": "user_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "ocr_jobs": {
+        "references": [
+          {
+            "table": "vendors",
+            "via": "vendor_id → id"
+          }
+        ],
+        "referenced_by": [
+          {
+            "table": "ocr_documents",
+            "via": "ocr_job_id ← id"
+          }
+        ]
+      },
+      "ocr_documents": {
+        "references": [
+          {
+            "table": "ocr_jobs",
+            "via": "ocr_job_id → id"
+          }
+        ],
+        "referenced_by": [
+          {
+            "table": "ocr_line_items",
+            "via": "ocr_document_id ← id"
+          },
+          {
+            "table": "ocr_note_entities",
+            "via": "ocr_document_id ← id"
+          }
+        ]
+      },
+      "ocr_line_items": {
+        "references": [
+          {
+            "table": "ocr_documents",
+            "via": "ocr_document_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "ocr_note_entities": {
+        "references": [
+          {
+            "table": "ocr_documents",
+            "via": "ocr_document_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "vendor_locations": {
+        "references": [
+          {
+            "table": "vendors",
+            "via": "vendor_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "item_transactions": {
+        "references": [
+          {
+            "table": "items",
+            "via": "item_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "user_invitations": {
+        "references": [
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "tenant_assignments": {
+        "references": [
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "role_permissions": {
+        "references": [
+          {
+            "table": "permissions",
+            "via": "permission_id → id"
+          },
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "material_requests": {
+        "references": [
+          {
+            "table": "jobs",
+            "via": "job_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "customer_feedback": {
+        "references": [
+          {
+            "table": "jobs",
+            "via": "job_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "user_sessions": {
+        "references": [
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          }
+        ],
+        "referenced_by": [
+          {
+            "table": "auth_audit_log",
+            "via": "session_id ← id"
+          }
+        ]
+      },
+      "travel_logs": {
+        "references": [
+          {
+            "table": "properties",
+            "via": "from_property_id → id"
+          },
+          {
+            "table": "properties",
+            "via": "to_property_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "job_reschedules": {
+        "references": [
+          {
+            "table": "jobs",
+            "via": "original_job_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "routing_schedules": {
+        "references": [
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          },
+          {
+            "table": "users_extended",
+            "via": "user_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "intake_requests": {
+        "references": [
+          {
+            "table": "users_extended",
+            "via": "assigned_to → id"
+          },
+          {
+            "table": "jobs",
+            "via": "converted_to_job_id → id"
+          },
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          }
+        ],
+        "referenced_by": [
+          {
+            "table": "intake_documents",
+            "via": "intake_id ← id"
+          },
+          {
+            "table": "intake_documents",
+            "via": "intake_request_id ← id"
+          }
+        ]
+      },
+      "safety_checklists": {
+        "references": [
+          {
+            "table": "jobs",
+            "via": "job_id → id"
+          },
+          {
+            "table": "users_extended",
+            "via": "supervisor_id → id"
+          },
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          },
+          {
+            "table": "users_extended",
+            "via": "user_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "intake_documents": {
+        "references": [
+          {
+            "table": "intake_requests",
+            "via": "intake_id → id"
+          },
+          {
+            "table": "intake_requests",
+            "via": "intake_request_id → id"
+          },
+          {
+            "table": "tenants",
+            "via": "tenant_id → id"
+          }
+        ],
+        "referenced_by": []
+      },
+      "vendor_aliases": {
+        "references": [
+          {
+            "table": "vendors",
+            "via": "vendor_id → id"
+          }
+        ],
+        "referenced_by": []
+      }
+    }
+  },
+  "recommendations": [
+    "🔒 Add RLS policies to 49 tables with RLS enabled but no policies",
+    "🛡️ Enable RLS on 5 tables containing data",
+    "📈 Add indexes to 1 large tables with 1000+ rows"
+  ]
+}
