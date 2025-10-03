@@ -67,7 +67,7 @@ describe('Vision - Cross-Domain Integration', () => {
       // Act 1: Pre-job verification
       const preJobVerification = await visionService.verifyKit({
         kitId: `pre-${job.id}`,
-        companyId: TEST_COMPANY_ID,
+        tenantId: TEST_COMPANY_ID,
         imageData: generateImageData(),
         expectedItems: job.requiredEquipment,
         maxBudgetUsd: 10.0
@@ -92,7 +92,7 @@ describe('Vision - Cross-Domain Integration', () => {
       // Act 2: Post-job verification
       const postJobVerification = await visionService.verifyKit({
         kitId: `post-${job.id}`,
-        companyId: TEST_COMPANY_ID,
+        tenantId: TEST_COMPANY_ID,
         imageData: generateImageData(),
         expectedItems: job.requiredEquipment,
         maxBudgetUsd: 10.0
@@ -125,7 +125,7 @@ describe('Vision - Cross-Domain Integration', () => {
       // Act 1: Perform verification
       const verification = await visionService.verifyKit({
         kitId: 'kit-voice-feedback',
-        companyId: TEST_COMPANY_ID,
+        tenantId: TEST_COMPANY_ID,
         imageData,
         expectedItems: ['mower', 'trimmer', 'blower'],
         maxBudgetUsd: 10.0
@@ -187,21 +187,21 @@ describe('Vision - Cross-Domain Integration', () => {
       const verifications = await Promise.all([
         visionService.verifyKit({
           kitId: 'kit-cost-1',
-          companyId: TEST_COMPANY_ID,
+          tenantId: TEST_COMPANY_ID,
           imageData,
           expectedItems: ['mower'],
           maxBudgetUsd: 10.0
         }),
         visionService.verifyKit({
           kitId: 'kit-cost-2',
-          companyId: TEST_COMPANY_ID,
+          tenantId: TEST_COMPANY_ID,
           imageData,
           expectedItems: ['trimmer'],
           maxBudgetUsd: 10.0
         }),
         visionService.verifyKit({
           kitId: 'kit-cost-3',
-          companyId: TEST_COMPANY_ID,
+          tenantId: TEST_COMPANY_ID,
           imageData,
           expectedItems: ['blower'],
           maxBudgetUsd: 10.0
@@ -261,7 +261,7 @@ describe('Vision - Cross-Domain Integration', () => {
       // Act: Verify equipment
       const verification = await visionService.verifyKit({
         kitId: 'kit-equipment-tracking',
-        companyId: TEST_COMPANY_ID,
+        tenantId: TEST_COMPANY_ID,
         imageData: generateImageData(),
         expectedItems: equipment.map(e => e.type),
         maxBudgetUsd: 10.0
@@ -319,7 +319,7 @@ describe('Vision - Cross-Domain Integration', () => {
       // STEP 2: Pre-Job Equipment Verification
       const preJobVerification = await visionService.verifyKit({
         kitId: `prejob-${job.id}`,
-        companyId: TEST_COMPANY_ID,
+        tenantId: TEST_COMPANY_ID,
         imageData: generateImageData(),
         expectedItems: job.requiredEquipment,
         maxBudgetUsd: 10.0
@@ -355,7 +355,7 @@ describe('Vision - Cross-Domain Integration', () => {
       // STEP 6: Post-Job Verification
       const postJobVerification = await visionService.verifyKit({
         kitId: `postjob-${job.id}`,
-        companyId: TEST_COMPANY_ID,
+        tenantId: TEST_COMPANY_ID,
         imageData: generateImageData(),
         expectedItems: job.requiredEquipment,
         maxBudgetUsd: 10.0
@@ -414,7 +414,7 @@ describe('Vision - Cross-Domain Integration', () => {
       for (let i = 0; i < 10; i++) {
         const attempt = await visionService.verifyKit({
           kitId: `kit-budget-test-${i}`,
-          companyId: budgetedCompany.id,
+          tenantId: budgetedCompany.id,
           imageData: generateImageData(),
           expectedItems: ['mower', 'trimmer'],
           maxBudgetUsd: budgetedCompany.dailyBudget,
@@ -463,7 +463,7 @@ describe('Vision - Cross-Domain Integration', () => {
       for (let i = 0; i < 5; i++) {
         const verification = await visionService.verifyKit({
           kitId: `kit-history-${i}`,
-          companyId: TEST_COMPANY_ID,
+          tenantId: TEST_COMPANY_ID,
           imageData,
           expectedItems: ['mower', 'trimmer', 'blower'],
           maxBudgetUsd: 10.0
@@ -474,7 +474,7 @@ describe('Vision - Cross-Domain Integration', () => {
 
       // Act: Query verification history
       const history = await verificationRepo.findAll({
-        companyId: TEST_COMPANY_ID,
+        tenantId: TEST_COMPANY_ID,
         limit: 100
       });
 
@@ -521,7 +521,7 @@ describe('Vision - Cross-Domain Integration', () => {
       // Act: Attempt verification with invalid data
       const result = await visionService.verifyKit({
         kitId: 'kit-error-test',
-        companyId: TEST_COMPANY_ID,
+        tenantId: TEST_COMPANY_ID,
         imageData: invalidImageData,
         expectedItems: ['mower'],
         maxBudgetUsd: 10.0

@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const companyId = user.user_metadata?.company_id;
-    if (!companyId) {
+    const tenantId = user.user_metadata?.tenant_id;
+    if (!tenantId) {
       return NextResponse.json({ error: 'Company ID not found' }, { status: 400 });
     }
 
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const openaiApiKey = process.env.OPENAI_API_KEY || '';
     const parsingService = new WorkflowsTaskParsingService(
       supabase,
-      companyId,
+      tenantId,
       openaiApiKey
     );
 
@@ -86,8 +86,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const companyId = user.user_metadata?.company_id;
-    if (!companyId) {
+    const tenantId = user.user_metadata?.tenant_id;
+    if (!tenantId) {
       return NextResponse.json({ error: 'Company ID not found' }, { status: 400 });
     }
 
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
     const openaiApiKey = process.env.OPENAI_API_KEY || '';
     const parsingService = new WorkflowsTaskParsingService(
       supabase,
-      companyId,
+      tenantId,
       openaiApiKey
     );
 

@@ -33,7 +33,7 @@ export interface KitItem {
 
 export interface KitSummary {
   id: string;
-  companyId: string;
+  tenantId: string;
   kitCode: string;
   name: string;
   isActive: boolean;
@@ -47,7 +47,7 @@ export interface KitDetail extends KitSummary {
 export interface KitVariant {
   id: string;
   kitId: string;
-  companyId: string;
+  tenantId: string;
   variantCode: string;
   name: string;
   isDefault: boolean;
@@ -56,7 +56,7 @@ export interface KitVariant {
 
 export interface CreateKitVariantInput {
   kitId: string;
-  companyId: string;
+  tenantId: string;
   variantCode: string;
   name: string;
   isDefault?: boolean;
@@ -65,7 +65,7 @@ export interface CreateKitVariantInput {
 
 export interface KitAssignment {
   id: string;
-  companyId: string;
+  tenantId: string;
   kitId: string;
   variantId?: string | null;
   externalRef: string;
@@ -76,7 +76,7 @@ export interface KitAssignment {
 }
 
 export interface CreateKitAssignmentInput {
-  companyId: string;
+  tenantId: string;
   kitId: string;
   variantId?: string | null;
   externalRef: string;
@@ -85,7 +85,7 @@ export interface CreateKitAssignmentInput {
 }
 
 export interface CreateKitOverrideLogInput {
-  companyId: string;
+  tenantId: string;
   assignmentId: string;
   itemId?: string | null;
   reason: string;

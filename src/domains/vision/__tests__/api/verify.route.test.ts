@@ -82,7 +82,7 @@ describe('POST /api/vision/verify', () => {
       },
       body: {
         kitId: 'kit-123',
-        companyId: 'company-456',
+        tenantId: 'company-456',
         imageData: 'base64-image-data',
         expectedItems: ['wrench', 'hammer']
       }
@@ -115,7 +115,7 @@ describe('POST /api/vision/verify', () => {
       },
       body: {
         kitId: 'kit-123',
-        companyId: 'company-456',
+        tenantId: 'company-456',
         imageData: 'base64-image-data',
         expectedItems: ['wrench']
       }

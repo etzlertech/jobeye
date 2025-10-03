@@ -27,14 +27,14 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { kitId, companyId, imageData, expectedItems, maxBudgetUsd, maxRequestsPerDay } = body;
+    const { kitId, tenantId, imageData, expectedItems, maxBudgetUsd, maxRequestsPerDay } = body;
 
     // Validate required fields
-    if (!kitId || !companyId || !imageData || !expectedItems) {
+    if (!kitId || !tenantId || !imageData || !expectedItems) {
       return NextResponse.json(
         {
           error: 'Missing required fields',
-          details: 'kitId, companyId, imageData, and expectedItems are required'
+          details: 'kitId, tenantId, imageData, and expectedItems are required'
         },
         { status: 400 }
       );
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     const service = getVisionVerificationService();
     const result = await service.verifyKit({
       kitId,
-      companyId,
+      tenantId,
       imageData: processedImageData,
       expectedItems,
       maxBudgetUsd,

@@ -72,7 +72,7 @@ export async function GET(request: Request) {
     const kits = [
       {
         id: 'kit-1',
-        company_id: 'mock-company-id',
+        tenant_id: 'mock-company-id',
         kit_code: 'LAWN-BASIC',
         name: 'Basic Lawn Care Kit',
         description: 'Essential tools for lawn maintenance',
@@ -166,7 +166,7 @@ export async function POST(request: Request) {
     const kitId = 'mock-kit-id';
     const responseData: any = {
       id: kitId,
-      company_id: 'mock-company-id',
+      tenant_id: 'mock-company-id',
       kit_code,
       name,
       description: description || null,

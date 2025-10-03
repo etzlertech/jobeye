@@ -23,7 +23,7 @@
  *   coverage: 90%
  *   test_file: /src/__tests__/scheduling/repositories/day-plan.repository.test.ts
  * tasks:
- *   - Implement CRUD operations with company_id filtering
+ *   - Implement CRUD operations with tenant_id filtering
  *   - Support offline caching for read operations
  *   - Handle voice session linking
  *   - Implement pagination and filtering
@@ -250,11 +250,11 @@ export class DayPlanRepository {
     return data;
   }
 
-  async countByStatus(companyId: string, status?: DayPlan['status']): Promise<number> {
+  async countByStatus(tenantId: string, status?: DayPlan['status']): Promise<number> {
     let query = this.supabase
       .from('day_plans')
       .select('id', { count: 'exact', head: true })
-      .eq('company_id', companyId);
+      .eq('tenant_id', tenantId);
 
     if (status) {
       query = query.eq('status', status);

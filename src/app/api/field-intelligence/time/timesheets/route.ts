@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const companyId = user.user_metadata?.company_id;
-    if (!companyId) {
+    const tenantId = user.user_metadata?.tenant_id;
+    if (!tenantId) {
       return NextResponse.json({ error: 'Company ID not found' }, { status: 400 });
     }
 
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
     }
 
-    const timesheetsService = new TimeTimesheetsService(supabase, companyId);
+    const timesheetsService = new TimeTimesheetsService(supabase, tenantId);
 
     // Determine period
     let period;

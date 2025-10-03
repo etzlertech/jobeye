@@ -133,7 +133,7 @@ export type Database = {
       company_settings: {
         Row: {
           id: string;
-          company_id: string;
+          tenant_id: string;
           vision_thresholds: Record<string, any>;
           voice_preferences: Record<string, any>;
           budget_limits: Record<string, any>;
@@ -143,7 +143,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          company_id: string;
+          tenant_id: string;
           vision_thresholds?: Record<string, any>;
           voice_preferences?: Record<string, any>;
           budget_limits?: Record<string, any>;
@@ -153,7 +153,7 @@ export type Database = {
         };
         Update: {
           id?: string;
-          company_id?: string;
+          tenant_id?: string;
           vision_thresholds?: Record<string, any>;
           voice_preferences?: Record<string, any>;
           budget_limits?: Record<string, any>;

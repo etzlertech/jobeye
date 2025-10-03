@@ -16,7 +16,7 @@ describe('KitService', () => {
 
   const baseKit = {
     id: 'kit-snow-ops',
-    companyId: 'company-1',
+    tenantId: 'company-1',
     kitCode: 'SNOW_OPS',
     name: 'Snow Operations Kit',
     isActive: true,
@@ -127,14 +127,14 @@ describe('KitService', () => {
       mocks.findActiveVariantsForKit.mockResolvedValue([winterVariant, summerVariant]);
       mocks.createAssignment.mockResolvedValue({
         id: 'job-kit-001',
-        companyId: 'company-1',
+        tenantId: 'company-1',
         jobId: 'job-42',
         kitId: 'kit-snow-ops',
         variantId: 'variant-winter-2025',
       });
 
       const result = await service.assignKitToJob({
-        companyId: 'company-1',
+        tenantId: 'company-1',
         jobId: 'job-42',
         technicianId: 'tech-9',
         kitCode: 'SNOW_OPS',
@@ -144,7 +144,7 @@ describe('KitService', () => {
       expect(mocks.findActiveKitByCode).toHaveBeenCalledWith('company-1', 'SNOW_OPS');
       expect(mocks.findActiveVariantsForKit).toHaveBeenCalledWith('kit-snow-ops');
       expect(mocks.createAssignment).toHaveBeenCalledWith({
-        companyId: 'company-1',
+        tenantId: 'company-1',
         jobId: 'job-42',
         kitId: 'kit-snow-ops',
         variantId: 'variant-winter-2025',
@@ -180,14 +180,14 @@ describe('KitService', () => {
 
       mocks.createAssignment.mockResolvedValue({
         id: 'job-kit-002',
-        companyId: 'company-1',
+        tenantId: 'company-1',
         jobId: 'job-43',
         kitId: 'kit-snow-ops',
         variantId: 'variant-winter-2025',
       });
 
       const result = await service.assignKitToJob({
-        companyId: 'company-1',
+        tenantId: 'company-1',
         jobId: 'job-43',
         technicianId: 'tech-9',
         kitCode: 'SNOW_OPS',
@@ -214,7 +214,7 @@ describe('KitService', () => {
     it('logs override and notifies supervisor with escalation metadata', async () => {
       mocks.createOverride.mockResolvedValue({
         id: 'override-100',
-        companyId: 'company-1',
+        tenantId: 'company-1',
         jobId: 'job-43',
         kitId: 'kit-snow-ops',
         itemId: 'item-ice-melt',
@@ -230,7 +230,7 @@ describe('KitService', () => {
       });
 
       const result = await service.recordMissingItemOverride({
-        companyId: 'company-1',
+        tenantId: 'company-1',
         jobId: 'job-43',
         kitId: 'kit-snow-ops',
         itemId: 'item-ice-melt',
@@ -240,7 +240,7 @@ describe('KitService', () => {
       });
 
       expect(mocks.createOverride).toHaveBeenCalledWith({
-        companyId: 'company-1',
+        tenantId: 'company-1',
         jobId: 'job-43',
         kitId: 'kit-snow-ops',
         itemId: 'item-ice-melt',
@@ -253,7 +253,7 @@ describe('KitService', () => {
       });
 
       expect(mocks.dispatchSupervisorAlert).toHaveBeenCalledWith({
-        companyId: 'company-1',
+        tenantId: 'company-1',
         jobId: 'job-43',
         kitId: 'kit-snow-ops',
         itemId: 'item-ice-melt',

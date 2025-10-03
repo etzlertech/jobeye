@@ -16,7 +16,7 @@ export interface VlmRequest {
   imageData: ImageData;
   kitId: string;
   expectedItems: string[]; // Kit items expected in the photo
-  companyId: string;
+  tenantId: string;
   context?: string; // Optional context for better detection
 }
 

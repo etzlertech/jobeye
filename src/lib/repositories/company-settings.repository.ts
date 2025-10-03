@@ -26,12 +26,12 @@ const TABLE_NAME = 'company_settings';
 export class CompanySettingsRepository {
   constructor(private readonly client: SupabaseClient<Database> = supabase) {}
 
-  async getForCompany(companyId: string): Promise<CompanySettings | null> {
+  async getForCompany(tenantId: string): Promise<CompanySettings | null> {
     try {
       const { data, error } = await this.client
         .from(TABLE_NAME)
         .select('*')
-        .eq('company_id', companyId)
+        .eq('tenant_id', tenantId)
         .single();
 
       if (error) {
@@ -56,8 +56,8 @@ export class CompanySettingsRepository {
     }
   }
 
-  async ensureForCompany(companyId: string): Promise<CompanySettings> {
-    const existing = await this.getForCompany(companyId);
+  async ensureForCompany(tenantId: string): Promise<CompanySettings> {
+    const existing = await this.getForCompany(tenantId);
     if (existing) {
       return existing;
     }
@@ -65,7 +65,7 @@ export class CompanySettingsRepository {
     try {
       const { data, error } = await this.client
         .from(TABLE_NAME)
-        .insert({ company_id: companyId })
+        .insert({ tenant_id: tenantId })
         .select('*')
         .single();
 
@@ -84,16 +84,16 @@ export class CompanySettingsRepository {
   }
 
   async getForCurrentCompany(): Promise<CompanySettings> {
-    const companyId = await this.getCurrentCompanyId();
-    return this.ensureForCompany(companyId);
+    const tenantId = await this.getCurrentCompanyId();
+    return this.ensureForCompany(tenantId);
   }
 
-  async updateVisionThresholds(companyId: string, thresholds: VisionThresholds): Promise<CompanySettings> {
+  async updateVisionThresholds(tenantId: string, thresholds: VisionThresholds): Promise<CompanySettings> {
     try {
       const { data, error } = await this.client
         .from(TABLE_NAME)
         .update({ vision_thresholds: thresholds })
-        .eq('company_id', companyId)
+        .eq('tenant_id', tenantId)
         .select('*')
         .single();
 
@@ -123,21 +123,21 @@ export class CompanySettingsRepository {
       throw new RepositoryError('User not authenticated', 'AUTH_ERROR');
     }
 
-    const companyId = this.extractCompanyIdFromUser(user);
-    if (companyId) {
-      return companyId;
+    const tenantId = this.extractCompanyIdFromUser(user);
+    if (tenantId) {
+      return tenantId;
     }
 
     try {
       const { data: rpcData, error: rpcError } = await this.client
-        .rpc('get_user_company_id', { user_id: user.id });
+        .rpc('get_user_tenant_id', { user_id: user.id });
 
       if (!rpcError && rpcData) {
         return rpcData as string;
       }
     } catch (rpcError) {
       // Swallow RPC errors and continue to throw a standardized exception below.
-      console.warn('get_user_company_id RPC unavailable:', rpcError);
+      console.warn('get_user_tenant_id RPC unavailable:', rpcError);
     }
 
     throw new RepositoryError(
@@ -151,9 +151,9 @@ export class CompanySettingsRepository {
     const appMetadata = user.app_metadata ?? {};
 
     const rawCompanyId =
-      userMetadata.company_id ??
       userMetadata.tenant_id ??
-      appMetadata.company_id ??
+      userMetadata.tenant_id ??
+      appMetadata.tenant_id ??
       appMetadata.tenant_id;
 
     return typeof rawCompanyId === 'string' && rawCompanyId.length > 0

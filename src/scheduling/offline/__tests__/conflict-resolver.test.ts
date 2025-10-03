@@ -41,7 +41,7 @@ describe('ConflictResolver', () => {
       operation_type: 'update' as OperationType,
       entity_type: 'schedule_event',
       entity_id: 'event-1',
-      company_id: 'company-1',
+      tenant_id: 'company-1',
       status: 'pending' as const,
       attempts: 0,
       created_at: new Date('2025-01-30T10:00:00Z')
@@ -293,7 +293,7 @@ describe('ConflictResolver', () => {
         operation_type: 'update' as OperationType,
         entity_type: 'schedule_event',
         entity_id: 'event-1',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         user_id: 'user-1',
         data: { test: 'data' },
         status: 'pending' as const,

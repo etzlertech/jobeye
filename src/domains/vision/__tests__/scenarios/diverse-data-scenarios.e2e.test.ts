@@ -17,7 +17,7 @@ import * as verificationRepo from '../../repositories/vision-verification.reposi
 const REAL_WORLD_SCENARIOS = {
   // Scenario: New employee's first day
   new_employee_training: {
-    companyId: 'acme-landscaping',
+    tenantId: 'acme-landscaping',
     employee: 'john-new-hire',
     kits: [
       {
@@ -32,7 +32,7 @@ const REAL_WORLD_SCENARIOS = {
 
   // Scenario: Seasonal equipment rotation (spring to summer)
   seasonal_rotation: {
-    companyId: 'greenscape-services',
+    tenantId: 'greenscape-services',
     season: 'spring',
     kits: [
       {
@@ -53,7 +53,7 @@ const REAL_WORLD_SCENARIOS = {
 
   // Scenario: Multi-crew coordination
   multi_crew_operation: {
-    companyId: 'elite-tree-service',
+    tenantId: 'elite-tree-service',
     crews: [
       {
         crewId: 'crew-alpha',
@@ -76,7 +76,7 @@ const REAL_WORLD_SCENARIOS = {
 
   // Scenario: Equipment sharing between properties
   property_hopping: {
-    companyId: 'mobile-maintenance',
+    tenantId: 'mobile-maintenance',
     route: [
       {
         propertyId: 'prop-001-residential',
@@ -102,7 +102,7 @@ const REAL_WORLD_SCENARIOS = {
 
   // Scenario: Emergency response (storm damage)
   emergency_response: {
-    companyId: 'rapid-response-tree',
+    tenantId: 'rapid-response-tree',
     emergency: 'hurricane-cleanup',
     priority: 'high',
     equipment: [
@@ -197,7 +197,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
       // Act
       const result = await visionService.verifyKit({
         kitId: kit.id,
-        companyId: scenario.companyId,
+        tenantId: scenario.tenantId,
         imageData,
         expectedItems: kit.items,
         maxBudgetUsd: 10.0
@@ -235,7 +235,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
 
       // Act: Verify both kits
       const results = await batchService.verifyBatch({
-        companyId: scenario.companyId,
+        tenantId: scenario.tenantId,
         items: requests,
         stopOnError: false
       });
@@ -277,7 +277,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
         crewVerifications.map(verification =>
           visionService.verifyKit({
             kitId: verification.kitId,
-            companyId: scenario.companyId,
+            tenantId: scenario.tenantId,
             imageData: verification.imageData,
             expectedItems: verification.expectedItems,
             maxBudgetUsd: 10.0
@@ -309,7 +309,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
       for (const property of scenario.route) {
         const verification = await visionService.verifyKit({
           kitId: `kit-${property.propertyId}`,
-          companyId: scenario.companyId,
+          tenantId: scenario.tenantId,
           imageData: generateRealisticImageData('mobile_phone'),
           expectedItems: property.requiredEquipment,
           maxBudgetUsd: 10.0
@@ -355,7 +355,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
       // Act: Verify critical equipment first
       const criticalVerification = await visionService.verifyKit({
         kitId: `emergency-${scenario.emergency}-critical`,
-        companyId: scenario.companyId,
+        tenantId: scenario.tenantId,
         imageData: generateRealisticImageData('tablet'),
         expectedItems: criticalItems,
         maxBudgetUsd: 20.0 // Higher budget for emergency
@@ -376,7 +376,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
       // Act: Verify all equipment
       const fullVerification = await visionService.verifyKit({
         kitId: `emergency-${scenario.emergency}-full`,
-        companyId: scenario.companyId,
+        tenantId: scenario.tenantId,
         imageData: generateRealisticImageData('professional_camera'),
         expectedItems: allItems,
         maxBudgetUsd: 20.0
@@ -396,7 +396,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
         scenario.locations.map(location =>
           visionService.verifyKit({
             kitId: `kit-${location.locationId}`,
-            companyId: scenario.franchiseId,
+            tenantId: scenario.franchiseId,
             imageData: generateRealisticImageData('mobile_phone'),
             expectedItems: location.standardKit,
             maxBudgetUsd: 10.0
@@ -409,7 +409,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
 
       // Act: Query all verifications for franchise
       const franchiseHistory = await verificationRepo.findAll({
-        companyId: scenario.franchiseId,
+        tenantId: scenario.franchiseId,
         limit: 100
       });
 
@@ -446,7 +446,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
         imageSources.map(source =>
           visionService.verifyKit({
             kitId: `kit-quality-${source.type}`,
-            companyId: 'test-image-quality',
+            tenantId: 'test-image-quality',
             imageData: generateRealisticImageData(source.type),
             expectedItems: ['mower', 'trimmer', 'blower'],
             maxBudgetUsd: 10.0
@@ -485,7 +485,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
         timeSlots.map(slot =>
           visionService.verifyKit({
             kitId: `kit-${slot.period}`,
-            companyId: 'test-time-patterns',
+            tenantId: 'test-time-patterns',
             imageData: generateImageData(),
             expectedItems: ['mower', 'trimmer'],
             maxBudgetUsd: 10.0
@@ -518,7 +518,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
         weatherScenarios.map(weather =>
           visionService.verifyKit({
             kitId: `kit-weather-${weather.condition}`,
-            companyId: 'test-weather-conditions',
+            tenantId: 'test-weather-conditions',
             imageData: generateImageData(), // Would vary by weather in real scenario
             expectedItems: ['mower', 'trimmer', 'blower'],
             maxBudgetUsd: 10.0
@@ -550,7 +550,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
         equipmentStates.map(state =>
           visionService.verifyKit({
             kitId: `kit-state-${state.state}`,
-            companyId: 'test-equipment-states',
+            tenantId: 'test-equipment-states',
             imageData: generateImageData(),
             expectedItems: state.items,
             maxBudgetUsd: 10.0
@@ -579,7 +579,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
         terminologyVariations.map(variation =>
           visionService.verifyKit({
             kitId: `kit-${variation.company}`,
-            companyId: variation.company,
+            tenantId: variation.company,
             imageData: generateImageData(),
             expectedItems: [variation.term, variation.variant],
             maxBudgetUsd: 10.0
@@ -604,7 +604,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
       // Arrange: Complex real-world scenario
       // Mid-day, cloudy, worn equipment, multiple crews, mid-route check
       const complexScenario = {
-        companyId: 'complex-scenario-test',
+        tenantId: 'complex-scenario-test',
         context: {
           time: '14:30',
           weather: 'cloudy',
@@ -625,7 +625,7 @@ describe('Vision Verification - Diverse Data Scenarios', () => {
       // Act: Verify complex scenario
       const result = await visionService.verifyKit({
         kitId: 'kit-complex-scenario',
-        companyId: complexScenario.companyId,
+        tenantId: complexScenario.tenantId,
         imageData: generateImageData(),
         expectedItems: complexScenario.equipment,
         maxBudgetUsd: 10.0

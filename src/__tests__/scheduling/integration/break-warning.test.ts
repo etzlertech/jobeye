@@ -59,7 +59,7 @@ describe('Break Warning System', () => {
     await supabase
       .from('day_plans')
       .delete()
-      .eq('company_id', testCompanyId)
+      .eq('tenant_id', testCompanyId)
       .gte('created_at', new Date(Date.now() - 86400000).toISOString());
   });
 
@@ -360,7 +360,7 @@ describe('Break Warning System', () => {
     // ... (implementation details)
 
     const report = await breakScheduler.generateComplianceReport({
-      company_id: testCompanyId,
+      tenant_id: testCompanyId,
       start_date: '2024-01-15',
       end_date: '2024-01-15'
     });

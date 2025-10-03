@@ -106,7 +106,7 @@ export interface PayrollExportData {
  *
  * @example
  * ```typescript
- * const timesheetsService = new TimeTimesheetsService(supabase, companyId);
+ * const timesheetsService = new TimeTimesheetsService(supabase, tenantId);
  *
  * // Generate weekly timesheet
  * const timesheet = await timesheetsService.generateTimesheet(userId, {
@@ -124,9 +124,9 @@ export class TimeTimesheetsService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string
+    private tenantId: string
   ) {
-    // TODO: this.timeEntriesRepository = new TimeEntriesRepository(client, companyId);
+    // TODO: this.timeEntriesRepository = new TimeEntriesRepository(client, tenantId);
   }
 
   /**

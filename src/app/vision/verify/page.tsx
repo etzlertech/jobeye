@@ -42,7 +42,7 @@ export default function VerifyKitPage() {
   const [isOnline, setIsOnline] = useState(true);
 
   // Mock data - in production, these would come from auth/context
-  const companyId = 'company-123';
+  const tenantId = 'company-123';
   const kitId = 'kit-456';
   const expectedItems = ['wrench', 'hammer', 'screwdriver', 'pliers'];
 
@@ -75,7 +75,7 @@ export default function VerifyKitPage() {
         const queue = getOfflineQueue();
         await queue.enqueue({
           kitId,
-          companyId,
+          tenantId,
           imageData,
           expectedItems,
           maxBudgetUsd: 10.0,
@@ -95,7 +95,7 @@ export default function VerifyKitPage() {
         },
         body: JSON.stringify({
           kitId,
-          companyId,
+          tenantId,
           imageData: Array.from(imageData.data), // Convert to array for JSON
           expectedItems,
           maxBudgetUsd: 10.0,
@@ -117,7 +117,7 @@ export default function VerifyKitPage() {
           const queue = getOfflineQueue();
           await queue.enqueue({
             kitId,
-            companyId,
+            tenantId,
             imageData,
             expectedItems,
             maxBudgetUsd: 10.0,
@@ -269,7 +269,7 @@ export default function VerifyKitPage() {
                       New Verification
                     </button>
                   </div>
-                  <VerificationDisplay {...result} kitId={kitId} companyId={companyId} />
+                  <VerificationDisplay {...result} kitId={kitId} tenantId={tenantId} />
                 </div>
               ) : (
                 <div className="bg-white rounded-lg shadow-sm p-6">
@@ -305,7 +305,7 @@ export default function VerifyKitPage() {
 
         {activeTab === 'batch' && (
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <BatchVerification companyId={companyId} />
+            <BatchVerification tenantId={tenantId} />
           </div>
         )}
 
@@ -317,13 +317,13 @@ export default function VerifyKitPage() {
 
         {activeTab === 'history' && (
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <VerificationHistory companyId={companyId} kitId={kitId} />
+            <VerificationHistory tenantId={tenantId} kitId={kitId} />
           </div>
         )}
 
         {activeTab === 'costs' && (
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <CostDashboard companyId={companyId} />
+            <CostDashboard tenantId={tenantId} />
           </div>
         )}
       </div>

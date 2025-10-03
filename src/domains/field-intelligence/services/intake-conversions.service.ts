@@ -127,7 +127,7 @@ const DEFAULT_SCORING_CONFIG: LeadScoringConfig = {
  *
  * @example
  * ```typescript
- * const conversionsService = new IntakeConversionsService(supabase, companyId);
+ * const conversionsService = new IntakeConversionsService(supabase, tenantId);
  *
  * // Calculate conversion rate
  * const metrics = await conversionsService.getConversionMetrics('2025-09');
@@ -144,10 +144,10 @@ export class IntakeConversionsService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string,
+    private tenantId: string,
     scoringConfig?: Partial<LeadScoringConfig>
   ) {
-    // TODO: this.requestsRepository = new IntakeRequestsRepository(client, companyId);
+    // TODO: this.requestsRepository = new IntakeRequestsRepository(client, tenantId);
     this.scoringConfig = { ...DEFAULT_SCORING_CONFIG, ...scoringConfig };
   }
 

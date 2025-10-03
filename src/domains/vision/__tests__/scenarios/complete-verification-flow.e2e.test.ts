@@ -136,12 +136,12 @@ describe('Vision Verification - Complete End-to-End Flows', () => {
       await supabase
         .from('vision_verifications')
         .delete()
-        .eq('tenant_id', TEST_COMPANY_ID); // Use tenant_id not company_id
+        .eq('tenant_id', TEST_COMPANY_ID); // Use tenant_id not tenant_id
 
       await supabase
         .from('cost_records')
         .delete()
-        .eq('company_id', TEST_COMPANY_ID);
+        .eq('tenant_id', TEST_COMPANY_ID);
     } catch (error) {
       console.warn('Cleanup error:', error);
     }
@@ -157,7 +157,7 @@ describe('Vision Verification - Complete End-to-End Flows', () => {
       // Act 1: Create verification
       const createResult = await visionService.verifyKit({
         kitId: kit.id,
-        companyId: TEST_COMPANY_ID,
+        tenantId: TEST_COMPANY_ID,
         imageData,
         expectedItems: kit.items,
         maxBudgetUsd: 10.0,
@@ -177,8 +177,8 @@ describe('Vision Verification - Complete End-to-End Flows', () => {
       // Assert 2: Can retrieve verification
       expect(readResult.data).toBeDefined();
       expect(readResult.data?.kit_id).toBe(kit.id);
-      // Note: Database schema uses tenant_id not company_id
-      expect(readResult.data?.tenant_id || readResult.data?.company_id).toBeDefined();
+      // Note: Database schema uses tenant_id not tenant_id
+      expect(readResult.data?.tenant_id || readResult.data?.tenant_id).toBeDefined();
       expect(readResult.data?.processing_method).toMatch(/local_yolo|cloud_vlm/);
 
       // Act 3: Read detected items
@@ -213,7 +213,7 @@ describe('Vision Verification - Complete End-to-End Flows', () => {
 
       // Act: Batch process all kits
       const batchResult = await batchService.verifyBatch({
-        companyId: TEST_COMPANY_ID,
+        tenantId: TEST_COMPANY_ID,
         items: requests,
         maxBudgetUsd: 10.0,
         stopOnError: false, // Continue even if one fails
@@ -248,7 +248,7 @@ describe('Vision Verification - Complete End-to-End Flows', () => {
         requests.push(
           visionService.verifyKit({
             kitId: `kit-budget-test-${i}`,
-            companyId: TEST_COMPANY_ID,
+            tenantId: TEST_COMPANY_ID,
             imageData,
             expectedItems: ['mower', 'trimmer'],
             maxBudgetUsd: dailyBudget,
@@ -319,7 +319,7 @@ describe('Vision Verification - Complete End-to-End Flows', () => {
       // Act: Verify safety kit
       const result = await visionService.verifyKit({
         kitId: safetyKit.id,
-        companyId: TEST_COMPANY_ID,
+        tenantId: TEST_COMPANY_ID,
         imageData,
         expectedItems: safetyKit.items,
         maxBudgetUsd: 10.0
@@ -367,7 +367,7 @@ describe('Vision Verification - Complete End-to-End Flows', () => {
         containers.map(container =>
           visionService.verifyKit({
             kitId: `multi-container-${container.name}`,
-            companyId: TEST_COMPANY_ID,
+            tenantId: TEST_COMPANY_ID,
             imageData: generateImageData(),
             expectedItems: container.items,
             maxBudgetUsd: 10.0
@@ -399,21 +399,21 @@ describe('Vision Verification - Complete End-to-End Flows', () => {
       const verifications = await Promise.all([
         visionService.verifyKit({
           kitId: 'kit-history-1',
-          companyId: TEST_COMPANY_ID,
+          tenantId: TEST_COMPANY_ID,
           imageData,
           expectedItems: ['mower', 'trimmer'],
           maxBudgetUsd: 10.0
         }),
         visionService.verifyKit({
           kitId: 'kit-history-2',
-          companyId: TEST_COMPANY_ID,
+          tenantId: TEST_COMPANY_ID,
           imageData,
           expectedItems: ['chainsaw', 'helmet'],
           maxBudgetUsd: 10.0
         }),
         visionService.verifyKit({
           kitId: 'kit-history-3',
-          companyId: TEST_COMPANY_ID,
+          tenantId: TEST_COMPANY_ID,
           imageData,
           expectedItems: ['blower'],
           maxBudgetUsd: 10.0
@@ -422,7 +422,7 @@ describe('Vision Verification - Complete End-to-End Flows', () => {
 
       // Act: Query verification history
       const history = await verificationRepo.findAll({
-        companyId: TEST_COMPANY_ID,
+        tenantId: TEST_COMPANY_ID,
         limit: 10,
         offset: 0
       });
@@ -466,7 +466,7 @@ describe('Vision Verification - Complete End-to-End Flows', () => {
 
       // Act: Process batch with stopOnError: false
       const batchResult = await batchService.verifyBatch({
-        companyId: TEST_COMPANY_ID,
+        tenantId: TEST_COMPANY_ID,
         items: mixedRequests,
         stopOnError: false,
         concurrency: 1
@@ -504,7 +504,7 @@ describe('Vision Verification - Complete End-to-End Flows', () => {
 
           const result = await visionService.verifyKit({
             kitId: `kit-size-${size.name}`,
-            companyId: TEST_COMPANY_ID,
+            tenantId: TEST_COMPANY_ID,
             imageData,
             expectedItems: ['mower', 'trimmer'],
             maxBudgetUsd: 10.0
@@ -574,7 +574,7 @@ describe('Vision Verification - Complete End-to-End Flows', () => {
 
           const result = await visionService.verifyKit({
             kitId: testCase.kitId,
-            companyId: TEST_COMPANY_ID,
+            tenantId: TEST_COMPANY_ID,
             imageData,
             expectedItems: testCase.expectedItems,
             maxBudgetUsd: 10.0
@@ -605,7 +605,7 @@ describe('Vision Verification - Complete End-to-End Flows', () => {
       const imageData = generateImageData();
       const createResult = await visionService.verifyKit({
         kitId: 'kit-crud-test',
-        companyId: TEST_COMPANY_ID,
+        tenantId: TEST_COMPANY_ID,
         imageData,
         expectedItems: ['mower', 'trimmer'],
         maxBudgetUsd: 10.0
@@ -646,7 +646,7 @@ describe('Vision Verification - Complete End-to-End Flows', () => {
       for (let i = 0; i < 10; i++) {
         const result = await visionService.verifyKit({
           kitId: `kit-optimization-${i}`,
-          companyId: TEST_COMPANY_ID,
+          tenantId: TEST_COMPANY_ID,
           imageData,
           expectedItems: ['mower', 'trimmer', 'blower'],
           maxBudgetUsd: 10.0

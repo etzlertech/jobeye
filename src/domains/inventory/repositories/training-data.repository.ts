@@ -40,14 +40,14 @@ export async function findById(
 }
 
 export async function findByCompany(
-  companyId: string,
+  tenantId: string,
   limit = 100
 ): Promise<{ data: TrainingDataRecord[]; error: Error | null }> {
 
   const { data, error } = await supabase
     .from('training_data_records')
     .select('*')
-    .eq('tenant_id', companyId)
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .limit(limit);
 

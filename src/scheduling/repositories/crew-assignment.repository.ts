@@ -204,11 +204,11 @@ export class CrewAssignmentRepository {
     return true;
   }
 
-  async countByRole(companyId: string, role: CrewAssignment['role']): Promise<number> {
+  async countByRole(tenantId: string, role: CrewAssignment['role']): Promise<number> {
     const { count, error } = await this.supabase
       .from('crew_assignments')
       .select('id', { count: 'exact', head: true })
-      .eq('company_id', companyId)
+      .eq('tenant_id', tenantId)
       .eq('role', role);
 
     if (error) throw error;

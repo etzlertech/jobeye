@@ -48,7 +48,7 @@ describe('Cost Trend Chart - End-to-End Scenarios', () => {
       });
 
       // Act
-      render(<CostTrendChart companyId="company-123" days={30} />);
+      render(<CostTrendChart tenantId="company-123" days={30} />);
 
       // Assert
       await waitFor(() => {
@@ -94,7 +94,7 @@ describe('Cost Trend Chart - End-to-End Scenarios', () => {
       });
 
       // Act
-      render(<CostTrendChart companyId="company-123" days={30} />);
+      render(<CostTrendChart tenantId="company-123" days={30} />);
 
       await waitFor(() => {
         expect(screen.getByText('Cost ($)')).toBeInTheDocument();
@@ -124,7 +124,7 @@ describe('Cost Trend Chart - End-to-End Scenarios', () => {
       });
 
       // Act
-      render(<CostTrendChart companyId="company-123" days={30} />);
+      render(<CostTrendChart tenantId="company-123" days={30} />);
 
       // Assert
       await waitFor(() => {
@@ -144,7 +144,7 @@ describe('Cost Trend Chart - End-to-End Scenarios', () => {
       );
 
       // Act
-      render(<CostTrendChart companyId="company-123" days={30} />);
+      render(<CostTrendChart tenantId="company-123" days={30} />);
 
       // Assert
       expect(screen.getByTestId('loading-skeleton') || document.querySelector('.animate-pulse')).toBeTruthy();
@@ -160,7 +160,7 @@ describe('Cost Trend Chart - End-to-End Scenarios', () => {
       });
 
       // Act
-      render(<CostTrendChart companyId="company-123" days={30} />);
+      render(<CostTrendChart tenantId="company-123" days={30} />);
 
       // Assert
       await waitFor(() => {
@@ -188,7 +188,7 @@ describe('Cost Trend Chart - End-to-End Scenarios', () => {
       });
 
       // Act
-      render(<CostTrendChart companyId="company-123" days={3} />);
+      render(<CostTrendChart tenantId="company-123" days={3} />);
 
       // Assert
       await waitFor(() => {
@@ -225,7 +225,7 @@ describe('Cost Trend Chart - End-to-End Scenarios', () => {
       });
 
       // Act
-      const { container } = render(<CostTrendChart companyId="company-123" days={3} />);
+      const { container } = render(<CostTrendChart tenantId="company-123" days={3} />);
 
       // Assert
       await waitFor(() => {
@@ -259,7 +259,7 @@ describe('Cost Trend Chart - End-to-End Scenarios', () => {
       });
 
       // Act
-      const { container } = render(<CostTrendChart companyId="company-123" days={3} />);
+      const { container } = render(<CostTrendChart tenantId="company-123" days={3} />);
 
       // Assert
       await waitFor(() => {
@@ -288,7 +288,7 @@ describe('Cost Trend Chart - End-to-End Scenarios', () => {
       });
 
       // Act
-      const { container } = render(<CostTrendChart companyId="company-123" days={1} />);
+      const { container } = render(<CostTrendChart tenantId="company-123" days={1} />);
 
       // Assert
       await waitFor(() => {
@@ -319,7 +319,7 @@ describe('Cost Trend Chart - End-to-End Scenarios', () => {
       });
 
       // Act
-      render(<CostTrendChart companyId="company-123" days={30} />);
+      render(<CostTrendChart tenantId="company-123" days={30} />);
 
       // Wait for error
       await waitFor(() => {

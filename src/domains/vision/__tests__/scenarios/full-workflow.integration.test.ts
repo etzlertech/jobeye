@@ -193,7 +193,7 @@ describe('Vision System - Full Workflow Integration', () => {
 
       const batchService = getBatchVerificationService();
       const batchResult = await batchService.verifyBatch({
-        companyId: 'company-123',
+        tenantId: 'company-123',
         items: batchItems,
         concurrency: 2,
         stopOnError: false
@@ -223,7 +223,7 @@ describe('Vision System - Full Workflow Integration', () => {
         const blob = await pdfService.generateReport({
           ...verification.result!,
           kitId: verification.kitId,
-          companyId: 'company-123'
+          tenantId: 'company-123'
         });
         pdfReports.push(blob);
       }
@@ -246,7 +246,7 @@ describe('Vision System - Full Workflow Integration', () => {
         const narratePromise = voiceService.narrateResult({
           ...incompleteVerification.result,
           kitId: incompleteVerification.kitId,
-          companyId: 'company-123'
+          tenantId: 'company-123'
         });
 
         // Simulate narration completion
@@ -280,7 +280,7 @@ describe('Vision System - Full Workflow Integration', () => {
 
         const queuePromise = offlineQueue.enqueue({
           kitId: failedVerification.kitId,
-          companyId: 'company-123',
+          tenantId: 'company-123',
           imageData: batchItems[4].imageData,
           expectedItems: batchItems[4].expectedItems,
           maxBudgetUsd: 10.0,
@@ -394,7 +394,7 @@ describe('Vision System - Full Workflow Integration', () => {
 
       const batchService = getBatchVerificationService();
       const result = await batchService.verifyBatch({
-        companyId: 'company-123',
+        tenantId: 'company-123',
         items: largeBatch,
         concurrency: 5
       });

@@ -18,7 +18,7 @@ export interface CostAlert {
 }
 
 export interface CostSummary {
-  companyId: string;
+  tenantId: string;
   todayCost: number;
   todayRequests: number;
   totalCost: number;
@@ -49,12 +49,12 @@ export class CostTrackingService {
    * Check if a VLM request is within budget
    */
   async checkBudget(
-    companyId: string,
+    tenantId: string,
     dailyBudgetUsd?: number,
     dailyRequestLimit?: number
   ): Promise<BudgetCheckResult> {
     const budgetCheck = await costRecordRepo.canMakeVlmRequest(
-      companyId,
+      tenantId,
       dailyBudgetUsd,
       dailyRequestLimit
     );
@@ -88,7 +88,7 @@ export class CostTrackingService {
    * Record a VLM cost
    */
   async recordCost(
-    companyId: string,
+    tenantId: string,
     verificationId: string,
     costUsd: number,
     provider: string,
@@ -97,7 +97,7 @@ export class CostTrackingService {
     imageSizeBytes?: number
   ): Promise<{ success: boolean; error?: string }> {
     const result = await costRecordRepo.createCostRecord({
-      company_id: companyId,
+      tenant_id: tenantId,
       verification_id: verificationId,
       cost_usd: costUsd,
       provider,
@@ -119,9 +119,9 @@ export class CostTrackingService {
   /**
    * Get today's cost summary
    */
-  async getTodayCostSummary(companyId: string): Promise<CostSummary> {
-    const todayResult = await costRecordRepo.getTodaysCost(companyId);
-    const totalResult = await costRecordRepo.getTotalCost(companyId);
+  async getTodayCostSummary(tenantId: string): Promise<CostSummary> {
+    const todayResult = await costRecordRepo.getTodaysCost(tenantId);
+    const totalResult = await costRecordRepo.getTotalCost(tenantId);
 
     if (todayResult.error || !todayResult.data) {
       throw new Error(`Failed to get today's cost: ${todayResult.error?.message}`);
@@ -137,7 +137,7 @@ export class CostTrackingService {
         : 0;
 
     return {
-      companyId,
+      tenantId,
       todayCost: todayResult.data.totalCost,
       todayRequests: todayResult.data.requestCount,
       totalCost: totalResult.data.totalCost,
@@ -150,7 +150,7 @@ export class CostTrackingService {
    * Get cost breakdown by provider
    */
   async getCostBreakdownByProvider(
-    companyId: string,
+    tenantId: string,
     startDate?: string,
     endDate?: string
   ): Promise<Array<{
@@ -159,7 +159,7 @@ export class CostTrackingService {
     requestCount: number;
     avgCost: number;
   }>> {
-    const result = await costRecordRepo.getCostStatsByProvider(companyId, startDate, endDate);
+    const result = await costRecordRepo.getCostStatsByProvider(tenantId, startDate, endDate);
 
     if (result.error || !result.data) {
       throw new Error(`Failed to get cost breakdown: ${result.error?.message}`);
@@ -172,7 +172,7 @@ export class CostTrackingService {
    * Get daily cost summaries for a date range
    */
   async getDailyCostSummaries(
-    companyId: string,
+    tenantId: string,
     startDate: string,
     endDate: string
   ): Promise<Array<{
@@ -181,7 +181,7 @@ export class CostTrackingService {
     requestCount: number;
     avgCostPerRequest: number;
   }>> {
-    const result = await costRecordRepo.getDailyCostSummaries(companyId, startDate, endDate);
+    const result = await costRecordRepo.getDailyCostSummaries(tenantId, startDate, endDate);
 
     if (result.error || !result.data) {
       throw new Error(`Failed to get daily summaries: ${result.error?.message}`);
@@ -255,7 +255,7 @@ export class CostTrackingService {
    * Get daily cost summaries for date range
    */
   async getDailyCostSummaries(
-    companyId: string,
+    tenantId: string,
     startDate: string,
     endDate: string
   ): Promise<Array<{
@@ -264,7 +264,7 @@ export class CostTrackingService {
     requestCount: number;
   }>> {
     const result = await costRecordRepo.findCostRecords({
-      tenantId: companyId,
+      tenantId: tenantId,
       startDate,
       endDate,
       limit: 1000

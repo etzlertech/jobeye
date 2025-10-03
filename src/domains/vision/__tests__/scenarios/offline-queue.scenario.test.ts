@@ -57,7 +57,7 @@ describe('Offline Queue - End-to-End Scenarios', () => {
       // Act: Enqueue verification
       const queueId = await queue.enqueue({
         kitId: 'kit-001',
-        companyId: 'company-123',
+        tenantId: 'company-123',
         imageData,
         expectedItems: ['wrench', 'hammer'],
         maxBudgetUsd: 10.0,
@@ -81,7 +81,7 @@ describe('Offline Queue - End-to-End Scenarios', () => {
       expect(items[0]).toMatchObject({
         id: queueId,
         kitId: 'kit-001',
-        companyId: 'company-123',
+        tenantId: 'company-123',
         status: 'pending',
         attempts: 0
       });
@@ -102,7 +102,7 @@ describe('Offline Queue - End-to-End Scenarios', () => {
 
       const queueId = await queue.enqueue({
         kitId: 'kit-001',
-        companyId: 'company-123',
+        tenantId: 'company-123',
         imageData,
         expectedItems: ['wrench'],
         maxBudgetUsd: 10.0,
@@ -156,7 +156,7 @@ describe('Offline Queue - End-to-End Scenarios', () => {
 
       await queue.enqueue({
         kitId: 'kit-001',
-        companyId: 'company-123',
+        tenantId: 'company-123',
         imageData,
         expectedItems: ['wrench'],
         maxBudgetUsd: 10.0,
@@ -165,7 +165,7 @@ describe('Offline Queue - End-to-End Scenarios', () => {
 
       await queue.enqueue({
         kitId: 'kit-002',
-        companyId: 'company-123',
+        tenantId: 'company-123',
         imageData,
         expectedItems: ['hammer'],
         maxBudgetUsd: 10.0,
@@ -192,7 +192,7 @@ describe('Offline Queue - End-to-End Scenarios', () => {
 
       await queue.enqueue({
         kitId: 'kit-001',
-        companyId: 'company-123',
+        tenantId: 'company-123',
         imageData,
         expectedItems: ['wrench'],
         maxBudgetUsd: 10.0,
@@ -224,7 +224,7 @@ describe('Offline Queue - End-to-End Scenarios', () => {
 
       const queueId = await queue.enqueue({
         kitId: 'kit-001',
-        companyId: 'company-123',
+        tenantId: 'company-123',
         imageData,
         expectedItems: ['wrench'],
         maxBudgetUsd: 10.0,

@@ -232,11 +232,11 @@ export class JobKitRepository {
     return true;
   }
 
-  async countByStatus(companyId: string): Promise<Record<string, number>> {
+  async countByStatus(tenantId: string): Promise<Record<string, number>> {
     const { data, error } = await this.supabase
       .from('job_kits')
       .select('verification_status')
-      .eq('company_id', companyId);
+      .eq('tenant_id', tenantId);
 
     if (error) throw error;
 

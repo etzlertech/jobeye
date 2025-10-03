@@ -16,7 +16,7 @@ type VisionVerificationInsert = Database['public']['Tables']['vision_verificatio
 type VisionVerificationUpdate = Database['public']['Tables']['vision_verifications']['Update'];
 
 export interface VisionVerificationFilter {
-  companyId?: string;
+  tenantId?: string;
   kitId?: string;
   jobId?: string;
   verificationResult?: 'complete' | 'incomplete' | 'failed' | 'unverified';
@@ -51,7 +51,7 @@ export async function findVerificationById(
  */
 export async function findById(
   id: string,
-  companyId: string
+  tenantId: string
 ): Promise<{ data: VisionVerification | null; error: Error | null }> {
   return findVerificationById(id);
 }
@@ -74,7 +74,7 @@ export async function findAll(
  */
 export async function deleteById(
   id: string,
-  companyId: string
+  tenantId: string
 ): Promise<{ error: Error | null }> {
   return deleteVerification(id);
 }
@@ -91,8 +91,8 @@ export async function findVerifications(
     .select('*', { count: 'exact' });
 
   // Apply filters
-  if (filter.companyId) {
-    query = query.eq('tenant_id', filter.companyId);
+  if (filter.tenantId) {
+    query = query.eq('tenant_id', filter.tenantId);
   }
 
   if (filter.kitId) {
@@ -197,7 +197,7 @@ export async function deleteVerification(
  * Get verification statistics for a company
  */
 export async function getVerificationStats(
-  companyId: string,
+  tenantId: string,
   startDate?: string,
   endDate?: string
 ): Promise<{
@@ -216,7 +216,7 @@ export async function getVerificationStats(
   let query = supabase
     .from('vision_verifications')
     .select('verification_result, processing_method, confidence_score')
-    .eq('tenant_id', companyId);
+    .eq('tenant_id', tenantId);
 
   if (startDate) {
     query = query.gte('verified_at', startDate);

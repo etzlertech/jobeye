@@ -46,7 +46,7 @@ type ScheduleEventInsert = Tables['schedule_events']['Insert'];
 interface CreateDayPlanInput {
   user_id: string;
   plan_date: string;
-  schedule_events?: Array<Omit<ScheduleEventInsert, 'day_plan_id' | 'company_id' | 'id' | 'created_at' | 'updated_at'>>;
+  schedule_events?: Array<Omit<ScheduleEventInsert, 'day_plan_id' | 'tenant_id' | 'id' | 'created_at' | 'updated_at'>>;
   route_data?: any;
   voice_session_id?: string;
 }
@@ -88,11 +88,11 @@ export class DayPlanService {
     }
 
     // Get company ID from auth context (mock for now)
-    const companyId = '00000000-0000-4000-a000-000000000003';
+    const tenantId = '00000000-0000-4000-a000-000000000003';
 
     // Create the day plan
     const dayPlan = await this.dayPlanRepo.create({
-      company_id: companyId,
+      tenant_id: tenantId,
       user_id: input.user_id,
       plan_date: input.plan_date,
       status: 'draft',

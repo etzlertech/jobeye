@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     // Check if demo mode
     const isDemo = request.headers.get('x-is-demo') === 'true';
-    const companyId = request.headers.get('x-tenant-id');
+    const tenantId = request.headers.get('x-tenant-id');
 
     if (isDemo) {
       // Return mock inventory for demo mode
@@ -164,8 +164,8 @@ export async function GET(request: NextRequest) {
       `, { count: 'exact' });
 
     // Add filters
-    if (companyId) {
-      query = query.eq('company_id', companyId);
+    if (tenantId) {
+      query = query.eq('tenant_id', tenantId);
     }
 
     if (category && category !== 'all') {
@@ -193,8 +193,8 @@ export async function GET(request: NextRequest) {
       .from('inventory_items')
       .select('status, current_quantity, reorder_level', { count: 'exact' });
 
-    if (companyId) {
-      statsQuery.eq('company_id', companyId);
+    if (tenantId) {
+      statsQuery.eq('tenant_id', tenantId);
     }
 
     const { data: allItems } = await statsQuery;
@@ -239,8 +239,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get company ID from headers
-    const companyId = request.headers.get('x-tenant-id');
-    if (!companyId) {
+    const tenantId = request.headers.get('x-tenant-id');
+    if (!tenantId) {
       return validationError('Company ID required');
     }
 
@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
           status: 'active',
           type: body.category === 'equipment' ? 'equipment' : 'material',
           tracking_mode: body.category === 'equipment' ? 'individual' : 'quantity',
-          company_id: companyId,
+          tenant_id: tenantId,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         },
@@ -278,7 +278,7 @@ export async function POST(request: NextRequest) {
       type,
       tracking_mode: trackingMode,
       status: 'active',
-      company_id: companyId,
+      tenant_id: tenantId,
       specifications: body.container ? { container: body.container } : {}
     };
 

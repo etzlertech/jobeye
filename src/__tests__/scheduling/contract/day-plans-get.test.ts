@@ -189,7 +189,7 @@ describe('GET /api/scheduling/day-plans', () => {
 
     expect(response.status).toBe(200);
     // All returned plans should belong to the authenticated company
-    // The actual company_id check will be enforced by RLS policies
+    // The actual tenant_id check will be enforced by RLS policies
     expect(data.plans).toBeDefined();
   });
 });

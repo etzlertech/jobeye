@@ -34,11 +34,11 @@ const KIT_SELECT =
 export class KitRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  async listKits(companyId: string): Promise<KitDetail[]> {
+  async listKits(tenantId: string): Promise<KitDetail[]> {
     const { data, error } = await this.supabase
       .from('kits')
       .select(KIT_SELECT)
-      .eq('tenant_id', companyId)
+      .eq('tenant_id', tenantId)
       .order('kit_code', { ascending: true });
 
     if (error) {
@@ -48,11 +48,11 @@ export class KitRepository {
     return (data as KitRow[] | null)?.map((row) => this.mapKitRowToDetail(row)) ?? [];
   }
 
-  async getKitById(kitId: string, companyId: string): Promise<KitDetail | null> {
+  async getKitById(kitId: string, tenantId: string): Promise<KitDetail | null> {
     const { data, error } = await this.supabase
       .from('kits')
       .select(KIT_SELECT)
-      .eq('tenant_id', companyId)
+      .eq('tenant_id', tenantId)
       .eq('id', kitId)
       .maybeSingle();
 
@@ -67,11 +67,11 @@ export class KitRepository {
     return this.mapKitRowToDetail(data as KitRow);
   }
 
-  async findActiveKitByCode(companyId: string, kitCode: string): Promise<KitDetail | null> {
+  async findActiveKitByCode(tenantId: string, kitCode: string): Promise<KitDetail | null> {
     const { data, error } = await this.supabase
       .from('kits')
       .select(KIT_SELECT)
-      .eq('tenant_id', companyId)
+      .eq('tenant_id', tenantId)
       .eq('kit_code', kitCode)
       .eq('is_active', true)
       .maybeSingle();
@@ -87,9 +87,9 @@ export class KitRepository {
     return this.mapKitRowToDetail(data as KitRow);
   }
 
-  async createKit(input: CreateKitInput, companyId: string): Promise<KitDetail> {
+  async createKit(input: CreateKitInput, tenantId: string): Promise<KitDetail> {
     const kitInsert = {
-      tenant_id: companyId,
+      tenant_id: tenantId,
       kit_code: input.kitCode,
       name: input.name,
       is_active: input.isActive ?? true,
@@ -109,7 +109,7 @@ export class KitRepository {
     const kitId = (kitData as { id: string }).id;
 
     if (input.items.length > 0) {
-      const itemsPayload = this.buildItemPayloads(input.items, companyId, kitId);
+      const itemsPayload = this.buildItemPayloads(input.items, tenantId, kitId);
       const { error: itemError } = await this.supabase.from('kit_items').insert(itemsPayload);
 
       if (itemError) {
@@ -118,7 +118,7 @@ export class KitRepository {
       }
     }
 
-    const created = await this.getKitById(kitId, companyId);
+    const created = await this.getKitById(kitId, tenantId);
     if (!created) {
       throw new Error('Kit created but could not be reloaded');
     }
@@ -126,9 +126,9 @@ export class KitRepository {
     return created;
   }
 
-  private buildItemPayloads(items: KitItemInput[], companyId: string, kitId: string) {
+  private buildItemPayloads(items: KitItemInput[], tenantId: string, kitId: string) {
     return items.map((item) => ({
-      tenant_id: companyId,
+      tenant_id: tenantId,
       kit_id: kitId,
       item_type: item.itemType,
       quantity: item.quantity,
@@ -141,7 +141,7 @@ export class KitRepository {
   private mapKitRowToDetail(row: KitRow): KitDetail {
     return {
       id: row.id,
-      companyId: row.tenant_id,
+      tenantId: row.tenant_id,
       kitCode: row.kit_code,
       name: row.name,
       isActive: row.is_active,

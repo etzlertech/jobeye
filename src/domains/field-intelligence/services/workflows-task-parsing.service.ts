@@ -95,7 +95,7 @@ const DEFAULT_CONFIG: TaskParsingConfig = {
  *
  * @example
  * ```typescript
- * const parsingService = new WorkflowsTaskParsingService(supabase, companyId, openaiKey);
+ * const parsingService = new WorkflowsTaskParsingService(supabase, tenantId, openaiKey);
  *
  * // Parse voice transcript into tasks
  * const result = await parsingService.parseVoiceToTasks(
@@ -113,11 +113,11 @@ export class WorkflowsTaskParsingService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string,
+    private tenantId: string,
     private openaiApiKey: string,
     config?: Partial<TaskParsingConfig>
   ) {
-    // TODO: this.tasksRepository = new WorkflowsParsedTasksRepository(client, companyId)
+    // TODO: this.tasksRepository = new WorkflowsParsedTasksRepository(client, tenantId)
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 

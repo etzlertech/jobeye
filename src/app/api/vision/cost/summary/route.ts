@@ -27,15 +27,15 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
-    const companyId = searchParams.get('companyId');
+    const tenantId = searchParams.get('tenantId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const breakdown = searchParams.get('breakdown'); // 'provider' or 'daily'
 
-    // Validate companyId
-    if (!companyId) {
+    // Validate tenantId
+    if (!tenantId) {
       return NextResponse.json(
-        { error: 'companyId query parameter is required' },
+        { error: 'tenantId query parameter is required' },
         { status: 400 }
       );
     }
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     const service = getCostTrackingService();
 
     // Get base summary
-    const summary = await service.getTodayCostSummary(companyId);
+    const summary = await service.getTodayCostSummary(tenantId);
 
     // Get optional breakdowns
     let providerBreakdown = null;
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
     if (breakdown === 'provider' || breakdown === 'all') {
       providerBreakdown = await service.getCostBreakdownByProvider(
-        companyId,
+        tenantId,
         startDate || undefined,
         endDate || undefined
       );
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     if (breakdown === 'daily' || breakdown === 'all') {
       if (startDate && endDate) {
         dailyBreakdown = await service.getDailyCostSummaries(
-          companyId,
+          tenantId,
           startDate,
           endDate
         );

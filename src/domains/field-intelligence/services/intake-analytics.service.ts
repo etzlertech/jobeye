@@ -103,7 +103,7 @@ export interface TrendDataPoint {
  *
  * @example
  * ```typescript
- * const analyticsService = new IntakeAnalyticsService(supabase, companyId);
+ * const analyticsService = new IntakeAnalyticsService(supabase, tenantId);
  *
  * // Get source performance
  * const sources = await analyticsService.getSourcePerformance();
@@ -122,9 +122,9 @@ export class IntakeAnalyticsService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string
+    private tenantId: string
   ) {
-    // TODO: this.requestsRepository = new IntakeRequestsRepository(client, companyId);
+    // TODO: this.requestsRepository = new IntakeRequestsRepository(client, tenantId);
   }
 
   /**

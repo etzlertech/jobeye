@@ -44,9 +44,9 @@ export async function GET(request: Request) {
     const auth = await requireSession();
     if ('response' in auth) return auth.response;
 
-    const companyId = extractCompanyId(auth.session, request);
+    const tenantId = extractCompanyId(auth.session, request);
     const kitService = buildKitService();
-    const kits = await kitService.listKits(companyId);
+    const kits = await kitService.listKits(tenantId);
 
     return NextResponse.json(
       {
@@ -79,9 +79,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const companyId = extractCompanyId(auth.session, request);
+    const tenantId = extractCompanyId(auth.session, request);
     const kitService = buildKitService();
-    const kit = await kitService.createKitWithSteps(parsed.data, companyId);
+    const kit = await kitService.createKitWithSteps(parsed.data, tenantId);
 
     return NextResponse.json(
       {

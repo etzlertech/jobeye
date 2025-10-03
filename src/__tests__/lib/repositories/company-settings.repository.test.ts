@@ -4,7 +4,7 @@ jest.mock('@/lib/supabase/client');
 
 const defaultRow = {
   id: 'settings-123',
-  company_id: 'company-123',
+  tenant_id: 'company-123',
   vision_thresholds: {
     confidenceThreshold: 0.7,
     maxObjects: 20,
@@ -84,9 +84,9 @@ describe('CompanySettingsRepository', () => {
     const settings = await repository.ensureForCompany('company-123');
 
     expect(selectMock).toHaveBeenCalledWith('*');
-    expect(selectEqMock).toHaveBeenCalledWith('company_id', 'company-123');
-    expect(insertMock).toHaveBeenCalledWith({ company_id: 'company-123' });
-    expect(settings.companyId).toBe('company-123');
+    expect(selectEqMock).toHaveBeenCalledWith('tenant_id', 'company-123');
+    expect(insertMock).toHaveBeenCalledWith({ tenant_id: 'company-123' });
+    expect(settings.tenantId).toBe('company-123');
     expect(settings.visionThresholds.confidenceThreshold).toBe(0.7);
     expect(settings.voicePreferences.wakeWord).toBe('Hey JobEye');
     expect(settings.budgetLimits.tts).toBe(5);
@@ -133,7 +133,7 @@ describe('CompanySettingsRepository', () => {
     const result = await repository.updateVisionThresholds('company-123', thresholds);
 
     expect(updateMock).toHaveBeenCalledWith({ vision_thresholds: thresholds });
-    expect(updateEqMock).toHaveBeenCalledWith('company_id', 'company-123');
+    expect(updateEqMock).toHaveBeenCalledWith('tenant_id', 'company-123');
     expect(result.visionThresholds).toEqual(thresholds);
     expect(result.voicePreferences.wakeWord).toBe('Hey JobEye');
   });
@@ -174,7 +174,7 @@ describe('CompanySettingsRepository', () => {
       data: {
         user: {
           id: 'user-1',
-          user_metadata: { company_id: 'company-123' },
+          user_metadata: { tenant_id: 'company-123' },
           app_metadata: {},
         },
       },
@@ -183,7 +183,7 @@ describe('CompanySettingsRepository', () => {
 
     const ownSettings = await repository.getForCurrentCompany();
 
-    expect(selectEqMock).toHaveBeenCalledWith('company_id', 'company-123');
-    expect(ownSettings.companyId).toBe('company-123');
+    expect(selectEqMock).toHaveBeenCalledWith('tenant_id', 'company-123');
+    expect(ownSettings.tenantId).toBe('company-123');
   });
 });

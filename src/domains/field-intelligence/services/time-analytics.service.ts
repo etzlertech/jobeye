@@ -122,7 +122,7 @@ export interface LaborCostForecast {
  *
  * @example
  * ```typescript
- * const analyticsService = new TimeAnalyticsService(supabase, companyId);
+ * const analyticsService = new TimeAnalyticsService(supabase, tenantId);
  *
  * // Get labor utilization
  * const utilization = await analyticsService.getLaborUtilization(startDate, endDate);
@@ -138,9 +138,9 @@ export class TimeAnalyticsService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string
+    private tenantId: string
   ) {
-    // TODO: this.timeEntriesRepository = new TimeEntriesRepository(client, companyId);
+    // TODO: this.timeEntriesRepository = new TimeEntriesRepository(client, tenantId);
   }
 
   /**

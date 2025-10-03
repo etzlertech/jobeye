@@ -108,7 +108,7 @@ export interface TaskParsingAccuracy {
  *
  * @example
  * ```typescript
- * const analyticsService = new WorkflowsAnalyticsService(supabase, companyId);
+ * const analyticsService = new WorkflowsAnalyticsService(supabase, tenantId);
  *
  * // Get task performance
  * const performance = await analyticsService.getTaskPerformance('MOW');
@@ -127,15 +127,15 @@ export class WorkflowsAnalyticsService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string
+    private tenantId: string
   ) {
     // TODO: this.arrivalsRepository = new WorkflowsJobArrivalsRepository(
     //   client,
-    //   companyId
+    //   tenantId
     // );
     // TODO: this.completionRepository = new WorkflowsCompletionRecordsRepository(
     //   client,
-    //   companyId
+    //   tenantId
     // );
   }
 

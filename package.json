@@ -41,6 +41,16 @@
     "check:security": "tsx scripts/security/check-dependencies.sh",
     "check:context": "tsx scripts/dev/context-check.sh",
     "check:db-actual": "tsx scripts/check-actual-db.ts",
+    "cleanup:analyze-schema": "tsx scripts/validation/analyze-schema.ts",
+    "cleanup:analyze-code": "tsx scripts/validation/analyze-code-patterns.ts",
+    "cleanup:find-orphaned": "tsx scripts/validation/find-orphaned-tables.ts",
+    "cleanup:migrate-tenant": "tsx scripts/migrations/migrate-company-to-tenant.ts",
+    "cleanup:update-rls": "tsx scripts/migrations/update-rls-policies.ts",
+    "cleanup:rollback": "tsx scripts/migrations/rollback-tenant-migration.ts",
+    "cleanup:convert-repos": "tsx scripts/migrations/convert-to-class-repository.ts",
+    "cleanup:remove-orphaned": "tsx scripts/migrations/remove-orphaned-tables.ts",
+    "cleanup:scan-violations": "tsx scripts/validation/scan-violations.ts",
+    "cleanup:full-analysis": "npm run cleanup:analyze-schema && npm run cleanup:analyze-code && npm run cleanup:find-orphaned",
     "analyze:supabase": "tsx supabase-analysis/scripts/analyze-supabase-live.ts",
     "analyze:supabase:migrations": "tsx supabase-analysis/scripts/analyze-supabase-complete.ts",
     "analyze:supabase:simple": "tsx supabase-analysis/scripts/analyze-supabase.ts",
@@ -100,6 +110,7 @@
     "dexie": "^4.2.0",
     "fuse.js": "^7.1.0",
     "idb": "^8.0.3",
+    "js-yaml": "^4.1.0",
     "lucide-react": "^0.544.0",
     "mapbox-gl": "^3.15.0",
     "next": "14.2.0",
@@ -116,8 +127,7 @@
     "uuid": "^13.0.0",
     "wav": "^1.0.2",
     "workbox-core": "^7.3.0",
-    "zod": "^3.23.8",
-    "js-yaml": "^4.1.0"
+    "zod": "^3.23.8"
   },
   "optionalDependencies": {
     "speaker": "^0.5.5"
@@ -136,7 +146,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
+    "@typescript-eslint/parser": "^7.18.0",
     "autoprefixer": "^10.4.21",
     "babel-jest": "^30.1.2",
     "dotenv": "^17.2.2",
@@ -158,6 +168,7 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11",
     "ts-jest": "^29.1.0",
+    "ts-morph": "^27.0.0",
     "tsx": "^4.15.0"
   },
   "engines": {

@@ -42,7 +42,7 @@ type Tables = Database['public']['Tables'];
 type ScheduleEventInsert = Tables['schedule_events']['Insert'];
 type ScheduleEvent = Tables['schedule_events']['Row'];
 
-interface ScheduleEventInput extends Omit<ScheduleEventInsert, 'company_id' | 'id' | 'created_at' | 'updated_at'> {
+interface ScheduleEventInput extends Omit<ScheduleEventInsert, 'tenant_id' | 'id' | 'created_at' | 'updated_at'> {
   day_plan_id: string;
 }
 
@@ -74,7 +74,7 @@ export class SchedulingService {
     // Create the event
     const event = await this.scheduleEventRepo.create({
       ...input,
-      company_id: dayPlan.company_id
+      tenant_id: dayPlan.tenant_id
     });
 
     // Check if we need to send notifications

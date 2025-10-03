@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     // Check if demo mode
     const isDemo = request.headers.get('x-is-demo') === 'true';
-    const companyId = request.headers.get('x-tenant-id');
+    const tenantId = request.headers.get('x-tenant-id');
 
     if (isDemo) {
       // Return mock properties for demo mode
@@ -100,8 +100,8 @@ export async function GET(request: NextRequest) {
       .select('*, customer:customers(name)', { count: 'exact' });
 
     // Add filters
-    if (companyId) {
-      query = query.eq('company_id', companyId);
+    if (tenantId) {
+      query = query.eq('tenant_id', tenantId);
     }
 
     if (customerId) {
@@ -146,8 +146,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get company ID from headers
-    const companyId = request.headers.get('x-tenant-id');
-    if (!companyId) {
+    const tenantId = request.headers.get('x-tenant-id');
+    if (!tenantId) {
       return validationError('Company ID required');
     }
 
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
         property: {
           id: Date.now().toString(),
           ...body,
-          company_id: companyId,
+          tenant_id: tenantId,
           created_at: new Date().toISOString()
         },
         message: 'Property created successfully (demo mode - not saved to database)',
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
       .from('properties')
       .insert({
         ...body,
-        company_id: companyId
+        tenant_id: tenantId
       })
       .select()
       .single();

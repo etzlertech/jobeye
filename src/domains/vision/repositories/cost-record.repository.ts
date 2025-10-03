@@ -15,7 +15,7 @@ type CostRecord = Database['public']['Tables']['vision_cost_records']['Row'];
 type CostRecordInsert = Database['public']['Tables']['vision_cost_records']['Insert'];
 
 export interface CostRecordFilter {
-  companyId?: string;
+  tenantId?: string;
   provider?: string;
   startDate?: string; // ISO date
   endDate?: string; // ISO date
@@ -61,8 +61,8 @@ export async function findCostRecords(
     .select('*', { count: 'exact' });
 
   // Apply filters
-  if (filter.companyId) {
-    query = query.eq('tenant_id', filter.companyId);
+  if (filter.tenantId) {
+    query = query.eq('tenant_id', filter.tenantId);
   }
 
   if (filter.provider) {
@@ -117,7 +117,7 @@ export async function createCostRecord(
  * Get today's cost for a company
  */
 export async function getTodaysCost(
-  companyId: string
+  tenantId: string
 ): Promise<{ data: { totalCost: number; requestCount: number } | null; error: Error | null }> {
 
   // Get start of today in UTC
@@ -128,7 +128,7 @@ export async function getTodaysCost(
   const { data, error } = await supabase
     .from('vision_cost_records')
     .select('cost_usd')
-    .eq('tenant_id', companyId)
+    .eq('tenant_id', tenantId)
     .gte('created_at', todayISO);
 
   if (error) {
@@ -151,7 +151,7 @@ export async function getTodaysCost(
  * Get daily cost summaries for a date range
  */
 export async function getDailyCostSummaries(
-  companyId: string,
+  tenantId: string,
   startDate: string,
   endDate: string
 ): Promise<{ data: DailyCostSummary[]; error: Error | null }> {
@@ -159,7 +159,7 @@ export async function getDailyCostSummaries(
   const { data, error } = await supabase
     .from('vision_cost_records')
     .select('created_at, cost_usd')
-    .eq('tenant_id', companyId)
+    .eq('tenant_id', tenantId)
     .gte('created_at', startDate)
     .lte('created_at', endDate)
     .order('created_at', { ascending: true });
@@ -204,7 +204,7 @@ export async function getDailyCostSummaries(
  * Get total cost for a company within date range
  */
 export async function getTotalCost(
-  companyId: string,
+  tenantId: string,
   startDate?: string,
   endDate?: string
 ): Promise<{ data: { totalCost: number; requestCount: number } | null; error: Error | null }> {
@@ -212,7 +212,7 @@ export async function getTotalCost(
   let query = supabase
     .from('vision_cost_records')
     .select('cost_usd')
-    .eq('tenant_id', companyId);
+    .eq('tenant_id', tenantId);
 
   if (startDate) {
     query = query.gte('created_at', startDate);
@@ -244,7 +244,7 @@ export async function getTotalCost(
  * Check if company can make VLM request based on budget
  */
 export async function canMakeVlmRequest(
-  companyId: string,
+  tenantId: string,
   dailyBudgetLimit: number = 10.0,
   dailyRequestLimit: number = 100
 ): Promise<{
@@ -258,7 +258,7 @@ export async function canMakeVlmRequest(
   } | null;
   error: Error | null;
 }> {
-  const { data, error } = await getTodaysCost(companyId);
+  const { data, error } = await getTodaysCost(tenantId);
 
   if (error) {
     return { data: null, error };
@@ -296,7 +296,7 @@ export async function canMakeVlmRequest(
  * Get cost statistics by provider
  */
 export async function getCostStatsByProvider(
-  companyId: string,
+  tenantId: string,
   startDate?: string,
   endDate?: string
 ): Promise<{
@@ -312,7 +312,7 @@ export async function getCostStatsByProvider(
   let query = supabase
     .from('vision_cost_records')
     .select('provider, cost_usd')
-    .eq('tenant_id', companyId);
+    .eq('tenant_id', tenantId);
 
   if (startDate) {
     query = query.gte('created_at', startDate);

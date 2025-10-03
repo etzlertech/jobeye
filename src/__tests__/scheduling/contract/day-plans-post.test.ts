@@ -32,7 +32,7 @@ describe('POST /api/scheduling/day-plans', () => {
         'authorization': 'Bearer mock-token'
       },
       body: {
-        company_id: '00000000-0000-0000-0000-000000000001',
+        tenant_id: '00000000-0000-0000-0000-000000000001',
         user_id: '123e4567-e89b-12d3-a456-426614174000',
         plan_date: '2024-01-15',
         route_data: {
@@ -71,7 +71,7 @@ describe('POST /api/scheduling/day-plans', () => {
         'authorization': 'Bearer mock-token'
       },
       body: {
-        company_id: '00000000-0000-0000-0000-000000000001',
+        tenant_id: '00000000-0000-0000-0000-000000000001',
         user_id: '123e4567-e89b-12d3-a456-426614174000',
         plan_date: '2024-01-15',
         schedule_events: Array(7).fill({

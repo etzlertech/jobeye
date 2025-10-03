@@ -10,7 +10,7 @@
 export interface QueuedVerification {
   id: string;
   kitId: string;
-  companyId: string;
+  tenantId: string;
   imageData: ImageData;
   expectedItems: string[];
   maxBudgetUsd?: number;
@@ -289,7 +289,7 @@ export class OfflineVerificationQueue {
           },
           body: JSON.stringify({
             kitId: verification.kitId,
-            companyId: verification.companyId,
+            tenantId: verification.tenantId,
             imageData: Array.from(verification.imageData.data),
             expectedItems: verification.expectedItems,
             maxBudgetUsd: verification.maxBudgetUsd,

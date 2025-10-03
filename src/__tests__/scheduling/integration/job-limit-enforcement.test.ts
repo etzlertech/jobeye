@@ -49,7 +49,7 @@ describe('Job Limit Enforcement', () => {
     await supabase
       .from('day_plans')
       .delete()
-      .eq('company_id', testCompanyId)
+      .eq('tenant_id', testCompanyId)
       .gte('created_at', new Date(Date.now() - 3600000).toISOString());
   });
 

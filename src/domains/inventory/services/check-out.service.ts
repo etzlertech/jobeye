@@ -25,7 +25,7 @@ import type {
 import { getOfflineInventoryQueue } from './offline-queue.service';
 
 export interface CheckOutRequest {
-  companyId: string;
+  tenantId: string;
   userId: string;
   itemIds: string[];
   jobId?: string;
@@ -51,7 +51,7 @@ export async function checkOut(
   request: CheckOutRequest
 ): Promise<CheckOutResult> {
   const {
-    companyId,
+    tenantId,
     userId,
     itemIds,
     jobId,
@@ -66,7 +66,7 @@ export async function checkOut(
   const offlineQueue = getOfflineInventoryQueue();
   if (!offlineQueue.getIsOnline()) {
     await offlineQueue.enqueue({
-      companyId,
+      tenantId,
       userId,
       type: 'check_out',
       payload: request,
@@ -130,7 +130,7 @@ export async function checkOut(
 
       // Step 5: Create transaction record
       const transactionResult = await inventoryTransactionsRepo.create({
-        company_id: companyId,
+        tenant_id: tenantId,
         item_id: itemId,
         type: 'check_out',
         quantity,
@@ -181,7 +181,7 @@ export async function checkOut(
       // Step 7: Create container assignment if going to a container/truck
       if (locationId && item.tracking_mode === 'individual') {
         const assignmentResult = await containerAssignmentsRepo.create({
-          company_id: companyId,
+          tenant_id: tenantId,
           container_id: locationId,
           item_id: itemId,
           assigned_by: userId,
@@ -227,8 +227,8 @@ export async function batchCheckOut(
  * Get check-out history for a job
  */
 export async function getCheckOutHistory(
-  companyId: string,
+  tenantId: string,
   jobId: string
 ): Promise<{ data: InventoryTransaction[]; error: Error | null }> {
-  return await inventoryTransactionsRepo.findByCompany(companyId, 'check_out');
+  return await inventoryTransactionsRepo.findByCompany(tenantId, 'check_out');
 }

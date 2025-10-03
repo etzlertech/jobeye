@@ -9,7 +9,7 @@
 import { supabase } from '@/lib/supabase/client';
 
 export interface UploadImageOptions {
-  companyId: string;
+  tenantId: string;
   jobId?: string;
   userId: string;
   category?: 'verification' | 'inspection' | 'documentation';
@@ -68,7 +68,7 @@ export class MediaAssetService {
     options: UploadImageOptions
   ): Promise<{ data: UploadImageResult | null; error: Error | null }> {
     try {
-      const { companyId, jobId, userId, category = 'verification', metadata = {} } = options;
+      const { tenantId, jobId, userId, category = 'verification', metadata = {} } = options;
 
       // Convert ImageData to Blob
       const imageBlob = await this.imageDataToBlob(imageData);
@@ -77,8 +77,8 @@ export class MediaAssetService {
 
       // Generate storage path: company/job/timestamp.jpg
       const storagePath = jobId
-        ? `${companyId}/${jobId}/${fileName}`
-        : `${companyId}/misc/${fileName}`;
+        ? `${tenantId}/${jobId}/${fileName}`
+        : `${tenantId}/misc/${fileName}`;
 
       console.log('[MediaAssetService] Uploading photo to Storage:', {
         bucket: this.STORAGE_BUCKET,
@@ -113,7 +113,7 @@ export class MediaAssetService {
       const { data: mediaAsset, error: dbError } = await this.supabase
         .from('media_assets')
         .insert({
-          tenant_id: companyId,
+          tenant_id: tenantId,
           uploaded_by: userId,
           media_type: 'photo',
           file_name: fileName,

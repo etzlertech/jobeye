@@ -48,13 +48,13 @@ describe('Multi-tenant RLS Isolation', () => {
     // Create test users
     const userA = await createTestUser(adminClient, {
       email: 'user-a@company-a.test',
-      company_id: companyAId
+      tenant_id: companyAId
     });
     userAId = userA.id;
 
     const userB = await createTestUser(adminClient, {
       email: 'user-b@company-b.test',
-      company_id: companyBId
+      tenant_id: companyBId
     });
     userBId = userB.id;
 
@@ -96,7 +96,7 @@ describe('Multi-tenant RLS Isolation', () => {
     const { data: planA, error: errorA } = await companyAClient
       .from('day_plans')
       .insert({
-        company_id: companyAId,
+        tenant_id: companyAId,
         user_id: userAId,
         plan_date: '2024-01-15',
         status: 'draft'
@@ -112,7 +112,7 @@ describe('Multi-tenant RLS Isolation', () => {
     const { data: planB, error: errorB } = await companyBClient
       .from('day_plans')
       .insert({
-        company_id: companyBId,
+        tenant_id: companyBId,
         user_id: userBId,
         plan_date: '2024-01-15',
         status: 'draft'
@@ -157,7 +157,7 @@ describe('Multi-tenant RLS Isolation', () => {
     const { data: kitA } = await companyAClient
       .from('kits')
       .insert({
-        company_id: companyAId,
+        tenant_id: companyAId,
         kit_code: 'KIT-A-001',
         name: 'Company A Kit',
         category: 'general'
@@ -191,7 +191,7 @@ describe('Multi-tenant RLS Isolation', () => {
     const { data: eventA } = await companyAClient
       .from('schedule_events')
       .insert({
-        company_id: companyAId,
+        tenant_id: companyAId,
         day_plan_id: uuidv4(),
         event_type: 'job',
         sequence_order: 1,
@@ -227,7 +227,7 @@ describe('Multi-tenant RLS Isolation', () => {
     const { data: kitA } = await companyAClient
       .from('kits')
       .insert({
-        company_id: companyAId,
+        tenant_id: companyAId,
         kit_code: 'SHARED-001',
         name: 'Shared Kit Name'
       })
@@ -237,7 +237,7 @@ describe('Multi-tenant RLS Isolation', () => {
     const { data: kitB } = await companyBClient
       .from('kits')
       .insert({
-        company_id: companyBId,
+        tenant_id: companyBId,
         kit_code: 'SHARED-001', // Same code, different company
         name: 'Shared Kit Name'
       })
@@ -250,7 +250,7 @@ describe('Multi-tenant RLS Isolation', () => {
     const { data: assignA } = await companyAClient
       .from('job_kits')
       .insert({
-        company_id: companyAId,
+        tenant_id: companyAId,
         job_id: uuidv4(),
         kit_id: kitA!.id,
         assigned_by: userAId
@@ -261,7 +261,7 @@ describe('Multi-tenant RLS Isolation', () => {
     const { data: assignB } = await companyBClient
       .from('job_kits')
       .insert({
-        company_id: companyBId,
+        tenant_id: companyBId,
         job_id: uuidv4(),
         kit_id: kitB!.id,
         assigned_by: userBId
@@ -283,7 +283,7 @@ describe('Multi-tenant RLS Isolation', () => {
     const { error: crossAssignError } = await companyAClient
       .from('job_kits')
       .insert({
-        company_id: companyAId,
+        tenant_id: companyAId,
         job_id: uuidv4(),
         kit_id: kitB!.id, // Trying to use Company B's kit
         assigned_by: userAId
@@ -298,7 +298,7 @@ describe('Multi-tenant RLS Isolation', () => {
     const { data: overrideA } = await companyAClient
       .from('kit_override_logs')
       .insert({
-        company_id: companyAId,
+        tenant_id: companyAId,
         job_id: uuidv4(),
         kit_id: uuidv4(),
         item_id: uuidv4(),
@@ -311,7 +311,7 @@ describe('Multi-tenant RLS Isolation', () => {
     const { data: overrideB } = await companyBClient
       .from('kit_override_logs')
       .insert({
-        company_id: companyBId,
+        tenant_id: companyBId,
         job_id: uuidv4(),
         kit_id: uuidv4(),
         item_id: uuidv4(),
@@ -339,15 +339,15 @@ describe('Multi-tenant RLS Isolation', () => {
       });
 
     expect(analyticsA.total_overrides).toBe(1);
-    expect(analyticsA.company_id).toBe(companyAId);
+    expect(analyticsA.tenant_id).toBe(companyAId);
   });
 
-  it('should enforce company_id consistency in nested operations', async () => {
+  it('should enforce tenant_id consistency in nested operations', async () => {
     // Create day plan as Company A
     const { data: dayPlan } = await companyAClient
       .from('day_plans')
       .insert({
-        company_id: companyAId,
+        tenant_id: companyAId,
         user_id: userAId,
         plan_date: '2024-01-15'
       })
@@ -356,11 +356,11 @@ describe('Multi-tenant RLS Isolation', () => {
 
     testDataIds.push(dayPlan!.id);
 
-    // Try to create schedule event with mismatched company_id
+    // Try to create schedule event with mismatched tenant_id
     const { error: mismatchError } = await companyAClient
       .from('schedule_events')
       .insert({
-        company_id: companyBId, // Wrong company!
+        tenant_id: companyBId, // Wrong company!
         day_plan_id: dayPlan!.id,
         event_type: 'job',
         sequence_order: 1
@@ -369,11 +369,11 @@ describe('Multi-tenant RLS Isolation', () => {
     expect(mismatchError).toBeDefined();
     // Should be blocked by RLS check constraint
 
-    // Create with correct company_id
+    // Create with correct tenant_id
     const { data: validEvent } = await companyAClient
       .from('schedule_events')
       .insert({
-        company_id: companyAId,
+        tenant_id: companyAId,
         day_plan_id: dayPlan!.id,
         event_type: 'job',
         sequence_order: 1,
@@ -392,30 +392,30 @@ describe('Multi-tenant RLS Isolation', () => {
     const { data: allDayPlans } = await adminClient
       .from('day_plans')
       .select('*')
-      .in('company_id', [companyAId, companyBId]);
+      .in('tenant_id', [companyAId, companyBId]);
 
     // Create test data first
     await adminClient
       .from('day_plans')
       .insert([
-        { company_id: companyAId, user_id: userAId, plan_date: '2024-01-15' },
-        { company_id: companyBId, user_id: userBId, plan_date: '2024-01-15' }
+        { tenant_id: companyAId, user_id: userAId, plan_date: '2024-01-15' },
+        { tenant_id: companyBId, user_id: userBId, plan_date: '2024-01-15' }
       ]);
 
     const { data: verifyPlans } = await adminClient
       .from('day_plans')
-      .select('company_id')
-      .in('company_id', [companyAId, companyBId]);
+      .select('tenant_id')
+      .in('tenant_id', [companyAId, companyBId]);
 
-    const companyIds = verifyPlans!.map(p => p.company_id);
-    expect(companyIds).toContain(companyAId);
-    expect(companyIds).toContain(companyBId);
+    const tenantIds = verifyPlans!.map(p => p.tenant_id);
+    expect(tenantIds).toContain(companyAId);
+    expect(tenantIds).toContain(companyBId);
 
     // But regular clients still isolated
     const { data: isolatedA } = await companyAClient
       .from('day_plans')
-      .select('company_id');
+      .select('tenant_id');
 
-    expect(isolatedA!.every(p => p.company_id === companyAId)).toBe(true);
+    expect(isolatedA!.every(p => p.tenant_id === companyAId)).toBe(true);
   });
 });

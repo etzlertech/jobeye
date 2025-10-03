@@ -225,10 +225,10 @@ export class KitOverrideLogRepository {
     return data || [];
   }
 
-  async getAnalytics(companyId: string, startDate: string, endDate: string): Promise<OverrideAnalytics> {
+  async getAnalytics(tenantId: string, startDate: string, endDate: string): Promise<OverrideAnalytics> {
     const { data, error } = await this.supabase
       .rpc('get_override_analytics', {
-        p_company_id: companyId,
+        p_tenant_id: tenantId,
         p_start_date: startDate,
         p_end_date: endDate
       });
@@ -251,7 +251,7 @@ export class KitOverrideLogRepository {
     };
   }
 
-  async findFrequentOverrides(companyId: string, days: number = 30): Promise<Array<{
+  async findFrequentOverrides(tenantId: string, days: number = 30): Promise<Array<{
     item_id: string;
     count: number;
     reasons: string[];
@@ -262,7 +262,7 @@ export class KitOverrideLogRepository {
     const { data, error } = await this.supabase
       .from('kit_override_logs')
       .select('item_id, override_reason')
-      .eq('company_id', companyId)
+      .eq('tenant_id', tenantId)
       .gte('created_at', startDate.toISOString());
 
     if (error) throw error;

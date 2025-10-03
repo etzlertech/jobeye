@@ -24,7 +24,7 @@ describe('Cost Tracking Performance Benchmarks', () => {
       const start = performance.now();
 
       await service.trackCost({
-        companyId: 'bench-company-001',
+        tenantId: 'bench-company-001',
         verificationId: `vrfy-${Date.now()}`,
         method: 'vlm',
         cost: 0.10,
@@ -56,7 +56,7 @@ describe('Cost Tracking Performance Benchmarks', () => {
   describe('Bulk Operations', () => {
     it('should track 100 costs in under 1 second', async () => {
       const costs = Array.from({ length: 100 }, (_, i) => ({
-        companyId: 'bench-company-001',
+        tenantId: 'bench-company-001',
         verificationId: `vrfy-bulk-${Date.now()}-${i}`,
         method: 'vlm' as const,
         cost: 0.10,
@@ -107,7 +107,7 @@ describe('Cost Tracking Performance Benchmarks', () => {
       const operations = [
         ...Array.from({ length: 25 }, () =>
           service.trackCost({
-            companyId: 'bench-company-001',
+            tenantId: 'bench-company-001',
             verificationId: `vrfy-mixed-${Date.now()}`,
             method: 'vlm',
             cost: 0.10,
@@ -135,7 +135,7 @@ describe('Cost Tracking Performance Benchmarks', () => {
       // Perform 1000 operations
       for (let i = 0; i < 1000; i++) {
         await service.trackCost({
-          companyId: 'bench-company-001',
+          tenantId: 'bench-company-001',
           verificationId: `vrfy-mem-${i}`,
           method: 'yolo',
           cost: 0.00,

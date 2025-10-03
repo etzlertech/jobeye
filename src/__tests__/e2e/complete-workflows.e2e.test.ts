@@ -75,7 +75,7 @@ interface TestUser {
   email: string;
   password: string;
   role: 'TECHNICIAN' | 'MANAGER' | 'ADMIN';
-  companyId: string;
+  tenantId: string;
 }
 
 interface TestSession {
@@ -120,7 +120,7 @@ async function logoutUser(testSession: TestSession): Promise<void> {
 }
 
 // Helper: Process voice command (mocked for now, real implementation would use speech-to-text + LLM)
-async function processVoiceCommand(command: string, userId: string, companyId: string) {
+async function processVoiceCommand(command: string, userId: string, tenantId: string) {
   // TODO: Real implementation would:
   // 1. Convert speech to text (Whisper API)
   // 2. Send to LLM for intent recognition
@@ -157,19 +157,19 @@ describe('Complete End-to-End Workflows', () => {
       email: 'tech-e2e@example.com',
       password: 'Test123!@#',
       role: 'TECHNICIAN' as const,
-      companyId: 'company-e2e-test'
+      tenantId: 'company-e2e-test'
     },
     manager: {
       email: 'manager-e2e@example.com',
       password: 'Test123!@#',
       role: 'MANAGER' as const,
-      companyId: 'company-e2e-test'
+      tenantId: 'company-e2e-test'
     },
     admin: {
       email: 'admin-e2e@example.com',
       password: 'Test123!@#',
       role: 'ADMIN' as const,
-      companyId: 'company-e2e-test'
+      tenantId: 'company-e2e-test'
     }
   };
 
@@ -184,7 +184,7 @@ describe('Complete End-to-End Workflows', () => {
       const voiceCommand = await processVoiceCommand(
         "Show me my jobs for today",
         session.user.id,
-        testUsers.technician.companyId
+        testUsers.technician.tenantId
       );
       expect(voiceCommand.intent).toBe('get_jobs');
       expect(voiceCommand.confidence).toBeGreaterThan(0.9);
@@ -208,7 +208,7 @@ describe('Complete End-to-End Workflows', () => {
 
       const equipmentCheck = await visionService.verifyKit({
         kitId: `job-${firstJob.id}-precheck`,
-        companyId: testUsers.technician.companyId,
+        tenantId: testUsers.technician.tenantId,
         imageData,
         expectedItems: ['mower', 'trimmer', 'blower', 'safety_glasses'],
         maxBudgetUsd: 10.0
@@ -304,7 +304,7 @@ describe('Complete End-to-End Workflows', () => {
 
       const postJobCheck = await visionService.verifyKit({
         kitId: 'job-completion-001',
-        companyId: testUsers.technician.companyId,
+        tenantId: testUsers.technician.tenantId,
         imageData,
         expectedItems: ['mower', 'trimmer', 'blower', 'safety_glasses'],
         maxBudgetUsd: 10.0
@@ -357,7 +357,7 @@ describe('Complete End-to-End Workflows', () => {
       const nextJobCommand = await processVoiceCommand(
         "What's my next job?",
         session.user.id,
-        testUsers.technician.companyId
+        testUsers.technician.tenantId
       );
 
       expect(nextJobCommand.intent).toBe('get_jobs');
@@ -429,7 +429,7 @@ describe('Complete End-to-End Workflows', () => {
       const voiceCommand = await processVoiceCommand(
         "Show me all technicians and their current status",
         session.user.id,
-        testUsers.manager.companyId
+        testUsers.manager.tenantId
       );
 
       expect(voiceCommand.intent).toBe('get_jobs');
@@ -443,7 +443,7 @@ describe('Complete End-to-End Workflows', () => {
           role,
           tenant_id
         `)
-        .eq('tenant_id', testUsers.manager.companyId)
+        .eq('tenant_id', testUsers.manager.tenantId)
         .eq('role', 'TECHNICIAN')
         .eq('is_active', true);
 
@@ -456,7 +456,7 @@ describe('Complete End-to-End Workflows', () => {
 
       const equipmentAudit = await visionService.verifyKit({
         kitId: 'company-daily-audit',
-        companyId: testUsers.manager.companyId,
+        tenantId: testUsers.manager.tenantId,
         imageData: auditImage,
         expectedItems: [
           'mower', 'trimmer', 'blower', 'edger', 'chainsaw',
@@ -487,7 +487,7 @@ describe('Complete End-to-End Workflows', () => {
       const { data: dailyReport, error: reportError } = await session.supabase
         .from('daily_reports')
         .insert({
-          company_id: testUsers.manager.companyId,
+          tenant_id: testUsers.manager.tenantId,
           report_date: new Date().toISOString().split('T')[0],
           created_by: session.user.id,
           technician_count: teamMembers?.length || 0,
@@ -537,7 +537,7 @@ describe('Complete End-to-End Workflows', () => {
       const emergencyCommand = await processVoiceCommand(
         "Emergency: Mower blade broke during job",
         session.user.id,
-        testUsers.technician.companyId
+        testUsers.technician.tenantId
       );
 
       expect(emergencyCommand.intent).toBe('get_jobs'); // Would be 'emergency_report' in real system
@@ -548,7 +548,7 @@ describe('Complete End-to-End Workflows', () => {
 
       const damageCheck = await visionService.verifyKit({
         kitId: 'emergency-damage-001',
-        companyId: testUsers.technician.companyId,
+        tenantId: testUsers.technician.tenantId,
         imageData: damageImage,
         expectedItems: ['mower', 'trimmer', 'blower'], // Expected working equipment
         maxBudgetUsd: 10.0
@@ -561,7 +561,7 @@ describe('Complete End-to-End Workflows', () => {
       const { data: incident, error: incidentError } = await session.supabase
         .from('equipment_incidents')
         .insert({
-          company_id: testUsers.technician.companyId,
+          tenant_id: testUsers.technician.tenantId,
           reported_by: session.user.id,
           incident_type: 'equipment_damage',
           equipment_item: 'mower',
@@ -627,7 +627,7 @@ describe('Complete End-to-End Workflows', () => {
       const { data: notification, error: notifyError } = await session.supabase
         .from('notifications')
         .insert({
-          company_id: testUsers.technician.companyId,
+          tenant_id: testUsers.technician.tenantId,
           user_id: session.user.id, // Would be manager's ID in real system
           notification_type: 'equipment_incident',
           title: 'Emergency: Equipment Failure',
@@ -679,7 +679,7 @@ describe('Complete End-to-End Workflows', () => {
       const voiceCommand = await processVoiceCommand(
         "Create new customer John Smith at 123 Oak Street",
         session.user.id,
-        testUsers.manager.companyId
+        testUsers.manager.tenantId
       );
 
       expect(voiceCommand.intent).toBe('get_jobs'); // Would be 'create_customer' in real system
@@ -689,7 +689,7 @@ describe('Complete End-to-End Workflows', () => {
         .from('customers')
         .insert({
           tenant_id: TEST_TENANT_UUID,
-          company_id: TEST_TENANT_UUID,
+          tenant_id: TEST_TENANT_UUID,
           customer_number: `CUST-${Date.now()}`,
           name: 'John Smith',
           email: 'john.smith@example.com',
@@ -712,7 +712,7 @@ describe('Complete End-to-End Workflows', () => {
 
       const propertyAssessment = await visionService.verifyKit({
         kitId: `property-${customer!.id}-assessment`,
-        companyId: testUsers.manager.companyId,
+        tenantId: testUsers.manager.tenantId,
         imageData: propertyImage,
         expectedItems: ['lawn', 'trees', 'driveway', 'fence'], // Property features
         maxBudgetUsd: 12.0
@@ -804,7 +804,7 @@ describe('Complete End-to-End Workflows', () => {
 
       const equipmentReturn = await visionService.verifyKit({
         kitId: 'eod-return-check',
-        companyId: testUsers.technician.companyId,
+        tenantId: testUsers.technician.tenantId,
         imageData: returnImage,
         expectedItems: ['mower', 'trimmer', 'blower', 'edger', 'safety_glasses'],
         maxBudgetUsd: 10.0
@@ -837,7 +837,7 @@ describe('Complete End-to-End Workflows', () => {
       const summaryCommand = await processVoiceCommand(
         "Give me my day summary",
         session.user.id,
-        testUsers.technician.companyId
+        testUsers.technician.tenantId
       );
 
       expect(summaryCommand.intent).toBe('get_jobs'); // Would be 'day_summary' in real system
@@ -851,7 +851,7 @@ describe('Complete End-to-End Workflows', () => {
         .from('user_activity_logs')
         .insert({
           user_id: session.user.id,
-          company_id: TEST_TENANT_UUID,
+          tenant_id: TEST_TENANT_UUID,
           activity_date: today,
           jobs_completed: jobCount,
           equipment_return_verification_id: equipmentReturn.data!.verificationId,
@@ -917,7 +917,7 @@ describe('Complete End-to-End Workflows', () => {
       const auditCommand = await processVoiceCommand(
         "Start quality audit for today's completed jobs",
         session.user.id,
-        testUsers.manager.companyId
+        testUsers.manager.tenantId
       );
 
       expect(auditCommand.intent).toBe('get_jobs'); // Would be 'start_audit' in real system
@@ -948,7 +948,7 @@ describe('Complete End-to-End Workflows', () => {
 
       const siteInspection = await visionService.verifyKit({
         kitId: 'quality-audit-site-001',
-        companyId: testUsers.manager.companyId,
+        tenantId: testUsers.manager.tenantId,
         imageData: siteImage,
         expectedItems: ['clean_edges', 'uniform_cut', 'debris_removed', 'trimmed_borders'],
         maxBudgetUsd: 15.0
@@ -961,7 +961,7 @@ describe('Complete End-to-End Workflows', () => {
       const { data: audit, error: auditError } = await session.supabase
         .from('quality_audits')
         .insert({
-          company_id: TEST_TENANT_UUID,
+          tenant_id: TEST_TENANT_UUID,
           auditor_id: session.user.id,
           audit_date: today,
           jobs_audited: auditJobCount,
@@ -984,7 +984,7 @@ describe('Complete End-to-End Workflows', () => {
       // Skipping actual insert for now, simulating report generation
       const auditReport = {
         id: `report-${Date.now()}`,
-        company_id: TEST_TENANT_UUID,
+        tenant_id: TEST_TENANT_UUID,
         report_type: 'quality_audit',
         report_date: today,
         created_by: session.user.id,
@@ -1037,7 +1037,7 @@ describe('Complete End-to-End Workflows', () => {
       const trainingCommand = await processVoiceCommand(
         "Start equipment safety training session",
         session.user.id,
-        testUsers.admin.companyId
+        testUsers.admin.tenantId
       );
 
       expect(trainingCommand.intent).toBe('get_jobs'); // Would be 'start_training' in real system
@@ -1046,7 +1046,7 @@ describe('Complete End-to-End Workflows', () => {
       const { data: trainingSession, error: sessionError } = await session.supabase
         .from('training_sessions')
         .insert({
-          company_id: testUsers.admin.companyId,
+          tenant_id: testUsers.admin.tenantId,
           trainer_id: session.user.id,
           training_type: 'equipment_safety',
           session_date: new Date().toISOString(),
@@ -1063,7 +1063,7 @@ describe('Complete End-to-End Workflows', () => {
 
       const equipmentDemo = await visionService.verifyKit({
         kitId: `training-demo-${trainingSession!.id}`,
-        companyId: testUsers.admin.companyId,
+        tenantId: testUsers.admin.tenantId,
         imageData: demoImage,
         expectedItems: ['safety_glasses', 'gloves', 'helmet', 'ear_protection', 'steel_toe_boots'],
         maxBudgetUsd: 10.0
@@ -1090,7 +1090,7 @@ describe('Complete End-to-End Workflows', () => {
       const assessmentCommand = await processVoiceCommand(
         "Trainee passed equipment safety assessment",
         session.user.id,
-        testUsers.admin.companyId
+        testUsers.admin.tenantId
       );
 
       expect(assessmentCommand.intent).toBe('get_jobs'); // Would be 'record_assessment' in real system
@@ -1102,7 +1102,7 @@ describe('Complete End-to-End Workflows', () => {
       const { data: certificate, error: certError } = await session.supabase
         .from('training_certificates')
         .insert({
-          company_id: testUsers.admin.companyId,
+          tenant_id: testUsers.admin.tenantId,
           training_session_id: trainingSession!.id,
           trainee_id: session.user.id, // Would be actual trainee in real system
           certificate_type: 'equipment_safety',
@@ -1164,7 +1164,7 @@ describe('Complete End-to-End Workflows', () => {
 
       const preMaintenanceCheck = await visionService.verifyKit({
         kitId: 'maintenance-pre-check-001',
-        companyId: testUsers.technician.companyId,
+        tenantId: testUsers.technician.tenantId,
         imageData: preMaintenanceImage,
         expectedItems: ['mower', 'oil_filter', 'air_filter', 'spark_plug', 'blade'],
         maxBudgetUsd: 10.0
@@ -1176,7 +1176,7 @@ describe('Complete End-to-End Workflows', () => {
       const maintenanceCommand = await processVoiceCommand(
         "Performing scheduled maintenance on mower: oil change, filter replacement, blade sharpening",
         session.user.id,
-        testUsers.technician.companyId
+        testUsers.technician.tenantId
       );
 
       expect(maintenanceCommand.intent).toBe('get_jobs'); // Would be 'log_maintenance' in real system
@@ -1185,7 +1185,7 @@ describe('Complete End-to-End Workflows', () => {
       const { data: maintenanceRecord, error: maintError } = await session.supabase
         .from('equipment_maintenance')
         .insert({
-          company_id: testUsers.technician.companyId,
+          tenant_id: testUsers.technician.tenantId,
           equipment_id: 'mower-001',
           performed_by: session.user.id,
           maintenance_type: 'scheduled',
@@ -1204,7 +1204,7 @@ describe('Complete End-to-End Workflows', () => {
 
       const postMaintenanceCheck = await visionService.verifyKit({
         kitId: 'maintenance-post-check-001',
-        companyId: testUsers.technician.companyId,
+        tenantId: testUsers.technician.tenantId,
         imageData: postMaintenanceImage,
         expectedItems: ['mower', 'oil_filter', 'air_filter', 'spark_plug', 'blade'],
         maxBudgetUsd: 10.0
@@ -1234,7 +1234,7 @@ describe('Complete End-to-End Workflows', () => {
       const { data: schedule, error: schedError } = await session.supabase
         .from('maintenance_schedule')
         .insert({
-          company_id: testUsers.technician.companyId,
+          tenant_id: testUsers.technician.tenantId,
           equipment_id: 'mower-001',
           scheduled_date: nextMaintenanceDate.toISOString(),
           maintenance_type: 'routine',
@@ -1285,7 +1285,7 @@ describe('Complete End-to-End Workflows', () => {
       const routeCommand = await processVoiceCommand(
         "Show me my route for today",
         session.user.id,
-        testUsers.technician.companyId
+        testUsers.technician.tenantId
       );
 
       expect(routeCommand.intent).toBe('get_jobs'); // Would be 'get_route' in real system
@@ -1317,7 +1317,7 @@ describe('Complete End-to-End Workflows', () => {
 
       const property1Check = await visionService.verifyKit({
         kitId: `route-job-${todayJobs?.[0]?.id}-pre`,
-        companyId: testUsers.technician.companyId,
+        tenantId: testUsers.technician.tenantId,
         imageData: property1Image,
         expectedItems: ['mower', 'trimmer', 'blower'],
         maxBudgetUsd: 10.0
@@ -1345,7 +1345,7 @@ describe('Complete End-to-End Workflows', () => {
 
       const property2Check = await visionService.verifyKit({
         kitId: `route-job-${todayJobs?.[1]?.id}-pre`,
-        companyId: testUsers.technician.companyId,
+        tenantId: testUsers.technician.tenantId,
         imageData: property2Image,
         expectedItems: ['mower', 'trimmer', 'blower', 'edger'],
         maxBudgetUsd: 10.0

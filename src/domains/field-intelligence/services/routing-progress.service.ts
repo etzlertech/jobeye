@@ -94,7 +94,7 @@ const DEFAULT_CONFIG: ProgressConfig = {
  *
  * @example
  * ```typescript
- * const progressService = new RoutingProgressService(supabase, companyId);
+ * const progressService = new RoutingProgressService(supabase, tenantId);
  *
  * // Get current route progress
  * const progress = await progressService.getRouteProgress(scheduleId, userId);
@@ -112,14 +112,14 @@ export class RoutingProgressService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string,
+    private tenantId: string,
     config?: Partial<ProgressConfig>
   ) {
     // TODO: this.breadcrumbsRepository = new RoutingGPSBreadcrumbsRepository(
       client,
-      companyId
+      tenantId
     );
-    // TODO: this.schedulesRepository = new RoutingSchedulesRepository(client, companyId);
+    // TODO: this.schedulesRepository = new RoutingSchedulesRepository(client, tenantId);
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 

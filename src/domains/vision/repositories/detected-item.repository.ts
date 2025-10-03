@@ -111,7 +111,7 @@ export async function findItemsForVerification(
  */
 export async function findByVerificationId(
   verificationId: string,
-  companyId?: string
+  tenantId?: string
 ): Promise<{ data: DetectedItem[]; error: Error | null }> {
   return findItemsForVerification(verificationId);
 }

@@ -190,7 +190,7 @@ export async function middleware(request: NextRequest) {
       const requestHeaders = new Headers(request.headers);
       requestHeaders.set('x-user-id', userId);
       requestHeaders.set('x-user-role', userRole);
-      requestHeaders.set('x-tenant-id', session?.user?.app_metadata?.company_id || 'demo-company');
+      requestHeaders.set('x-tenant-id', session?.user?.app_metadata?.tenant_id || 'demo-company');
       requestHeaders.set('x-is-demo', isDemo ? 'true' : 'false');
       
       return NextResponse.next({

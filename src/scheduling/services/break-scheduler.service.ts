@@ -336,7 +336,7 @@ export class BreakSchedulerService {
 
       // Create the break event
       await this.scheduleEventRepo.create({
-        company_id: workEvents[0].company_id,
+        tenant_id: workEvents[0].tenant_id,
         day_plan_id: dayPlanId,
         event_type: 'break',
         sequence_order: sequenceOrder,

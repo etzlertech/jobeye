@@ -23,14 +23,14 @@ interface Verification {
 }
 
 interface VerificationHistoryProps {
-  companyId: string;
+  tenantId: string;
   kitId?: string;
   limit?: number;
   className?: string;
 }
 
 export default function VerificationHistory({
-  companyId,
+  tenantId,
   kitId,
   limit = 20,
   className = ''
@@ -47,7 +47,7 @@ export default function VerificationHistory({
       setError(null);
 
       const params = new URLSearchParams({
-        companyId,
+        tenantId,
         limit: limit.toString()
       });
 
@@ -80,7 +80,7 @@ export default function VerificationHistory({
 
   useEffect(() => {
     fetchVerifications();
-  }, [companyId, kitId, filter, limit]);
+  }, [tenantId, kitId, filter, limit]);
 
   const handleViewDetails = (id: string) => {
     router.push(`/vision/verifications/${id}`);

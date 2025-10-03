@@ -27,7 +27,7 @@ describe('Vision Verification Flow - YOLO Local Detection', () => {
     const result = await service.verifyKit({
       kitId: 'test-kit',
       photo: new Blob(['test-image']),
-      companyId: 'company-1',
+      tenantId: 'company-1',
       technicianId: 'tech-1'
     });
 
@@ -36,13 +36,13 @@ describe('Vision Verification Flow - YOLO Local Detection', () => {
     expect(result.requiresVlmFallback).toBe(false);
   });
 
-  it('should store verification record in database with company_id', async () => {
-    const companyId = 'test-company-1';
+  it('should store verification record in database with tenant_id', async () => {
+    const tenantId = 'test-company-1';
 
     // Trigger verification
     const verificationId = 'test-verification-1';
 
-    // Query verification_verifications (tenant_id maps to company_id)
+    // Query verification_verifications (tenant_id maps to tenant_id)
     const { data, error } = await supabase
       .from('vision_verifications')
       .select('*')
@@ -50,7 +50,7 @@ describe('Vision Verification Flow - YOLO Local Detection', () => {
       .single();
 
     expect(error).toBeNull();
-    expect(data?.tenant_id).toBe(companyId);
+    expect(data?.tenant_id).toBe(tenantId);
   });
 
   it('should create detected_items records for YOLO detections', async () => {

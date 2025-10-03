@@ -56,7 +56,7 @@ describe('PDF Export - End-to-End Scenarios', () => {
       const verification = {
         verificationId: 'ver-123',
         kitId: 'kit-456',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'complete' as const,
         processingMethod: 'local_yolo' as const,
         confidenceScore: 0.95,
@@ -102,7 +102,7 @@ describe('PDF Export - End-to-End Scenarios', () => {
       const verification = {
         verificationId: 'ver-124',
         kitId: 'kit-457',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'incomplete' as const,
         processingMethod: 'local_yolo' as const,
         confidenceScore: 0.72,
@@ -133,7 +133,7 @@ describe('PDF Export - End-to-End Scenarios', () => {
       const verification = {
         verificationId: 'ver-125',
         kitId: 'kit-458',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'incomplete' as const,
         processingMethod: 'local_yolo' as const,
         confidenceScore: 0.81,
@@ -163,7 +163,7 @@ describe('PDF Export - End-to-End Scenarios', () => {
       const verification = {
         verificationId: 'ver-126',
         kitId: 'kit-459',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'complete' as const,
         processingMethod: 'cloud_vlm' as const,
         confidenceScore: 0.97,
@@ -193,7 +193,7 @@ describe('PDF Export - End-to-End Scenarios', () => {
       const verification = {
         verificationId: 'ver-127',
         kitId: 'kit-460',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'complete' as const,
         processingMethod: 'local_yolo' as const,
         confidenceScore: 0.93,
@@ -254,7 +254,7 @@ describe('PDF Export - End-to-End Scenarios', () => {
       const verification = {
         verificationId: 'ver-128',
         kitId: 'kit-461',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'failed' as const,
         processingMethod: 'local_yolo' as const,
         confidenceScore: 0.35,
@@ -283,7 +283,7 @@ describe('PDF Export - End-to-End Scenarios', () => {
       const verification = {
         verificationId: 'ver-129',
         kitId: 'kit-462',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'complete' as const,
         processingMethod: 'local_yolo' as const,
         confidenceScore: 0.91,

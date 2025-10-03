@@ -25,7 +25,7 @@ import * as detectionOrchestratorService from './detection-orchestrator.service'
 import * as receiptProcessingService from './receipt-processing.service';
 
 export interface VoiceCommandContext {
-  companyId: string;
+  tenantId: string;
   userId: string;
   sessionId: string;
   jobId?: string;
@@ -71,7 +71,7 @@ export async function handleCheckOutEquipment(
     // TODO: Resolve item names to IDs
     // For now, assume itemNames are IDs
     const result = await checkOutService.checkOut({
-      companyId: context.companyId,
+      tenantId: context.tenantId,
       userId: context.userId,
       itemIds: itemNames, // In real implementation, resolve names to IDs
       jobId,
@@ -131,7 +131,7 @@ export async function handleCheckInEquipment(
     }
 
     const result = await checkInService.checkIn({
-      companyId: context.companyId,
+      tenantId: context.tenantId,
       userId: context.userId,
       itemIds: itemNames, // TODO: Resolve names to IDs
       fromLocationId: fromLocation,
@@ -200,7 +200,7 @@ export async function handleRecordMaterialUsage(
     }
 
     const result = await materialUsageService.recordUsage({
-      companyId: context.companyId,
+      tenantId: context.tenantId,
       userId: context.userId,
       materialId: materialName, // TODO: Resolve name to ID
       quantity,
@@ -266,7 +266,7 @@ export async function handleTransferInventory(
     }
 
     const result = await transferService.transfer({
-      companyId: context.companyId,
+      tenantId: context.tenantId,
       userId: context.userId,
       itemIds: itemNames, // TODO: Resolve names to IDs
       fromLocationId: fromLocation,
@@ -321,7 +321,7 @@ export async function handleScanInventory(
       .map((e) => e.value);
 
     const result = await detectionOrchestratorService.detectInventoryItems({
-      companyId: context.companyId,
+      tenantId: context.tenantId,
       userId: context.userId,
       imageSource,
       imageUrl,
@@ -368,7 +368,7 @@ export async function handleStartInventoryAudit(
 
     // Get items at location for audit
     const itemsResult = await auditService.getItemsForAudit(
-      context.companyId,
+      context.tenantId,
       locationId
     );
 

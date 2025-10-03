@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
-    const companyId = searchParams.get('companyId');
+    const tenantId = searchParams.get('tenantId');
     const kitId = searchParams.get('kitId');
     const verificationResult = searchParams.get('verificationResult') as 'complete' | 'incomplete' | 'failed' | null;
     const processingMethod = searchParams.get('processingMethod') as 'local_yolo' | 'cloud_vlm' | null;
@@ -34,17 +34,17 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Validate companyId is provided
-    if (!companyId) {
+    // Validate tenantId is provided
+    if (!tenantId) {
       return NextResponse.json(
-        { error: 'companyId query parameter is required' },
+        { error: 'tenantId query parameter is required' },
         { status: 400 }
       );
     }
 
     // Query verifications
     const result = await verificationRepo.findVerifications({
-      companyId,
+      tenantId,
       kitId: kitId || undefined,
       verificationResult: verificationResult || undefined,
       processingMethod: processingMethod || undefined,

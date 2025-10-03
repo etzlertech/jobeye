@@ -43,7 +43,7 @@ describeIf('RouteOptimizationService Integration', () => {
       const stops: RouteStop[] = [
         {
           id: 'stop-1',
-          company_id: 'company-1',
+          tenant_id: 'company-1',
           route_id: 'route-1',
           sequence: 1,
           schedule_event_id: 'event-1',
@@ -66,7 +66,7 @@ describeIf('RouteOptimizationService Integration', () => {
         },
         {
           id: 'stop-2',
-          company_id: 'company-1', 
+          tenant_id: 'company-1', 
           route_id: 'route-1',
           sequence: 2,
           schedule_event_id: 'event-2',
@@ -89,7 +89,7 @@ describeIf('RouteOptimizationService Integration', () => {
         },
         {
           id: 'stop-3',
-          company_id: 'company-1',
+          tenant_id: 'company-1',
           route_id: 'route-1',
           sequence: 3,
           schedule_event_id: 'event-3',
@@ -142,7 +142,7 @@ describeIf('RouteOptimizationService Integration', () => {
     it('should handle API errors gracefully', async () => {
       const invalidStops: RouteStop[] = [{
         id: 'invalid',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         route_id: 'route-1',
         sequence: 1,
         schedule_event_id: 'event-1',
@@ -172,7 +172,7 @@ describeIf('RouteOptimizationService Integration', () => {
       const stopsWithWindows: RouteStop[] = [
         {
           id: 'stop-1',
-          company_id: 'company-1',
+          tenant_id: 'company-1',
           route_id: 'route-1',
           sequence: 1,
           schedule_event_id: 'event-1',
@@ -198,7 +198,7 @@ describeIf('RouteOptimizationService Integration', () => {
         },
         {
           id: 'stop-2',
-          company_id: 'company-1',
+          tenant_id: 'company-1',
           route_id: 'route-1',
           sequence: 2,
           schedule_event_id: 'event-2',

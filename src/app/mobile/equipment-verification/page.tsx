@@ -35,7 +35,7 @@ import { getOfflineQueue } from '@/domains/vision/lib/offline-queue';
 function EquipmentVerificationContent() {
   const searchParams = useSearchParams();
   const jobId = searchParams?.get('job_id') || 'demo-job';
-  const companyId = searchParams?.get('company_id') || 'demo-company';
+  const tenantId = searchParams?.get('tenant_id') || 'demo-company';
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
@@ -58,8 +58,8 @@ function EquipmentVerificationContent() {
 
   // Initialize session on mount
   useEffect(() => {
-    session.initSession(jobId, companyId);
-  }, [jobId, companyId]);
+    session.initSession(jobId, tenantId);
+  }, [jobId, tenantId]);
 
   // Request camera on mount
   useEffect(() => {

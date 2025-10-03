@@ -22,7 +22,7 @@ import type {
 import { getOfflineInventoryQueue } from './offline-queue.service';
 
 export interface MaterialUsageRequest {
-  companyId: string;
+  tenantId: string;
   userId: string;
   materialId: string;
   quantity: number;
@@ -46,7 +46,7 @@ export async function recordUsage(
   request: MaterialUsageRequest
 ): Promise<MaterialUsageResult> {
   const {
-    companyId,
+    tenantId,
     userId,
     materialId,
     quantity,
@@ -70,7 +70,7 @@ export async function recordUsage(
   const offlineQueue = getOfflineInventoryQueue();
   if (!offlineQueue.getIsOnline()) {
     await offlineQueue.enqueue({
-      companyId,
+      tenantId,
       userId,
       type: 'material_usage',
       payload: request,
@@ -135,7 +135,7 @@ export async function recordUsage(
 
     // Step 5: Create usage transaction
     const transactionResult = await inventoryTransactionsRepo.create({
-      company_id: companyId,
+      tenant_id: tenantId,
       item_id: materialId,
       type: 'usage',
       quantity,
@@ -213,22 +213,22 @@ export async function batchRecordUsage(
  * Get material usage history for a job
  */
 export async function getUsageHistory(
-  companyId: string,
+  tenantId: string,
   jobId: string
 ): Promise<{ data: InventoryTransaction[]; error: Error | null }> {
-  return await inventoryTransactionsRepo.findByCompany(companyId, 'usage');
+  return await inventoryTransactionsRepo.findByCompany(tenantId, 'usage');
 }
 
 /**
  * Calculate total material cost for a job
  */
 export async function calculateJobMaterialCost(
-  companyId: string,
+  tenantId: string,
   jobId: string
 ): Promise<{ data: { totalCost: number; breakdown: Array<{ materialId: string; quantity: number; cost: number }> } | null; error: Error | null }> {
   try {
     const usageResult = await inventoryTransactionsRepo.findByCompany(
-      companyId,
+      tenantId,
       'usage'
     );
 

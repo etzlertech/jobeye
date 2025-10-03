@@ -21,7 +21,7 @@ import * as inventoryItemsRepo from '../repositories/inventory-items.repository'
 import type { InventoryItem } from '../types/inventory-types';
 
 export interface DetectionRequest {
-  companyId: string;
+  tenantId: string;
   userId: string;
   imageSource: HTMLImageElement | File | Blob | string;
   imageUrl: string; // For session storage
@@ -67,7 +67,7 @@ export async function detectInventoryItems(
   try {
     // Step 1: Create detection session
     const sessionResult = await detectionSessionService.createSession(
-      request.companyId,
+      request.tenantId,
       request.userId,
       request.imageUrl,
       {
@@ -127,7 +127,7 @@ export async function detectInventoryItems(
     const candidatesWithMatches = await Promise.all(
       candidates.map(async (candidate) => {
         const matches = await matchLabelToItems(
-          request.companyId,
+          request.tenantId,
           candidate.label || ''
         );
 
@@ -222,7 +222,7 @@ async function fallbackToVlm(
     const vlmCandidates = await Promise.all(
       vlmResult.data.detections.map(async (detection, idx) => {
         const matches = await matchLabelToItems(
-          request.companyId,
+          request.tenantId,
           detection.label
         );
 
@@ -271,7 +271,7 @@ async function fallbackToVlm(
  * Match detected label to inventory items
  */
 async function matchLabelToItems(
-  companyId: string,
+  tenantId: string,
   label: string
 ): Promise<InventoryItem[]> {
   if (!label || label === 'unknown') {
@@ -280,7 +280,7 @@ async function matchLabelToItems(
 
   // Search by name or category
   const result = await inventoryItemsRepo.findAll({
-    companyId,
+    tenantId,
     search: label,
     limit: 5,
   });

@@ -142,7 +142,7 @@ describe('CostTrackingService', () => {
       expect(result.success).toBe(true);
       expect(result.error).toBeUndefined();
       expect(costRecordRepo.createCostRecord).toHaveBeenCalledWith({
-        company_id: 'company-123',
+        tenant_id: 'company-123',
         verification_id: 'verify-456',
         cost_usd: 0.12,
         provider: 'openai-gpt4-vision',
@@ -191,7 +191,7 @@ describe('CostTrackingService', () => {
 
       const result = await service.getTodayCostSummary('company-123');
 
-      expect(result.companyId).toBe('company-123');
+      expect(result.tenantId).toBe('company-123');
       expect(result.todayCost).toBe(2.5);
       expect(result.todayRequests).toBe(25);
       expect(result.totalCost).toBe(50.0);

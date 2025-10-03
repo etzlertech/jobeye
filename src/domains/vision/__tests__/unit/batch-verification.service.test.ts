@@ -53,7 +53,7 @@ describe('BatchVerificationService', () => {
       const result = await service.verifyBatch({
         photos,
         kitId: 'kit-001',
-        companyId: 'company-123'
+        tenantId: 'company-123'
       });
 
       // Assert
@@ -93,7 +93,7 @@ describe('BatchVerificationService', () => {
       const result = await service.verifyBatch({
         photos,
         kitId: 'kit-001',
-        companyId: 'company-123'
+        tenantId: 'company-123'
       });
 
       // Assert
@@ -133,7 +133,7 @@ describe('BatchVerificationService', () => {
       const result = await service.verifyBatch({
         photos,
         kitId: 'kit-001',
-        companyId: 'company-123'
+        tenantId: 'company-123'
       });
 
       // Assert
@@ -147,7 +147,7 @@ describe('BatchVerificationService', () => {
       await expect(service.verifyBatch({
         photos: [],
         kitId: 'kit-001',
-        companyId: 'company-123'
+        tenantId: 'company-123'
       })).rejects.toThrow(/at least one photo/);
     });
 
@@ -173,7 +173,7 @@ describe('BatchVerificationService', () => {
       const result = await service.verifyBatch({
         photos,
         kitId: 'kit-001',
-        companyId: 'company-123',
+        tenantId: 'company-123',
         continueOnError: true
       });
 
@@ -204,7 +204,7 @@ describe('BatchVerificationService', () => {
       const result = await service.verifyBatch({
         photos,
         kitId: 'kit-001',
-        companyId: 'company-123'
+        tenantId: 'company-123'
       });
 
       // Assert
@@ -268,7 +268,7 @@ describe('BatchVerificationService', () => {
       await service.verifyBatch({
         photos,
         kitId: 'kit-001',
-        companyId: 'company-123',
+        tenantId: 'company-123',
         onProgress
       });
 

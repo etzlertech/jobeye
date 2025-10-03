@@ -24,7 +24,7 @@ export async function create(
 }
 
 export async function findByCompany(
-  companyId: string,
+  tenantId: string,
   type?: TransactionType,
   limit = 50
 ): Promise<{ data: InventoryTransaction[]; error: Error | null }> {
@@ -32,7 +32,7 @@ export async function findByCompany(
   let query = supabase
     .from('inventory_transactions')
     .select('*')
-    .eq('tenant_id', companyId);
+    .eq('tenant_id', tenantId);
 
   if (type) {
     query = query.eq('type', type);

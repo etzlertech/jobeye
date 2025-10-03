@@ -1,0 +1,12 @@
+{
+  "name": "eslint-plugin-cleanup",
+  "version": "1.0.0",
+  "description": "ESLint plugin for JobEye codebase cleanup",
+  "main": "index.js",
+  "keywords": ["eslint", "eslintplugin", "eslint-plugin"],
+  "author": "JobEye",
+  "license": "MIT",
+  "peerDependencies": {
+    "eslint": ">=8.0.0"
+  }
+}

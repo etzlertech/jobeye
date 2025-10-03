@@ -50,7 +50,7 @@ describe('Cost Record Repository', () => {
     it('should find record by ID', async () => {
       const mockRecord = {
         id: 'cost-123',
-        company_id: 'company-456',
+        tenant_id: 'company-456',
         cost_usd: 0.12,
         provider: 'openai-gpt4-vision'
       };
@@ -81,7 +81,7 @@ describe('Cost Record Repository', () => {
       });
 
       const result = await repo.findCostRecords({
-        companyId: 'company-123',
+        tenantId: 'company-123',
         provider: 'openai-gpt4-vision'
       });
 
@@ -111,7 +111,7 @@ describe('Cost Record Repository', () => {
   describe('createCostRecord', () => {
     it('should create cost record', async () => {
       const newRecord = {
-        company_id: 'company-123',
+        tenant_id: 'company-123',
         verification_id: 'verify-456',
         cost_usd: 0.12,
         provider: 'openai-gpt4-vision',

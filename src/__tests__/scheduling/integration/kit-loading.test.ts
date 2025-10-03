@@ -53,7 +53,7 @@ describe('Kit Loading and Verification Integration', () => {
     // Create test job
     await jobService.createJob({
       id: testJobId,
-      company_id: testCompanyId,
+      tenant_id: testCompanyId,
       customer_id: 'customer-001',
       property_id: 'property-001',
       job_type: 'lawn_maintenance',
@@ -267,7 +267,7 @@ describe('Kit Loading and Verification Integration', () => {
   it('should integrate with container tracking', async () => {
     // Create containers in truck
     const truck = await containerService.createContainer({
-      company_id: testCompanyId,
+      tenant_id: testCompanyId,
       container_type: 'truck',
       identifier: 'TRUCK-001',
       location: 'Field',
@@ -275,7 +275,7 @@ describe('Kit Loading and Verification Integration', () => {
     });
 
     const toolbox = await containerService.createContainer({
-      company_id: testCompanyId,
+      tenant_id: testCompanyId,
       container_type: 'toolbox',
       identifier: 'TOOLBOX-A',
       parent_container_id: truck.id,
@@ -343,7 +343,7 @@ describe('Kit Loading and Verification Integration', () => {
       const jobId = `job-plumb-${i}`;
       await jobService.createJob({
         id: jobId,
-        company_id: testCompanyId,
+        tenant_id: testCompanyId,
         job_type: 'plumbing_repair',
         scheduled_start: new Date(Date.now() + i * 86400000).toISOString()
       });

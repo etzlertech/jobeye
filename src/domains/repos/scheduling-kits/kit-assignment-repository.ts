@@ -21,7 +21,7 @@ export class KitAssignmentRepository {
 
   async createAssignment(payload: CreateKitAssignmentInput): Promise<KitAssignment> {
     const insertPayload = {
-      tenant_id: payload.companyId,
+      tenant_id: payload.tenantId,
       kit_id: payload.kitId,
       variant_id: payload.variantId ?? null,
       external_ref: payload.externalRef,
@@ -32,7 +32,7 @@ export class KitAssignmentRepository {
     const { data, error } = await this.supabase
       .from('kit_assignments')
       .insert(insertPayload)
-      .select('id, company_id, kit_id, variant_id, external_ref, notes, metadata, created_at, updated_at')
+      .select('id, tenant_id, kit_id, variant_id, external_ref, notes, metadata, created_at, updated_at')
       .single();
 
     if (error) {
@@ -42,11 +42,11 @@ export class KitAssignmentRepository {
     return this.mapRow(data as KitAssignmentRow);
   }
 
-  async findByExternalRef(companyId: string, externalRef: string): Promise<KitAssignment | null> {
+  async findByExternalRef(tenantId: string, externalRef: string): Promise<KitAssignment | null> {
     const { data, error } = await this.supabase
       .from('kit_assignments')
-      .select('id, company_id, kit_id, variant_id, external_ref, notes, metadata, created_at, updated_at')
-      .eq('tenant_id', companyId)
+      .select('id, tenant_id, kit_id, variant_id, external_ref, notes, metadata, created_at, updated_at')
+      .eq('tenant_id', tenantId)
       .eq('external_ref', externalRef)
       .maybeSingle();
 
@@ -64,7 +64,7 @@ export class KitAssignmentRepository {
   private mapRow(row: KitAssignmentRow): KitAssignment {
     return {
       id: row.id,
-      companyId: row.tenant_id,
+      tenantId: row.tenant_id,
       kitId: row.kit_id,
       variantId: row.variant_id,
       externalRef: row.external_ref,

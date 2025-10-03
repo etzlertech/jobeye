@@ -105,7 +105,7 @@ const DEFAULT_CONFIG: AutoClockOutConfig = {
  *
  * @example
  * ```typescript
- * const clockoutService = new TimeAutoClockoutService(supabase, companyId);
+ * const clockoutService = new TimeAutoClockoutService(supabase, tenantId);
  *
  * // Check for idle users
  * const idleResult = await clockoutService.detectIdle(userId);
@@ -124,11 +124,11 @@ export class TimeAutoClockoutService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string,
+    private tenantId: string,
     config?: Partial<AutoClockOutConfig>
   ) {
-    // TODO: this.timeEntriesRepository = new TimeEntriesRepository(client, companyId);
-    this.geofencingService = new RoutingGeofencingService(client, companyId);
+    // TODO: this.timeEntriesRepository = new TimeEntriesRepository(client, tenantId);
+    this.geofencingService = new RoutingGeofencingService(client, tenantId);
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 

@@ -25,12 +25,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const companyId = user.user_metadata?.company_id;
-    if (!companyId) {
+    const tenantId = user.user_metadata?.tenant_id;
+    if (!tenantId) {
       return NextResponse.json({ error: 'Company ID not found' }, { status: 400 });
     }
 
-    const approvalService = new TimeApprovalService(supabase, companyId);
+    const approvalService = new TimeApprovalService(supabase, tenantId);
     const pending = await approvalService.getPendingApprovals(user.id);
 
     return NextResponse.json({
@@ -59,8 +59,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const companyId = user.user_metadata?.company_id;
-    if (!companyId) {
+    const tenantId = user.user_metadata?.tenant_id;
+    if (!tenantId) {
       return NextResponse.json({ error: 'Company ID not found' }, { status: 400 });
     }
 
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const approvalService = new TimeApprovalService(supabase, companyId);
+    const approvalService = new TimeApprovalService(supabase, tenantId);
 
     let result;
     if (action === 'APPROVE') {
@@ -128,8 +128,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const companyId = user.user_metadata?.company_id;
-    if (!companyId) {
+    const tenantId = user.user_metadata?.tenant_id;
+    if (!tenantId) {
       return NextResponse.json({ error: 'Company ID not found' }, { status: 400 });
     }
 
@@ -143,7 +143,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const approvalService = new TimeApprovalService(supabase, companyId);
+    const approvalService = new TimeApprovalService(supabase, tenantId);
     const result = await approvalService.bulkApprove(entryIds, user.id, reason);
 
     logger.info('Bulk time approval via API', {

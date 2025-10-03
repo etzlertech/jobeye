@@ -30,7 +30,7 @@ interface VerificationDisplayProps {
   costUsd: number;
   processingTimeMs: number;
   kitId?: string;
-  companyId?: string;
+  tenantId?: string;
   className?: string;
 }
 
@@ -45,7 +45,7 @@ export default function VerificationDisplay({
   costUsd,
   processingTimeMs,
   kitId = 'unknown',
-  companyId = 'unknown',
+  tenantId = 'unknown',
   className = ''
 }: VerificationDisplayProps) {
   const [isExporting, setIsExporting] = useState(false);
@@ -76,7 +76,7 @@ export default function VerificationDisplay({
           costUsd,
           processingTimeMs,
           kitId,
-          companyId
+          tenantId
         },
         {
           includeTimestamp: true,
@@ -114,7 +114,7 @@ export default function VerificationDisplay({
         costUsd,
         processingTimeMs,
         kitId,
-        companyId
+        tenantId
       };
 
       if (full) {

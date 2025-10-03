@@ -101,7 +101,7 @@ const DEFAULT_CONFIG: OCRConfig = {
  *
  * @example
  * ```typescript
- * const ocrService = new IntakeOCRService(supabase, companyId, openaiApiKey);
+ * const ocrService = new IntakeOCRService(supabase, tenantId, openaiApiKey);
  *
  * // Extract text from document
  * const result = await ocrService.extractText(documentId, imageBlob);
@@ -115,11 +115,11 @@ export class IntakeOCRService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string,
+    private tenantId: string,
     private openaiApiKey: string,
     config?: Partial<OCRConfig>
   ) {
-    // TODO: this.documentsRepository = new IntakeDocumentsRepository(client, companyId);
+    // TODO: this.documentsRepository = new IntakeDocumentsRepository(client, tenantId);
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 

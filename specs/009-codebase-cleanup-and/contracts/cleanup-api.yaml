@@ -1,0 +1,367 @@
+openapi: 3.0.3
+info:
+  title: Codebase Cleanup API
+  description: API endpoints for monitoring and managing codebase cleanup operations
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api/cleanup
+    description: Local development server
+  - url: https://jobeye.railway.app/api/cleanup
+    description: Production server
+
+paths:
+  /schema/verify:
+    get:
+      summary: Verify database schema alignment
+      description: Checks if database schema matches migration files
+      operationId: verifySchema
+      tags:
+        - Schema
+      responses:
+        '200':
+          description: Schema verification results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaVerificationResult'
+        '500':
+          description: Server error during verification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /migration/status:
+    get:
+      summary: Get migration status
+      description: Returns current status of all table migrations
+      operationId: getMigrationStatus
+      tags:
+        - Migration
+      parameters:
+        - name: status
+          in: query
+          description: Filter by migration status
+          schema:
+            type: string
+            enum: [pending, in_progress, completed, failed, skipped]
+      responses:
+        '200':
+          description: List of migration statuses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  migrations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MigrationStatus'
+                  summary:
+                    $ref: '#/components/schemas/MigrationSummary'
+
+  /migration/execute:
+    post:
+      summary: Execute table migration
+      description: Migrate a specific table from company_id to tenant_id
+      operationId: executeMigration
+      tags:
+        - Migration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tableName
+              properties:
+                tableName:
+                  type: string
+                  description: Name of table to migrate
+                dryRun:
+                  type: boolean
+                  default: false
+                  description: Preview changes without executing
+      responses:
+        '202':
+          description: Migration started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MigrationResult'
+        '400':
+          description: Invalid table name or migration not needed
+        '409':
+          description: Migration already in progress
+        '500':
+          description: Migration failed
+
+  /patterns/violations:
+    get:
+      summary: Get pattern violations
+      description: Returns code pattern violations found in codebase
+      operationId: getPatternViolations
+      tags:
+        - Patterns
+      parameters:
+        - name: type
+          in: query
+          description: Filter by violation type
+          schema:
+            type: string
+            enum: [company_id_usage, functional_repository, missing_rls, direct_db_access, wrong_rls_path]
+        - name: fixed
+          in: query
+          description: Filter by fix status
+          schema:
+            type: boolean
+        - name: file
+          in: query
+          description: Filter by file path prefix
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of pattern violations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  violations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PatternViolation'
+                  summary:
+                    $ref: '#/components/schemas/ViolationSummary'
+
+  /patterns/scan:
+    post:
+      summary: Scan for pattern violations
+      description: Trigger a scan for deprecated patterns in codebase
+      operationId: scanPatterns
+      tags:
+        - Patterns
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                paths:
+                  type: array
+                  items:
+                    type: string
+                  description: Specific paths to scan (empty for all)
+                patterns:
+                  type: array
+                  items:
+                    type: string
+                    enum: [company_id_usage, functional_repository, missing_rls, direct_db_access, wrong_rls_path]
+                  description: Specific patterns to check (empty for all)
+      responses:
+        '202':
+          description: Scan started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scanId:
+                    type: string
+                    format: uuid
+                  estimatedDuration:
+                    type: integer
+                    description: Estimated seconds to complete
+        '429':
+          description: Scan already in progress
+
+  /tables/orphaned:
+    get:
+      summary: Get orphaned tables
+      description: Returns list of tables with no code references
+      operationId: getOrphanedTables
+      tags:
+        - Tables
+      responses:
+        '200':
+          description: List of orphaned tables
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tables:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrphanedTable'
+                  totalCount:
+                    type: integer
+                  totalSize:
+                    type: string
+                    description: Total size of orphaned tables
+
+components:
+  schemas:
+    SchemaVerificationResult:
+      type: object
+      properties:
+        isAligned:
+          type: boolean
+          description: Whether schema matches migrations
+        missingMigrations:
+          type: array
+          items:
+            type: string
+          description: Migration files not applied
+        unexpectedTables:
+          type: array
+          items:
+            type: string
+          description: Tables in DB not in migrations
+        mismatchedColumns:
+          type: array
+          items:
+            type: object
+            properties:
+              table:
+                type: string
+              expected:
+                type: array
+                items:
+                  type: string
+              actual:
+                type: array
+                items:
+                  type: string
+
+    MigrationStatus:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tableName:
+          type: string
+        hasCompanyId:
+          type: boolean
+        hasTenantId:
+          type: boolean
+        rowCount:
+          type: integer
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed, skipped]
+        migratedAt:
+          type: string
+          format: date-time
+        errorMessage:
+          type: string
+
+    MigrationSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+        pending:
+          type: integer
+        inProgress:
+          type: integer
+        completed:
+          type: integer
+        failed:
+          type: integer
+        skipped:
+          type: integer
+
+    MigrationResult:
+      type: object
+      properties:
+        migrationId:
+          type: string
+          format: uuid
+        tableName:
+          type: string
+        rowsAffected:
+          type: integer
+        duration:
+          type: integer
+          description: Milliseconds
+        status:
+          type: string
+          enum: [started, completed, failed]
+
+    PatternViolation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filePath:
+          type: string
+        lineNumber:
+          type: integer
+        columnNumber:
+          type: integer
+        patternType:
+          type: string
+          enum: [company_id_usage, functional_repository, missing_rls, direct_db_access, wrong_rls_path]
+        violationText:
+          type: string
+        suggestedFix:
+          type: string
+        isFixed:
+          type: boolean
+        fixedAt:
+          type: string
+          format: date-time
+
+    ViolationSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+        byType:
+          type: object
+          additionalProperties:
+            type: integer
+        fixed:
+          type: integer
+        pending:
+          type: integer
+
+    OrphanedTable:
+      type: object
+      properties:
+        schemaName:
+          type: string
+        tableName:
+          type: string
+        rowCount:
+          type: integer
+        sizeBytes:
+          type: integer
+        lastModified:
+          type: string
+          format: date-time
+        hasCodeReferences:
+          type: boolean
+        decision:
+          type: string
+          enum: [keep, seed, remove, document, pending]
+        decisionReason:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+        timestamp:
+          type: string
+          format: date-time

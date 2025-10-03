@@ -95,7 +95,7 @@ const DEFAULT_CONFIG: GeofenceConfig = {
  *
  * @example
  * ```typescript
- * const geofencingService = new RoutingGeofencingService(supabase, companyId);
+ * const geofencingService = new RoutingGeofencingService(supabase, tenantId);
  *
  * // Check if user is at property
  * const result = await geofencingService.checkGeofence(
@@ -118,16 +118,16 @@ export class RoutingGeofencingService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string,
+    private tenantId: string,
     config?: Partial<GeofenceConfig>
   ) {
     // TODO: this.eventsRepository = new RoutingGeofenceEventsRepository(
     //   client,
-    //   companyId
+    //   tenantId
     // );
     // TODO: this.boundariesRepository = new RoutingPropertyBoundariesRepository(
     //   client,
-    //   companyId
+    //   tenantId
     // );
     this.config = { ...DEFAULT_CONFIG, ...config };
   }

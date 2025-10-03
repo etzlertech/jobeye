@@ -21,13 +21,13 @@ interface BatchItem {
 }
 
 interface BatchVerificationProps {
-  companyId: string;
+  tenantId: string;
   onComplete?: (results: any) => void;
   className?: string;
 }
 
 export default function BatchVerification({
-  companyId,
+  tenantId,
   onComplete,
   className = ''
 }: BatchVerificationProps) {
@@ -123,7 +123,7 @@ export default function BatchVerification({
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          companyId,
+          tenantId,
           items: requestItems,
           maxBudgetUsd: 10.0,
           maxRequestsPerDay: 100,

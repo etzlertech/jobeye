@@ -183,7 +183,7 @@ export class KitService {
 
       // Log the override
       const overrideLog = await this.overrideLogRepo.create({
-        company_id: '', // Would get from context
+        tenant_id: '', // Would get from context
         job_id: request.jobId,
         kit_id: request.kitId,
         item_id: request.itemId,
@@ -375,7 +375,7 @@ export class KitService {
   }
 
   async getOverrideAnalytics(
-    companyId: string,
+    tenantId: string,
     startDate: Date,
     endDate: Date
   ): Promise<{
@@ -385,7 +385,7 @@ export class KitService {
     averageResponseTime: number;
   }> {
     const overrides = await this.overrideLogRepo.findByDateRange(
-      companyId,
+      tenantId,
       startDate,
       endDate
     );

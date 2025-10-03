@@ -40,14 +40,14 @@ export async function findById(
 }
 
 export async function findByCompany(
-  companyId: string,
+  tenantId: string,
   limit = 50
 ): Promise<{ data: PurchaseReceipt[]; error: Error | null }> {
 
   const { data, error } = await supabase
     .from('purchase_receipts')
     .select('*')
-    .eq('tenant_id', companyId)
+    .eq('tenant_id', tenantId)
     .order('purchase_date', { ascending: false })
     .limit(limit);
 

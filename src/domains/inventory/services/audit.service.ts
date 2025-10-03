@@ -24,7 +24,7 @@ import { getOfflineInventoryQueue } from './offline-queue.service';
 
 export interface AuditSession {
   id: string;
-  companyId: string;
+  tenantId: string;
   userId: string;
   locationId?: string;
   startedAt: string;
@@ -41,7 +41,7 @@ export interface AuditItemRecord {
 }
 
 export interface AuditRequest {
-  companyId: string;
+  tenantId: string;
   userId: string;
   locationId?: string;
   auditRecords: AuditItemRecord[];
@@ -65,7 +65,7 @@ export async function performAudit(
   request: AuditRequest
 ): Promise<AuditResult> {
   const {
-    companyId,
+    tenantId,
     userId,
     locationId,
     auditRecords,
@@ -78,7 +78,7 @@ export async function performAudit(
   const offlineQueue = getOfflineInventoryQueue();
   if (!offlineQueue.getIsOnline()) {
     await offlineQueue.enqueue({
-      companyId,
+      tenantId,
       userId,
       type: 'audit',
       payload: request,
@@ -145,7 +145,7 @@ export async function performAudit(
 
       // Step 5: Create adjustment transaction
       const transactionResult = await inventoryTransactionsRepo.create({
-        company_id: companyId,
+        tenant_id: tenantId,
         item_id: record.itemId,
         type: adjustmentType,
         quantity: adjustmentQty,
@@ -208,11 +208,11 @@ export async function performAudit(
  * Get items for audit at a location
  */
 export async function getItemsForAudit(
-  companyId: string,
+  tenantId: string,
   locationId?: string
 ): Promise<{ data: InventoryItem[]; error: Error | null }> {
   const result = await inventoryItemsRepo.findAll({
-    companyId,
+    tenantId,
     locationId,
     trackingMode: 'quantity', // Only quantity-tracked items need auditing
   });
@@ -224,15 +224,15 @@ export async function getItemsForAudit(
  * Get audit history
  */
 export async function getAuditHistory(
-  companyId: string,
+  tenantId: string,
   locationId?: string
 ): Promise<{ data: InventoryTransaction[]; error: Error | null }> {
   const adjustmentInResult = await inventoryTransactionsRepo.findByCompany(
-    companyId,
+    tenantId,
     'adjustment_in'
   );
   const adjustmentOutResult = await inventoryTransactionsRepo.findByCompany(
-    companyId,
+    tenantId,
     'adjustment_out'
   );
 

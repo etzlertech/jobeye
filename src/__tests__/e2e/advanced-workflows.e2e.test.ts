@@ -74,7 +74,7 @@ interface TestUser {
   email: string;
   password: string;
   role: 'TECHNICIAN' | 'MANAGER' | 'ADMIN';
-  companyId: string;
+  tenantId: string;
 }
 
 const testUsers = {
@@ -82,19 +82,19 @@ const testUsers = {
     email: 'tech-e2e@example.com',
     password: 'Test123!@#',
     role: 'TECHNICIAN' as const,
-    companyId: 'company-e2e-test'
+    tenantId: 'company-e2e-test'
   },
   manager: {
     email: 'manager-e2e@example.com',
     password: 'Test123!@#',
     role: 'MANAGER' as const,
-    companyId: 'company-e2e-test'
+    tenantId: 'company-e2e-test'
   },
   admin: {
     email: 'admin-e2e@example.com',
     password: 'Test123!@#',
     role: 'ADMIN' as const,
-    companyId: 'company-e2e-test'
+    tenantId: 'company-e2e-test'
   }
 };
 
@@ -140,7 +140,7 @@ async function logoutUser(session: TestSession) {
 }
 
 // Helper: Process voice command (mock)
-async function processVoiceCommand(command: string, userId: string, companyId: string) {
+async function processVoiceCommand(command: string, userId: string, tenantId: string) {
   // TODO: Real implementation would:
   // 1. Convert speech to text (Whisper API)
   // 2. Send to LLM for intent recognition
@@ -160,7 +160,7 @@ async function processVoiceCommand(command: string, userId: string, companyId: s
     confidence: 0.95,
     parameters: {},
     userId,
-    companyId,
+    tenantId,
     timestamp: new Date().toISOString()
   };
 }
@@ -404,7 +404,7 @@ describe('Advanced End-to-End Workflows', () => {
 
       const inventoryCheck = await visionService.verifyKit({
         kitId: `truck-inventory-${session.user.id}`,
-        companyId: testUsers.technician.companyId,
+        tenantId: testUsers.technician.tenantId,
         imageData,
         expectedItems: ['fertilizer_50lb', 'spreader', 'safety_vest', 'gloves'],
         maxBudgetUsd: 5.0
@@ -508,7 +508,7 @@ describe('Advanced End-to-End Workflows', () => {
 
       const reinspection = await visionService.verifyKit({
         kitId: `complaint-inspect-${complaint?.id}`,
-        companyId: testUsers.manager.companyId,
+        tenantId: testUsers.manager.tenantId,
         imageData,
         expectedItems: ['healthy_lawn', 'no_damage', 'proper_edging', 'clean_debris'],
         maxBudgetUsd: 10.0
@@ -626,7 +626,7 @@ describe('Advanced End-to-End Workflows', () => {
 
       const calibrationCheck = await visionService.verifyKit({
         kitId: `equipment-${currentEquipment!.id}-calibration`,
-        companyId: testUsers.technician.companyId,
+        tenantId: testUsers.technician.tenantId,
         imageData,
         expectedItems: ['blade_sharp', 'blade_level', 'deck_clean', 'tire_pressure_ok'],
         maxBudgetUsd: 8.0
@@ -948,7 +948,7 @@ describe('Advanced End-to-End Workflows', () => {
 
       const cleaningVerification = await visionService.verifyKit({
         kitId: `equipment-clean-${session.user.id}`,
-        companyId: testUsers.technician.companyId,
+        tenantId: testUsers.technician.tenantId,
         imageData,
         expectedItems: ['clean_tank', 'rinsed_hose', 'no_residue', 'clean_nozzle'],
         maxBudgetUsd: 6.0
@@ -977,7 +977,7 @@ describe('Advanced End-to-End Workflows', () => {
       // === STEP 5: Pre-service check at Property B (verify no contamination) ===
       const propertyBCheck = await visionService.verifyKit({
         kitId: `property-b-precheck-${Date.now()}`,
-        companyId: testUsers.technician.companyId,
+        tenantId: testUsers.technician.tenantId,
         imageData,
         expectedItems: ['equipment_clean', 'no_chemical_residue', 'proper_ppe'],
         maxBudgetUsd: 5.0

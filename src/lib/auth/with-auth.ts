@@ -11,7 +11,7 @@ export interface AuthenticatedRequest extends NextRequest {
     id: string;
     email: string;
     role: string;
-    company_id: string;
+    tenant_id: string;
   };
 }
 
@@ -21,7 +21,7 @@ export interface User {
   app_metadata?: {
     role?: string;
     crew_id?: string;
-    company_id?: string;
+    tenant_id?: string;
   };
 }
 
@@ -53,11 +53,11 @@ export async function withAuth(
       app_metadata: {
         role: 'crew',
         crew_id: 'mock-crew-id',
-        company_id: 'mock-company-id'
+        tenant_id: 'mock-company-id'
       }
     };
 
-    const tenantId = mockUser.app_metadata?.company_id || 'mock-company-id';
+    const tenantId = mockUser.app_metadata?.tenant_id || 'mock-company-id';
 
     return await handler(mockUser, tenantId);
   } catch (error) {

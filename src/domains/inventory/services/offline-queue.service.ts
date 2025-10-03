@@ -15,7 +15,7 @@
 
 export interface QueuedInventoryOperation {
   id: string;
-  companyId: string;
+  tenantId: string;
   userId: string;
   type:
     | 'check_in'
@@ -83,7 +83,7 @@ export class OfflineInventoryQueue {
           store.createIndex('status', 'status', { unique: false });
           store.createIndex('type', 'type', { unique: false });
           store.createIndex('queuedAt', 'queuedAt', { unique: false });
-          store.createIndex('companyId', 'companyId', { unique: false });
+          store.createIndex('tenantId', 'tenantId', { unique: false });
         }
       };
     });

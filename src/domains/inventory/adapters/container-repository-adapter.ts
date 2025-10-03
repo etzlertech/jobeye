@@ -15,7 +15,7 @@ import type {
 } from '../types/inventory-types';
 
 export interface ContainerFilter {
-  companyId?: string;
+  tenantId?: string;
   type?: ContainerType;
   isActive?: boolean;
   isDefault?: boolean;
@@ -66,7 +66,7 @@ export async function findAll(
 
     // Map inventory filter format to equipment repository format
     const result = await repo.findAll({
-      tenantId: filter.companyId || '',
+      tenantId: filter.tenantId || '',
       filters: {
         containerType: filter.type,
         isActive: filter.isActive,
@@ -100,11 +100,11 @@ export async function create(
     const repo = getRepository();
 
     // Extract tenant ID and prepare data
-    const tenantId = container.company_id;
+    const tenantId = container.tenant_id;
     if (!tenantId) {
       return {
         data: null,
-        error: new Error('company_id is required'),
+        error: new Error('tenant_id is required'),
       };
     }
 
@@ -216,14 +216,14 @@ export async function deleteById(
  * Find containers by company (compatibility method for inventory service)
  */
 export async function findByCompany(
-  companyId: string,
+  tenantId: string,
   limit?: number
 ): Promise<{ data: Container[]; error: Error | null }> {
   try {
     const repo = getRepository();
 
     const result = await repo.findAll({
-      tenantId: companyId,
+      tenantId: tenantId,
       limit: limit || 50,
     });
 
@@ -245,7 +245,7 @@ export async function findByCompany(
 function mapToInventoryFormat(equipmentContainer: any): Container {
   return {
     id: equipmentContainer.id,
-    company_id: equipmentContainer.tenantId,
+    tenant_id: equipmentContainer.tenantId,
     name: equipmentContainer.name,
     type: equipmentContainer.containerType,
     container_type: equipmentContainer.containerType,

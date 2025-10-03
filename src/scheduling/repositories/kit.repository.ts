@@ -84,12 +84,12 @@ export class KitRepository {
     return data;
   }
 
-  async findByCode(kitCode: string, companyId: string): Promise<Kit | null> {
+  async findByCode(kitCode: string, tenantId: string): Promise<Kit | null> {
     const { data, error } = await this.supabase
       .from('kits')
       .select('*')
       .eq('kit_code', kitCode)
-      .eq('company_id', companyId)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (error) {
@@ -213,11 +213,11 @@ export class KitRepository {
     });
   }
 
-  async findByVoiceIdentifier(voiceIdentifier: string, companyId: string): Promise<Kit | null> {
+  async findByVoiceIdentifier(voiceIdentifier: string, tenantId: string): Promise<Kit | null> {
     const { data, error } = await this.supabase
       .from('kits')
       .select('*')
-      .eq('company_id', companyId)
+      .eq('tenant_id', tenantId)
       .ilike('metadata->voice_identifier', voiceIdentifier)
       .single();
 
@@ -229,11 +229,11 @@ export class KitRepository {
     return data;
   }
 
-  async searchKits(searchTerm: string, companyId: string): Promise<Kit[]> {
+  async searchKits(searchTerm: string, tenantId: string): Promise<Kit[]> {
     const { data, error } = await this.supabase
       .from('kits')
       .select('*')
-      .eq('company_id', companyId)
+      .eq('tenant_id', tenantId)
       .or(
         `name.ilike.%${searchTerm}%,kit_code.ilike.%${searchTerm}%,metadata->voice_identifier.ilike.%${searchTerm}%`
       )
@@ -244,11 +244,11 @@ export class KitRepository {
     return data || [];
   }
 
-  async countByCategory(companyId: string): Promise<Record<string, number>> {
+  async countByCategory(tenantId: string): Promise<Record<string, number>> {
     const { data, error } = await this.supabase
       .from('kits')
       .select('category')
-      .eq('company_id', companyId)
+      .eq('tenant_id', tenantId)
       .eq('is_active', true);
 
     if (error) throw error;

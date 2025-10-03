@@ -155,7 +155,7 @@ export interface InventoryImageFinalizePayload {
 
 export interface InventoryItem {
   id: string;
-  company_id: string;
+  tenant_id: string;
   type: ItemType;
   name: string;
   category: string | null;
@@ -187,7 +187,7 @@ export interface InventoryImageData {
 }
 
 export interface InventoryItemCreate {
-  company_id: string;
+  tenant_id: string;
   type: ItemType;
   name: string;
   category?: string;
@@ -220,7 +220,7 @@ export interface InventoryItemUpdate {
 
 export interface Container {
   id: string;
-  company_id: string;
+  tenant_id: string;
   type: ContainerType;
   name: string;
   identifier: string | null;
@@ -236,7 +236,7 @@ export interface Container {
 }
 
 export interface ContainerCreate {
-  company_id: string;
+  tenant_id: string;
   type: ContainerType;
   name: string;
   identifier?: string;
@@ -291,7 +291,7 @@ export interface ContainerAssignmentCreate {
 
 export interface InventoryTransaction {
   id: string;
-  company_id: string;
+  tenant_id: string;
   type: TransactionType;
   item_ids: string[];
   quantity: number | null;
@@ -315,7 +315,7 @@ export interface CostData {
 }
 
 export interface InventoryTransactionCreate {
-  company_id: string;
+  tenant_id: string;
   type: TransactionType;
   item_ids: string[];
   quantity?: number;
@@ -337,7 +337,7 @@ export interface InventoryTransactionCreate {
 
 export interface PurchaseReceipt {
   id: string;
-  company_id: string;
+  tenant_id: string;
   vendor_name: string;
   vendor_location: string | null;
   purchase_date: string;
@@ -363,7 +363,7 @@ export interface ReceiptLineItem {
 }
 
 export interface PurchaseReceiptCreate {
-  company_id: string;
+  tenant_id: string;
   vendor_name: string;
   vendor_location?: string;
   purchase_date: string;
@@ -384,7 +384,7 @@ export interface PurchaseReceiptCreate {
 
 export interface TrainingDataRecord {
   id: string;
-  company_id: string;
+  tenant_id: string;
   user_id: string;
   original_photo_url: string;
   yolo_detections: YoloDetections;
@@ -444,7 +444,7 @@ export interface QualityMetrics {
 }
 
 export interface TrainingDataRecordCreate {
-  company_id: string;
+  tenant_id: string;
   user_id: string;
   original_photo_url: string;
   yolo_detections: YoloDetections;
@@ -496,7 +496,7 @@ export interface VisionTrainingAnnotationCreate {
 
 export interface DetectionConfidenceThreshold {
   id: string;
-  company_id: string;
+  tenant_id: string;
   local_confidence_threshold: number;
   max_daily_vlm_requests: number;
   daily_cost_budget_cap: number;
@@ -511,7 +511,7 @@ export interface DetectionConfidenceThreshold {
 
 export interface BackgroundFilterPreference {
   id: string;
-  company_id: string;
+  tenant_id: string;
   user_id: string | null;
   object_label: string;
   action: FilterAction;

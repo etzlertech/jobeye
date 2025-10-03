@@ -94,19 +94,19 @@ export async function cleanupTestDatabase() {
     await supabase
       .from('schedule_events')
       .delete()
-      .eq('company_id', TEST_IDS.company);
+      .eq('tenant_id', TEST_IDS.company);
 
     // 2. Delete day plans
     await supabase
       .from('day_plans')
       .delete()
-      .eq('company_id', TEST_IDS.company);
+      .eq('tenant_id', TEST_IDS.company);
 
     // 3. Delete jobs (if needed)
     // await supabase
     //   .from('jobs')
     //   .delete()
-    //   .eq('company_id', TEST_IDS.company);
+    //   .eq('tenant_id', TEST_IDS.company);
 
     // 4. Keep company for reuse (or delete if preferred)
     // await supabase
@@ -128,7 +128,7 @@ export async function createTestDayPlan(overrides: Partial<Database['public']['T
   const { data, error } = await supabase
     .from('day_plans')
     .insert({
-      company_id: TEST_IDS.company,
+      tenant_id: TEST_IDS.company,
       user_id: TEST_IDS.user1,
       plan_date: '2024-01-15',
       status: 'draft',
@@ -154,7 +154,7 @@ export async function createTestScheduleEvent(
   const { data, error } = await supabase
     .from('schedule_events')
     .insert({
-      company_id: TEST_IDS.company,
+      tenant_id: TEST_IDS.company,
       day_plan_id: dayPlanId,
       event_type: 'job',
       sequence_order: 1,

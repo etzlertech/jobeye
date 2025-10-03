@@ -101,7 +101,7 @@ export interface WeeklyAnalytics {
  *
  * @example
  * ```typescript
- * const analyticsService = new RoutingAnalyticsService(supabase, companyId);
+ * const analyticsService = new RoutingAnalyticsService(supabase, tenantId);
  *
  * // Get route efficiency
  * const metrics = await analyticsService.getRouteEfficiency(scheduleId);
@@ -118,12 +118,12 @@ export class RoutingAnalyticsService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string
+    private tenantId: string
   ) {
-    // TODO: this.schedulesRepository = new RoutingSchedulesRepository(client, companyId);
+    // TODO: this.schedulesRepository = new RoutingSchedulesRepository(client, tenantId);
     // TODO: this.breadcrumbsRepository = new RoutingGPSBreadcrumbsRepository(
       client,
-      companyId
+      tenantId
     );
   }
 

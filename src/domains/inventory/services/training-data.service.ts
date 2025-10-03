@@ -17,7 +17,7 @@ import * as trainingDataRepo from '../repositories/training-data.repository';
 import type { TrainingDataRecord } from '../types/inventory-types';
 
 export interface TrainingDataRequest {
-  companyId: string;
+  tenantId: string;
   userId: string;
   detectionSessionId: string;
   imageUrl: string;
@@ -49,7 +49,7 @@ export async function recordCorrection(
 ): Promise<TrainingDataResult> {
   try {
     const recordData = {
-      company_id: request.companyId,
+      tenant_id: request.tenantId,
       detection_session_id: request.detectionSessionId,
       image_url: request.imageUrl,
       crop_url: request.cropUrl,
@@ -93,7 +93,7 @@ export async function recordCorrection(
  * Batch record corrections from detection session
  */
 export async function recordSessionCorrections(
-  companyId: string,
+  tenantId: string,
   userId: string,
   detectionSessionId: string,
   corrections: Array<{
@@ -112,7 +112,7 @@ export async function recordSessionCorrections(
 
   for (const correction of corrections) {
     const result = await recordCorrection({
-      companyId,
+      tenantId,
       userId,
       detectionSessionId,
       ...correction,
@@ -136,10 +136,10 @@ export async function recordSessionCorrections(
  * Get training data for company
  */
 export async function getTrainingData(
-  companyId: string,
+  tenantId: string,
   limit?: number
 ): Promise<{ data: TrainingDataRecord[]; error: Error | null }> {
-  return await trainingDataRepo.findByCompany(companyId, limit);
+  return await trainingDataRepo.findByCompany(tenantId, limit);
 }
 
 /**
@@ -155,7 +155,7 @@ export async function getTrainingDataBySession(
  * Calculate detection accuracy metrics
  */
 export async function calculateAccuracyMetrics(
-  companyId: string
+  tenantId: string
 ): Promise<{
   data: {
     totalDetections: number;
@@ -169,7 +169,7 @@ export async function calculateAccuracyMetrics(
   error: Error | null;
 }> {
   try {
-    const result = await trainingDataRepo.findByCompany(companyId, 1000);
+    const result = await trainingDataRepo.findByCompany(tenantId, 1000);
 
     if (result.error) {
       return { data: null, error: result.error };

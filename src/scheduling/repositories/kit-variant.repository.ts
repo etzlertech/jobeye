@@ -237,11 +237,11 @@ export class KitVariantRepository {
     return data;
   }
 
-  async countByKit(companyId: string): Promise<Record<string, number>> {
+  async countByKit(tenantId: string): Promise<Record<string, number>> {
     const { data, error } = await this.supabase
       .from('kit_variants')
       .select('kit_id')
-      .eq('company_id', companyId);
+      .eq('tenant_id', tenantId);
 
     if (error) throw error;
 

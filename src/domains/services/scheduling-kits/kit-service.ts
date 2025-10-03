@@ -9,17 +9,17 @@ import {
 
 export interface KitServiceDependencies {
   kitRepository: {
-    createKit: (input: CreateKitInput, companyId: string) => Promise<KitDetail>;
-    listKits: (companyId: string) => Promise<KitDetail[]>;
-    getKitById: (kitId: string, companyId: string) => Promise<KitDetail | null>;
-    findActiveKitByCode: (companyId: string, kitCode: string) => Promise<KitDetail | null>;
+    createKit: (input: CreateKitInput, tenantId: string) => Promise<KitDetail>;
+    listKits: (tenantId: string) => Promise<KitDetail[]>;
+    getKitById: (kitId: string, tenantId: string) => Promise<KitDetail | null>;
+    findActiveKitByCode: (tenantId: string, kitCode: string) => Promise<KitDetail | null>;
   };
   kitVariantRepository: {
-    listVariantsForKit: (companyId: string, kitId: string) => Promise<KitVariant[]>;
+    listVariantsForKit: (tenantId: string, kitId: string) => Promise<KitVariant[]>;
   };
   kitAssignmentRepository: {
     createAssignment: (input: CreateKitAssignmentInput) => Promise<KitAssignment>;
-    findByExternalRef: (companyId: string, externalRef: string) => Promise<KitAssignment | null>;
+    findByExternalRef: (tenantId: string, externalRef: string) => Promise<KitAssignment | null>;
   };
   kitOverrideLogRepository: {
     createOverride: (input: CreateKitOverrideLogInput) => Promise<{ id: string }>;
@@ -32,21 +32,21 @@ export interface KitServiceDependencies {
 export class KitService {
   constructor(private readonly deps: KitServiceDependencies) {}
 
-  async createKitWithSteps(input: CreateKitInput, companyId: string): Promise<KitDetail> {
+  async createKitWithSteps(input: CreateKitInput, tenantId: string): Promise<KitDetail> {
     if (!input.items.length) {
       throw new Error('At least one kit item is required');
     }
 
-    const created = await this.deps.kitRepository.createKit(input, companyId);
+    const created = await this.deps.kitRepository.createKit(input, tenantId);
     return created;
   }
 
-  listKits(companyId: string): Promise<KitDetail[]> {
-    return this.deps.kitRepository.listKits(companyId);
+  listKits(tenantId: string): Promise<KitDetail[]> {
+    return this.deps.kitRepository.listKits(tenantId);
   }
 
-  async getKitOrThrow(companyId: string, kitId: string): Promise<KitDetail> {
-    const kit = await this.deps.kitRepository.getKitById(kitId, companyId);
+  async getKitOrThrow(tenantId: string, kitId: string): Promise<KitDetail> {
+    const kit = await this.deps.kitRepository.getKitById(kitId, tenantId);
     if (!kit) {
       throw new Error('Kit not found');
     }
@@ -54,22 +54,22 @@ export class KitService {
   }
 
   async assignKitByCode(params: {
-    companyId: string;
+    tenantId: string;
     kitCode: string;
     externalRef: string;
     notes?: string;
     metadata?: Record<string, unknown>;
   }): Promise<KitAssignment> {
-    const kit = await this.deps.kitRepository.findActiveKitByCode(params.companyId, params.kitCode);
+    const kit = await this.deps.kitRepository.findActiveKitByCode(params.tenantId, params.kitCode);
     if (!kit) {
-      throw new Error(`Kit ${params.kitCode} is not available for company ${params.companyId}`);
+      throw new Error(`Kit ${params.kitCode} is not available for company ${params.tenantId}`);
     }
 
-    const variants = await this.deps.kitVariantRepository.listVariantsForKit(params.companyId, kit.id);
+    const variants = await this.deps.kitVariantRepository.listVariantsForKit(params.tenantId, kit.id);
     const defaultVariant = variants.find((variant) => variant.isDefault) ?? null;
 
     const payload: CreateKitAssignmentInput = {
-      companyId: params.companyId,
+      tenantId: params.tenantId,
       kitId: kit.id,
       variantId: defaultVariant?.id ?? null,
       externalRef: params.externalRef,

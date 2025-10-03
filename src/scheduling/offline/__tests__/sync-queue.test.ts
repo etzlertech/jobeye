@@ -84,7 +84,7 @@ describe('SyncQueueService', () => {
         operation_type: 'create',
         entity_type: 'schedule_event',
         entity_id: 'event-1',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         user_id: 'user-1',
         data: { test: 'data' },
         status: 'pending'
@@ -107,7 +107,7 @@ describe('SyncQueueService', () => {
           operation_type: 'create' as OperationType,
           entity_type: 'schedule_event',
           entity_id: 'event-1',
-          company_id: 'company-1',
+          tenant_id: 'company-1',
           user_id: 'user-1',
           data: { title: 'Event 1' },
           status: 'pending' as const
@@ -116,7 +116,7 @@ describe('SyncQueueService', () => {
           operation_type: 'update' as OperationType,
           entity_type: 'day_plan',
           entity_id: 'plan-1',
-          company_id: 'company-1',
+          tenant_id: 'company-1',
           user_id: 'user-1',
           data: { status: 'in_progress' },
           status: 'pending' as const
@@ -145,7 +145,7 @@ describe('SyncQueueService', () => {
         operation_type: 'create',
         entity_type: 'schedule_event',
         entity_id: 'event-1',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         user_id: 'user-1',
         data: { test: 'data' },
         status: 'pending'
@@ -174,7 +174,7 @@ describe('SyncQueueService', () => {
         operation_type: 'create',
         entity_type: 'schedule_event',
         entity_id: 'event-1',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         user_id: 'user-1',
         data: { test: 'data' },
         status: 'pending'
@@ -194,7 +194,7 @@ describe('SyncQueueService', () => {
         operation_type: 'create',
         entity_type: 'schedule_event',
         entity_id: 'event-1',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         user_id: 'user-1',
         data: { test: 'data' },
         status: 'pending'
@@ -222,7 +222,7 @@ describe('SyncQueueService', () => {
         operation_type: 'create',
         entity_type: 'schedule_event',
         entity_id: 'event-1',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         user_id: 'user-1',
         data: { test: 'data' },
         status: 'pending'
@@ -246,7 +246,7 @@ describe('SyncQueueService', () => {
         operation_type: 'update',
         entity_type: 'schedule_event',
         entity_id: 'event-1',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         user_id: 'user-1',
         data: { title: 'Update 1' },
         status: 'pending'
@@ -256,7 +256,7 @@ describe('SyncQueueService', () => {
         operation_type: 'update',
         entity_type: 'schedule_event',
         entity_id: 'event-1',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         user_id: 'user-2',
         data: { title: 'Update 2' },
         status: 'pending'
@@ -273,7 +273,7 @@ describe('SyncQueueService', () => {
         operation_type: 'create',
         entity_type: 'schedule_event',
         entity_id: 'event-1',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         user_id: 'user-1',
         data: { title: 'Event 1' },
         status: 'pending'
@@ -283,7 +283,7 @@ describe('SyncQueueService', () => {
         operation_type: 'create',
         entity_type: 'schedule_event',
         entity_id: 'event-2',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         user_id: 'user-1',
         data: { title: 'Event 2' },
         status: 'pending'
@@ -304,7 +304,7 @@ describe('SyncQueueService', () => {
         operation_type: 'create',
         entity_type: 'schedule_event',
         entity_id: 'event-old',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         user_id: 'user-1',
         data: { test: 'data' },
         status: 'synced',
@@ -316,7 +316,7 @@ describe('SyncQueueService', () => {
         operation_type: 'create',
         entity_type: 'schedule_event',
         entity_id: 'event-new',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         user_id: 'user-1',
         data: { test: 'data' },
         status: 'pending'

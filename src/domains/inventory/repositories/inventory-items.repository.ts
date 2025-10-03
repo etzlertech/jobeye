@@ -19,7 +19,7 @@ import type {
 } from '../types/inventory-types';
 
 export interface InventoryItemFilter {
-  companyId?: string;
+  tenantId?: string;
   type?: ItemType;
   status?: ItemStatus;
   category?: string;
@@ -60,8 +60,8 @@ export async function findAll(
     .select('*', { count: 'exact' });
 
   // Apply filters
-  if (filter.companyId) {
-    query = query.eq('tenant_id', filter.companyId);
+  if (filter.tenantId) {
+    query = query.eq('tenant_id', filter.tenantId);
   }
 
   if (filter.type) {
@@ -173,10 +173,10 @@ export async function updateLocation(
  */
 export async function findByLocation(
   locationId: string,
-  companyId: string
+  tenantId: string
 ): Promise<{ data: InventoryItem[]; error: Error | null }> {
   const result = await findAll({
-    companyId,
+    tenantId,
     currentLocationId: locationId,
   });
 

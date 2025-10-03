@@ -134,11 +134,11 @@ export class JobFromVoiceService {
       // Get user's tenant
       const { data: user } = await this.supabase
         .from('users')
-        .select('company_id')
+        .select('tenant_id')
         .eq('id', userId)
         .single();
 
-      if (!user?.company_id) {
+      if (!user?.tenant_id) {
         return {
           success: false,
           message: 'User company not found',
@@ -148,7 +148,7 @@ export class JobFromVoiceService {
 
       // Create job
       const jobData = {
-        tenant_id: user.company_id,
+        tenant_id: user.tenant_id,
         template_id: validation.template_id!,
         customer_id: validation.customer_id!,
         property_id: validation.property_id!,

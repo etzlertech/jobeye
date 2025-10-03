@@ -1,6 +1,6 @@
 # OCR Migration Preflight Report
 
-Timestamp: 2025-09-30T02:03:16.149Z
+Timestamp: 2025-10-03T16:48:27.539Z
 Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
 
 ## Issues Detected
@@ -19,6 +19,7 @@ Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
   - is_active: boolean, nullable=YES (default: true)
   - created_at: timestamp with time zone, nullable=YES (default: now())
   - updated_at: timestamp with time zone, nullable=YES (default: now())
+  - intake_session_id: uuid, nullable=YES
 - Indexes:
   - vendors_pkey: CREATE UNIQUE INDEX vendors_pkey ON public.vendors USING btree (id)
 

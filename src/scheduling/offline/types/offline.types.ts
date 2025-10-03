@@ -32,7 +32,7 @@ export interface SyncQueueEntry {
   operation_type: OperationType;
   entity_type: string;
   entity_id: string;
-  company_id: string;
+  tenant_id: string;
   user_id: string;
   data: any;
   status: SyncStatus;

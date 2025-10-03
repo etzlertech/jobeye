@@ -31,7 +31,7 @@ describe('Voice Narration - End-to-End Scenarios', () => {
       const result = {
         verificationId: 'ver-123',
         kitId: 'kit-456',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'complete' as const,
         processingMethod: 'local_yolo' as const,
         confidenceScore: 0.95,
@@ -59,7 +59,7 @@ describe('Voice Narration - End-to-End Scenarios', () => {
       const result = {
         verificationId: 'ver-124',
         kitId: 'kit-457',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'complete' as const,
         processingMethod: 'local_yolo' as const,
         confidenceScore: 0.89,
@@ -98,7 +98,7 @@ describe('Voice Narration - End-to-End Scenarios', () => {
       const result = {
         verificationId: 'ver-125',
         kitId: 'kit-458',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'incomplete' as const,
         processingMethod: 'local_yolo' as const,
         confidenceScore: 0.67,
@@ -135,7 +135,7 @@ describe('Voice Narration - End-to-End Scenarios', () => {
       const result = {
         verificationId: 'ver-126',
         kitId: 'kit-459',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'failed' as const,
         processingMethod: 'local_yolo' as const,
         confidenceScore: 0.32,
@@ -171,7 +171,7 @@ describe('Voice Narration - End-to-End Scenarios', () => {
       const result = {
         verificationId: 'ver-127',
         kitId: 'kit-460',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'complete' as const,
         processingMethod: 'cloud_vlm' as const,
         confidenceScore: 0.97,
@@ -245,7 +245,7 @@ describe('Voice Narration - End-to-End Scenarios', () => {
       const result = {
         verificationId: 'ver-128',
         kitId: 'kit-461',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'complete' as const,
         processingMethod: 'local_yolo' as const,
         confidenceScore: 0.91,
@@ -286,7 +286,7 @@ describe('Voice Narration - End-to-End Scenarios', () => {
       const result = {
         verificationId: 'ver-129',
         kitId: 'kit-462',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'incomplete' as const,
         processingMethod: 'local_yolo' as const,
         confidenceScore: 0.78,
@@ -323,7 +323,7 @@ describe('Voice Narration - End-to-End Scenarios', () => {
       const result = {
         verificationId: 'ver-130',
         kitId: 'kit-463',
-        companyId: 'company-789',
+        tenantId: 'company-789',
         verificationResult: 'incomplete' as const,
         processingMethod: 'local_yolo' as const,
         confidenceScore: 0.65,

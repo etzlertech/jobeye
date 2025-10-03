@@ -25,7 +25,7 @@ export class PDFExportService {
    * Generate PDF report from verification result
    */
   async generateReport(
-    verification: VerifyKitResult & { kitId: string; companyId: string },
+    verification: VerifyKitResult & { kitId: string; tenantId: string },
     options: PDFExportOptions = {}
   ): Promise<Blob> {
     const {
@@ -49,7 +49,7 @@ export class PDFExportService {
    * Generate HTML content for PDF
    */
   private generateHTML(
-    verification: VerifyKitResult & { kitId: string; companyId: string },
+    verification: VerifyKitResult & { kitId: string; tenantId: string },
     options: PDFExportOptions
   ): string {
     const timestamp = new Date().toLocaleString();
@@ -259,7 +259,7 @@ export class PDFExportService {
   <div class="header">
     <h1>Kit Verification Report</h1>
     <div class="meta">
-      Kit ID: ${verification.kitId} | Company: ${verification.companyId}
+      Kit ID: ${verification.kitId} | Company: ${verification.tenantId}
       ${options.includeTimestamp ? `<br>Generated: ${timestamp}` : ''}
     </div>
   </div>

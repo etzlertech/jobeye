@@ -24,7 +24,7 @@ import type {
 import { getOfflineInventoryQueue } from './offline-queue.service';
 
 export interface TransferRequest {
-  companyId: string;
+  tenantId: string;
   userId: string;
   itemIds: string[];
   fromLocationId: string;
@@ -50,7 +50,7 @@ export async function transfer(
   request: TransferRequest
 ): Promise<TransferResult> {
   const {
-    companyId,
+    tenantId,
     userId,
     itemIds,
     fromLocationId,
@@ -76,7 +76,7 @@ export async function transfer(
   const offlineQueue = getOfflineInventoryQueue();
   if (!offlineQueue.getIsOnline()) {
     await offlineQueue.enqueue({
-      companyId,
+      tenantId,
       userId,
       type: 'transfer',
       payload: request,
@@ -142,7 +142,7 @@ export async function transfer(
 
       // Step 5: Create transfer transaction
       const transactionResult = await inventoryTransactionsRepo.create({
-        company_id: companyId,
+        tenant_id: tenantId,
         item_id: itemId,
         type: 'transfer',
         quantity,
@@ -186,7 +186,7 @@ export async function transfer(
       // Step 7: Create new container assignment if transferring to a container
       if (item.tracking_mode === 'individual') {
         const assignmentResult = await containerAssignmentsRepo.create({
-          company_id: companyId,
+          tenant_id: tenantId,
           container_id: toLocationId,
           item_id: itemId,
           assigned_by: userId,
@@ -232,11 +232,11 @@ export async function batchTransfer(
  * Get transfer history between locations
  */
 export async function getTransferHistory(
-  companyId: string,
+  tenantId: string,
   locationId?: string
 ): Promise<{ data: InventoryTransaction[]; error: Error | null }> {
   const result = await inventoryTransactionsRepo.findByCompany(
-    companyId,
+    tenantId,
     'transfer'
   );
 

@@ -418,26 +418,15 @@ console.log(result.cost); // 0.00 (used local YOLO)
 ---
 
 ## Recent Changes
+- 009-codebase-cleanup-and: Added TypeScript 5.x, Node.js 18+   + Next.js 14, Supabase Client SDK, @supabase/supabase-js  
 
 ### Feature 008: Codebase Redundancy Analysis (2025-01-02)
 - Created redundancy analyzer tool specifications
 - Designed data model for tracking duplicate code and abandoned tables
-- Established CLI interface for running analysis
-- Planned TypeScript AST parsing approach with ts-morph
-- Defined three-factor impact scoring: scale, risk, quality
 
 ### Feature 007: MVP Intent-Driven Mobile App (2025-01-27)
-- Added intent recognition layer on top of existing VLM services
-- Implemented role-based routing with Next.js middleware
-- Created new domains: `/domains/intent/`, `/domains/supervisor/`, `/domains/crew/`
-- Added PWA offline support with IndexedDB queue
-- Integrated Web Speech API for voice commands
-- New API endpoints: `/api/intent/*`, `/api/supervisor/*`, `/api/crew/*`
 
 ### Previous Features
-- Feature 001: Vision-Based Kit Verification (Merged) - YOLO + VLM pipeline
-- Feature 005: Field Intelligence Safety - Workflow automation
-- Feature 006: Mobile PWA UI - Initial mobile interface
 
 ## Important Conventions
 

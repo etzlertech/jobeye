@@ -258,7 +258,7 @@ describe('VLM Fallback Integration', () => {
         imageData: mockImageData,
         kitId: 'test-kit-123',
         expectedItems: ['wrench'],
-        companyId: 'test-company'
+        tenantId: 'test-company'
       });
 
       // Should return empty result without throwing
@@ -282,7 +282,7 @@ describe('VLM Fallback Integration', () => {
         imageData: mockImageData,
         kitId: 'test-kit-123',
         expectedItems: ['wrench'],
-        companyId: 'test-company'
+        tenantId: 'test-company'
       });
 
       // Should return empty result, not throw

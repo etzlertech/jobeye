@@ -16,7 +16,7 @@ export interface BatchVerificationItem {
 }
 
 export interface BatchVerificationRequest {
-  companyId: string;
+  tenantId: string;
   items: BatchVerificationItem[];
   maxBudgetUsd?: number;
   maxRequestsPerDay?: number;
@@ -61,7 +61,7 @@ export class BatchVerificationService {
   }> {
     const startTime = Date.now();
     const {
-      companyId,
+      tenantId,
       items,
       maxBudgetUsd,
       maxRequestsPerDay,
@@ -96,7 +96,7 @@ export class BatchVerificationService {
             try {
               const verifyRequest: VerifyKitRequest = {
                 kitId: item.kitId,
-                companyId,
+                tenantId,
                 imageData: item.imageData,
                 expectedItems: item.expectedItems,
                 maxBudgetUsd,

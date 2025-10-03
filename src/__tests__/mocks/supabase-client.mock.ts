@@ -378,7 +378,7 @@ export function createMockSupabaseClient() {
             id: 'test-user-id',
             email: 'test@example.com',
             app_metadata: {
-              company_id: 'test-company-id'
+              tenant_id: 'test-company-id'
             }
           }
         },

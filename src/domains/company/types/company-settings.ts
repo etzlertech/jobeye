@@ -47,7 +47,7 @@ export interface CompanyFeatureFlags {
 
 export interface CompanySettings {
   id: string;
-  companyId: string;
+  tenantId: string;
   visionThresholds: VisionThresholds;
   voicePreferences: VoicePreferences;
   budgetLimits: BudgetLimits;
@@ -158,7 +158,7 @@ const normalizeFeatureFlags = (value: unknown): CompanyFeatureFlags => {
 export const mapCompanySettingsRow = (row: CompanySettingsRow): CompanySettings => {
   return {
     id: row.id,
-    companyId: row.company_id,
+    tenantId: row.tenant_id,
     visionThresholds: normalizeVisionThresholds(row.vision_thresholds),
     voicePreferences: normalizeVoicePreferences(row.voice_preferences),
     budgetLimits: normalizeBudgetLimits(row.budget_limits),

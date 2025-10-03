@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     // Parse request body
     const body = await request.json();
     const {
-      companyId,
+      tenantId,
       items,
       maxBudgetUsd = 10.0,
       maxRequestsPerDay = 100,
@@ -37,11 +37,11 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!companyId || !items || !Array.isArray(items)) {
+    if (!tenantId || !items || !Array.isArray(items)) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing required fields: companyId, items (array)'
+          error: 'Missing required fields: tenantId, items (array)'
         },
         { status: 400 }
       );
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     // Call batch verification service
     const service = getBatchVerificationService();
     const result = await service.verifyBatch({
-      companyId,
+      tenantId,
       items: processedItems,
       maxBudgetUsd,
       maxRequestsPerDay,

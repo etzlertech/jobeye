@@ -64,7 +64,7 @@ describe('GET /api/vision/history - Contract Tests', () => {
       if (data.verifications.length > 0) {
         const record = data.verifications[0];
         expect(record).toHaveProperty('id');
-        expect(record).toHaveProperty('companyId');
+        expect(record).toHaveProperty('tenantId');
         expect(record).toHaveProperty('technicianId');
         expect(record).toHaveProperty('kitId');
         expect(record).toHaveProperty('verificationResult');
@@ -98,9 +98,9 @@ describe('GET /api/vision/history - Contract Tests', () => {
 
       // All records should belong to same company
       if (data.verifications.length > 1) {
-        const firstCompanyId = data.verifications[0].companyId;
+        const firstCompanyId = data.verifications[0].tenantId;
         data.verifications.forEach(record => {
-          expect(record.companyId).toBe(firstCompanyId);
+          expect(record.tenantId).toBe(firstCompanyId);
         });
       }
     });

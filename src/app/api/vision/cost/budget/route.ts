@@ -25,14 +25,14 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
-    const companyId = searchParams.get('companyId');
+    const tenantId = searchParams.get('tenantId');
     const dailyBudgetUsd = searchParams.get('dailyBudgetUsd');
     const dailyRequestLimit = searchParams.get('dailyRequestLimit');
 
-    // Validate companyId
-    if (!companyId) {
+    // Validate tenantId
+    if (!tenantId) {
       return NextResponse.json(
-        { error: 'companyId query parameter is required' },
+        { error: 'tenantId query parameter is required' },
         { status: 400 }
       );
     }
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     // Check budget
     const budgetCheck = await service.checkBudget(
-      companyId,
+      tenantId,
       dailyBudgetUsd ? parseFloat(dailyBudgetUsd) : undefined,
       dailyRequestLimit ? parseInt(dailyRequestLimit) : undefined
     );

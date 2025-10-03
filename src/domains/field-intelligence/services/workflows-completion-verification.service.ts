@@ -112,7 +112,7 @@ const DEFAULT_CONFIG: VerificationConfig = {
  *
  * @example
  * ```typescript
- * const verificationService = new WorkflowsCompletionVerificationService(supabase, companyId);
+ * const verificationService = new WorkflowsCompletionVerificationService(supabase, tenantId);
  *
  * // Verify job completion
  * const result = await verificationService.verifyCompletion({
@@ -135,12 +135,12 @@ export class WorkflowsCompletionVerificationService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string,
+    private tenantId: string,
     config?: Partial<VerificationConfig>
   ) {
     // TODO: this.completionRepository = new WorkflowsCompletionRecordsRepository(
     //   client,
-    //   companyId
+    //   tenantId
     // );
     this.config = { ...DEFAULT_CONFIG, ...config };
   }

@@ -138,10 +138,10 @@ export async function POST(request: Request) {
       return createResponse({ error: 'Unauthorized' }, 401);
     }
 
-    // Extract company_id from token or use test default
+    // Extract tenant_id from token or use test default
     // In production, this would come from JWT token claims
     // For now, we'll use a test default UUID
-    const company_id = body.company_id || '00000000-0000-0000-0000-000000000001';
+    const tenant_id = body.tenant_id || '00000000-0000-0000-0000-000000000001';
 
     const { user_id, plan_date, schedule_events = [], route_data } = body;
 
@@ -167,7 +167,7 @@ export async function POST(request: Request) {
 
     // Create day plan
     const dayPlan = await dayPlanRepo.create({
-      company_id,
+      tenant_id,
       user_id,
       plan_date,
       status: 'draft',
@@ -181,7 +181,7 @@ export async function POST(request: Request) {
     for (const event of schedule_events) {
       const createdEvent = await eventRepo.create({
         ...event,
-        company_id,
+        tenant_id,
         day_plan_id: dayPlan.id,
         status: event.status || 'pending'
       });

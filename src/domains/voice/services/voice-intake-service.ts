@@ -92,7 +92,7 @@ export class VoiceIntakeService {
       // Validate session exists and belongs to user's company
       const { data: session, error: sessionError } = await this.supabase
         .from('conversation_sessions')
-        .select('id, company_id, user_id')
+        .select('id, tenant_id, user_id')
         .eq('id', request.sessionId)
         .single();
 
@@ -103,7 +103,7 @@ export class VoiceIntakeService {
       // Generate storage path
       const { data: pathData, error: pathError } = await this.supabase
         .rpc('generate_storage_path', {
-          p_company_id: session.company_id,
+          p_tenant_id: session.tenant_id,
           p_object_type: 'voice',
           p_file_extension: this.getFileExtension(request.fileName)
         });
@@ -118,7 +118,7 @@ export class VoiceIntakeService {
       const { data: mediaAsset, error: mediaError } = await this.supabase
         .from('media_assets')
         .insert({
-          company_id: session.company_id,
+          tenant_id: session.tenant_id,
           type: 'audio',
           storage_path: storagePath,
           file_size_bytes: request.fileSize,

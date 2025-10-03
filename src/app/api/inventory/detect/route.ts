@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get company ID from user metadata
-    const companyId = user.app_metadata?.company_id;
-    if (!companyId) {
+    const tenantId = user.app_metadata?.tenant_id;
+    if (!tenantId) {
       return NextResponse.json(
         { error: 'Company ID not found in user metadata' },
         { status: 400 }
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       imageData = imageFile;
 
       // Upload to Supabase Storage
-      const fileName = `detections/${companyId}/${Date.now()}-${imageFile.name}`;
+      const fileName = `detections/${tenantId}/${Date.now()}-${imageFile.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('inventory-images')
         .upload(fileName, imageFile);
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
 
     // Run detection
     const result = await detectionOrchestratorService.detectInventoryItems({
-      companyId,
+      tenantId,
       userId: user.id,
       imageSource: imageData,
       imageUrl,

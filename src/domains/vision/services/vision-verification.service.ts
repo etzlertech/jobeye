@@ -17,7 +17,7 @@ import * as costRecordRepo from '../repositories/cost-record.repository';
 
 export interface VerifyKitRequest {
   kitId: string;
-  companyId: string;
+  tenantId: string;
   imageData: ImageData;
   expectedItems: string[];
   maxBudgetUsd?: number;
@@ -63,7 +63,7 @@ export class VisionVerificationService {
     error: VerificationError | null;
   }> {
     const startTime = Date.now();
-    const { kitId, companyId, imageData, expectedItems, maxBudgetUsd, maxRequestsPerDay } = request;
+    const { kitId, tenantId, imageData, expectedItems, maxBudgetUsd, maxRequestsPerDay } = request;
 
     try {
       // Step 1: Run YOLO detection
@@ -96,7 +96,7 @@ export class VisionVerificationService {
       if (fallbackDecision.shouldUseFallback) {
         // Check budget
         const budgetCheck = await costRecordRepo.canMakeVlmRequest(
-          companyId,
+          tenantId,
           maxBudgetUsd,
           maxRequestsPerDay
         );
@@ -121,7 +121,7 @@ export class VisionVerificationService {
             imageData,
             kitId,
             expectedItems,
-            companyId,
+            tenantId,
             context: `Verify kit ${kitId}. Expected items: ${expectedItems.join(', ')}`
           };
 
@@ -134,7 +134,7 @@ export class VisionVerificationService {
 
             // Record cost
             await costRecordRepo.createCostRecord({
-              company_id: companyId,
+              tenant_id: tenantId,
               verification_id: '', // Will update after creating verification
               cost_usd: vlmResult.estimatedCostUsd,
               provider: 'openai-gpt4-vision',
@@ -160,7 +160,7 @@ export class VisionVerificationService {
 
       // Step 7: Save verification record
       const verification = await verificationRepo.createVerification({
-        tenant_id: companyId,
+        tenant_id: tenantId,
         kit_id: kitId,
         verification_result: verificationResult,
         processing_method: processingMethod,
@@ -199,7 +199,7 @@ export class VisionVerificationService {
       const processingTimeMs = Date.now() - startTime;
 
       const budgetCheck = await costRecordRepo.canMakeVlmRequest(
-        companyId,
+        tenantId,
         maxBudgetUsd,
         maxRequestsPerDay
       );

@@ -93,7 +93,7 @@ const DEFAULT_CONFIG: MatchingConfig = {
  *
  * @example
  * ```typescript
- * const matchingService = new IntakeDuplicateMatchingService(supabase, companyId);
+ * const matchingService = new IntakeDuplicateMatchingService(supabase, tenantId);
  *
  * // Check for duplicates
  * const result = await matchingService.findDuplicates({
@@ -113,10 +113,10 @@ export class IntakeDuplicateMatchingService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string,
+    private tenantId: string,
     config?: Partial<MatchingConfig>
   ) {
-    // TODO: this.requestsRepository = new IntakeRequestsRepository(client, companyId);
+    // TODO: this.requestsRepository = new IntakeRequestsRepository(client, tenantId);
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 

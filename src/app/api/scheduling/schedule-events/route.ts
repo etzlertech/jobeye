@@ -82,9 +82,9 @@ export async function POST(request: Request) {
       return createResponse({ error: 'Unauthorized' }, 401);
     }
 
-    // Extract company_id from token or use test default
+    // Extract tenant_id from token or use test default
     // In production, this would come from JWT token claims
-    const company_id = body.company_id || '00000000-0000-0000-0000-000000000001';
+    const tenant_id = body.tenant_id || '00000000-0000-0000-0000-000000000001';
 
     const {
       day_plan_id,
@@ -145,7 +145,7 @@ export async function POST(request: Request) {
 
     // Create the event
     const event = await eventRepo.create({
-      company_id,
+      tenant_id,
       day_plan_id,
       event_type,
       job_id,

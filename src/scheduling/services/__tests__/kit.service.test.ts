@@ -95,7 +95,7 @@ describe('KitService', () => {
   describe('loadKitWithVariant', () => {
     const mockKit: Kit = {
       id: 'kit-1',
-      company_id: 'company-1',
+      tenant_id: 'company-1',
       kit_code: 'LAWN-BASIC',
       name: 'Basic Lawn Care Kit',
       description: 'Essential lawn care tools',
@@ -109,7 +109,7 @@ describe('KitService', () => {
     const mockItems: KitItem[] = [
       {
         id: 'item-1',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         kit_id: 'kit-1',
         variant_id: null,
         material_id: 'mat-1',
@@ -123,7 +123,7 @@ describe('KitService', () => {
       },
       {
         id: 'item-2',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         kit_id: 'kit-1',
         variant_id: 'variant-summer',
         material_id: 'mat-2',
@@ -139,7 +139,7 @@ describe('KitService', () => {
 
     const mockVariant: KitVariant = {
       id: 'variant-summer',
-      company_id: 'company-1',
+      tenant_id: 'company-1',
       kit_id: 'kit-1',
       variant_code: 'SUMMER',
       name: 'Summer Variant',
@@ -216,7 +216,7 @@ describe('KitService', () => {
     const baseItems: KitItem[] = [
       {
         id: 'item-1',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         kit_id: 'kit-1',
         variant_id: null,
         material_id: 'mat-1',
@@ -274,7 +274,7 @@ describe('KitService', () => {
     it('should cache loaded kits', async () => {
       const mockKit: Kit = {
         id: 'kit-1',
-        company_id: 'company-1',
+        tenant_id: 'company-1',
         kit_code: 'TEST',
         name: 'Test Kit',
         description: null,

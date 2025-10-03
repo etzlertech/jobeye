@@ -144,7 +144,7 @@ describe('ocr-preflight-check', () => {
       seedTable(table, {
         columns: [
           column('id', 'uuid'),
-          column('company_id', 'uuid'),
+          column('tenant_id', 'uuid'),
         ],
         rows: 3,
       });
@@ -181,7 +181,7 @@ describe('ocr-preflight-check', () => {
       seedTable(table, {
         columns: [
           column('id', 'uuid'),
-          column('company_id', 'uuid'),
+          column('tenant_id', 'uuid'),
         ],
         rows: 1,
       });

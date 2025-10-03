@@ -44,7 +44,7 @@ export type Database = {
       day_plans: {
         Row: {
           id: string
-          company_id: string
+          tenant_id: string
           user_id: string
           plan_date: string
           status: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
@@ -61,7 +61,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          company_id: string
+          tenant_id: string
           user_id: string
           plan_date: string
           status?: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
@@ -78,7 +78,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          company_id?: string
+          tenant_id?: string
           user_id?: string
           plan_date?: string
           status?: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
@@ -97,7 +97,7 @@ export type Database = {
       schedule_events: {
         Row: {
           id: string
-          company_id: string
+          tenant_id: string
           day_plan_id: string
           event_type: 'job' | 'break' | 'travel' | 'maintenance' | 'meeting'
           job_id: string | null
@@ -117,7 +117,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          company_id: string
+          tenant_id: string
           day_plan_id: string
           event_type: 'job' | 'break' | 'travel' | 'maintenance' | 'meeting'
           job_id?: string | null
@@ -137,7 +137,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          company_id?: string
+          tenant_id?: string
           day_plan_id?: string
           event_type?: 'job' | 'break' | 'travel' | 'maintenance' | 'meeting'
           job_id?: string | null
@@ -159,7 +159,7 @@ export type Database = {
       crew_assignments: {
         Row: {
           id: string
-          company_id: string
+          tenant_id: string
           schedule_event_id: string
           user_id: string
           role: 'lead' | 'helper' | 'trainee'
@@ -173,7 +173,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          company_id: string
+          tenant_id: string
           schedule_event_id: string
           user_id: string
           role: 'lead' | 'helper' | 'trainee'
@@ -187,7 +187,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          company_id?: string
+          tenant_id?: string
           schedule_event_id?: string
           user_id?: string
           role?: 'lead' | 'helper' | 'trainee'
@@ -203,7 +203,7 @@ export type Database = {
       kits: {
         Row: {
           id: string
-          company_id: string
+          tenant_id: string
           kit_code: string
           name: string
           description: string | null
@@ -215,7 +215,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          company_id: string
+          tenant_id: string
           kit_code: string
           name: string
           description?: string | null
@@ -227,7 +227,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          company_id?: string
+          tenant_id?: string
           kit_code?: string
           name?: string
           description?: string | null
@@ -241,7 +241,7 @@ export type Database = {
       kit_items: {
         Row: {
           id: string
-          company_id: string
+          tenant_id: string
           kit_id: string
           item_type: 'equipment' | 'material' | 'tool'
           quantity: number
@@ -253,7 +253,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          company_id: string
+          tenant_id: string
           kit_id: string
           item_type: 'equipment' | 'material' | 'tool'
           quantity?: number
@@ -265,7 +265,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          company_id?: string
+          tenant_id?: string
           kit_id?: string
           item_type?: 'equipment' | 'material' | 'tool'
           quantity?: number
@@ -279,7 +279,7 @@ export type Database = {
       kit_variants: {
         Row: {
           id: string
-          company_id: string
+          tenant_id: string
           kit_id: string
           variant_code: string
           name: string
@@ -290,7 +290,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          company_id: string
+          tenant_id: string
           kit_id: string
           variant_code: string
           name: string
@@ -301,7 +301,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          company_id?: string
+          tenant_id?: string
           kit_id?: string
           variant_code?: string
           name?: string
@@ -314,7 +314,7 @@ export type Database = {
       job_kits: {
         Row: {
           id: string
-          company_id: string
+          tenant_id: string
           job_id: string
           kit_id: string
           variant_id: string | null
@@ -330,7 +330,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          company_id: string
+          tenant_id: string
           job_id: string
           kit_id: string
           variant_id?: string | null
@@ -346,7 +346,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          company_id?: string
+          tenant_id?: string
           job_id?: string
           kit_id?: string
           variant_id?: string | null
@@ -364,7 +364,7 @@ export type Database = {
       kit_override_logs: {
         Row: {
           id: string
-          company_id: string
+          tenant_id: string
           job_id: string
           kit_id: string | null
           item_id: string | null
@@ -385,7 +385,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          company_id: string
+          tenant_id: string
           job_id: string
           kit_id?: string | null
           item_id?: string | null
@@ -406,7 +406,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          company_id?: string
+          tenant_id?: string
           job_id?: string
           kit_id?: string | null
           item_id?: string | null
@@ -429,7 +429,7 @@ export type Database = {
       notification_queue: {
         Row: {
           id: string
-          company_id: string
+          tenant_id: string
           recipient_id: string
           type: string
           priority: 'low' | 'medium' | 'high' | 'urgent'
@@ -446,7 +446,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          company_id: string
+          tenant_id: string
           recipient_id: string
           type: string
           priority?: 'low' | 'medium' | 'high' | 'urgent'
@@ -463,7 +463,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          company_id?: string
+          tenant_id?: string
           recipient_id?: string
           type?: string
           priority?: 'low' | 'medium' | 'high' | 'urgent'
@@ -492,7 +492,7 @@ export type Database = {
       }
       get_override_analytics: {
         Args: {
-          p_company_id: string
+          p_tenant_id: string
           p_start_date: string
           p_end_date: string
         }

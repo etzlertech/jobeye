@@ -66,7 +66,7 @@ interface User {
   email: string;
   fullName: string;
   role: 'admin' | 'supervisor' | 'crew';
-  companyId: string;
+  tenantId: string;
   companyName: string;
   lastActive: string;
   status: 'active' | 'inactive' | 'pending';
@@ -117,7 +117,7 @@ export default function AdminDashboardPage() {
             email: 'admin@example.com',
             fullName: 'Admin User',
             role: 'admin',
-            companyId: '1',
+            tenantId: '1',
             companyName: 'System Admin',
             lastActive: '2025-10-02',
             status: 'active'

@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run cleanup pattern checks
+echo "🔍 Running cleanup pattern checks..."
+
+# Run ESLint with cleanup rules
+npx eslint --ext .ts,.tsx src/ --config .eslintrc.cleanup.js --max-warnings 0
+
+# Run pattern violation scanner
+npx tsx scripts/validation/scan-violations.ts --staged-only
+
+# Run existing pre-commit checks
+npm run pre-commit:checks
+
+echo "✅ Pre-commit checks passed"

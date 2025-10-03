@@ -96,7 +96,7 @@ const DEFAULT_CONFIG: ArrivalConfig = {
  *
  * @example
  * ```typescript
- * const arrivalService = new WorkflowsJobArrivalService(supabase, companyId);
+ * const arrivalService = new WorkflowsJobArrivalService(supabase, tenantId);
  *
  * // Log arrival (manual)
  * const arrival = await arrivalService.logArrival({
@@ -118,14 +118,14 @@ export class WorkflowsJobArrivalService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string,
+    private tenantId: string,
     config?: Partial<ArrivalConfig>
   ) {
     // TODO: this.arrivalsRepository = new WorkflowsJobArrivalsRepository(
     //   client,
-    //   companyId
+    //   tenantId
     // );
-    this.geofencingService = new RoutingGeofencingService(client, companyId);
+    this.geofencingService = new RoutingGeofencingService(client, tenantId);
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 

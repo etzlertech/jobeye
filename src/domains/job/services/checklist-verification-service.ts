@@ -589,11 +589,11 @@ export class ChecklistVerificationService {
   private async getUserTenantId(userId: string): Promise<string> {
     const { data } = await this.supabase
       .from('users')
-      .select('company_id')
+      .select('tenant_id')
       .eq('id', userId)
       .single();
     
-    return data?.company_id || '';
+    return data?.tenant_id || '';
   }
 
   // Offline support

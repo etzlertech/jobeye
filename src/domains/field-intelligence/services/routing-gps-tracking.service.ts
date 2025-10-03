@@ -93,7 +93,7 @@ const DEFAULT_CONFIG: GPSTrackingConfig = {
  *
  * @example
  * ```typescript
- * const trackingService = new RoutingGPSTrackingService(supabase, companyId);
+ * const trackingService = new RoutingGPSTrackingService(supabase, tenantId);
  *
  * // Record GPS coordinate
  * await trackingService.recordCoordinate(userId, {
@@ -115,10 +115,10 @@ export class RoutingGPSTrackingService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string,
+    private tenantId: string,
     config?: Partial<GPSTrackingConfig>
   ) {
-    this.repository = new RoutingGPSBreadcrumbsRepository(client, companyId);
+    this.repository = new RoutingGPSBreadcrumbsRepository(client, tenantId);
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 

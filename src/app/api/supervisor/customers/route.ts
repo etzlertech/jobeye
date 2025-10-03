@@ -48,12 +48,12 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Get tenant ID (no more demo mode - all users use live database)
-    let companyId = request.headers.get('x-tenant-id');
+    let tenantId = request.headers.get('x-tenant-id');
     
     // Allow demo mode override
     const isDemoParam = searchParams.get('demo') === 'true';
-    if (isDemoParam && !companyId) {
-      companyId = '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'; // Demo tenant ID
+    if (isDemoParam && !tenantId) {
+      tenantId = '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'; // Demo tenant ID
     }
 
     // Build query - map billing_address to address for UI compatibility
@@ -70,9 +70,9 @@ export async function GET(request: NextRequest) {
         properties(count)
       `, { count: 'exact' });
 
-    // Add tenant filter (use tenant_id instead of company_id)
-    if (companyId) {
-      query = query.eq('tenant_id', companyId);
+    // Add tenant filter (use tenant_id instead of tenant_id)
+    if (tenantId) {
+      query = query.eq('tenant_id', tenantId);
     }
 
     // Add search filter

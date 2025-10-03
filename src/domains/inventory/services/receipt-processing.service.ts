@@ -25,7 +25,7 @@ import type {
 } from '../types/inventory-types';
 
 export interface ReceiptProcessingRequest {
-  companyId: string;
+  tenantId: string;
   userId: string;
   imageData: File | Blob | string;
   jobId?: string;
@@ -87,7 +87,7 @@ export async function processReceipt(
 
     // Step 2: Create purchase receipt record
     const receiptData = {
-      company_id: request.companyId,
+      tenant_id: request.tenantId,
       vendor: ocr.structuredData.vendor,
       purchase_date: ocr.structuredData.date || new Date().toISOString().split('T')[0],
       total_amount: ocr.structuredData.total || ocr.structuredData.subtotal,
@@ -120,7 +120,7 @@ export async function processReceipt(
 
     // Step 3: Match line items to existing inventory
     const lineItemsWithMatches = await matchLineItemsToInventory(
-      request.companyId,
+      request.tenantId,
       ocr.structuredData.lineItems
     );
 
@@ -137,7 +137,7 @@ export async function processReceipt(
 
         // Create new material item
         const itemResult = await inventoryItemsRepo.create({
-          company_id: request.companyId,
+          tenant_id: request.tenantId,
           type: 'material',
           name: lineItem.description,
           status: 'active',
@@ -159,7 +159,7 @@ export async function processReceipt(
           if (lineItem.quantity && lineItem.quantity > 0) {
             const transactionResult =
               await inventoryTransactionsRepo.create({
-                company_id: request.companyId,
+                tenant_id: request.tenantId,
                 item_id: itemResult.data.id,
                 type: 'purchase',
                 quantity: lineItem.quantity,
@@ -215,7 +215,7 @@ export async function processReceipt(
  * Match receipt line items to existing inventory items
  */
 async function matchLineItemsToInventory(
-  companyId: string,
+  tenantId: string,
   lineItems: Array<{
     description: string;
     quantity?: number;
@@ -228,7 +228,7 @@ async function matchLineItemsToInventory(
   for (const lineItem of lineItems) {
     // Search for matching items by description
     const searchResult = await inventoryItemsRepo.findAll({
-      companyId,
+      tenantId,
       search: lineItem.description,
       type: 'material',
       limit: 1,
@@ -258,8 +258,8 @@ export async function getReceipt(
  * Get receipts for company
  */
 export async function getReceipts(
-  companyId: string,
+  tenantId: string,
   limit?: number
 ): Promise<{ data: PurchaseReceipt[]; error: Error | null }> {
-  return await purchaseReceiptsRepo.findByCompany(companyId, limit);
+  return await purchaseReceiptsRepo.findByCompany(tenantId, limit);
 }

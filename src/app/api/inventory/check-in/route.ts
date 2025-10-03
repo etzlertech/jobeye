@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get company ID from user metadata
-    const companyId = user.app_metadata?.company_id;
-    if (!companyId) {
+    const tenantId = user.app_metadata?.tenant_id;
+    if (!tenantId) {
       return NextResponse.json(
         { error: 'Company ID not found in user metadata' },
         { status: 400 }
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     // Execute check-in
     const result = await checkInService.checkIn({
-      companyId,
+      tenantId,
       userId: user.id,
       itemIds,
       fromLocationId,

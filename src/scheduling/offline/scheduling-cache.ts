@@ -40,7 +40,7 @@ import { logger } from '@/core/logger/voice-logger';
 // Offline data models
 export interface OfflineDayPlan {
   id: string;
-  company_id: string;
+  tenant_id: string;
   user_id: string;
   plan_date: string;
   status: string;
@@ -58,7 +58,7 @@ export interface OfflineDayPlan {
 
 export interface OfflineScheduleEvent {
   id: string;
-  company_id: string;
+  tenant_id: string;
   day_plan_id: string;
   event_type: string;
   job_id?: string;
@@ -83,7 +83,7 @@ export interface OfflineScheduleEvent {
 
 export interface OfflineKit {
   id: string;
-  company_id: string;
+  tenant_id: string;
   kit_code: string;
   name: string;
   description?: string;
@@ -116,7 +116,7 @@ export interface OfflineKitVariant {
 
 export interface OfflineOverride {
   id: string;
-  company_id: string;
+  tenant_id: string;
   job_id: string;
   kit_id?: string;
   item_id?: string;
@@ -161,10 +161,10 @@ export class SchedulingOfflineDB extends Dexie {
     super('SchedulingOfflineDB');
 
     this.version(1).stores({
-      dayPlans: 'id, [company_id+user_id+plan_date], sync_status, updated_at',
-      scheduleEvents: 'id, day_plan_id, [company_id+job_id], sync_status, updated_at',
-      kits: 'id, [company_id+kit_code], last_synced',
-      overrides: 'id, [company_id+job_id], sync_status, created_at',
+      dayPlans: 'id, [tenant_id+user_id+plan_date], sync_status, updated_at',
+      scheduleEvents: 'id, day_plan_id, [tenant_id+job_id], sync_status, updated_at',
+      kits: 'id, [tenant_id+kit_code], last_synced',
+      overrides: 'id, [tenant_id+job_id], sync_status, created_at',
       voiceCommands: 'id, user_id, created_at, processed',
       metadata: 'id, table_name'
     });
@@ -231,11 +231,11 @@ export class SchedulingOfflineDB extends Dexie {
   async getDayPlanByUserAndDate(
     userId: string,
     date: string,
-    companyId: string
+    tenantId: string
   ): Promise<OfflineDayPlan | undefined> {
     return this.dayPlans
-      .where('[company_id+user_id+plan_date]')
-      .equals([companyId, userId, date])
+      .where('[tenant_id+user_id+plan_date]')
+      .equals([tenantId, userId, date])
       .first();
   }
 
@@ -273,10 +273,10 @@ export class SchedulingOfflineDB extends Dexie {
     return this.kits.get(id);
   }
 
-  async getKitByCode(code: string, companyId: string): Promise<OfflineKit | undefined> {
+  async getKitByCode(code: string, tenantId: string): Promise<OfflineKit | undefined> {
     return this.kits
-      .where('[company_id+kit_code]')
-      .equals([companyId, code])
+      .where('[tenant_id+kit_code]')
+      .equals([tenantId, code])
       .first();
   }
 

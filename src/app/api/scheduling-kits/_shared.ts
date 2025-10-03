@@ -28,8 +28,8 @@ import { KitOverrideLogRepository } from '@/domains/repos/scheduling-kits/kit-ov
 import { KitService } from '@/domains/services/scheduling-kits/kit-service';
 
 export interface SessionUserMeta {
-  company_id?: string;
-  companyId?: string;
+  tenant_id?: string;
+  tenantId?: string;
   tenant_id?: string;
 }
 
@@ -101,19 +101,19 @@ export function extractCompanyId(session: SessionPayload, request: Request): str
   const appMeta = (session.user.app_metadata ?? {}) as SessionUserMeta;
   const userMeta = (session.user.user_metadata ?? {}) as SessionUserMeta;
 
-  const companyId =
-    appMeta.company_id ??
-    appMeta.companyId ??
-    userMeta.company_id ??
-    userMeta.companyId ??
+  const tenantId =
+    appMeta.tenant_id ??
+    appMeta.tenantId ??
+    userMeta.tenant_id ??
+    userMeta.tenantId ??
     appMeta.tenant_id ??
     userMeta.tenant_id;
 
-  if (!companyId) {
+  if (!tenantId) {
     throw new Error('Missing company context for request');
   }
 
-  return companyId;
+  return tenantId;
 }
 
 export function buildKitService() {

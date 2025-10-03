@@ -32,7 +32,7 @@ export interface ContainerWithContents {
  * Create new container
  */
 export async function createContainer(
-  companyId: string,
+  tenantId: string,
   userId: string,
   data: {
     name: string;
@@ -43,7 +43,7 @@ export async function createContainer(
   }
 ): Promise<{ data: Container | null; error: Error | null }> {
   return await containersRepo.create({
-    company_id: companyId,
+    tenant_id: tenantId,
     name: data.name,
     type: data.type,
     status: 'active',
@@ -74,7 +74,7 @@ export async function getContainerWithContents(
 
     // Step 2: Get items in container
     const itemsResult = await inventoryItemsRepo.findAll({
-      companyId: container.company_id,
+      tenantId: container.tenant_id,
       locationId: containerId,
     });
 
@@ -105,14 +105,14 @@ export async function getContainerWithContents(
  * Get all containers for company
  */
 export async function getContainers(
-  companyId: string,
+  tenantId: string,
   options: {
     type?: string;
     status?: string;
     limit?: number;
   } = {}
 ): Promise<{ data: Container[]; error: Error | null }> {
-  return await containersRepo.findByCompany(companyId, options.limit);
+  return await containersRepo.findByCompany(tenantId, options.limit);
 }
 
 /**
@@ -129,7 +129,7 @@ export async function updateContainer(
  * Assign item to container
  */
 export async function assignItemToContainer(
-  companyId: string,
+  tenantId: string,
   userId: string,
   itemId: string,
   containerId: string,
@@ -158,7 +158,7 @@ export async function assignItemToContainer(
 
     // Step 3: Create assignment
     const assignmentResult = await containerAssignmentsRepo.create({
-      company_id: companyId,
+      tenant_id: tenantId,
       container_id: containerId,
       item_id: itemId,
       assigned_by: userId,

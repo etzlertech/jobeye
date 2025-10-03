@@ -25,7 +25,7 @@ import type {
 import { getOfflineInventoryQueue } from './offline-queue.service';
 
 export interface CheckInRequest {
-  companyId: string;
+  tenantId: string;
   userId: string;
   itemIds: string[];
   fromLocationId?: string; // Where items came from (truck, job site)
@@ -53,7 +53,7 @@ export async function checkIn(
   request: CheckInRequest
 ): Promise<CheckInResult> {
   const {
-    companyId,
+    tenantId,
     userId,
     itemIds,
     fromLocationId,
@@ -70,7 +70,7 @@ export async function checkIn(
   const offlineQueue = getOfflineInventoryQueue();
   if (!offlineQueue.getIsOnline()) {
     await offlineQueue.enqueue({
-      companyId,
+      tenantId,
       userId,
       type: 'check_in',
       payload: request,
@@ -116,7 +116,7 @@ export async function checkIn(
 
       // Step 4: Create transaction record
       const transactionResult = await inventoryTransactionsRepo.create({
-        company_id: companyId,
+        tenant_id: tenantId,
         item_id: itemId,
         type: 'check_in',
         quantity,
@@ -216,8 +216,8 @@ export async function batchCheckIn(
  * Get check-in history for a job
  */
 export async function getCheckInHistory(
-  companyId: string,
+  tenantId: string,
   jobId: string
 ): Promise<{ data: InventoryTransaction[]; error: Error | null }> {
-  return await inventoryTransactionsRepo.findByCompany(companyId, 'check_in');
+  return await inventoryTransactionsRepo.findByCompany(tenantId, 'check_in');
 }

@@ -153,7 +153,7 @@ export async function POST(request: Request) {
     // Mock response
     const responseData: any = {
       id: 'mock-override-id',
-      company_id: 'mock-company-id',
+      tenant_id: 'mock-company-id',
       job_id,
       kit_id,
       item_id: item_id || missing_items?.[0] || null,

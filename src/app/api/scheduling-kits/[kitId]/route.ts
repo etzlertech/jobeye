@@ -31,9 +31,9 @@ export async function GET(request: Request, { params }: RouteParams) {
     const auth = await requireSession();
     if ('response' in auth) return auth.response;
 
-    const companyId = extractCompanyId(auth.session, request);
+    const tenantId = extractCompanyId(auth.session, request);
     const kitService = buildKitService();
-    const kit = await kitService.getKitOrThrow(companyId, params.kitId);
+    const kit = await kitService.getKitOrThrow(tenantId, params.kitId);
 
     return NextResponse.json(
       {

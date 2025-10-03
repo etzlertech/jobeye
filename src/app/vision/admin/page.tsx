@@ -13,7 +13,7 @@ import { useState, useEffect } from 'react';
 import CostTrendChart from '@/domains/vision/components/CostTrendChart';
 
 interface CompanyStats {
-  companyId: string;
+  tenantId: string;
   companyName: string;
   totalVerifications: number;
   totalCost: number;
@@ -59,7 +59,7 @@ export default function VisionAdminPage() {
 
       setCompanyStats([
         {
-          companyId: 'company-1',
+          tenantId: 'company-1',
           companyName: 'Acme Corp',
           totalVerifications: 432,
           totalCost: 12.45,
@@ -69,7 +69,7 @@ export default function VisionAdminPage() {
           vlmPercentage: 0.06
         },
         {
-          companyId: 'company-2',
+          tenantId: 'company-2',
           companyName: 'TechStart Inc',
           totalVerifications: 287,
           totalCost: 8.91,
@@ -79,7 +79,7 @@ export default function VisionAdminPage() {
           vlmPercentage: 0.11
         },
         {
-          companyId: 'company-3',
+          tenantId: 'company-3',
           companyName: 'BuildCo',
           totalVerifications: 198,
           totalCost: 6.12,
@@ -232,7 +232,7 @@ export default function VisionAdminPage() {
 
             {/* System-wide Cost Trend */}
             <div className="bg-white border rounded-lg p-6">
-              <CostTrendChart companyId="all-companies" days={parseInt(dateRange)} />
+              <CostTrendChart tenantId="all-companies" days={parseInt(dateRange)} />
             </div>
           </div>
         )}
@@ -241,11 +241,11 @@ export default function VisionAdminPage() {
         {activeTab === 'companies' && (
           <div className="space-y-4">
             {companyStats.map((company) => (
-              <div key={company.companyId} className="bg-white border rounded-lg p-6">
+              <div key={company.tenantId} className="bg-white border rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-semibold">{company.companyName}</h3>
-                    <p className="text-sm text-gray-500">{company.companyId}</p>
+                    <p className="text-sm text-gray-500">{company.tenantId}</p>
                   </div>
                   <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
                     View Details

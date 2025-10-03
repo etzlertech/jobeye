@@ -36,7 +36,7 @@ interface CostSummary {
 }
 
 interface CostDashboardProps {
-  companyId: string;
+  tenantId: string;
   dailyBudgetUsd?: number;
   dailyRequestLimit?: number;
   autoRefresh?: boolean;
@@ -45,7 +45,7 @@ interface CostDashboardProps {
 }
 
 export default function CostDashboard({
-  companyId,
+  tenantId,
   dailyBudgetUsd = 10.0,
   dailyRequestLimit = 100,
   autoRefresh = true,
@@ -63,7 +63,7 @@ export default function CostDashboard({
 
       // Fetch budget status
       const budgetRes = await fetch(
-        `/api/vision/cost/budget?companyId=${companyId}&dailyBudgetUsd=${dailyBudgetUsd}&dailyRequestLimit=${dailyRequestLimit}`,
+        `/api/vision/cost/budget?tenantId=${tenantId}&dailyBudgetUsd=${dailyBudgetUsd}&dailyRequestLimit=${dailyRequestLimit}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -80,7 +80,7 @@ export default function CostDashboard({
 
       // Fetch cost summary
       const summaryRes = await fetch(
-        `/api/vision/cost/summary?companyId=${companyId}`,
+        `/api/vision/cost/summary?tenantId=${tenantId}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -109,7 +109,7 @@ export default function CostDashboard({
       const interval = setInterval(fetchData, refreshIntervalMs);
       return () => clearInterval(interval);
     }
-  }, [companyId, dailyBudgetUsd, dailyRequestLimit, autoRefresh, refreshIntervalMs]);
+  }, [tenantId, dailyBudgetUsd, dailyRequestLimit, autoRefresh, refreshIntervalMs]);
 
   if (isLoading) {
     return (
@@ -255,7 +255,7 @@ export default function CostDashboard({
       </div>
 
       {/* Cost Trend Chart */}
-      <CostTrendChart companyId={companyId} days={30} />
+      <CostTrendChart tenantId={tenantId} days={30} />
 
       {/* Refresh Button */}
       <div className="text-center mt-6">

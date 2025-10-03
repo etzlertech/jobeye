@@ -34,7 +34,7 @@ export interface VerificationSessionHookResult {
   /** Retry count for detections */
   retryCount: number;
   /** Initialize verification session */
-  initSession: (jobId: string, companyId: string) => Promise<void>;
+  initSession: (jobId: string, tenantId: string) => Promise<void>;
   /** Update checklist with detected items */
   updateChecklist: (detectedItems: DetectedItem[]) => void;
   /** Complete verification session */
@@ -68,14 +68,14 @@ export function useVerificationSession(): VerificationSessionHookResult {
    * Initialize verification session
    */
   const initSession = useCallback(
-    async (jobId: string, companyId: string): Promise<void> => {
+    async (jobId: string, tenantId: string): Promise<void> => {
       try {
         setStatus('initializing');
         setError(null);
 
-        console.log('[useVerificationSession] Initializing session', { jobId, companyId });
+        console.log('[useVerificationSession] Initializing session', { jobId, tenantId });
 
-        const newSession = await workflowService.startVerification(jobId, companyId);
+        const newSession = await workflowService.startVerification(jobId, tenantId);
         setSession(newSession);
         setStatus('detecting');
 

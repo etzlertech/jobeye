@@ -25,7 +25,7 @@ export interface VerificationSession {
   sessionId: string;
   jobId: string;
   kitId: string;
-  companyId: string;
+  tenantId: string;
   checklist: EquipmentChecklistItem[];
   retryCount: number;
   startedAt: string;
@@ -69,7 +69,7 @@ export class VerificationWorkflowService {
   /**
    * Start verification session - fetch equipment checklist from job
    */
-  async startVerification(jobId: string, companyId: string): Promise<VerificationSession> {
+  async startVerification(jobId: string, tenantId: string): Promise<VerificationSession> {
     try {
       // TODO: Fetch from jobs domain (out of scope for initial implementation)
       // For now, return mock checklist
@@ -84,7 +84,7 @@ export class VerificationWorkflowService {
         sessionId: `session-${Date.now()}`,
         jobId,
         kitId: `kit-${jobId}`,
-        companyId,
+        tenantId,
         checklist,
         retryCount: 0,
         startedAt: new Date().toISOString(),
@@ -180,7 +180,7 @@ export class VerificationWorkflowService {
         console.log('[VerificationWorkflow] Uploading verification photo...');
 
         const uploadResult = await this.mediaAssetService.uploadVerificationPhoto(photo, {
-          companyId: session.companyId,
+          tenantId: session.tenantId,
           jobId: session.jobId,
           userId: 'system', // TODO: Get from auth context
           category: 'verification',
@@ -210,7 +210,7 @@ export class VerificationWorkflowService {
           photo: base64Photo,
           kitId: session.kitId,
           jobId: session.jobId,
-          companyId: session.companyId,
+          tenantId: session.tenantId,
           expectedItems,
           mediaAssetId: uploadResult.data?.mediaAssetId, // Link to uploaded photo
         });
@@ -227,7 +227,7 @@ export class VerificationWorkflowService {
         // Queue for offline sync
         const queueId = await this.offlineQueue.enqueue({
           kitId: session.kitId,
-          companyId: session.companyId,
+          tenantId: session.tenantId,
           imageData: photo,
           expectedItems,
         });

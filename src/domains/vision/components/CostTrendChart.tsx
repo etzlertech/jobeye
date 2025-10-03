@@ -18,13 +18,13 @@ interface CostDataPoint {
 }
 
 interface CostTrendChartProps {
-  companyId: string;
+  tenantId: string;
   days?: number; // Number of days to show (default 30)
   className?: string;
 }
 
 export default function CostTrendChart({
-  companyId,
+  tenantId,
   days = 30,
   className = ''
 }: CostTrendChartProps) {
@@ -35,7 +35,7 @@ export default function CostTrendChart({
 
   useEffect(() => {
     fetchCostTrends();
-  }, [companyId, days]);
+  }, [tenantId, days]);
 
   const fetchCostTrends = async () => {
     setIsLoading(true);
@@ -48,7 +48,7 @@ export default function CostTrendChart({
         .split('T')[0];
 
       const response = await fetch(
-        `/api/vision/cost/summary?companyId=${companyId}&startDate=${startDate}&endDate=${endDate}&breakdown=daily`,
+        `/api/vision/cost/summary?tenantId=${tenantId}&startDate=${startDate}&endDate=${endDate}&breakdown=daily`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`

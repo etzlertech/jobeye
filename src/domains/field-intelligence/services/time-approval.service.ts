@@ -116,7 +116,7 @@ export interface BulkApprovalResult {
  *
  * @example
  * ```typescript
- * const approvalService = new TimeApprovalService(supabase, companyId);
+ * const approvalService = new TimeApprovalService(supabase, tenantId);
  *
  * // Get pending approvals
  * const pending = await approvalService.getPendingApprovals(supervisorId);
@@ -135,10 +135,10 @@ export class TimeApprovalService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string
+    private tenantId: string
   ) {
-    // TODO: this.timeEntriesRepository = new TimeEntriesRepository(client, companyId);
-    // TODO: this.approvalsRepository = new TimeApprovalsRepository(client, companyId);
+    // TODO: this.timeEntriesRepository = new TimeEntriesRepository(client, tenantId);
+    // TODO: this.approvalsRepository = new TimeApprovalsRepository(client, tenantId);
   }
 
   /**

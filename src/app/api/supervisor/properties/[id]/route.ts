@@ -46,7 +46,7 @@ export async function GET(
 
     // Check if demo mode
     const isDemo = request.headers.get('x-is-demo') === 'true';
-    const companyId = request.headers.get('x-tenant-id');
+    const tenantId = request.headers.get('x-tenant-id');
 
     if (isDemo) {
       // Return mock property for demo mode
@@ -70,8 +70,8 @@ export async function GET(
       .select('*, customer:customers(name)')
       .eq('id', propertyId);
 
-    if (companyId) {
-      query = query.eq('company_id', companyId);
+    if (tenantId) {
+      query = query.eq('tenant_id', tenantId);
     }
 
     const { data: property, error } = await query.single();
@@ -103,8 +103,8 @@ export async function PUT(
     const body = await request.json();
 
     // Get company ID from headers
-    const companyId = request.headers.get('x-tenant-id');
-    if (!companyId) {
+    const tenantId = request.headers.get('x-tenant-id');
+    if (!tenantId) {
       return validationError('Company ID required');
     }
 
@@ -116,7 +116,7 @@ export async function PUT(
         property: {
           id: propertyId,
           ...body,
-          company_id: companyId,
+          tenant_id: tenantId,
           updated_at: new Date().toISOString()
         },
         message: 'Property updated successfully in demo mode'
@@ -139,7 +139,7 @@ export async function PUT(
         updated_at: new Date().toISOString()
       })
       .eq('id', propertyId)
-      .eq('company_id', companyId) // Ensure tenant isolation
+      .eq('tenant_id', tenantId) // Ensure tenant isolation
       .select('*, customer:customers(name)')
       .single();
 
@@ -172,8 +172,8 @@ export async function DELETE(
     const propertyId = params.id;
 
     // Get company ID from headers
-    const companyId = request.headers.get('x-tenant-id');
-    if (!companyId) {
+    const tenantId = request.headers.get('x-tenant-id');
+    if (!tenantId) {
       return validationError('Company ID required');
     }
 
@@ -191,7 +191,7 @@ export async function DELETE(
       .from('properties')
       .delete()
       .eq('id', propertyId)
-      .eq('company_id', companyId); // Ensure tenant isolation
+      .eq('tenant_id', tenantId); // Ensure tenant isolation
 
     if (error) throw error;
 

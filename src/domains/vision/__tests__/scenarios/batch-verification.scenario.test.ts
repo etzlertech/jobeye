@@ -69,7 +69,7 @@ describe('Batch Verification - End-to-End Scenarios', () => {
 
       // Act: Process batch
       const result = await batchService.verifyBatch({
-        companyId: 'company-123',
+        tenantId: 'company-123',
         items: batchItems,
         concurrency: 2,
         maxBudgetUsd: 10.0,
@@ -152,7 +152,7 @@ describe('Batch Verification - End-to-End Scenarios', () => {
 
       // Act
       const result = await batchService.verifyBatch({
-        companyId: 'company-123',
+        tenantId: 'company-123',
         items: batchItems,
         stopOnError: false,
         concurrency: 3
@@ -197,7 +197,7 @@ describe('Batch Verification - End-to-End Scenarios', () => {
 
       // Act
       const result = await batchService.verifyBatch({
-        companyId: 'company-123',
+        tenantId: 'company-123',
         items: batchItems,
         stopOnError: true,
         concurrency: 1
@@ -253,7 +253,7 @@ describe('Batch Verification - End-to-End Scenarios', () => {
 
       // Act
       const result = await batchService.verifyBatch({
-        companyId: 'company-123',
+        tenantId: 'company-123',
         items: batchItems,
         concurrency: 3
       });
@@ -273,7 +273,7 @@ describe('Batch Verification - End-to-End Scenarios', () => {
     it('should return error for empty batch', async () => {
       // Act
       const result = await batchService.verifyBatch({
-        companyId: 'company-123',
+        tenantId: 'company-123',
         items: [],
         concurrency: 3
       });
@@ -317,7 +317,7 @@ describe('Batch Verification - End-to-End Scenarios', () => {
 
       // Act
       const result = await batchService.verifyBatch({
-        companyId: 'company-123',
+        tenantId: 'company-123',
         items: batchItems,
         concurrency: 3
       });

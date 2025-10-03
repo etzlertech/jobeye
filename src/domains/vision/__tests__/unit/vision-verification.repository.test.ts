@@ -105,7 +105,7 @@ describe('Vision Verification Repository', () => {
       });
 
       const result = await repo.findVerifications({
-        companyId: 'company-123',
+        tenantId: 'company-123',
         verificationResult: 'complete'
       });
 

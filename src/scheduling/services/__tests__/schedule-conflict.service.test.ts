@@ -38,7 +38,7 @@ describe('ScheduleConflictService', () => {
   describe('checkConflicts', () => {
     const baseEvent: ScheduleEvent = {
       id: '1',
-      company_id: 'company-1',
+      tenant_id: 'company-1',
       day_plan_id: 'plan-1',
       event_type: 'job',
       job_id: 'job-1',
@@ -180,7 +180,7 @@ describe('ScheduleConflictService', () => {
   describe('findOptimalSlot', () => {
     const baseEvent: ScheduleEvent = {
       id: '1',
-      company_id: 'company-1',
+      tenant_id: 'company-1',
       day_plan_id: 'plan-1',
       event_type: 'job',
       job_id: 'job-1',

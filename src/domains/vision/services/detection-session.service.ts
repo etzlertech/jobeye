@@ -39,7 +39,7 @@ export interface SessionState {
  * Create new detection session
  */
 export async function createSession(
-  companyId: string,
+  tenantId: string,
   userId: string,
   imageUrl: string,
   context?: {
@@ -49,7 +49,7 @@ export async function createSession(
   }
 ): Promise<{ data: DetectionSession | null; error: Error | null }> {
   const sessionData: DetectionSessionCreate = {
-    company_id: companyId,
+    tenant_id: tenantId,
     user_id: userId,
     image_url: imageUrl,
     status: 'pending',
@@ -220,7 +220,7 @@ export async function getSession(
   return { 
       data: {
         id: sessionId,
-        company_id: '',
+        tenant_id: '',
         user_id: '',
         status: 'pending',
         created_at: new Date().toISOString(),
@@ -234,12 +234,12 @@ export async function getSession(
  * List sessions for company
  */
 export async function listSessions(
-  companyId: string,
+  tenantId: string,
   options: {
     status?: string;
     userId?: string;
     limit?: number;
   } = {}
 ): Promise<{ data: DetectionSession[]; error: Error | null }> {
-  return { data: [], error: null }; // TODO: return await detectionSessionRepo.findByCompany(companyId, options.limit);
+  return { data: [], error: null }; // TODO: return await detectionSessionRepo.findByCompany(tenantId, options.limit);
 }

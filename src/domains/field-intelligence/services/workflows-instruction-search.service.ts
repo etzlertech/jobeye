@@ -93,7 +93,7 @@ const DEFAULT_CONFIG: SearchConfig = {
  *
  * @example
  * ```typescript
- * const searchService = new WorkflowsInstructionSearchService(supabase, companyId, openaiKey);
+ * const searchService = new WorkflowsInstructionSearchService(supabase, tenantId, openaiKey);
  *
  * // Search for instructions
  * const results = await searchService.search({
@@ -117,13 +117,13 @@ export class WorkflowsInstructionSearchService {
 
   constructor(
     client: SupabaseClient,
-    private companyId: string,
+    private tenantId: string,
     private openaiApiKey: string,
     config?: Partial<SearchConfig>
   ) {
     // TODO: this.instructionsRepository = new WorkflowsStandardInstructionsRepository(
     //   client,
-    //   companyId
+    //   tenantId
     // );
     this.config = { ...DEFAULT_CONFIG, ...config };
   }

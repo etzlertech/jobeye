@@ -42,7 +42,7 @@ export interface YoloInferenceResult {
 // Vision verification record
 export interface VisionVerificationRecord {
   id: string;
-  companyId: string;
+  tenantId: string;
   technicianId: string;
   kitId: string;
   jobId?: string;
@@ -73,7 +73,7 @@ export interface DetectedItem {
 // Cost tracking
 export interface VisionCostRecord {
   id: string;
-  companyId: string;
+  tenantId: string;
   verificationId: string;
   provider: string; // 'openai', 'anthropic', etc.
   operationType: string; // 'vlm_analysis', 'image_upload', etc.
@@ -88,7 +88,7 @@ export interface VisionCostRecord {
 export interface VlmAnalysisRequest {
   imageData: string | Blob;
   kitItems: string[]; // Expected items to detect
-  companyId: string;
+  tenantId: string;
   estimatedCost: number;
 }
 
@@ -107,7 +107,7 @@ export interface OfflineVerificationEntry {
   kitId: string;
   containerId?: string;
   technicianId: string;
-  companyId: string;
+  tenantId: string;
   timestamp: Date;
   retryCount: number;
   lastError?: string;

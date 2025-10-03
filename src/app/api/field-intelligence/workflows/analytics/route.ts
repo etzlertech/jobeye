@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const companyId = user.user_metadata?.company_id;
-    if (!companyId) {
+    const tenantId = user.user_metadata?.tenant_id;
+    if (!tenantId) {
       return NextResponse.json({ error: 'Company ID not found' }, { status: 400 });
     }
 
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    const analyticsService = new WorkflowsAnalyticsService(supabase, companyId);
+    const analyticsService = new WorkflowsAnalyticsService(supabase, tenantId);
 
     let data;
     switch (type) {

@@ -60,7 +60,7 @@ describe('Day Plan Flow Integration', () => {
     await supabase
       .from('day_plans')
       .delete()
-      .eq('company_id', testCompanyId)
+      .eq('tenant_id', testCompanyId)
       .gte('created_at', new Date(Date.now() - 3600000).toISOString());
   });
 
@@ -96,13 +96,13 @@ describe('Day Plan Flow Integration', () => {
       user_id: testUserId,
       plan_date: '2024-01-15',
       status: 'draft',
-      company_id: testCompanyId
+      tenant_id: testCompanyId
     });
 
     // Step 2: Create schedule events for jobs
     const events = await Promise.all([
       scheduleEventRepo.create({
-        company_id: testCompanyId,
+        tenant_id: testCompanyId,
         day_plan_id: dayPlan.id,
         event_type: 'job',
         job_id: 'job-001',
@@ -113,7 +113,7 @@ describe('Day Plan Flow Integration', () => {
         address: { street: '123 Main St' }
       }),
       scheduleEventRepo.create({
-        company_id: testCompanyId,
+        tenant_id: testCompanyId,
         day_plan_id: dayPlan.id,
         event_type: 'job',
         job_id: 'job-002',
@@ -124,7 +124,7 @@ describe('Day Plan Flow Integration', () => {
         address: { street: '456 Park Ave' }
       }),
       scheduleEventRepo.create({
-        company_id: testCompanyId,
+        tenant_id: testCompanyId,
         day_plan_id: dayPlan.id,
         event_type: 'job',
         job_id: 'job-003',
@@ -176,7 +176,7 @@ describe('Day Plan Flow Integration', () => {
     // Try to add 7 jobs
     const jobPromises = Array.from({ length: 7 }, (_, i) => 
       scheduleEventRepo.create({
-        company_id: testCompanyId,
+        tenant_id: testCompanyId,
         day_plan_id: dayPlan.id,
         event_type: 'job',
         job_id: `job-${i + 1}`,
@@ -197,7 +197,7 @@ describe('Day Plan Flow Integration', () => {
 
     // Create events
     await scheduleEventRepo.create({
-      company_id: testCompanyId,
+      tenant_id: testCompanyId,
       day_plan_id: dayPlan.id,
       event_type: 'job',
       job_id: 'job-001',
@@ -227,7 +227,7 @@ describe('Day Plan Flow Integration', () => {
 
     // Create initial events
     const event1 = await scheduleEventRepo.create({
-      company_id: testCompanyId,
+      tenant_id: testCompanyId,
       day_plan_id: dayPlan.id,
       event_type: 'job',
       job_id: 'job-001',
@@ -237,7 +237,7 @@ describe('Day Plan Flow Integration', () => {
     });
 
     const event2 = await scheduleEventRepo.create({
-      company_id: testCompanyId,
+      tenant_id: testCompanyId,
       day_plan_id: dayPlan.id,
       event_type: 'job',
       job_id: 'job-002',
