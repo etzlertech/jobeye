@@ -1,4 +1,4 @@
-analyzed_at: '2025-10-03T17:07:02.971Z'
+analyzed_at: '2025-10-03T14:14:58.474Z'
 database_url: https://rtwigjwqufozqfwozpvo.supabase.co
 tables:
   - name: ai_cost_tracking
@@ -386,7 +386,7 @@ tables:
     description: Customer data
   - name: customers
     schema: public
-    row_count: 86
+    row_count: 84
     columns:
       - name: id
         data_type: uuid
@@ -757,81 +757,86 @@ tables:
         column_default: null
         ordinal_position: 1
         comment: Primary identifier
-      - name: equipment_id
+      - name: company_id
         data_type: varchar
         is_nullable: false
         column_default: null
         ordinal_position: 2
         comment: Foreign key reference
+      - name: equipment_id
+        data_type: varchar
+        is_nullable: false
+        column_default: null
+        ordinal_position: 3
+        comment: Foreign key reference
       - name: performed_by
         data_type: uuid
         is_nullable: false
         column_default: null
-        ordinal_position: 3
+        ordinal_position: 4
         comment: Data field
       - name: maintenance_type
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 4
+        ordinal_position: 5
         comment: Data field
       - name: maintenance_date
         data_type: timestamp
         is_nullable: false
         column_default: null
-        ordinal_position: 5
+        ordinal_position: 6
         comment: Data field
       - name: actions_performed
         data_type: array
         is_nullable: false
         column_default: null
-        ordinal_position: 6
+        ordinal_position: 7
         comment: Data field
       - name: pre_maintenance_verification_id
         data_type: uuid
         is_nullable: false
         column_default: null
-        ordinal_position: 7
+        ordinal_position: 8
         comment: Foreign key reference
       - name: post_maintenance_verification_id
         data_type: uuid
         is_nullable: false
         column_default: null
-        ordinal_position: 8
+        ordinal_position: 9
         comment: Foreign key reference
       - name: status
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 9
+        ordinal_position: 10
         comment: Current status/state
       - name: completion_date
         data_type: timestamp
         is_nullable: false
         column_default: null
-        ordinal_position: 10
+        ordinal_position: 11
         comment: Data field
       - name: notes
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 11
+        ordinal_position: 12
         comment: User notes
       - name: created_at
         data_type: timestamp
         is_nullable: false
         column_default: null
-        ordinal_position: 12
-        comment: Timestamp
-      - name: tenant_id
-        data_type: unknown
-        is_nullable: true
-        column_default: null
         ordinal_position: 13
-        comment: Foreign key reference
+        comment: Timestamp
     primary_keys:
       - id
     foreign_keys:
+      - constraint_name: fk_equipment_maintenance_company_id
+        table_name: equipment_maintenance
+        column_name: company_id
+        foreign_table_name: companies
+        foreign_column_name: id
       - constraint_name: fk_equipment_maintenance_equipment_id
         table_name: equipment_maintenance
         column_name: equipment_id
@@ -846,11 +851,6 @@ tables:
         table_name: equipment_maintenance
         column_name: post_maintenance_verification_id
         foreign_table_name: post_maintenance_verifications
-        foreign_column_name: id
-      - constraint_name: fk_equipment_maintenance_tenant_id
-        table_name: equipment_maintenance
-        column_name: tenant_id
-        foreign_table_name: tenants
         foreign_column_name: id
     indexes: []
     rls_enabled: true
@@ -1677,57 +1677,62 @@ tables:
         column_default: null
         ordinal_position: 1
         comment: Primary identifier
-      - name: kit_id
+      - name: company_id
         data_type: uuid
         is_nullable: false
         column_default: null
         ordinal_position: 2
         comment: Foreign key reference
-      - name: variant_id
+      - name: kit_id
         data_type: uuid
         is_nullable: false
         column_default: null
         ordinal_position: 3
         comment: Foreign key reference
+      - name: variant_id
+        data_type: uuid
+        is_nullable: false
+        column_default: null
+        ordinal_position: 4
+        comment: Foreign key reference
       - name: external_ref
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 4
+        ordinal_position: 5
         comment: Data field
       - name: notes
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 5
+        ordinal_position: 6
         comment: User notes
       - name: metadata
         data_type: jsonb
         is_nullable: false
         column_default: null
-        ordinal_position: 6
+        ordinal_position: 7
         comment: Additional data
       - name: created_at
         data_type: timestamp
         is_nullable: false
         column_default: null
-        ordinal_position: 7
+        ordinal_position: 8
         comment: Timestamp
       - name: updated_at
         data_type: timestamp
         is_nullable: false
         column_default: null
-        ordinal_position: 8
-        comment: Timestamp
-      - name: tenant_id
-        data_type: unknown
-        is_nullable: true
-        column_default: null
         ordinal_position: 9
-        comment: Foreign key reference
+        comment: Timestamp
     primary_keys:
       - id
     foreign_keys:
+      - constraint_name: fk_kit_assignments_company_id
+        table_name: kit_assignments
+        column_name: company_id
+        foreign_table_name: companies
+        foreign_column_name: id
       - constraint_name: fk_kit_assignments_kit_id
         table_name: kit_assignments
         column_name: kit_id
@@ -1737,11 +1742,6 @@ tables:
         table_name: kit_assignments
         column_name: variant_id
         foreign_table_name: variants
-        foreign_column_name: id
-      - constraint_name: fk_kit_assignments_tenant_id
-        table_name: kit_assignments
-        column_name: tenant_id
-        foreign_table_name: tenants
         foreign_column_name: id
     indexes: []
     rls_enabled: true
@@ -2237,69 +2237,74 @@ tables:
         column_default: null
         ordinal_position: 1
         comment: Primary identifier
+      - name: company_id
+        data_type: varchar
+        is_nullable: false
+        column_default: null
+        ordinal_position: 2
+        comment: Foreign key reference
       - name: user_id
         data_type: uuid
         is_nullable: false
         column_default: null
-        ordinal_position: 2
+        ordinal_position: 3
         comment: Foreign key reference
       - name: notification_type
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 3
+        ordinal_position: 4
         comment: Data field
       - name: title
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 4
+        ordinal_position: 5
         comment: Data field
       - name: message
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 5
+        ordinal_position: 6
         comment: Data field
       - name: priority
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 6
+        ordinal_position: 7
         comment: Data field
       - name: related_entity_type
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 7
+        ordinal_position: 8
         comment: Data field
       - name: related_entity_id
         data_type: uuid
         is_nullable: false
         column_default: null
-        ordinal_position: 8
+        ordinal_position: 9
         comment: Foreign key reference
       - name: read_at
         data_type: unknown
         is_nullable: true
         column_default: null
-        ordinal_position: 9
+        ordinal_position: 10
         comment: Timestamp
       - name: created_at
         data_type: timestamp
         is_nullable: false
         column_default: null
-        ordinal_position: 10
-        comment: Timestamp
-      - name: tenant_id
-        data_type: unknown
-        is_nullable: true
-        column_default: null
         ordinal_position: 11
-        comment: Foreign key reference
+        comment: Timestamp
     primary_keys:
       - id
     foreign_keys:
+      - constraint_name: fk_notifications_company_id
+        table_name: notifications
+        column_name: company_id
+        foreign_table_name: companies
+        foreign_column_name: id
       - constraint_name: fk_notifications_user_id
         table_name: notifications
         column_name: user_id
@@ -2309,11 +2314,6 @@ tables:
         table_name: notifications
         column_name: related_entity_id
         foreign_table_name: related_entitys
-        foreign_column_name: id
-      - constraint_name: fk_notifications_tenant_id
-        table_name: notifications
-        column_name: tenant_id
-        foreign_table_name: tenants
         foreign_column_name: id
     indexes: []
     rls_enabled: true
@@ -2522,42 +2522,42 @@ tables:
         column_default: null
         ordinal_position: 1
         comment: Primary identifier
+      - name: company_id
+        data_type: varchar
+        is_nullable: false
+        column_default: null
+        ordinal_position: 2
+        comment: Foreign key reference
       - name: ocr_document_id
         data_type: uuid
         is_nullable: false
         column_default: null
-        ordinal_position: 2
+        ordinal_position: 3
         comment: Foreign key reference
       - name: label
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 3
+        ordinal_position: 4
         comment: Data field
       - name: value
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 4
-        comment: Data field
-      - name: tenant_id
-        data_type: unknown
-        is_nullable: true
-        column_default: null
         ordinal_position: 5
-        comment: Foreign key reference
+        comment: Data field
     primary_keys:
       - id
     foreign_keys:
+      - constraint_name: fk_ocr_note_entities_company_id
+        table_name: ocr_note_entities
+        column_name: company_id
+        foreign_table_name: companies
+        foreign_column_name: id
       - constraint_name: fk_ocr_note_entities_ocr_document_id
         table_name: ocr_note_entities
         column_name: ocr_document_id
         foreign_table_name: ocr_documents
-        foreign_column_name: id
-      - constraint_name: fk_ocr_note_entities_tenant_id
-        table_name: ocr_note_entities
-        column_name: tenant_id
-        foreign_table_name: tenants
         foreign_column_name: id
     indexes: []
     rls_enabled: true
@@ -3595,36 +3595,36 @@ tables:
         column_default: null
         ordinal_position: 1
         comment: Primary identifier
+      - name: company_id
+        data_type: varchar
+        is_nullable: false
+        column_default: null
+        ordinal_position: 2
+        comment: Foreign key reference
       - name: vendor_id
         data_type: uuid
         is_nullable: false
         column_default: null
-        ordinal_position: 2
+        ordinal_position: 3
         comment: Foreign key reference
       - name: alias
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 3
-        comment: Data field
-      - name: tenant_id
-        data_type: unknown
-        is_nullable: true
-        column_default: null
         ordinal_position: 4
-        comment: Foreign key reference
+        comment: Data field
     primary_keys:
       - id
     foreign_keys:
+      - constraint_name: fk_vendor_aliases_company_id
+        table_name: vendor_aliases
+        column_name: company_id
+        foreign_table_name: companies
+        foreign_column_name: id
       - constraint_name: fk_vendor_aliases_vendor_id
         table_name: vendor_aliases
         column_name: vendor_id
         foreign_table_name: vendors
-        foreign_column_name: id
-      - constraint_name: fk_vendor_aliases_tenant_id
-        table_name: vendor_aliases
-        column_name: tenant_id
-        foreign_table_name: tenants
         foreign_column_name: id
     indexes: []
     rls_enabled: true
@@ -3663,60 +3663,60 @@ tables:
         column_default: null
         ordinal_position: 1
         comment: Primary identifier
+      - name: company_id
+        data_type: varchar
+        is_nullable: false
+        column_default: null
+        ordinal_position: 2
+        comment: Foreign key reference
       - name: vendor_id
         data_type: uuid
         is_nullable: false
         column_default: null
-        ordinal_position: 2
+        ordinal_position: 3
         comment: Foreign key reference
       - name: address
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 3
+        ordinal_position: 4
         comment: Physical address
       - name: city
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 4
+        ordinal_position: 5
         comment: Data field
       - name: state
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 5
+        ordinal_position: 6
         comment: Data field
       - name: postal_code
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 6
+        ordinal_position: 7
         comment: Data field
       - name: country
         data_type: varchar
         is_nullable: false
         column_default: null
-        ordinal_position: 7
-        comment: Numeric count
-      - name: tenant_id
-        data_type: unknown
-        is_nullable: true
-        column_default: null
         ordinal_position: 8
-        comment: Foreign key reference
+        comment: Numeric count
     primary_keys:
       - id
     foreign_keys:
+      - constraint_name: fk_vendor_locations_company_id
+        table_name: vendor_locations
+        column_name: company_id
+        foreign_table_name: companies
+        foreign_column_name: id
       - constraint_name: fk_vendor_locations_vendor_id
         table_name: vendor_locations
         column_name: vendor_id
         foreign_table_name: vendors
-        foreign_column_name: id
-      - constraint_name: fk_vendor_locations_tenant_id
-        table_name: vendor_locations
-        column_name: tenant_id
-        foreign_table_name: tenants
         foreign_column_name: id
     indexes: []
     rls_enabled: true
@@ -3733,37 +3733,37 @@ tables:
         column_default: null
         ordinal_position: 1
         comment: Primary identifier
-      - name: name
+      - name: company_id
         data_type: varchar
         is_nullable: false
         column_default: null
         ordinal_position: 2
+        comment: Foreign key reference
+      - name: name
+        data_type: varchar
+        is_nullable: false
+        column_default: null
+        ordinal_position: 3
         comment: Display name
       - name: is_active
         data_type: boolean
         is_nullable: false
         column_default: null
-        ordinal_position: 3
+        ordinal_position: 4
         comment: Boolean flag
       - name: created_at
         data_type: timestamp
         is_nullable: false
         column_default: null
-        ordinal_position: 4
+        ordinal_position: 5
         comment: Timestamp
       - name: updated_at
         data_type: timestamp
         is_nullable: false
         column_default: null
-        ordinal_position: 5
+        ordinal_position: 6
         comment: Timestamp
       - name: intake_session_id
-        data_type: unknown
-        is_nullable: true
-        column_default: null
-        ordinal_position: 6
-        comment: Foreign key reference
-      - name: tenant_id
         data_type: unknown
         is_nullable: true
         column_default: null
@@ -3772,15 +3772,15 @@ tables:
     primary_keys:
       - id
     foreign_keys:
+      - constraint_name: fk_vendors_company_id
+        table_name: vendors
+        column_name: company_id
+        foreign_table_name: companies
+        foreign_column_name: id
       - constraint_name: fk_vendors_intake_session_id
         table_name: vendors
         column_name: intake_session_id
         foreign_table_name: intake_sessions
-        foreign_column_name: id
-      - constraint_name: fk_vendors_tenant_id
-        table_name: vendors
-        column_name: tenant_id
-        foreign_table_name: tenants
         foreign_column_name: id
     indexes: []
     rls_enabled: true
@@ -3945,7 +3945,7 @@ views: []
 functions: []
 enums: []
 total_tables: 157
-total_rows: 694
+total_rows: 692
 orphaned_tables:
   - ai_cost_tracking
   - ai_interaction_logs

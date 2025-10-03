@@ -1,13 +1,13 @@
 # Supabase Analysis Report
 
-Generated: 2025-10-03T17:07:02.971Z
+Generated: 2025-10-03T14:14:58.474Z
 Database: https://rtwigjwqufozqfwozpvo.supabase.co
 
 ## Executive Summary
 
 ### Database Overview
 - **Total Tables**: 157
-- **Total Rows**: 694
+- **Total Rows**: 692
 - **Tables without RLS**: 0
 - **Orphaned Tables**: 127
 - **Views**: 0
@@ -54,8 +54,8 @@ This report provides comprehensive analysis of the Supabase database and storage
 | Table Name | Rows | Columns | RLS | Primary Key | Description |
 |------------|------|---------|-----|-------------|-------------|
 | notification_queue | 209 | 15 | ✅ | id | Domain data |
-| customers | 86 | 19 | ✅ | id | Customer data |
 | tenants | 85 | 5 | ✅ | id | Domain data |
+| customers | 84 | 19 | ✅ | id | Customer data |
 | invoices | 77 | 16 | ✅ | id | Voice interactions |
 | jobs | 50 | 51 | ✅ | id | Job tracking |
 | properties | 35 | 22 | ✅ | id | Domain data |
@@ -343,7 +343,7 @@ This report provides comprehensive analysis of the Supabase database and storage
 
 #### customers
 
-**Row Count**: 86 | **RLS**: Enabled
+**Row Count**: 84 | **RLS**: Enabled
 
 **Columns**:
 | Column | Type | Nullable | Default | Description |
@@ -448,6 +448,7 @@ This report provides comprehensive analysis of the Supabase database and storage
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
 | id | uuid | No | - | Primary identifier |
+| company_id | varchar | No | - | Foreign key reference |
 | equipment_id | varchar | No | - | Foreign key reference |
 | performed_by | uuid | No | - | Data field |
 | maintenance_type | varchar | No | - | Data field |
@@ -459,13 +460,12 @@ This report provides comprehensive analysis of the Supabase database and storage
 | completion_date | timestamp | No | - | Data field |
 | notes | varchar | No | - | User notes |
 | created_at | timestamp | No | - | Timestamp |
-| tenant_id | unknown | Yes | - | Foreign key reference |
 
 **Foreign Keys**:
+- company_id → companies.id (undefined)
 - equipment_id → equipment.id (undefined)
 - pre_maintenance_verification_id → pre_maintenance_verifications.id (undefined)
 - post_maintenance_verification_id → post_maintenance_verifications.id (undefined)
-- tenant_id → tenants.id (undefined)
 
 #### estimates
 
@@ -690,6 +690,7 @@ This report provides comprehensive analysis of the Supabase database and storage
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
 | id | uuid | No | - | Primary identifier |
+| company_id | uuid | No | - | Foreign key reference |
 | kit_id | uuid | No | - | Foreign key reference |
 | variant_id | uuid | No | - | Foreign key reference |
 | external_ref | varchar | No | - | Data field |
@@ -697,12 +698,11 @@ This report provides comprehensive analysis of the Supabase database and storage
 | metadata | jsonb | No | - | Additional data |
 | created_at | timestamp | No | - | Timestamp |
 | updated_at | timestamp | No | - | Timestamp |
-| tenant_id | unknown | Yes | - | Foreign key reference |
 
 **Foreign Keys**:
+- company_id → companies.id (undefined)
 - kit_id → kits.id (undefined)
 - variant_id → variants.id (undefined)
-- tenant_id → tenants.id (undefined)
 
 #### kit_items
 
@@ -851,6 +851,7 @@ This report provides comprehensive analysis of the Supabase database and storage
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
 | id | uuid | No | - | Primary identifier |
+| company_id | varchar | No | - | Foreign key reference |
 | user_id | uuid | No | - | Foreign key reference |
 | notification_type | varchar | No | - | Data field |
 | title | varchar | No | - | Data field |
@@ -860,12 +861,11 @@ This report provides comprehensive analysis of the Supabase database and storage
 | related_entity_id | uuid | No | - | Foreign key reference |
 | read_at | unknown | Yes | - | Timestamp |
 | created_at | timestamp | No | - | Timestamp |
-| tenant_id | unknown | Yes | - | Foreign key reference |
 
 **Foreign Keys**:
+- company_id → companies.id (undefined)
 - user_id → users.id (undefined)
 - related_entity_id → related_entitys.id (undefined)
-- tenant_id → tenants.id (undefined)
 
 #### ocr_documents
 
@@ -932,14 +932,14 @@ This report provides comprehensive analysis of the Supabase database and storage
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
 | id | uuid | No | - | Primary identifier |
+| company_id | varchar | No | - | Foreign key reference |
 | ocr_document_id | uuid | No | - | Foreign key reference |
 | label | varchar | No | - | Data field |
 | value | varchar | No | - | Data field |
-| tenant_id | unknown | Yes | - | Foreign key reference |
 
 **Foreign Keys**:
+- company_id → companies.id (undefined)
 - ocr_document_id → ocr_documents.id (undefined)
-- tenant_id → tenants.id (undefined)
 
 #### offline_queue
 
@@ -1256,13 +1256,13 @@ This report provides comprehensive analysis of the Supabase database and storage
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
 | id | uuid | No | - | Primary identifier |
+| company_id | varchar | No | - | Foreign key reference |
 | vendor_id | uuid | No | - | Foreign key reference |
 | alias | varchar | No | - | Data field |
-| tenant_id | unknown | Yes | - | Foreign key reference |
 
 **Foreign Keys**:
+- company_id → companies.id (undefined)
 - vendor_id → vendors.id (undefined)
-- tenant_id → tenants.id (undefined)
 
 #### vendor_contacts
 
@@ -1280,17 +1280,17 @@ This report provides comprehensive analysis of the Supabase database and storage
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
 | id | uuid | No | - | Primary identifier |
+| company_id | varchar | No | - | Foreign key reference |
 | vendor_id | uuid | No | - | Foreign key reference |
 | address | varchar | No | - | Physical address |
 | city | varchar | No | - | Data field |
 | state | varchar | No | - | Data field |
 | postal_code | varchar | No | - | Data field |
 | country | varchar | No | - | Numeric count |
-| tenant_id | unknown | Yes | - | Foreign key reference |
 
 **Foreign Keys**:
+- company_id → companies.id (undefined)
 - vendor_id → vendors.id (undefined)
-- tenant_id → tenants.id (undefined)
 
 #### vendors
 
@@ -1300,16 +1300,16 @@ This report provides comprehensive analysis of the Supabase database and storage
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
 | id | uuid | No | - | Primary identifier |
+| company_id | varchar | No | - | Foreign key reference |
 | name | varchar | No | - | Display name |
 | is_active | boolean | No | - | Boolean flag |
 | created_at | timestamp | No | - | Timestamp |
 | updated_at | timestamp | No | - | Timestamp |
 | intake_session_id | unknown | Yes | - | Foreign key reference |
-| tenant_id | unknown | Yes | - | Foreign key reference |
 
 **Foreign Keys**:
+- company_id → companies.id (undefined)
 - intake_session_id → intake_sessions.id (undefined)
-- tenant_id → tenants.id (undefined)
 
 #### vision_confidence_config
 
@@ -1568,6 +1568,13 @@ Based on the analysis, here are suggested API endpoints for each major table:
 - DELETE /api/notification_queue/:id - Delete notification_queue
 - Filters: ?company_id=value, ?recipient_id=value
 
+**tenants**:
+- GET /api/tenants - List all tenants
+- GET /api/tenants/:id - Get single tenant
+- POST /api/tenants - Create new tenant
+- PUT /api/tenants/:id - Update tenant
+- DELETE /api/tenants/:id - Delete tenant
+
 **customers**:
 - GET /api/customers - List all customers
 - GET /api/customers/:id - Get single customer
@@ -1575,13 +1582,6 @@ Based on the analysis, here are suggested API endpoints for each major table:
 - PUT /api/customers/:id - Update customer
 - DELETE /api/customers/:id - Delete customer
 - Filters: ?tenant_id=value, ?intake_session_id=value
-
-**tenants**:
-- GET /api/tenants - List all tenants
-- GET /api/tenants/:id - Get single tenant
-- POST /api/tenants - Create new tenant
-- PUT /api/tenants/:id - Update tenant
-- DELETE /api/tenants/:id - Delete tenant
 
 **invoices**:
 - GET /api/invoices - List all invoices
@@ -1613,7 +1613,7 @@ Based on the analysis, here are suggested API endpoints for each major table:
 - POST /api/equipment_maintenance - Create new equipment_maintenance
 - PUT /api/equipment_maintenance/:id - Update equipment_maintenance
 - DELETE /api/equipment_maintenance/:id - Delete equipment_maintenance
-- Filters: ?equipment_id=value, ?pre_maintenance_verification_id=value, ?post_maintenance_verification_id=value, ?tenant_id=value
+- Filters: ?company_id=value, ?equipment_id=value, ?pre_maintenance_verification_id=value, ?post_maintenance_verification_id=value
 
 **users_extended**:
 - GET /api/users_extended - List all users_extended
@@ -1668,7 +1668,7 @@ Based on the analysis, here are suggested API endpoints for each major table:
 - POST /api/notifications - Create new notification
 - PUT /api/notifications/:id - Update notification
 - DELETE /api/notifications/:id - Delete notification
-- Filters: ?user_id=value, ?related_entity_id=value, ?tenant_id=value
+- Filters: ?company_id=value, ?user_id=value, ?related_entity_id=value
 
 **companies**:
 - GET /api/companies - List all companies
@@ -1708,7 +1708,7 @@ Based on the analysis, here are suggested API endpoints for each major table:
 - POST /api/kit_assignments - Create new kit_assignment
 - PUT /api/kit_assignments/:id - Update kit_assignment
 - DELETE /api/kit_assignments/:id - Delete kit_assignment
-- Filters: ?kit_id=value, ?variant_id=value, ?tenant_id=value
+- Filters: ?company_id=value, ?kit_id=value, ?variant_id=value
 
 **ocr_documents**:
 - GET /api/ocr_documents - List all ocr_documents

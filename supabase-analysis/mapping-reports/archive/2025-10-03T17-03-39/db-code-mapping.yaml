@@ -1,4 +1,4 @@
-analyzedAt: '2025-10-03T17:03:45.447Z'
+analyzedAt: '2025-10-03T14:31:52.564Z'
 codebasePath: /mnt/c/Users/tetzler.KWW/OneDrive - Kaspar Companies/Documents/GitHub/jobeye
 totalTables: 157
 mappedTables: 49
@@ -158,21 +158,14 @@ tableMappings:
         - audit_logs
         - companies
         - customers
-        - equipment_maintenance
         - invoices
         - jobs
-        - kit_assignments
         - kit_items
         - kit_variants
         - kits
-        - notifications
-        - ocr_note_entities
         - properties
         - role_permissions
         - users_extended
-        - vendor_aliases
-        - vendor_locations
-        - vendors
   jobs:
     tableName: jobs
     totalReferences: 83
@@ -2594,9 +2587,9 @@ tableMappings:
           - src/domains/repos/scheduling-kits/kit-assignment-repository.ts
     relationships:
       references:
+        - companies
         - kits
         - variants
-        - tenants
       referencedBy: []
   kit_override_logs:
     tableName: kit_override_logs
@@ -4645,11 +4638,18 @@ tableMappings:
         - tenants
       referencedBy:
         - day_plans
+        - equipment_maintenance
         - inventory_images
+        - kit_assignments
         - notification_queue
+        - notifications
         - ocr_documents
         - ocr_jobs
         - ocr_line_items
+        - ocr_note_entities
+        - vendor_aliases
+        - vendor_locations
+        - vendors
   detected_items:
     tableName: detected_items
     totalReferences: 2
@@ -4868,8 +4868,8 @@ tableMappings:
           - scripts/migrations/005-all-tables.ts
     relationships:
       references:
+        - companies
         - intake_sessions
-        - tenants
       referencedBy:
         - ocr_jobs
         - vendor_aliases

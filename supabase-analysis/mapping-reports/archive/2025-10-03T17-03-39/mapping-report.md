@@ -1,6 +1,6 @@
 # Database to Codebase Mapping Report
 
-Generated: 2025-10-03T17:03:45.447Z
+Generated: 2025-10-03T14:31:52.564Z
 Codebase Path: /mnt/c/Users/tetzler.KWW/OneDrive - Kaspar Companies/Documents/GitHub/jobeye
 
 ## Executive Summary
@@ -245,7 +245,7 @@ Click on a table name to see detailed usage information.
 `select`, `update`, `insert`, `rpc:exec_sql`, `upsert`
 
 #### Table Relationships
-- **Referenced by**: audit_logs, companies, customers, equipment_maintenance, invoices, jobs, kit_assignments, kit_items, kit_variants, kits, notifications, ocr_note_entities, properties, role_permissions, users_extended, vendor_aliases, vendor_locations, vendors
+- **Referenced by**: audit_logs, companies, customers, invoices, jobs, kit_items, kit_variants, kits, properties, role_permissions, users_extended
 
 </details>
 
@@ -1056,7 +1056,7 @@ Click on a table name to see detailed usage information.
 
 #### Table Relationships
 - **References**: tenants
-- **Referenced by**: day_plans, inventory_images, notification_queue, ocr_documents, ocr_jobs, ocr_line_items
+- **Referenced by**: day_plans, equipment_maintenance, inventory_images, kit_assignments, notification_queue, notifications, ocr_documents, ocr_jobs, ocr_line_items, ocr_note_entities, vendor_aliases, vendor_locations, vendors
 
 </details>
 
@@ -1147,7 +1147,7 @@ Click on a table name to see detailed usage information.
 `insert`, `select`
 
 #### Table Relationships
-- **References**: kits, variants, tenants
+- **References**: companies, kits, variants
 
 </details>
 
@@ -1439,7 +1439,7 @@ Click on a table name to see detailed usage information.
 `sql`
 
 #### Table Relationships
-- **References**: intake_sessions, tenants
+- **References**: companies, intake_sessions
 - **Referenced by**: ocr_jobs, vendor_aliases, vendor_locations
 
 </details>
