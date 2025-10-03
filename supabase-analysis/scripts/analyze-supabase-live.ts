@@ -2,9 +2,9 @@
 
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { LiveDatabaseAnalyzer } from './db-analyzer-live';
+import { LiveDatabaseAnalyzer } from './db-analyzer-live-fixed';
 import { StorageAnalyzer } from './storage-analyzer';
-import { ReportGenerator } from './report-generator';
+import { ReportGeneratorFixed as ReportGenerator } from './report-generator-fixed';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 

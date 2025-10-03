@@ -17,7 +17,7 @@ import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import dotenv from 'dotenv';
-import { EnhancedDatabaseAnalyzer } from './db-analyzer-enhanced';
+import { EnhancedDatabaseAnalyzer } from './db-analyzer-enhanced-fixed';
 import { EnhancedReportGenerator } from './report-generator-enhanced';
 
 // Load environment variables

@@ -1,202 +1,350 @@
-#!/usr/bin/env npx tsx
+import { SupabaseClient } from '@supabase/supabase-js';
 
-import { SupabaseClient, createClient } from '@supabase/supabase-js';
-import { LiveDatabaseAnalyzer, DatabaseAnalysis } from './db-analyzer-live';
-import dotenv from 'dotenv';
+export interface TableInfo {
+  name: string;
+  row_count: number;
+  data_size?: string;
+  index_size?: string;
+  total_size?: string;
+  rls_enabled?: boolean;
+  has_primary_key?: boolean;
+  primary_key_columns?: string[];
+  columns?: ColumnInfo[];
+  foreign_keys?: ForeignKeyInfo[];
+  indexes?: IndexInfo[];
+}
 
-dotenv.config({ path: '.env.local' });
+export interface ColumnInfo {
+  column_name: string;
+  data_type: string;
+  is_nullable: boolean;
+  column_default: string | null;
+  character_maximum_length: number | null;
+}
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+export interface ForeignKeyInfo {
+  constraint_name: string;
+  column_name: string;
+  foreign_table_name: string;
+  foreign_column_name: string;
+}
 
-export class FixedLiveDatabaseAnalyzer extends LiveDatabaseAnalyzer {
-  private discoveredTables: Set<string> = new Set();
-  
-  constructor(private client: SupabaseClient) {
-    super(client);
+export interface IndexInfo {
+  index_name: string;
+  column_name: string;
+  is_unique: boolean;
+  is_primary: boolean;
+}
+
+export interface LiveDatabaseAnalysis {
+  analyzed_at: string;
+  database_url: string;
+  total_tables: number;
+  total_rows: number;
+  total_size: string;
+  database_size: number;
+  tables: TableInfo[];
+  recommendations: string[];
+}
+
+export class LiveDatabaseAnalyzer {
+  private client: SupabaseClient;
+  private discoveredTables: string[] = [];
+
+  constructor(client: SupabaseClient) {
+    this.client = client;
   }
 
-  /**
-   * Properly discover tables using multiple methods
-   */
-  private async discoverTables(): Promise<void> {
-    console.log('\n🔍 Discovering tables from LIVE database...');
+  async analyze(): Promise<LiveDatabaseAnalysis> {
+    console.log('\n📊 Analyzing LIVE database...\n');
     
-    // Method 1: Try using exec_sql with information_schema
-    try {
-      console.log('  Attempting to query information_schema...');
-      const { data: tables, error } = await this.client.rpc('exec_sql', {
-        sql: `
-          SELECT 
-            table_name
-          FROM information_schema.tables
-          WHERE table_schema = 'public'
-          AND table_type = 'BASE TABLE'
-          ORDER BY table_name;
-        `
-      });
-
-      if (!error && tables && Array.isArray(tables)) {
-        console.log(`  ✅ Found ${tables.length} tables via information_schema`);
-        tables.forEach((row: any) => {
-          this.discoveredTables.add(row.table_name);
-        });
-        return;
-      } else if (error) {
-        console.log(`  ⚠️  exec_sql not available: ${error.message}`);
-      }
-    } catch (e) {
-      console.log('  ⚠️  exec_sql method failed');
+    // First, discover actual tables
+    await this.discoverTablesFromDatabase();
+    
+    if (this.discoveredTables.length === 0) {
+      throw new Error('No tables discovered in the database');
     }
 
-    // Method 2: Query OpenAPI spec from Supabase REST API
-    try {
-      console.log('  Attempting to fetch OpenAPI spec...');
-      const response = await fetch(`${supabaseUrl}/rest/v1/`, {
-        headers: {
-          'apikey': supabaseServiceKey,
-          'Authorization': `Bearer ${supabaseServiceKey}`
-        }
-      });
-      
-      if (response.ok) {
-        const openapi = await response.json();
-        const paths = Object.keys(openapi.paths || {});
-        
-        const tables = paths
-          .filter(path => path !== '/' && path.startsWith('/'))
-          .map(path => path.substring(1))
-          .filter(name => !name.includes('/'));
-        
-        console.log(`  ✅ Found ${tables.length} tables via OpenAPI spec`);
-        tables.forEach(table => this.discoveredTables.add(table));
-        return;
-      }
-    } catch (e) {
-      console.log('  ⚠️  OpenAPI method failed');
-    }
+    console.log(`✅ Discovered ${this.discoveredTables.length} actual tables in the database\n`);
 
-    // Method 3: Probe common table names (fallback)
-    console.log('  Falling back to probing common table names...');
-    const commonTables = [
-      // Core tables that commonly exist
-      'companies', 'users', 'profiles', 'tenants',
-      'jobs', 'customers', 'properties', 'equipment', 
-      'materials', 'teams', 'schedules', 'routes',
-      'voice_sessions', 'vision_verifications',
-      'media_assets', 'documents', 'notifications',
-      'audit_logs', 'system_logs'
-    ];
-
-    let found = 0;
-    for (const tableName of commonTables) {
-      try {
-        const { error } = await this.client
-          .from(tableName)
-          .select('*', { count: 'exact', head: true });
-        
-        if (!error) {
-          this.discoveredTables.add(tableName);
-          found++;
-        }
-      } catch (e) {
-        // Table doesn't exist
-      }
-    }
-    
-    console.log(`  ✅ Found ${found} tables via probing`);
-  }
-
-  async analyze(): Promise<DatabaseAnalysis> {
-    const analyzedAt = new Date().toISOString();
-    
-    // First discover all accessible tables
-    await this.discoverTables();
-    
-    console.log(`\n📊 Analyzing ${this.discoveredTables.size} tables from LIVE database...`);
-    
-    const tableAnalyses = [];
+    // Analyze each discovered table
+    const tableAnalyses: TableInfo[] = [];
     let totalRows = 0;
-    let analyzed = 0;
+    let totalSize = 0;
+
+    console.log(`📊 Analyzing ${this.discoveredTables.length} tables from LIVE database...`);
     
-    // Call parent's analyzeTable method for each discovered table
-    for (const tableName of Array.from(this.discoveredTables).sort()) {
-      analyzed++;
-      if (analyzed % 10 === 0) {
-        console.log(`  Progress: ${analyzed}/${this.discoveredTables.size} tables analyzed...`);
-      }
+    for (let i = 0; i < this.discoveredTables.length; i++) {
+      const tableName = this.discoveredTables[i];
       
+      if ((i + 1) % 10 === 0) {
+        console.log(`  Progress: ${i + 1}/${this.discoveredTables.length} tables analyzed...`);
+      }
+
       try {
-        const analysis = await (this as any).analyzeTable(tableName);
-        tableAnalyses.push(analysis);
-        totalRows += analysis.row_count;
+        const tableInfo = await this.analyzeTable(tableName);
+        tableAnalyses.push(tableInfo);
+        totalRows += tableInfo.row_count;
+        
+        if (tableInfo.total_size) {
+          const sizeMatch = tableInfo.total_size.match(/(\d+)/);
+          if (sizeMatch) {
+            totalSize += parseInt(sizeMatch[1]);
+          }
+        }
       } catch (error) {
-        console.error(`  ⚠️  Failed to analyze ${tableName}:`, error);
+        console.error(`  ⚠️  Error analyzing table ${tableName}:`, error.message);
       }
     }
-    
-    console.log(`\n✅ Analysis complete. Processed ${tableAnalyses.length} tables with ${totalRows} total rows.`);
-    
-    // Calculate statistics
-    const missingRlsTables = tableAnalyses
-      .filter(t => !t.rls_enabled)
-      .map(t => t.name);
-    const orphanedTables = (this as any).detectOrphanedTables(tableAnalyses);
-    
-    // Generate recommendations
-    const recommendations = (this as any).generateRecommendations(tableAnalyses);
-    
+
+    console.log(`\n✅ Analysis complete. Processed ${tableAnalyses.length} tables with ${totalRows} total rows.\n`);
+
+    // Sort tables by row count
+    tableAnalyses.sort((a, b) => b.row_count - a.row_count);
+
     return {
-      analyzed_at: analyzedAt,
-      database_url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      tables: tableAnalyses,
-      views: [],
-      functions: [],
-      enums: [],
+      analyzed_at: new Date().toISOString(),
+      database_url: process.env.NEXT_PUBLIC_SUPABASE_URL || 'unknown',
       total_tables: tableAnalyses.length,
       total_rows: totalRows,
-      orphaned_tables: orphanedTables,
-      missing_rls_tables: missingRlsTables,
-      recommendations
+      total_size: this.formatBytes(totalSize),
+      database_size: totalSize,
+      tables: tableAnalyses,
+      recommendations: this.generateRecommendations(tableAnalyses)
     };
   }
-}
 
-// Main execution
-async function main() {
-  console.log('🚀 Starting FIXED Live Database Analysis...');
-  console.log(`📍 Target: ${supabaseUrl}`);
-  
-  const client = createClient(supabaseUrl, supabaseServiceKey);
-  const analyzer = new FixedLiveDatabaseAnalyzer(client);
-  
-  try {
-    const analysis = await analyzer.analyze();
+  private async discoverTablesFromDatabase(): Promise<void> {
+    console.log('🔍 Discovering tables from LIVE database...\n');
     
-    // Save results
-    const fs = await import('fs/promises');
-    const outputPath = './supabase-analysis/output/live-database-analysis-fixed.json';
-    await fs.writeFile(outputPath, JSON.stringify(analysis, null, 2));
+    // Method 1: Try using exec_sql with information_schema
+    const { data: schemaData, error: schemaError } = await this.client.rpc('exec_sql', {
+      sql: `
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+          AND table_type = 'BASE TABLE'
+        ORDER BY table_name;
+      `
+    });
+
+    if (!schemaError && schemaData && schemaData.length > 0) {
+      console.log('✅ Retrieved table list from information_schema');
+      this.discoveredTables = schemaData.map((row: any) => row.table_name);
+      return;
+    }
+
+    // Method 2: Try REST API OpenAPI spec
+    console.log('⚠️  exec_sql not available, trying REST API approach...');
     
-    console.log(`\n💾 Analysis saved to: ${outputPath}`);
-    console.log('\n📊 Summary:');
-    console.log(`  - Total tables: ${analysis.total_tables}`);
-    console.log(`  - Total rows: ${analysis.total_rows.toLocaleString()}`);
-    console.log(`  - Orphaned tables: ${analysis.orphaned_tables.length}`);
-    console.log(`  - Missing RLS: ${analysis.missing_rls_tables.length}`);
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
-    if (analysis.recommendations.length > 0) {
-      console.log('\n💡 Recommendations:');
-      analysis.recommendations.forEach(rec => console.log(`  - ${rec}`));
+    if (supabaseUrl && supabaseKey) {
+      try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/?apikey=${supabaseKey}`);
+        if (response.ok) {
+          const openApiSpec = await response.json();
+          
+          if (openApiSpec.definitions) {
+            const tableNames = Object.keys(openApiSpec.definitions)
+              .filter(name => !name.includes('.'))
+              .sort();
+            
+            if (tableNames.length > 0) {
+              console.log('✅ Retrieved table list from REST API');
+              this.discoveredTables = tableNames;
+              return;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('  ⚠️  REST API approach failed:', error.message);
+      }
+    }
+
+    // Method 3: As a last resort, probe common table names
+    console.log('⚠️  Falling back to probing common table names...');
+    
+    const commonTables = [
+      'tenants', 'companies', 'customers', 'users', 'jobs', 'properties',
+      'equipment', 'materials', 'invoices', 'notifications', 'audit_logs'
+    ];
+    
+    const foundTables: string[] = [];
+    
+    for (const tableName of commonTables) {
+      const { error } = await this.client
+        .from(tableName)
+        .select('*', { count: 'exact', head: true });
+      
+      if (!error) {
+        foundTables.push(tableName);
+      }
     }
     
-  } catch (error) {
-    console.error('\n❌ Analysis failed:', error);
-    process.exit(1);
+    if (foundTables.length > 0) {
+      console.log(`⚠️  Found ${foundTables.length} tables through probing (incomplete list)`);
+      this.discoveredTables = foundTables;
+    } else {
+      throw new Error('Could not discover any tables in the database');
+    }
   }
-}
 
-// Run if executed directly
-if (require.main === module) {
-  main().catch(console.error);
+  private async analyzeTable(tableName: string): Promise<TableInfo> {
+    const tableInfo: TableInfo = {
+      name: tableName,
+      row_count: 0,
+      rls_enabled: false,
+      has_primary_key: false,
+      columns: [],
+      foreign_keys: [],
+      indexes: []
+    };
+
+    // Get row count
+    const { count, error: countError } = await this.client
+      .from(tableName)
+      .select('*', { count: 'exact', head: true });
+
+    if (!countError) {
+      tableInfo.row_count = count || 0;
+    }
+
+    // Try to get table metadata if exec_sql is available
+    const { data: metadata, error: metaError } = await this.client.rpc('exec_sql', {
+      sql: `
+        SELECT 
+          pg_relation_size('public.${tableName}') as data_size,
+          pg_indexes_size('public.${tableName}') as index_size,
+          pg_total_relation_size('public.${tableName}') as total_size,
+          relrowsecurity as rls_enabled
+        FROM pg_class
+        WHERE relname = '${tableName}' AND relnamespace = 'public'::regnamespace;
+      `
+    });
+
+    if (!metaError && metadata && metadata[0]) {
+      const meta = metadata[0];
+      tableInfo.data_size = this.formatBytes(meta.data_size);
+      tableInfo.index_size = this.formatBytes(meta.index_size);
+      tableInfo.total_size = this.formatBytes(meta.total_size);
+      tableInfo.rls_enabled = meta.rls_enabled;
+    }
+
+    // Get column information
+    let columns = null;
+    try {
+      const { data } = await this.client.rpc('exec_sql', {
+        sql: `
+          SELECT 
+            column_name,
+            data_type,
+            is_nullable,
+            column_default,
+            character_maximum_length
+          FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = '${tableName}'
+          ORDER BY ordinal_position;
+        `
+      });
+      columns = data;
+    } catch (e) {
+      // exec_sql not available
+    }
+
+    if (columns) {
+      tableInfo.columns = columns;
+    }
+
+    // Check for primary key
+    let pkData = null;
+    try {
+      const { data } = await this.client.rpc('exec_sql', {
+        sql: `
+          SELECT column_name
+          FROM information_schema.key_column_usage
+          WHERE table_schema = 'public' 
+            AND table_name = '${tableName}'
+            AND constraint_name LIKE '%_pkey';
+        `
+      });
+      pkData = data;
+    } catch (e) {
+      // exec_sql not available
+    }
+
+    if (pkData && pkData.length > 0) {
+      tableInfo.has_primary_key = true;
+      tableInfo.primary_key_columns = pkData.map((row: any) => row.column_name);
+    }
+
+    // Get foreign keys
+    let fkData = null;
+    try {
+      const { data } = await this.client.rpc('exec_sql', {
+        sql: `
+          SELECT 
+            kcu.constraint_name,
+            kcu.column_name,
+            ccu.table_name AS foreign_table_name,
+            ccu.column_name AS foreign_column_name
+          FROM information_schema.table_constraints AS tc
+          JOIN information_schema.key_column_usage AS kcu
+            ON tc.constraint_name = kcu.constraint_name
+          JOIN information_schema.constraint_column_usage AS ccu
+            ON ccu.constraint_name = tc.constraint_name
+          WHERE tc.constraint_type = 'FOREIGN KEY'
+            AND tc.table_schema = 'public'
+            AND tc.table_name = '${tableName}';
+        `
+      });
+      fkData = data;
+    } catch (e) {
+      // exec_sql not available
+    }
+
+    if (fkData) {
+      tableInfo.foreign_keys = fkData;
+    }
+
+    return tableInfo;
+  }
+
+  private formatBytes(bytes: number): string {
+    if (!bytes || bytes === 0) return '0 B';
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  private generateRecommendations(tables: TableInfo[]): string[] {
+    const recommendations: string[] = [];
+
+    // Empty tables
+    const emptyTables = tables.filter(t => t.row_count === 0);
+    if (emptyTables.length > 0) {
+      recommendations.push(
+        `Review ${emptyTables.length} empty tables for potential removal`
+      );
+    }
+
+    // Tables without primary keys
+    const noPkTables = tables.filter(t => !t.has_primary_key && t.row_count > 0);
+    if (noPkTables.length > 0) {
+      recommendations.push(
+        `Add primary keys to ${noPkTables.length} tables: ${noPkTables.slice(0, 5).map(t => t.name).join(', ')}${noPkTables.length > 5 ? '...' : ''}`
+      );
+    }
+
+    // Tables without RLS
+    const noRlsTables = tables.filter(t => !t.rls_enabled && t.row_count > 0);
+    if (noRlsTables.length > 0) {
+      recommendations.push(
+        `Enable RLS on ${noRlsTables.length} tables containing data`
+      );
+    }
+
+    return recommendations;
+  }
 }
