@@ -47,6 +47,11 @@ next-env.d.ts
 supabase/.temp/
 supabase/.branches/
 
+# Analysis reports (generated files)
+supabase-analysis/reports/
+supabase-analysis/mapping-reports/
+table-usage-report.json
+
 # IDE
 *.swp
 *.swo

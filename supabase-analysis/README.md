@@ -1,201 +1,166 @@
 # Supabase Database Analysis Tools
 
-A comprehensive suite of tools for analyzing your Supabase database and understanding how it's used in your codebase.
+This directory contains tools for analyzing your Supabase database to get detailed information about tables, columns, indexes, foreign keys, and more.
 
-## Available Tools
+## Problem
 
-### 1. Basic Live Database Analysis
+The default Supabase analyzers were not getting table details (columns, foreign keys, indexes) because:
+1. The `exec_sql` RPC function returns `void`, not query results
+2. Direct database queries via Supabase client are limited
+3. Information schema queries require special permissions
+
+## Solution
+
+We've created three approaches to analyze your database:
+
+### 1. Basic Analysis (db-analyzer-detailed.ts)
+Uses REST API OpenAPI spec to discover tables and infer schema from the API definitions.
+
 ```bash
-npm run analyze:supabase
+npm run analyze:db:detailed
 ```
-Analyzes your live Supabase database and generates comprehensive reports about tables, relationships, and storage.
 
-### 2. Enhanced Database Analysis (NEW!)
+**Pros:**
+- Works without any database modifications
+- Gets basic column information from API schema
+- Can infer foreign keys from column naming conventions
+
+**Cons:**
+- Limited to what's exposed through REST API
+- No index or policy information
+- Schema might not match actual database
+
+### 2. Comprehensive Analysis (db-analyzer-comprehensive.ts)
+Uses custom RPC functions to query PostgreSQL system catalogs directly.
+
+**Setup Required:**
+```bash
+# First, create the required database functions
+npm run analyze:db:create-functions
+
+# Then run the comprehensive analyzer
+npm run analyze:db:comprehensive
+```
+
+**Pros:**
+- Gets complete table information including:
+  - All columns with exact PostgreSQL types
+  - Primary keys and foreign keys
+  - All indexes with their definitions
+  - RLS policies with their expressions
+  - Table sizes and row counts
+- Generates multiple reports:
+  - Markdown analysis report
+  - YAML data dump
+  - Complete SQL schema
+  - Migration recommendations
+
+**Cons:**
+- Requires creating RPC functions in your database
+- Needs service role key access
+
+### 3. Enhanced Analysis (existing tools)
+The existing enhanced analyzer that combines multiple analysis approaches.
+
 ```bash
 npm run analyze:supabase:enhanced
 ```
-Provides deep analysis including:
-- Database objects (functions, views, triggers, sequences)
-- Performance metrics (cache hit ratios, unused indexes, bloated tables)
-- Security analysis (RLS policies, roles, permissions, vulnerabilities)
-- Edge Functions analysis (if configured)
-- Realtime subscriptions configuration
-- Actionable recommendations with priority levels
-
-### 3. Database-to-Codebase Mapping
-```bash
-npm run analyze:db-mapping
-```
-Scans your codebase to understand how each database table is used, identifying access patterns, unused tables, and code quality issues.
-
-## Basic Database Analysis Features
-
-- **Live Database Queries**: Analyzes your actual Supabase database (not migration files)
-- **Table Discovery**: Automatically discovers all tables in your database
-- **Comprehensive Schema Analysis**: Columns, data types, constraints, row counts
-- **RLS Policy Analysis**: Security status for each table
-- **Foreign Key Relationships**: Complete relationship mapping
-- **Supabase Storage Analysis**: Buckets, folders, file counts, and sizes
-- **Cleanup Recommendations**: Identifies empty tables and unused storage
-- **AI-Agent Friendly Output**: YAML format for easy parsing
-- **Archive System**: Previous reports are automatically archived
-
-## Enhanced Analysis Features (NEW!)
-
-### Database Objects Analysis
-- **Functions**: PL/pgSQL functions with source code, volatility, and usage
-- **Views**: Regular and materialized views with definitions
-- **Triggers**: Event triggers with associated functions
-- **Sequences**: Auto-increment sequences with current values
-- **Extensions**: Installed PostgreSQL extensions
-- **Custom Types**: Enums and composite types with values
-
-### Performance Analysis
-- **Index Analysis**: Usage statistics, unused indexes, missing index opportunities
-- **Table Statistics**: Row counts, dead tuples, vacuum needs
-- **Cache Hit Ratios**: Database and index hit ratios
-- **Query Performance**: Identifies slow queries and optimization opportunities
-- **Bloat Detection**: Tables and indexes with excessive bloat
-
-### Security Analysis
-- **Role Analysis**: Superusers, permissions, object ownership
-- **RLS Deep Dive**: Policy expressions, permissive vs restrictive
-- **Permission Audit**: Table and column-level permissions
-- **Vulnerability Detection**: Critical security issues with severity levels
-- **Compliance Checklist**: Security hardening recommendations
-
-### Edge Functions & Realtime
-- **Edge Functions**: Deployment status, size, error rates (requires API key)
-- **Realtime Subscriptions**: Published tables, message rate estimates
-- **Channel Recommendations**: Suggested realtime channels based on table patterns
-
-## Database-to-Codebase Mapping Features
-
-- **TypeScript AST Parsing**: Finds all database table references in your code
-- **Access Pattern Detection**: Identifies repository, service, API, and direct access patterns
-- **Unused Table Detection**: Finds tables with no code references
-- **Code Quality Analysis**: Detects anti-patterns like direct database access
-- **Relationship Mapping**: Shows how tables relate to each other
-- **Operation Tracking**: Lists all database operations used per table
-- **Priority Recommendations**: Actionable suggestions for improving code architecture
 
 ## Output Files
 
-### Basic Database Analysis (`/reports/latest/`)
-- `database-analysis.yaml` - Complete database analysis in YAML format
-- `full-report.md` - Human-readable summary report
-- `storage-analysis.yaml` - Storage bucket analysis
+All analyzers generate reports in timestamped directories:
 
-### Enhanced Analysis (`/reports/latest/`)
-- `enhanced-analysis.yaml` - Complete enhanced analysis data (AI-friendly)
-- `enhanced-report.md` - Comprehensive human-readable report
-- `security-report.md` - Detailed security analysis and recommendations
-- `performance-report.md` - Performance optimization guide
-- `action-plan.md` - Prioritized action items (Critical, Short-term, Long-term)
-
-### Mapping Analysis (`/mapping-reports/latest/`)
-- `mapping-report.md` - Comprehensive human-readable report
-- `db-code-mapping.yaml` - AI-agent friendly mapping data
-- `unused-tables.yaml` - Tables with no code references
-
-Previous reports are automatically archived with timestamps.
-
-## Usage Workflow
-
-### Quick Start (Basic Analysis)
-```bash
-# Basic database and storage analysis
-npm run analyze:supabase
-
-# Code mapping analysis
-npm run analyze:db-mapping
+```
+supabase-analysis/
+├── reports/
+│   ├── comprehensive/
+│   │   ├── 2025-10-03T.../
+│   │   │   ├── comprehensive-analysis.md    # Full markdown report
+│   │   │   ├── comprehensive-data.yaml      # Structured data
+│   │   │   ├── complete-schema.sql          # SQL DDL statements
+│   │   │   └── migration-recommendations.sql # Suggested improvements
+│   │   └── latest/                          # Symlink to most recent
+│   └── detailed/
+│       └── 2025-10-03T.../
+│           ├── detailed-analysis.md
+│           ├── detailed-data.yaml
+│           └── table-definitions.sql
 ```
 
-### Comprehensive Analysis (Recommended)
-```bash
-# Run enhanced analysis with all features
-npm run analyze:supabase:enhanced
+## What Information You Get
+
+### From Comprehensive Analysis:
+- **Table Overview**: Name, row count, total size, feature flags
+- **Columns**: Name, type, nullable, defaults, max length
+- **Keys**: Primary keys, foreign keys with references
+- **Indexes**: Name, type (unique/primary), columns, size
+- **RLS Policies**: Name, command, roles, USING/CHECK expressions
+- **Triggers**: Custom triggers on tables
+- **Recommendations**: 
+  - Missing primary keys
+  - Missing indexes on foreign keys
+  - Tables without RLS
+  - Tables with RLS but no policies
+
+### Example Output
+
+```markdown
+### 📋 customers
+#### Overview
+- **Row Count**: 91
+- **Total Size**: 48 KB
+- **RLS Enabled**: ❌ No
+- **Has Primary Key**: ✅ Yes
+- **Has Foreign Keys**: ✅ Yes
+- **Has Indexes**: ✅ Yes
+
+#### Columns
+| Column | Type | Nullable | Default | PK | FK Reference |
+|--------|------|----------|---------|----|--------------| 
+| id | uuid | No | gen_random_uuid() | 🔑 | - |
+| tenant_id | uuid | No | - | - | tenants.id |
+| name | text | No | - | - | - |
+| email | text | Yes | - | - | - |
+| phone | text | Yes | - | - | - |
+| created_at | timestamptz | No | now() | - | - |
 ```
-
-This will generate:
-1. Complete database object inventory
-2. Performance optimization opportunities
-3. Security vulnerability assessment
-4. Prioritized action plan
-5. Monitoring recommendations
-
-### Review Reports
-Check the generated reports to:
-- 🚨 Fix critical security vulnerabilities
-- ⚡ Optimize database performance
-- 🧹 Clean up unused resources
-- 📊 Improve code architecture
-- 🔒 Harden security policies
-
-## Environment Requirements
-
-### Required Variables
-The following environment variables are required in `.env.local`:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
-
-### Optional Variables (for Enhanced Analysis)
-For full Edge Functions analysis and deployment information:
-
-```env
-SUPABASE_PROJECT_REF=your-project-ref      # Found in Supabase dashboard URL
-SUPABASE_MANAGEMENT_API_KEY=your-api-key   # From Supabase account settings
-```
-
-## Report Examples
-
-### Mapping Report Structure
-```yaml
-analyzed_at: "2025-01-03T..."
-codebase_path: "/path/to/project"
-total_tables: 157
-mapped_tables: 85
-unmapped_tables: 72
-table_mappings:
-  users:
-    total_references: 45
-    access_patterns:
-      - pattern: repository
-        count: 30
-      - pattern: api
-        count: 15
-    operations: [select, insert, update]
-    relationships:
-      references: [companies, roles]
-      referenced_by: [jobs, properties]
-```
-
-### Key Insights Provided
-
-1. **Unused Tables**: Tables with no code references that might be candidates for removal
-2. **Direct Access Issues**: Tables accessed directly instead of through repositories
-3. **Missing Type Definitions**: Frequently used tables without TypeScript types
-4. **Access Pattern Inconsistencies**: Tables accessed through multiple different patterns
 
 ## Troubleshooting
 
-### "Failed to load database analysis"
-Run `npm run analyze:supabase` first to generate the database analysis that the mapping tool needs.
+### Error: "Required info functions not found"
+Run `npm run analyze:db:create-functions` first to create the necessary RPC functions.
 
-### "Analysis takes too long"
-The tool scans all TypeScript/JavaScript files in src/, scripts/, and migrations/. Large codebases may take a few minutes.
+### Error: "exec_sql not available"
+The basic `exec_sql` function only returns void. Use the comprehensive analyzer instead.
 
-### "Missing environment variables"
-Ensure `.env.local` contains both required Supabase credentials.
+### Error: "Permission denied"
+Make sure you're using the service role key, not the anon key, for comprehensive analysis.
 
-## Future Enhancements
+## Which Analyzer to Use?
 
-- [ ] Performance metrics (slow queries, missing indexes)
-- [ ] Data quality checks (null percentages, outliers)
-- [ ] Historical comparison between analysis runs
-- [ ] GraphQL schema analysis
-- [ ] API endpoint generation suggestions
-- [ ] Automated repository generation for tables
+1. **Quick Overview**: Use `analyze:db:detailed` for a fast overview without setup
+2. **Full Analysis**: Use `analyze:db:comprehensive` for complete database documentation
+3. **Migration Planning**: Use comprehensive analyzer's migration recommendations
+4. **Regular Monitoring**: Set up a cron job to run comprehensive analysis weekly
+
+## Adding New Analysis Features
+
+To add new analysis capabilities:
+
+1. Add new RPC functions in `create-db-info-functions.ts`
+2. Update the analyzer to call your new functions
+3. Add new sections to the report generator
+
+Example: Adding constraint analysis
+```sql
+CREATE FUNCTION get_constraint_info(p_table_name text)
+RETURNS TABLE (
+  constraint_name text,
+  constraint_type text,
+  definition text
+) AS $$
+BEGIN
+  -- Your query here
+END
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
