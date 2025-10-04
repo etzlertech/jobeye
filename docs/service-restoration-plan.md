@@ -122,3 +122,7 @@ Prioritization inside Phase A:
 1. Stabilize developer tooling (Husky, npx path) so commits can proceed.
 2. Start Phase A with intake-analytics.service.ts, reintroducing logic and tests.
 3. Continue through Field Intelligence list in the priority order above, updating this plan as milestones are reached.
+
+## Progress Log
+- 2025-10-05: Restored `intake-analytics.service.ts` logic with stubbed Supabase fetch, aligning with current placeholder pattern. No historical unit tests existed; broader TypeScript issues remain tracked separately.
+- 2025-10-05: Restored intake-ocr.service.ts with stubbed GPT-4 Vision call and persistence hook; actual OCR integration pending repository rebuild.

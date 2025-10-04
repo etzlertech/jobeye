@@ -32,7 +32,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 // TODO: import { IntakeRequestsRepository } from '../repositories/intake-requests.repository';
 import { logger } from '@/core/logger/voice-logger';
-import { ValidationError } from '@/core/errors/error-types';
 
 /**
  * Source performance metrics
@@ -91,6 +90,16 @@ export interface TrendDataPoint {
   averageLeadScore: number;
 }
 
+type IntakeRequestRecord = {
+  id: string;
+  source: string | null;
+  status: string | null;
+  created_at: string;
+  first_contact_at: string | null;
+  service_type: string | null;
+  lead_score?: number | null;
+};
+
 /**
  * Service for intake analytics and performance tracking
  *
@@ -121,8 +130,8 @@ export class IntakeAnalyticsService {
   // TODO: private requestsRepository: IntakeRequestsRepository;
 
   constructor(
-    client: SupabaseClient,
-    private tenantId: string
+    private readonly client: SupabaseClient,
+    private readonly tenantId: string
   ) {
     // TODO: this.requestsRepository = new IntakeRequestsRepository(client, tenantId);
   }
@@ -410,17 +419,23 @@ export class IntakeAnalyticsService {
   private async getRequestsInRange(
     startDate?: Date,
     endDate?: Date
-  ): Promise<any[]> {
-    const filters: any = {};
+  ): Promise<IntakeRequestRecord[]> {
+    return this.fetchRequests({ startDate, endDate });
+  }
 
-    if (startDate) {
-      filters.created_after = startDate.toISOString();
-    }
+  private async fetchRequests(filters: {
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<IntakeRequestRecord[]> {
+    logger.debug('IntakeAnalyticsService.fetchRequests stub invoked', {
+      tenantId: this.tenantId,
+      startDate: filters.startDate?.toISOString(),
+      endDate: filters.endDate?.toISOString(),
+      clientConfigured: Boolean(this.client),
+    });
 
-    if (endDate) {
-      filters.created_before = endDate.toISOString();
-    }
-
-    return this.requestsRepository.findAll(filters);
+    // TODO: Reintroduce repository backed fetch once intake requests repository
+    // is restored.
+    return [];
   }
 }

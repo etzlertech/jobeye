@@ -34,9 +34,9 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-// TODO: // TODO: import { IntakeDocumentsRepository } from '../repositories/intake-documents.repository';
+// TODO: import { IntakeDocumentsRepository } from '../repositories/intake-documents.repository';
 import { logger } from '@/core/logger/voice-logger';
-import { ValidationError, ExternalServiceError } from '@/core/errors/error-types';
+import { ExternalServiceError } from '@/core/errors/error-types';
 
 /**
  * OCR extraction result
@@ -111,12 +111,12 @@ const DEFAULT_CONFIG: OCRConfig = {
  */
 export class IntakeOCRService {
   // TODO: private documentsRepository: IntakeDocumentsRepository;
-  private config: OCRConfig;
+  private readonly config: OCRConfig;
 
   constructor(
-    client: SupabaseClient,
-    private tenantId: string,
-    private openaiApiKey: string,
+    private readonly client: SupabaseClient,
+    private readonly tenantId: string,
+    private readonly openaiApiKey: string,
     config?: Partial<OCRConfig>
   ) {
     // TODO: this.documentsRepository = new IntakeDocumentsRepository(client, tenantId);
@@ -156,9 +156,13 @@ export class IntakeOCRService {
 
       const processingTimeMs = Date.now() - startTime;
 
-      // Update document with OCR results
-      // TODO: { id: "mock-id" }.toISOString(),
-      // });
+      await this.saveOCRResult(documentId, {
+        extractedText: ocrResult.extractedText,
+        structuredData,
+        confidence,
+        processingTimeMs,
+        costUSD: this.config.costPerRequest,
+      });
 
       logger.info('OCR extraction completed', {
         documentId,
@@ -398,5 +402,25 @@ Notes: Weekly service requested
    */
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async saveOCRResult(documentId: string, payload: {
+    extractedText: string;
+    structuredData: OCRStructuredData;
+    confidence: number;
+    processingTimeMs: number;
+    costUSD: number;
+  }): Promise<void> {
+    logger.debug('IntakeOCRService.saveOCRResult stub invoked', {
+      tenantId: this.tenantId,
+      documentId,
+      payloadSummary: {
+        confidence: payload.confidence,
+        costUSD: payload.costUSD,
+        processingTimeMs: payload.processingTimeMs,
+      },
+    });
+
+    // TODO: Persist OCR output via IntakeDocumentsRepository when available.
   }
 }
