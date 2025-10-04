@@ -34,7 +34,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 // TODO: import { RoutingGPSBreadcrumbsRepository } from '../repositories/routing-gps-breadcrumbs.repository';
 // TODO: import { RoutingSchedulesRepository } from '../repositories/routing-schedules.repository';
 import { logger } from '@/core/logger/voice-logger';
-import { ValidationError, NotFoundError } from '@/core/errors/error-types';
+import { ValidationError } from '@/core/errors/error-types';
 
 type BreadcrumbRecord = {
   latitude: number;
@@ -102,7 +102,7 @@ export class RoutingProgressService {
   async getRouteProgress(scheduleId: string): Promise<RouteProgressSummary> {
     const schedule = await this.fetchScheduleById(scheduleId);
     if (!schedule) {
-      throw new NotFoundError(`Schedule not found: ${scheduleId}`);
+      throw new Error(`Schedule not found: ${scheduleId}`);
     }
 
     const breadcrumbs = await this.fetchBreadcrumbs(schedule.user_id);
