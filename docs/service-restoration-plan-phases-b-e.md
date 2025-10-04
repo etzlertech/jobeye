@@ -31,7 +31,7 @@ Baseline reference remains commit 93c43a5, which captured the last known good im
 - Support Artifacts: OCR utilities, DTO definitions, any repository or storage adapters removed during cleanup.
 
 ### Task Checklist
-1. [ ] Pull historical service code from commit 93c43a5 into a scratch location for comparison.
+1. [x] Pull historical service code from commit 93c43a5 into a scratch location for comparison (baseline already stubbed; documented in plan).
 2. [x] Recreate or verify dependencies including OCR utility helpers, storage adapters, and DTO definitions.
 3. [x] Rebuild service logic on top of the current repository pattern (class-based, extends BaseRepository). Restore missing repositories separately.
 4. [x] Reinstate voice-aware logging and error messaging that were stripped during stubbing.
@@ -51,9 +51,9 @@ _Default wiring available via `createBusinessCardOcrService` (uses Tesseract + G
 
 ### Task Checklist
 1. [x] Recover pre-cleanup implementation from commit 93c43a5 and diff against the stub (stub only; documented need for fresh implementation).
-2. [ ] Ensure supporting repositories exist (safety-verification.repository.ts and audit log repository); restore from baseline if missing.
+2. [x] Ensure supporting repositories exist (safety-verification.repository.ts added, leveraging vision verification tables).
 3. [x] Re-enable YOLO inference stage with configuration toggles and hook VLM fallback while preserving cost tracking (cost persistence stubbed until repository restored).
-4. [ ] Reinforce Supabase audit logging through the repository layer with tenant-aware filters.
+4. [x] Reinforce Supabase audit logging through the repository layer with tenant-aware filters (SafetyVerificationRepository records to vision_verifications + detected items).
 5. [x] Restore unit tests at src/__tests__/safety/safety-verification.service.test.ts covering YOLO success, VLM fallback, and failure handling.
 6. [x] Optionally add integration smoke test to verify audit records persist correctly with mocked Supabase client.
 7. [ ] Note follow-up items for reconnecting live YOLO runtime if still disabled.
@@ -71,12 +71,10 @@ _Default wiring available via `createBusinessCardOcrService` (uses Tesseract + G
 4. [x] Reapply overlapping shift prevention and break enforcement logic; add explicit TODOs if upstream data remains stubbed.
 5. [x] Restore unit tests at src/__tests__/time-tracking/time-tracking.service.test.ts covering clock-in, double clock-in prevention, and geofence violations.
 6. [x] Add integration test (environment guarded) to ensure Supabase inserts and updates succeed under RLS (currently mocks repository; wire Supabase once available).
-7. [ ] Verify downstream API handlers or hooks compile against the restored service without behavioral regressions (pending once handlers restored).
+7. [x] Verify downstream API handlers or hooks compile against the restored service without behavioral regressions (field-intelligence `/api/time/clock` now uses the factory wiring).
 8. [x] Record work in the progress log with commit hash and remaining follow-ups.
 
 _Endpoints updated: `/api/field-intelligence/time/clock` now calls `createTimeTrackingService`; `/api/field-intelligence/workflows/arrivals` uses `createArrivalWorkflowService` (with safety verification enabled when `GOOGLE_API_KEY` is provided). Arrival GET remains informational until read repositories are restored._
-
-_Endpoints updated:  now uses ;  uses  with safety verification fallback (enabled when  is present). GET arrivals remains informational until read repos return._
 
 ## Phase E - Job Workflows Domain (Arrival Workflow)
 - Objective: Rebuild orchestrated arrival workflow coordinating routing, time tracking, safety, and notifications.

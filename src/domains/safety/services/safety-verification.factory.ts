@@ -18,6 +18,7 @@
  * END AGENT DIRECTIVE BLOCK
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { detectObjects } from '@/domains/vision/services/yolo-inference.service';
 import { createVisionBusinessCardClient } from '@/domains/intake/services/business-card-ocr.vision';
 import type {
@@ -28,8 +29,11 @@ import type {
 } from './safety-verification.types';
 import { SafetyVerificationService } from './safety-verification.service';
 import { voiceLogger } from '@/core/logger/voice-logger';
+import { SafetyVerificationRepository } from '@/domains/safety/repositories/safety-verification.repository';
 
 export interface SafetyVerificationFactoryOptions {
+  supabaseClient?: SupabaseClient;
+  repository?: SafetyVerificationRepository;
   confidenceThreshold?: number;
   fallbackConfidenceThreshold?: number;
   vision?: {
@@ -107,6 +111,12 @@ export function createDefaultSafetyVerificationDependencies(
     },
   } satisfies SafetyVerificationDependencies['vlmClient'];
 
+  const repository =
+    options.repository ??
+    (options.supabaseClient
+      ? new SafetyVerificationRepository(options.supabaseClient)
+      : undefined);
+
   return {
     yoloClient,
     vlmClient,
@@ -114,5 +124,10 @@ export function createDefaultSafetyVerificationDependencies(
     fallbackConfidenceThreshold: options.fallbackConfidenceThreshold,
     logger: options.logger ?? voiceLogger,
     now: options.now,
+    persistResult: repository
+      ? async (payload) => {
+          await repository.record(payload);
+        }
+      : undefined,
   } satisfies SafetyVerificationDependencies;
 }
