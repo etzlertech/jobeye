@@ -234,12 +234,17 @@ export default function SupervisorCustomersPage() {
     if (!validateForm()) return;
 
     setIsSaving(true);
+    setError(null); // Clear any previous errors
+    
     try {
       const url = view === 'edit' && selectedCustomer
         ? `/api/supervisor/customers/${selectedCustomer.id}`
         : '/api/supervisor/customers';
 
       const method = view === 'edit' ? 'PUT' : 'POST';
+
+      console.log('Submitting customer data:', { ...formData, demo: true });
+      console.log('API URL:', url, 'Method:', method);
 
       // Add demo flag to body for unauthenticated access
       const response = await fetch(url, {
@@ -249,8 +254,12 @@ export default function SupervisorCustomersPage() {
       });
 
       const data = await response.json();
+      console.log('API Response:', response.status, data);
 
-      if (!response.ok) throw new Error(data.message);
+      if (!response.ok) {
+        console.error('API Error:', data);
+        throw new Error(data.error?.message || data.message || 'Failed to save customer');
+      }
 
       // Use the specific message from the API response that indicates if it was saved to database
       setSuccess(data.message || (view === 'edit' ? 'Customer updated successfully' : 'Customer created successfully'));
@@ -261,6 +270,7 @@ export default function SupervisorCustomersPage() {
       setView('list');
       resetForm();
     } catch (err) {
+      console.error('Save error:', err);
       setError(err instanceof Error ? err.message : 'Failed to save customer');
     } finally {
       setIsSaving(false);
@@ -301,7 +311,7 @@ export default function SupervisorCustomersPage() {
       }
 
       // Use the specific message from the API response that indicates if it was deleted from database
-      setSuccess(data.message || 'Customer deleted successfully');
+      setSuccess('Customer deleted successfully');
       setTimeout(() => setSuccess(null), 5000); // Longer display time for database confirmation
       await loadCustomers();
     } catch (err) {

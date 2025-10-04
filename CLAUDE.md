@@ -14,6 +14,10 @@ JobEye is a Voice-First Field Service Management System built with Architecture-
 - Converted repositories to class-based pattern extending BaseRepository
 - Created unified inventory model with items and item_transactions tables
 - Implemented cleanup verification scripts and fast pre-commit hooks
+- **Pre-Frontend Cleanup (2025-10-03)**: Removed 9 additional orphaned tables
+  - Now 40 tables total (was 49)
+  - Ready for UI development on Customer, Property, Job, Vision, and Voice features
+  - See `docs/ui-ready-features.md` for frontend quick start
 
 **Previous Features**:
 - Feature 008: Codebase Redundancy Analysis - Analysis tools for finding duplicate code
@@ -423,7 +427,8 @@ console.log(result.cost); // 0.00 (used local YOLO)
 ---
 
 ## Recent Changes
-- 009-codebase-cleanup-and: Added TypeScript 5.x, Node.js 18+   + Next.js 14, Supabase Client SDK, @supabase/supabase-js  
+- 009-codebase-cleanup-and: Added TypeScript 5.x, Node.js 18+  
+ + Next.js 14, Supabase Client SDK, @supabase/supabase-js  
 
 ### Feature 008: Codebase Redundancy Analysis (2025-01-02)
 - Created redundancy analyzer tool specifications

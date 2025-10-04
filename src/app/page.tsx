@@ -299,7 +299,7 @@ export default function Home() {
           <h2 className="section-title mobile-title">📱 Direct Mobile Access</h2>
           
           <div className="demo-grid">
-            <Link href="/mobile/job-load-checklist-start" className="demo-card mobile-card">
+            <Link href="/mobile/equipment-verification?job_id=demo-job&tenant_id=demo-company" className="demo-card mobile-card">
               <div className="card-header">
                 <span className="card-icon">🎯</span>
                 <span className="card-title">Gemini VLM Checklist</span>
