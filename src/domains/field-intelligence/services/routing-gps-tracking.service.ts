@@ -33,13 +33,9 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-// TODO: // TODO: import { RoutingGPSBreadcrumbsRepository } from '../repositories/routing-gps-breadcrumbs.repository';
+// TODO: import { RoutingGPSBreadcrumbsRepository } from '../repositories/routing-gps-breadcrumbs.repository';
 import { logger } from '@/core/logger/voice-logger';
-import {
-  ValidationError,
-  NotFoundError,
-  ConflictError,
-} from '@/core/errors/error-types';
+import { ValidationError } from '@/core/errors/error-types';
 
 /**
  * GPS coordinate data from device
@@ -73,6 +69,18 @@ export interface TrackingSession {
   startTime: Date;
   pointsRecorded: number;
 }
+
+type BreadcrumbRecord = {
+  user_id: string;
+  job_id: string | null;
+  latitude: number;
+  longitude: number;
+  accuracy_meters: number;
+  altitude_meters?: number | null;
+  speed_mps?: number | null;
+  heading_degrees?: number | null;
+  recorded_at: string;
+};
 
 const DEFAULT_CONFIG: GPSTrackingConfig = {
   minAccuracy: 10, // 10m accuracy threshold
@@ -108,17 +116,17 @@ const DEFAULT_CONFIG: GPSTrackingConfig = {
  * ```
  */
 export class RoutingGPSTrackingService {
-  private repository: RoutingGPSBreadcrumbsRepository;
-  private config: GPSTrackingConfig;
-  private offlineQueue: Map<string, GPSCoordinate[]> = new Map();
-  private lastCoordinates: Map<string, GPSCoordinate> = new Map();
+  // TODO: private repository: RoutingGPSBreadcrumbsRepository;
+  private readonly config: GPSTrackingConfig;
+  private readonly offlineQueue: Map<string, GPSCoordinate[]> = new Map();
+  private readonly lastCoordinates: Map<string, GPSCoordinate> = new Map();
 
   constructor(
-    client: SupabaseClient,
-    private tenantId: string,
+    private readonly client: SupabaseClient,
+    private readonly tenantId: string,
     config?: Partial<GPSTrackingConfig>
   ) {
-    this.repository = new RoutingGPSBreadcrumbsRepository(client, tenantId);
+    // TODO: this.repository = new RoutingGPSBreadcrumbsRepository(client, tenantId);
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
@@ -153,10 +161,13 @@ export class RoutingGPSTrackingService {
       return;
     }
 
+    const isOnline =
+      typeof navigator !== 'undefined' ? navigator.onLine : true;
+
     // Try to save online
-    if (navigator.onLine) {
+    if (isOnline) {
       try {
-        await this.repository.create({
+        await this.persistBreadcrumb({
           user_id: userId,
           job_id: jobId || null,
           latitude: coordinate.latitude,
@@ -205,9 +216,9 @@ export class RoutingGPSTrackingService {
 
     for (const coordinate of queue) {
       try {
-        await this.repository.create({
+        await this.persistBreadcrumb({
           user_id: userId,
-          job_id: null, // Job ID lost in offline queue (would need enhancement)
+          job_id: null,
           latitude: coordinate.latitude,
           longitude: coordinate.longitude,
           accuracy_meters: coordinate.accuracy,
@@ -250,17 +261,16 @@ export class RoutingGPSTrackingService {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    const breadcrumbs = await this.repository.findAll({
-      user_id: userId,
-      job_id: jobId,
-      recorded_after: startOfDay.toISOString(),
+    const breadcrumbs = await this.fetchBreadcrumbs({
+      userId,
+      jobId,
+      recordedAfter: startOfDay,
     });
 
     if (breadcrumbs.length === 0) {
       return null;
     }
 
-    // Find earliest timestamp
     const timestamps = breadcrumbs.map((b) => new Date(b.recorded_at));
     const startTime = new Date(Math.min(...timestamps.map((t) => t.getTime())));
 
@@ -356,6 +366,31 @@ export class RoutingGPSTrackingService {
 
     queue.push(coordinate);
     this.offlineQueue.set(userId, queue);
+  }
+
+  private async persistBreadcrumb(record: BreadcrumbRecord): Promise<void> {
+    logger.debug('RoutingGPSTrackingService.persistBreadcrumb stub invoked', {
+      tenantId: this.companyId,
+      record,
+    });
+
+    // TODO: Persist breadcrumb via RoutingGPSBreadcrumbsRepository when ready.
+  }
+
+  private async fetchBreadcrumbs(filters: {
+    userId: string;
+    jobId?: string;
+    recordedAfter: Date;
+  }): Promise<BreadcrumbRecord[]> {
+    logger.debug('RoutingGPSTrackingService.fetchBreadcrumbs stub invoked', {
+      tenantId: this.companyId,
+      userId: filters.userId,
+      jobId: filters.jobId,
+      recordedAfter: filters.recordedAfter.toISOString(),
+    });
+
+    // TODO: Query breadcrumbs via repository when implemented.
+    return [];
   }
 
   /**
