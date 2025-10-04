@@ -37,7 +37,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 // TODO: import { RoutingGeofenceEventsRepository } from '../repositories/routing-geofence-events.repository';
 // TODO: import { RoutingPropertyBoundariesRepository } from '../repositories/routing-property-boundaries.repository';
 import { logger } from '@/core/logger/voice-logger';
-import { ValidationError, NotFoundError } from '@/core/errors/error-types';
+import { NotFoundError } from '@/core/errors/error-types';
 
 /**
  * Geographic coordinate
@@ -77,6 +77,27 @@ export interface GeofenceCheckResult {
   propertyId?: string;
 }
 
+type PropertyBoundaryRecord = {
+  property_id: string;
+  boundary_type: BoundaryType;
+  radius_meters?: number | null;
+  center_latitude?: number | null;
+  center_longitude?: number | null;
+  polygon_coordinates?: {
+    type: 'Polygon';
+    coordinates: number[][][];
+  } | null;
+};
+
+type GeofenceEventRecord = {
+  user_id: string;
+  property_id: string;
+  event_type: GeofenceEventType;
+  latitude: number;
+  longitude: number;
+  detected_at: string;
+};
+
 const DEFAULT_CONFIG: GeofenceConfig = {
   arrivalThresholdMeters: 50,
   departureThresholdMeters: 100,
@@ -112,13 +133,15 @@ const DEFAULT_CONFIG: GeofenceConfig = {
 export class RoutingGeofencingService {
   // TODO: private eventsRepository: RoutingGeofenceEventsRepository;
   // TODO: private boundariesRepository: RoutingPropertyBoundariesRepository;
-  private config: GeofenceConfig;
-  private lastEvents: Map<string, { type: GeofenceEventType; timestamp: Date }> =
-    new Map();
+  private readonly config: GeofenceConfig;
+  private readonly lastEvents: Map<
+    string,
+    { type: GeofenceEventType; timestamp: Date }
+  > = new Map();
 
   constructor(
-    client: SupabaseClient,
-    private tenantId: string,
+    private readonly client: SupabaseClient,
+    private readonly tenantId: string,
     config?: Partial<GeofenceConfig>
   ) {
     // TODO: this.eventsRepository = new RoutingGeofenceEventsRepository(
@@ -140,8 +163,7 @@ export class RoutingGeofencingService {
     propertyId: string,
     currentLocation: Coordinate
   ): Promise<GeofenceCheckResult> {
-    // Get property boundary
-    const boundary = [] /* TODO: Repository not implemented */;
+    const boundary = await this.fetchPropertyBoundary(propertyId, currentLocation);
     if (!boundary) {
       throw new NotFoundError(`Property boundary not found: ${propertyId}`);
     }
@@ -158,7 +180,8 @@ export class RoutingGeofencingService {
       userId,
       propertyId,
       isInside,
-      distanceMeters
+      distanceMeters,
+      currentLocation
     );
 
     return {
@@ -178,8 +201,7 @@ export class RoutingGeofencingService {
     hoursAgo: number = 24
   ): Promise<any[]> {
     const since = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
-    return []; // TODO: [],
-    // });
+    return this.fetchRecentEvents(userId, since);
   }
 
   /**
@@ -240,7 +262,8 @@ export class RoutingGeofencingService {
     userId: string,
     propertyId: string,
     isInside: boolean,
-    distanceMeters: number
+    distanceMeters: number,
+    currentLocation: Coordinate
   ): Promise<GeofenceEventType | null> {
     const eventKey = `${userId}:${propertyId}`;
     const lastEvent = this.lastEvents.get(eventKey);
@@ -276,8 +299,14 @@ export class RoutingGeofencingService {
 
     // Record event
     if (eventType) {
-      // TODO: { id: "mock-id" }.toISOString(),
-      // });
+      await this.recordGeofenceEvent({
+        user_id: userId,
+        property_id: propertyId,
+        event_type: eventType,
+        latitude: currentLocation.latitude ?? 0,
+        longitude: currentLocation.longitude ?? 0,
+        detected_at: new Date().toISOString(),
+      });
 
       this.lastEvents.set(eventKey, {
         type: eventType,
@@ -383,5 +412,48 @@ export class RoutingGeofencingService {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c; // Distance in meters
+  }
+
+  private async fetchPropertyBoundary(
+    propertyId: string,
+    fallbackLocation: Coordinate
+  ): Promise<PropertyBoundaryRecord | null> {
+    logger.debug('RoutingGeofencingService.fetchPropertyBoundary stub invoked', {
+      tenantId: this.tenantId,
+      propertyId,
+    });
+
+    // TODO: Replace with repository lookup once available.
+    return {
+      property_id: propertyId,
+      boundary_type: 'CIRCULAR',
+      radius_meters: this.config.arrivalThresholdMeters,
+      center_latitude: fallbackLocation.latitude,
+      center_longitude: fallbackLocation.longitude,
+      polygon_coordinates: null,
+    };
+  }
+
+  private async recordGeofenceEvent(event: GeofenceEventRecord): Promise<void> {
+    logger.debug('RoutingGeofencingService.recordGeofenceEvent stub invoked', {
+      tenantId: this.tenantId,
+      event,
+    });
+
+    // TODO: Persist geofence event via RoutingGeofenceEventsRepository when ready.
+  }
+
+  private async fetchRecentEvents(
+    userId: string,
+    since: Date
+  ): Promise<GeofenceEventRecord[]> {
+    logger.debug('RoutingGeofencingService.fetchRecentEvents stub invoked', {
+      tenantId: this.tenantId,
+      userId,
+      since: since.toISOString(),
+    });
+
+    // TODO: Query geofence events repository once implemented.
+    return [];
   }
 }
