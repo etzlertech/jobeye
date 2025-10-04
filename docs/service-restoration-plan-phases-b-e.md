@@ -74,6 +74,10 @@ _Default wiring available via `createBusinessCardOcrService` (uses Tesseract + G
 7. [ ] Verify downstream API handlers or hooks compile against the restored service without behavioral regressions (pending once handlers restored).
 8. [x] Record work in the progress log with commit hash and remaining follow-ups.
 
+_Endpoints updated: `/api/field-intelligence/time/clock` now calls `createTimeTrackingService`; `/api/field-intelligence/workflows/arrivals` uses `createArrivalWorkflowService` (with safety verification enabled when `GOOGLE_API_KEY` is provided). Arrival GET remains informational until read repositories are restored._
+
+_Endpoints updated:  now uses ;  uses  with safety verification fallback (enabled when  is present). GET arrivals remains informational until read repos return._
+
 ## Phase E - Job Workflows Domain (Arrival Workflow)
 - Objective: Rebuild orchestrated arrival workflow coordinating routing, time tracking, safety, and notifications.
 - Primary File: src/domains/job-workflows/services/arrival-workflow.service.ts

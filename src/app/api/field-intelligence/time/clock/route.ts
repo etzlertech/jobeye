@@ -9,56 +9,125 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-// TODO: These imports are commented out until the modules are implemented
-import { logger } from '@/core/logger/voice-logger';
-// These imports are commented out until the modules are implemented
-// TODO: // import { TimeEntriesRepository } from '@/domains/field-intelligence/repositories/time-entries.repository';
-// TODO: // import { TimeAutoClockoutService } from '@/domains/field-intelligence/services/time-auto-clockout.service';
+import { voiceLogger as logger } from '@/core/logger/voice-logger';
+import {
+  createTimeTrackingService,
+} from '@/domains/time-tracking/services/time-tracking.factory';
+import type {
+  ClockSource,
+  LocationPoint,
+} from '@/domains/time-tracking/services/time-tracking.types';
 
-/**
- * GET endpoint - stubbed
- */
-export async function GET(request: NextRequest) {
-  // TODO: Implement when field-intelligence domain is ready
-  logger.info('Field Intelligence time clock GET called - feature not yet implemented');
-  return NextResponse.json(
-    { message: 'Field Intelligence time clock feature coming soon' },
-    { status: 501 }
-  );
+type SupportedAction = 'clock-in' | 'clock-out';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
+
+export async function GET() {
+  return methodNotAllowed();
 }
 
-/**
- * POST endpoint - stubbed
- */
+export async function PUT() {
+  return methodNotAllowed();
+}
+
+export async function DELETE() {
+  return methodNotAllowed();
+}
+
 export async function POST(request: NextRequest) {
-  // TODO: Implement when field-intelligence domain is ready
-  logger.info('Field Intelligence time clock POST called - feature not yet implemented');
-  return NextResponse.json(
-    { message: 'Field Intelligence time clock feature coming soon' },
-    { status: 501 }
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const tenantId = user.user_metadata?.tenant_id as string | undefined;
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'Tenant information missing from user metadata' },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const { action, location, jobId, routeId, source, metadata } = body ?? {};
+
+    if (!isSupportedAction(action)) {
+      return NextResponse.json(
+        { error: 'action must be "clock-in" or "clock-out"' },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidLocation(location)) {
+      return NextResponse.json(
+        { error: 'location with latitude and longitude is required' },
+        { status: 400 }
+      );
+    }
+
+    const service = createTimeTrackingService({
+      supabaseClient: supabase,
+      logger,
+    });
+
+    if (action === 'clock-in') {
+      const result = await service.clockIn(user.id, location, {
+        context: { tenantId, jobId, routeId },
+        source: mapClockSource(source),
+        metadata,
+      });
+
+      return NextResponse.json({ success: true, data: result }, { status: 201 });
+    }
+
+    const result = await service.clockOut(user.id, location, {
+      context: { tenantId, jobId, routeId },
+      metadata,
+    });
+
+    return NextResponse.json({ success: true, data: result });
+  } catch (error: any) {
+    logger.error('Time clock API error', { error });
+    return NextResponse.json(
+      { error: error?.message ?? 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+function isSupportedAction(action: unknown): action is SupportedAction {
+  return action === 'clock-in' || action === 'clock-out';
+}
+
+function isValidLocation(location: unknown): location is LocationPoint {
+  return (
+    typeof location === 'object' &&
+    location !== null &&
+    typeof (location as any).latitude === 'number' &&
+    typeof (location as any).longitude === 'number'
   );
 }
 
-/**
- * PUT endpoint - stubbed
- */
-export async function PUT(request: NextRequest) {
-  // TODO: Implement when field-intelligence domain is ready
-  logger.info('Field Intelligence time clock PUT called - feature not yet implemented');
-  return NextResponse.json(
-    { message: 'Field Intelligence time clock feature coming soon' },
-    { status: 501 }
-  );
+function mapClockSource(source: unknown): ClockSource {
+  if (
+    source === 'manual' ||
+    source === 'voice_command' ||
+    source === 'geofence' ||
+    source === 'auto_detected'
+  ) {
+    return source;
+  }
+  return 'manual';
 }
 
-/**
- * DELETE endpoint - stubbed
- */
-export async function DELETE(request: NextRequest) {
-  // TODO: Implement when field-intelligence domain is ready
-  logger.info('Field Intelligence time clock DELETE called - feature not yet implemented');
-  return NextResponse.json(
-    { message: 'Field Intelligence time clock feature coming soon' },
-    { status: 501 }
-  );
+function methodNotAllowed() {
+  return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
 }
