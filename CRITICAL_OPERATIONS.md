@@ -69,22 +69,33 @@ git push origin main
 
 ## 🔴 3. RAILWAY MONITORING (ACTIVE, NOT PASSIVE)
 
-### The Problem with Current Scripts:
-- `npm run railway:check` - FAILS due to missing tsx
-- `npx tsx scripts/railway-check-latest.ts` - FAILS due to missing dependencies
-- Node.js module resolution is broken in this environment
+### The Problem:
+- Node.js module resolution is broken in WSL environment
+- node_modules directories exist but many are empty
+- This affects all Node.js based scripts
 
-### Working Alternative (Until Scripts Are Fixed):
+### Working Solution - Python Railway Monitor:
+```bash
+# Use the Python monitoring script
+python3 scripts/railway-monitor.py
+
+# This will:
+# - Show latest commit hash
+# - Warn about uncommitted changes  
+# - Monitor for 3 minutes with progress updates
+# - Tell you when deployment should be complete
+```
+
+### Alternative Manual Method:
 ```bash
 # 1. Note the time of push
 git push origin main
 echo "Pushed at $(date)"
 
-# 2. Monitor GitHub Actions (if configured)
-# Check https://github.com/etzlertech/jobeye/actions
+# 2. Wait 2-3 minutes (Railway typical deploy time)
+sleep 180
 
-# 3. Wait 2-3 minutes then test directly
-# Railway typically deploys in 2-3 minutes, not always 5
+# 3. Test with Browser MCP
 ```
 
 ### What NOT to Do:
@@ -130,12 +141,20 @@ sleep 180
 
 ## 🔴 5. DEPENDENCIES ISSUE
 
-### Current Problem:
-- Node.js module resolution is broken
-- Can't use npm scripts that require tsx or other modules
-- Python works more reliably than Node.js in this environment
+### Root Cause:
+- Node.js module resolution is broken in this WSL environment
+- Many node_modules directories exist but are empty (corrupted installation)
+- This affects ALL Node.js scripts including tsx, dotenv, etc.
 
-### Solution:
-- Use Python scripts for database operations
-- Use bash/git directly for version control
-- Avoid Node.js scripts until dependency issues are resolved
+### Working Solutions:
+1. **Database Operations**: Use Python scripts (shown above)
+2. **Git Operations**: Use bash commands directly  
+3. **Railway Monitoring**: Use `python3 scripts/railway-monitor.py`
+4. **Avoid**: Any Node.js based scripts until node_modules are fixed
+
+### To Fix Node Modules (for future sessions):
+```bash
+# Complete reinstall might help
+rm -rf node_modules package-lock.json
+npm install
+```
