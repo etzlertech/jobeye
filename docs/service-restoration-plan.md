@@ -128,3 +128,4 @@ Prioritization inside Phase A:
 - 2025-10-05: Restored intake-ocr.service.ts with stubbed GPT-4 Vision call and persistence hook; actual OCR integration pending repository rebuild.
 - 2025-10-05: Restored routing-geofencing.service.ts with stubbed boundary/event fetches; real repositories still pending.
 - 2025-10-05: Restored routing-gps-tracking.service.ts with stubbed breadcrumb persistence/fetch; real GPS repo wiring still outstanding.
+- 2025-10-05: Restored routing-progress.service.ts with stubbed schedule/breadcrumb lookups; ETA/delay calculations await repository hookups.
