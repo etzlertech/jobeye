@@ -3,6 +3,7 @@
  */
 
 import { GET } from '@/app/api/cleanup/migration/status/route';
+import { NextRequest } from 'next/server';
 import { createTestClient, cleanupTestData } from '../test-utils';
 
 describe('GET /api/cleanup/migration/status', () => {
@@ -13,14 +14,14 @@ describe('GET /api/cleanup/migration/status', () => {
     await client.from('migration_tracking').insert([
       {
         table_name: 'test_table_1',
-        has_tenant_id: true,
+        has_company_id: true,
         has_tenant_id: false,
         row_count: 10,
         migration_status: 'pending'
       },
       {
         table_name: 'test_table_2',
-        has_tenant_id: true,
+        has_company_id: true,
         has_tenant_id: true,
         row_count: 5,
         migration_status: 'completed',
@@ -35,7 +36,7 @@ describe('GET /api/cleanup/migration/status', () => {
 
   it('should return all migration statuses', async () => {
     const request = new Request('http://localhost:3000/api/cleanup/migration/status');
-    const response = await GET(request);
+    const response = await GET(request as unknown as NextRequest);
     
     expect(response.status).toBe(200);
     
@@ -67,7 +68,7 @@ describe('GET /api/cleanup/migration/status', () => {
 
   it('should filter by status when provided', async () => {
     const request = new Request('http://localhost:3000/api/cleanup/migration/status?status=pending');
-    const response = await GET(request);
+    const response = await GET(request as unknown as NextRequest);
     
     expect(response.status).toBe(200);
     
@@ -79,7 +80,7 @@ describe('GET /api/cleanup/migration/status', () => {
 
   it('should handle invalid status parameter', async () => {
     const request = new Request('http://localhost:3000/api/cleanup/migration/status?status=invalid');
-    const response = await GET(request);
+    const response = await GET(request as unknown as NextRequest);
     
     // Should either ignore invalid status or return 400
     expect([200, 400]).toContain(response.status);

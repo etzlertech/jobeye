@@ -42,6 +42,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { canAccessRoute } from '@/lib/auth/route-access';
 import {
   Menu,
   X,
@@ -119,8 +120,8 @@ export function MobileNavigation({
   }, [pathname]);
 
   // Get navigation items for current role
-  const visibleItems = navigationItems.filter(item => 
-    item.roles.includes(currentRole)
+  const visibleItems = navigationItems.filter(item =>
+    canAccessRoute(item.path, currentRole)
   );
 
   const handleNavigate = (path: string) => {

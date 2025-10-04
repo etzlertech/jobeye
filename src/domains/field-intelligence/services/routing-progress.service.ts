@@ -36,328 +36,206 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/core/logger/voice-logger';
 import { ValidationError, NotFoundError } from '@/core/errors/error-types';
 
+type BreadcrumbRecord = {
+  latitude: number;
+  longitude: number;
+  recorded_at: string;
+};
+
+type RoutingScheduleRecord = {
+  id: string;
+  user_id: string;
+  scheduled_date: string;
+  route_order?: unknown;
+};
+
 /**
  * Route progress data
  */
 export interface RouteProgress {
   scheduleId: string;
   userId: string;
-  completedStops: number;
-  totalStops: number;
-  percentComplete: number;
-  currentStop: number;
-  estimatedMinutesRemaining: number;
-  isOnSchedule: boolean;
-  minutesBehindSchedule: number;
-}
-
-/**
- * ETA calculation result
- */
-export interface ETACalculation {
-  destinationJobId: string;
-  estimatedArrivalTime: Date;
+  progressPercent: number;
+  etaToNextStopMinutes: number | null;
+  totalDistanceMeters: number;
   distanceRemainingMeters: number;
-  averageSpeedMPS: number;
-  confidenceLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+  isDelayed: boolean;
+  delayMinutes: number;
 }
 
 /**
- * Progress milestone types
+ * Progress milestone
  */
-export type ProgressMilestone = 'STARTED' | 'QUARTER' | 'HALF' | 'THREE_QUARTER' | 'NEARLY_COMPLETE';
-
-/**
- * Progress configuration
- */
-export interface ProgressConfig {
-  delayThresholdMinutes: number; // default: 15 min
-  nearlyCompleteThreshold: number; // default: 90%
-  minBreadcrumbsForETA: number; // default: 5
+export interface ProgressMilestone {
+  milestone: 'STARTED' | 'HALF_COMPLETE' | 'NEARLY_COMPLETE' | 'COMPLETED';
+  reachedAt: Date;
+  notes: string;
 }
 
-const DEFAULT_CONFIG: ProgressConfig = {
-  delayThresholdMinutes: 15,
-  nearlyCompleteThreshold: 0.9,
-  minBreadcrumbsForETA: 5,
-};
+/**
+ * Route progress summary
+ */
+export interface RouteProgressSummary {
+  scheduleId: string;
+  progress: RouteProgress;
+  milestones: ProgressMilestone[];
+}
 
 /**
- * Service for route progress tracking with ETA calculation
- *
- * Features:
- * - Real-time progress calculation (% complete)
- * - ETA estimation based on historical speed
- * - Milestone detection (25%, 50%, 75%, 90%)
- * - Delay detection and alerts
- * - Average speed calculation from GPS breadcrumbs
- *
- * @example
- * ```typescript
- * const progressService = new RoutingProgressService(supabase, tenantId);
- *
- * // Get current route progress
- * const progress = await progressService.getRouteProgress(scheduleId, userId);
- * console.log(`${progress.percentComplete}% complete`);
- *
- * // Calculate ETA to next job
- * const eta = await progressService.calculateETA(userId, nextJobId);
- * console.log(`ETA: ${eta.estimatedArrivalTime}`);
- * ```
+ * Service for route progress tracking and ETA calculations
  */
 export class RoutingProgressService {
   // TODO: private breadcrumbsRepository: RoutingGPSBreadcrumbsRepository;
   // TODO: private schedulesRepository: RoutingSchedulesRepository;
-  private config: ProgressConfig;
 
   constructor(
-    client: SupabaseClient,
-    private tenantId: string,
-    config?: Partial<ProgressConfig>
+    private readonly client: SupabaseClient,
+    private readonly companyId: string
   ) {
-    // TODO: this.breadcrumbsRepository = new RoutingGPSBreadcrumbsRepository(
-      client,
-      tenantId
-    );
-    // TODO: this.schedulesRepository = new RoutingSchedulesRepository(client, tenantId);
-    this.config = { ...DEFAULT_CONFIG, ...config };
+    // TODO: this.breadcrumbsRepository = new RoutingGPSBreadcrumbsRepository(client, companyId);
+    // TODO: this.schedulesRepository = new RoutingSchedulesRepository(client, companyId);
   }
 
   /**
-   * Get current route progress
+   * Get progress summary for a schedule
    */
-  async getRouteProgress(
-    scheduleId: string,
-    userId: string
-  ): Promise<RouteProgress> {
-    // Get schedule
-    const schedule = null;
+  async getRouteProgress(scheduleId: string): Promise<RouteProgressSummary> {
+    const schedule = await this.fetchScheduleById(scheduleId);
     if (!schedule) {
       throw new NotFoundError(`Schedule not found: ${scheduleId}`);
     }
 
-    // Parse route order
-    const routeOrder = schedule.route_order as any[];
-    const totalStops = routeOrder.length;
+    const breadcrumbs = await this.fetchBreadcrumbs(schedule.user_id);
 
-    // Count completed stops (simplified - would check job completion status)
-    let completedStops = 0;
-    let currentStop = 0;
-
-    // Calculate progress
-    const percentComplete = (completedStops / totalStops) * 100;
-
-    // Calculate time metrics
-    const plannedDurationMinutes = this.calculatePlannedDuration(schedule);
-    const elapsedMinutes = this.calculateElapsedMinutes(schedule);
-    const estimatedMinutesRemaining = Math.max(
-      0,
-      plannedDurationMinutes - elapsedMinutes
-    );
-
-    // Check if on schedule
-    const minutesBehindSchedule = Math.max(
-      0,
-      elapsedMinutes - plannedDurationMinutes * (completedStops / totalStops)
-    );
-    const isOnSchedule =
-      minutesBehindSchedule <= this.config.delayThresholdMinutes;
+    const progress = this.calculateProgress(schedule, breadcrumbs);
+    const milestones = this.deriveMilestones(progress);
 
     return {
       scheduleId,
-      userId,
-      completedStops,
-      totalStops,
-      percentComplete,
-      currentStop,
-      estimatedMinutesRemaining,
-      isOnSchedule,
-      minutesBehindSchedule,
+      progress,
+      milestones,
     };
   }
 
   /**
-   * Calculate ETA to destination job
+   * Calculate progress metrics
    */
-  async calculateETA(
-    userId: string,
-    destinationJobId: string
-  ): Promise<ETACalculation> {
-    // Get recent breadcrumbs for speed calculation
-    const recentBreadcrumbs = await this.getRecentBreadcrumbs(userId, 30); // 30 min
+  private calculateProgress(
+    schedule: RoutingScheduleRecord,
+    breadcrumbs: BreadcrumbRecord[]
+  ): RouteProgress {
+    const totalDistance = this.calculateTotalDistance(breadcrumbs);
+    const completedStops = ((schedule.route_order as unknown[]) ?? []).length;
+    const totalStops = completedStops || 1;
 
-    if (recentBreadcrumbs.length < this.config.minBreadcrumbsForETA) {
-      throw new ValidationError(
-        `Insufficient GPS data for ETA calculation (need ${this.config.minBreadcrumbsForETA}, got ${recentBreadcrumbs.length})`
-      );
-    }
-
-    // Calculate average speed
-    const averageSpeedMPS = this.calculateAverageSpeed(recentBreadcrumbs);
-
-    // Get destination coordinates (simplified - would look up job location)
-    const destinationLat = 33.4484;
-    const destinationLon = -112.074;
-
-    // Get current location from latest breadcrumb
-    const currentLocation = recentBreadcrumbs[recentBreadcrumbs.length - 1];
-    const distanceRemainingMeters = this.calculateDistance(
-      currentLocation.latitude,
-      currentLocation.longitude,
-      destinationLat,
-      destinationLon
-    );
-
-    // Calculate ETA
-    const etaSeconds =
-      averageSpeedMPS > 0 ? distanceRemainingMeters / averageSpeedMPS : 0;
-    const estimatedArrivalTime = new Date(Date.now() + etaSeconds * 1000);
-
-    // Determine confidence level
-    const confidenceLevel = this.determineETAConfidence(
-      recentBreadcrumbs.length,
-      averageSpeedMPS
-    );
-
-    logger.info('ETA calculated', {
-      userId,
-      destinationJobId,
-      estimatedArrivalTime,
-      distanceRemainingMeters,
-      averageSpeedMPS,
-      confidenceLevel,
-    });
+    const progressPercent = completedStops > 0 ? Math.min(100, (completedStops / totalStops) * 100) : 0;
 
     return {
-      destinationJobId,
-      estimatedArrivalTime,
-      distanceRemainingMeters,
-      averageSpeedMPS,
-      confidenceLevel,
+      scheduleId: schedule.id,
+      userId: schedule.user_id,
+      progressPercent,
+      etaToNextStopMinutes: null,
+      totalDistanceMeters: totalDistance,
+      distanceRemainingMeters: Math.max(totalDistance * (1 - progressPercent / 100), 0),
+      isDelayed: false,
+      delayMinutes: 0,
     };
   }
 
-  /**
-   * Detect progress milestone
-   */
-  detectMilestone(progress: RouteProgress): ProgressMilestone | null {
-    const percent = progress.percentComplete;
+  private deriveMilestones(progress: RouteProgress): ProgressMilestone[] {
+    const milestones: ProgressMilestone[] = [];
 
-    if (percent >= this.config.nearlyCompleteThreshold * 100) {
-      return 'NEARLY_COMPLETE';
-    } else if (percent >= 75) {
-      return 'THREE_QUARTER';
-    } else if (percent >= 50) {
-      return 'HALF';
-    } else if (percent >= 25) {
-      return 'QUARTER';
-    } else if (percent > 0) {
-      return 'STARTED';
+    if (progress.progressPercent >= 0) {
+      milestones.push({
+        milestone: 'STARTED',
+        reachedAt: new Date(),
+        notes: 'Route started',
+      });
     }
 
-    return null;
-  }
-
-  /**
-   * Get recent GPS breadcrumbs for user
-   */
-  private async getRecentBreadcrumbs(
-    userId: string,
-    minutesAgo: number
-  ): Promise<any[]> {
-    const since = new Date(Date.now() - minutesAgo * 60 * 1000);
-    return this.breadcrumbsRepository.findAll({
-      user_id: userId,
-      recorded_after: since.toISOString(),
-    });
-  }
-
-  /**
-   * Calculate average speed from breadcrumbs
-   */
-  private calculateAverageSpeed(breadcrumbs: any[]): number {
-    if (breadcrumbs.length < 2) {
-      return 0;
+    if (progress.progressPercent >= 50) {
+      milestones.push({
+        milestone: 'HALF_COMPLETE',
+        reachedAt: new Date(),
+        notes: 'Route is half complete',
+      });
     }
 
-    let totalDistance = 0;
-    let totalTime = 0;
-
-    for (let i = 1; i < breadcrumbs.length; i++) {
-      const prev = breadcrumbs[i - 1];
-      const curr = breadcrumbs[i];
-
-      const distance = this.calculateDistance(
-        prev.latitude,
-        prev.longitude,
-        curr.latitude,
-        curr.longitude
-      );
-
-      const timeDiff =
-        (new Date(curr.recorded_at).getTime() -
-          new Date(prev.recorded_at).getTime()) /
-        1000;
-
-      totalDistance += distance;
-      totalTime += timeDiff;
+    if (progress.progressPercent >= 75) {
+      milestones.push({
+        milestone: 'NEARLY_COMPLETE',
+        reachedAt: new Date(),
+        notes: 'Route nearly complete',
+      });
     }
 
-    return totalTime > 0 ? totalDistance / totalTime : 0; // meters per second
-  }
-
-  /**
-   * Calculate planned route duration in minutes
-   */
-  private calculatePlannedDuration(schedule: any): number {
-    // Simplified - would sum up job durations + travel times
-    return 480; // 8 hours default
-  }
-
-  /**
-   * Calculate elapsed time since route start
-   */
-  private calculateElapsedMinutes(schedule: any): number {
-    const startTime = new Date(schedule.scheduled_date);
-    const elapsed = Date.now() - startTime.getTime();
-    return elapsed / (1000 * 60);
-  }
-
-  /**
-   * Determine ETA confidence level
-   */
-  private determineETAConfidence(
-    breadcrumbCount: number,
-    averageSpeed: number
-  ): 'HIGH' | 'MEDIUM' | 'LOW' {
-    if (breadcrumbCount >= 20 && averageSpeed > 1) {
-      return 'HIGH';
-    } else if (breadcrumbCount >= 10 && averageSpeed > 0.5) {
-      return 'MEDIUM';
+    if (progress.progressPercent >= 100) {
+      milestones.push({
+        milestone: 'COMPLETED',
+        reachedAt: new Date(),
+        notes: 'Route completed',
+      });
     }
-    return 'LOW';
+
+    return milestones;
   }
 
-  /**
-   * Calculate distance between two coordinates using Haversine formula
-   */
-  private calculateDistance(
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number
+  private calculateTotalDistance(breadcrumbs: BreadcrumbRecord[]): number {
+    if (breadcrumbs.length <= 1) {
+      return breadcrumbs.length > 0 ? 1 : 0;
+    }
+
+    let distance = 0;
+    for (let i = 1; i < breadcrumbs.length; i += 1) {
+      distance += this.calculateDistanceMeters(breadcrumbs[i - 1], breadcrumbs[i]);
+    }
+
+    return distance;
+  }
+
+  private calculateDistanceMeters(
+    pointA: BreadcrumbRecord,
+    pointB: BreadcrumbRecord
   ): number {
-    const R = 6371e3; // Earth radius in meters
-    const φ1 = (lat1 * Math.PI) / 180;
-    const φ2 = (lat2 * Math.PI) / 180;
-    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+    const toRadians = (value: number) => (value * Math.PI) / 180;
+
+    const earthRadiusMeters = 6371000;
+    const lat1 = toRadians(pointA.latitude);
+    const lat2 = toRadians(pointB.latitude);
+    const deltaLat = toRadians(pointB.latitude - pointA.latitude);
+    const deltaLon = toRadians(pointB.longitude - pointA.longitude);
 
     const a =
-      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+      Math.cos(lat1) *
+        Math.cos(lat2) *
+        Math.sin(deltaLon / 2) *
+        Math.sin(deltaLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    return R * c; // Distance in meters
+    return earthRadiusMeters * c;
+  }
+
+  private async fetchScheduleById(
+    scheduleId: string
+  ): Promise<RoutingScheduleRecord | null> {
+    logger.debug('routing progress fetchScheduleById stub', {
+      companyId: this.companyId,
+      scheduleId,
+    });
+    return {
+      id: scheduleId,
+      user_id: 'stub-user',
+      scheduled_date: new Date().toISOString(),
+      route_order: [],
+    };
+  }
+
+  private async fetchBreadcrumbs(userId: string): Promise<BreadcrumbRecord[]> {
+    logger.debug('routing progress fetchBreadcrumbs stub', {
+      companyId: this.companyId,
+      userId,
+    });
+    return [];
   }
 }

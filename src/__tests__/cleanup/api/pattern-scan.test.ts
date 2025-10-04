@@ -3,6 +3,7 @@
  */
 
 import { POST } from '@/app/api/cleanup/patterns/scan/route';
+import { NextRequest } from 'next/server';
 import { createTestClient } from '../test-utils';
 
 describe('POST /api/cleanup/patterns/scan', () => {
@@ -15,7 +16,7 @@ describe('POST /api/cleanup/patterns/scan', () => {
       body: JSON.stringify({})
     });
     
-    const response = await POST(request);
+    const response = await POST(request as unknown as NextRequest);
     
     expect(response.status).toBe(202); // Accepted
     
@@ -38,7 +39,7 @@ describe('POST /api/cleanup/patterns/scan', () => {
       })
     });
     
-    const response = await POST(request);
+    const response = await POST(request as unknown as NextRequest);
     
     expect(response.status).toBe(202);
     
@@ -60,7 +61,7 @@ describe('POST /api/cleanup/patterns/scan', () => {
       })
     });
     
-    const response = await POST(request);
+    const response = await POST(request as unknown as NextRequest);
     
     expect(response.status).toBe(202);
     
@@ -80,7 +81,7 @@ describe('POST /api/cleanup/patterns/scan', () => {
       })
     });
     
-    const response = await POST(request);
+    const response = await POST(request as unknown as NextRequest);
     
     expect(response.status).toBe(202);
   });
@@ -95,7 +96,7 @@ describe('POST /api/cleanup/patterns/scan', () => {
     
     // This test assumes the implementation tracks ongoing scans
     // The actual implementation will need to handle this
-    const response1 = await POST(request1);
+    const response1 = await POST(request1 as unknown as NextRequest);
     expect(response1.status).toBe(202);
     
     // Immediate second request should be rejected
@@ -108,7 +109,7 @@ describe('POST /api/cleanup/patterns/scan', () => {
     // Note: This behavior depends on implementation
     // The test documents the expected behavior
     try {
-      const response2 = await POST(request2);
+      const response2 = await POST(request2 as unknown as NextRequest);
       if (response2.status === 429) {
         const error = await response2.json();
         expect(error).toHaveProperty('error');
@@ -127,7 +128,7 @@ describe('POST /api/cleanup/patterns/scan', () => {
       })
     });
     
-    const response = await POST(request);
+    const response = await POST(request as unknown as NextRequest);
     
     // Should either ignore invalid patterns or return 400
     expect([202, 400]).toContain(response.status);

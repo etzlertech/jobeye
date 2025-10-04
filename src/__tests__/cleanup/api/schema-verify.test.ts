@@ -3,6 +3,7 @@
  */
 
 import { GET } from '@/app/api/cleanup/schema/verify/route';
+import { NextRequest } from 'next/server';
 import { createTestClient } from '../test-utils';
 
 describe('GET /api/cleanup/schema/verify', () => {
@@ -10,7 +11,7 @@ describe('GET /api/cleanup/schema/verify', () => {
 
   it('should return schema verification results', async () => {
     const request = new Request('http://localhost:3000/api/cleanup/schema/verify');
-    const response = await GET(request);
+    const response = await GET(request as unknown as NextRequest);
     
     expect(response.status).toBe(200);
     
@@ -53,7 +54,7 @@ describe('GET /api/cleanup/schema/verify', () => {
     // The actual implementation should handle errors and return 500
     // This test will fail initially, driving the implementation
     try {
-      const response = await GET(request);
+      const response = await GET(request as unknown as NextRequest);
       if (response.status === 500) {
         const error = await response.json();
         expect(error).toHaveProperty('error');

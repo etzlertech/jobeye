@@ -1,6 +1,7 @@
 # Run fast pre-commit checks
-echo "🚀 Running fast pre-commit checks..."
+echo "Running fast pre-commit checks..."
 
-npx tsx scripts/ci/fast-pre-commit.ts
+export PATH="$PWD/node_modules/.bin:$PATH"
+node ./node_modules/tsx/dist/cli.mjs scripts/ci/fast-pre-commit.ts
 
 # If you need full checks, run: npm run pre-commit:full

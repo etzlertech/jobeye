@@ -46,7 +46,7 @@ describe('Tenant Migration Integration', () => {
     // Track the migration
     await migrationRepo.create({
       table_name: 'test_tenant_migration',
-      has_tenant_id: true,
+      has_company_id: true,
       has_tenant_id: false,
       row_count: 3,
       migration_status: 'pending'
@@ -93,7 +93,7 @@ describe('Tenant Migration Integration', () => {
     // Update tracking
     const tracking = await migrationRepo.findByTableName('test_tenant_migration');
     await migrationRepo.update(tracking!.id, {
-      has_tenant_id: true,
+      has_company_id: true,
       migration_status: 'completed',
       migrated_at: new Date()
     });
@@ -184,7 +184,7 @@ describe('Tenant Migration Integration', () => {
   it('should track migration progress accurately', async () => {
     const tracking = await migrationRepo.create({
       table_name: 'test_tenant_migration',
-      has_tenant_id: true,
+      has_company_id: true,
       has_tenant_id: false,
       row_count: 3,
       migration_status: 'pending'
@@ -216,7 +216,7 @@ describe('Tenant Migration Integration', () => {
     });
 
     await migrationRepo.update(tracking.id, {
-      has_tenant_id: true,
+      has_company_id: true,
       migration_status: 'completed',
       migrated_at: new Date()
     });

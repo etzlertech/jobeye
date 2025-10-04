@@ -11,7 +11,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export interface MigrationTracking {
   id: string;
   table_name: string;
-  has_tenant_id: boolean;
+  has_company_id: boolean;
   has_tenant_id: boolean;
   row_count: number;
   migration_status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'skipped';
@@ -23,7 +23,7 @@ export interface MigrationTracking {
 
 export interface CreateMigrationTracking {
   table_name: string;
-  has_tenant_id: boolean;
+  has_company_id: boolean;
   has_tenant_id: boolean;
   row_count: number;
   migration_status: MigrationTracking['migration_status'];
@@ -31,7 +31,7 @@ export interface CreateMigrationTracking {
 }
 
 export interface UpdateMigrationTracking {
-  has_tenant_id?: boolean;
+  has_company_id?: boolean;
   has_tenant_id?: boolean;
   row_count?: number;
   migration_status?: MigrationTracking['migration_status'];
@@ -98,7 +98,7 @@ export class MigrationTrackingRepository {
     }
 
     if (filters?.hasCompanyId !== undefined) {
-      query = query.eq('has_tenant_id', filters.hasCompanyId);
+      query = query.eq('has_company_id', filters.hasCompanyId);
     }
 
     if (filters?.hasTenantId !== undefined) {

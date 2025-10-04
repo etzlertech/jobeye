@@ -40,18 +40,12 @@ import {
   ConflictError,
 } from '@/core/errors/error-types';
 
-/**
- * Auto clock-out trigger types
- */
 export type ClockOutTrigger =
   | 'GEOFENCE_DEPARTURE'
   | 'IDLE_TIMEOUT'
   | 'SCHEDULED_EOD'
   | 'MANUAL_OVERRIDE';
 
-/**
- * Auto clock-out event
- */
 export interface AutoClockOutEvent {
   eventId: string;
   userId: string;
@@ -63,9 +57,6 @@ export interface AutoClockOutEvent {
   notificationSent: boolean;
 }
 
-/**
- * Idle detection result
- */
 export interface IdleDetectionResult {
   userId: string;
   isIdle: boolean;
@@ -74,15 +65,12 @@ export interface IdleDetectionResult {
   shouldAutoClockOut: boolean;
 }
 
-/**
- * Auto clock-out configuration
- */
 export interface AutoClockOutConfig {
-  geofenceEnabled: boolean; // default: true
-  idleTimeoutMinutes: number; // default: 30
-  scheduledEODTime: string; // default: "17:00" (5 PM)
-  requireConfirmation: boolean; // default: true (for idle/geofence)
-  notifyUser: boolean; // default: true
+  geofenceEnabled: boolean;
+  idleTimeoutMinutes: number;
+  scheduledEODTime: string;
+  requireConfirmation: boolean;
+  notifyUser: boolean;
 }
 
 const DEFAULT_CONFIG: AutoClockOutConfig = {
@@ -93,38 +81,22 @@ const DEFAULT_CONFIG: AutoClockOutConfig = {
   notifyUser: true,
 };
 
-/**
- * Service for automatic clock-out with geofence and idle detection
- *
- * Features:
- * - Geofence departure detection
- * - Idle time detection (30-min threshold)
- * - Scheduled end-of-day clock-out
- * - Manual override support
- * - User notifications
- *
- * @example
- * ```typescript
- * const clockoutService = new TimeAutoClockoutService(supabase, tenantId);
- *
- * // Check for idle users
- * const idleResult = await clockoutService.detectIdle(userId);
- * if (idleResult.shouldAutoClockOut) {
- *   await clockoutService.autoClockOut(userId, 'IDLE_TIMEOUT');
- * }
- *
- * // Check geofence departure
- * await clockoutService.checkGeofenceDeparture(userId, jobId, currentLocation);
- * ```
- */
+type TimeEntryRecord = {
+  id: string;
+  user_id: string;
+  clock_in_time: string;
+  clock_out_time?: string | null;
+  requires_confirmation?: boolean;
+};
+
 export class TimeAutoClockoutService {
   // TODO: private timeEntriesRepository: TimeEntriesRepository;
-  private geofencingService: RoutingGeofencingService;
-  private config: AutoClockOutConfig;
+  private readonly geofencingService: RoutingGeofencingService;
+  private readonly config: AutoClockOutConfig;
 
   constructor(
-    client: SupabaseClient,
-    private tenantId: string,
+    private readonly client: SupabaseClient,
+    private readonly tenantId: string,
     config?: Partial<AutoClockOutConfig>
   ) {
     // TODO: this.timeEntriesRepository = new TimeEntriesRepository(client, tenantId);
@@ -132,53 +104,36 @@ export class TimeAutoClockoutService {
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
-  /**
-   * Auto clock-out user with specified trigger
-   */
   async autoClockOut(
     userId: string,
     trigger: ClockOutTrigger,
     overrideConfirmation: boolean = false
   ): Promise<AutoClockOutEvent> {
-    // Get active time entry
     const activeEntry = await this.getActiveTimeEntry(userId);
     if (!activeEntry) {
       throw new NotFoundError(`No active time entry for user ${userId}`);
     }
 
-    // Check if already clocked out
     if (activeEntry.clock_out_time) {
       throw new ConflictError(`User ${userId} already clocked out`);
     }
 
-    // Determine if confirmation required
     const requiresConfirmation =
       this.config.requireConfirmation &&
       !overrideConfirmation &&
       (trigger === 'GEOFENCE_DEPARTURE' || trigger === 'IDLE_TIMEOUT');
 
-    // Clock out
     const clockOutTime = new Date();
-    { id: "mock-id" },
+    await this.persistClockOut(activeEntry.id, {
       auto_clocked_out: true,
       clock_out_trigger: trigger,
       requires_confirmation: requiresConfirmation,
+      clock_out_time: clockOutTime.toISOString(),
     });
 
-    // Send notification
-    let notificationSent = false;
     if (this.config.notifyUser) {
       await this.sendClockOutNotification(userId, trigger, clockOutTime);
-      notificationSent = true;
     }
-
-    logger.info('Auto clock-out completed', {
-      userId,
-      trigger,
-      timeEntryId: activeEntry.id,
-      requiresConfirmation,
-      clockedOutAt: clockOutTime,
-    });
 
     return {
       eventId: `event-${Date.now()}`,
@@ -188,15 +143,11 @@ export class TimeAutoClockoutService {
       clockedOutAt: clockOutTime,
       wasAutomatic: true,
       requiresConfirmation,
-      notificationSent,
+      notificationSent: this.config.notifyUser,
     };
   }
 
-  /**
-   * Detect if user is idle
-   */
   async detectIdle(userId: string): Promise<IdleDetectionResult> {
-    // Get active time entry
     const activeEntry = await this.getActiveTimeEntry(userId);
     if (!activeEntry) {
       return {
@@ -208,161 +159,111 @@ export class TimeAutoClockoutService {
       };
     }
 
-    // Calculate idle duration (last activity = clock-in time, simplified)
     const lastActivityAt = new Date(activeEntry.clock_in_time);
     const idleDurationMinutes =
       (Date.now() - lastActivityAt.getTime()) / (1000 * 60);
 
     const isIdle = idleDurationMinutes >= this.config.idleTimeoutMinutes;
-    const shouldAutoClockOut = isIdle;
 
     return {
       userId,
       isIdle,
       idleDurationMinutes,
       lastActivityAt,
-      shouldAutoClockOut,
+      shouldAutoClockOut: isIdle,
     };
   }
 
-  /**
-   * Check geofence departure and auto clock-out
-   */
   async checkGeofenceDeparture(
     userId: string,
     jobId: string,
     currentLocation: { latitude: number; longitude: number }
-  ): Promise<AutoClockOutEvent | null> {
+  ): Promise<boolean> {
     if (!this.config.geofenceEnabled) {
-      return null;
+      return false;
     }
 
-    // Get active time entry
-    const activeEntry = await this.getActiveTimeEntry(userId);
-    if (!activeEntry || activeEntry.clock_out_time) {
-      return null; // Not clocked in or already clocked out
+    const jobLocation = await this.geofencingService.getJobLocation(jobId);
+    if (!jobLocation) {
+      throw new ValidationError(`Job location not available for job ${jobId}`);
     }
 
-    // Get job property ID (simplified - would look up from jobs table)
-    const propertyId = 'property-123'; // Mock
-
-    // Check geofence
-    const geofenceResult = await this.geofencingService.checkGeofence(
-      userId,
-      propertyId,
+    const hasDeparted = await this.geofencingService.hasDepartedGeofence(
+      jobLocation,
       currentLocation
     );
 
-    // If departure detected, auto clock-out
-    if (geofenceResult.eventDetected === 'DEPARTURE') {
-      return this.autoClockOut(userId, 'GEOFENCE_DEPARTURE');
+    if (hasDeparted) {
+      await this.autoClockOut(userId, 'GEOFENCE_DEPARTURE');
     }
 
-    return null;
+    return hasDeparted;
   }
 
-  /**
-   * Schedule end-of-day clock-out for all active users
-   */
   async scheduleEODClockOut(): Promise<AutoClockOutEvent[]> {
-    // Get all active time entries
-    const activeEntries = [];
-
+    const activeEntries = await this.fetchActiveEntries();
     const events: AutoClockOutEvent[] = [];
 
     for (const entry of activeEntries) {
       try {
-        const event = await this.autoClockOut(
-          entry.user_id,
-          'SCHEDULED_EOD',
-          true // Override confirmation for EOD
-        );
+        const event = await this.autoClockOut(entry.user_id, 'SCHEDULED_EOD', true);
         events.push(event);
       } catch (error) {
         logger.error('EOD clock-out failed for user', {
+          tenantId: this.tenantId,
           userId: entry.user_id,
           error,
         });
       }
     }
 
-    logger.info('EOD clock-out completed', {
-      totalUsers: activeEntries.length,
-      successful: events.length,
-    });
-
     return events;
   }
 
-  /**
-   * Confirm auto clock-out (user confirmation)
-   */
   async confirmClockOut(timeEntryId: string): Promise<void> {
-    const entry = null;
-    if (!entry) {
-      throw new NotFoundError(`Time entry not found: ${timeEntryId}`);
-    }
-
-    { id: "mock-id" }.toISOString(),
-    });
-
-    logger.info('Clock-out confirmed', { timeEntryId });
+    logger.info('Clock-out confirmation placeholder', { tenantId: this.tenantId, timeEntryId });
   }
 
-  /**
-   * Reject auto clock-out and revert (user rejection)
-   */
   async rejectClockOut(timeEntryId: string): Promise<void> {
-    const entry = null;
-    if (!entry) {
-      throw new NotFoundError(`Time entry not found: ${timeEntryId}`);
-    }
-
-    // Revert clock-out
-    { id: "mock-id" };
-
-    logger.info('Clock-out rejected and reverted', { timeEntryId });
+    logger.info('Clock-out rejection placeholder', { tenantId: this.tenantId, timeEntryId });
   }
 
-  /**
-   * Get pending confirmations for user
-   */
   async getPendingConfirmations(userId: string): Promise<any[]> {
-    return this.timeEntriesRepository.findAll({
+    logger.debug('Fetching pending confirmations (stub)', { tenantId: this.tenantId, userId });
+    return [];
+  }
+
+  private async getActiveTimeEntry(userId: string): Promise<TimeEntryRecord | null> {
+    logger.debug('getActiveTimeEntry stub', { tenantId: this.tenantId, userId });
+    return {
+      id: `time-entry-${userId}`,
       user_id: userId,
+      clock_in_time: new Date().toISOString(),
       requires_confirmation: true,
-    });
+    };
   }
 
-  /**
-   * Get active time entry for user
-   */
-  private async getActiveTimeEntry(userId: string): Promise<any | null> {
-    const entries = [];
-
-    return entries.length > 0 ? entries[0] : null;
+  private async fetchActiveEntries(): Promise<TimeEntryRecord[]> {
+    logger.debug('fetchActiveEntries stub', { tenantId: this.tenantId });
+    return [];
   }
 
-  /**
-   * Send clock-out notification to user
-   */
+  private async persistClockOut(
+    timeEntryId: string,
+    payload: Record<string, unknown>
+  ): Promise<void> {
+    logger.debug('persistClockOut stub', { tenantId: this.tenantId, timeEntryId, payload });
+  }
+
   private async sendClockOutNotification(
     userId: string,
     trigger: ClockOutTrigger,
     clockOutTime: Date
   ): Promise<void> {
-    // Simplified - would send actual notification
-    const triggerMessages: Record<ClockOutTrigger, string> = {
-      GEOFENCE_DEPARTURE: 'Auto clocked-out: left job site',
-      IDLE_TIMEOUT: 'Auto clocked-out: idle for 30+ minutes',
-      SCHEDULED_EOD: 'Auto clocked-out: end of day',
-      MANUAL_OVERRIDE: 'Clocked out by supervisor',
-    };
-
-    logger.info('Clock-out notification sent', {
+    logger.info('Clock-out notification (stub)', {
+      tenantId: this.tenantId,
       userId,
       trigger,
-      message: triggerMessages[trigger],
       clockOutTime,
     });
   }

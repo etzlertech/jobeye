@@ -34,43 +34,43 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/core/logger/voice-logger';
 import { ValidationError, NotFoundError } from '@/core/errors/error-types';
 
-/**
- * Conversion metrics for a period
- */
+type IntakeRequestRecord = {
+  id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  converted_at?: string | null;
+  service_type?: string | null;
+  property_address?: string | null;
+  source?: string | null;
+  notes?: string | null;
+};
+
 export interface ConversionMetrics {
-  period: string; // e.g., "2025-09"
+  period: string;
   totalRequests: number;
   convertedRequests: number;
-  conversionRate: number; // 0-1
+  conversionRate: number;
   averageTimeToConversionDays: number;
   totalRevenue: number;
   averageRevenuePerConversion: number;
 }
 
-/**
- * Lead score result
- */
 export interface LeadScore {
   requestId: string;
-  score: number; // 0-100
+  score: number;
   scoreFactors: LeadScoreFactor[];
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
   recommendedAction: string;
 }
 
-/**
- * Individual lead score factor
- */
 export interface LeadScoreFactor {
   factor: string;
   points: number;
   description: string;
 }
 
-/**
- * Funnel stage
- */
-export type FunnelStage =
+type FunnelStage =
   | 'NEW'
   | 'CONTACTED'
   | 'QUOTED'
@@ -78,12 +78,9 @@ export type FunnelStage =
   | 'CONVERTED'
   | 'LOST';
 
-/**
- * Conversion attribution
- */
 export interface ConversionAttribution {
   requestId: string;
-  conversionSource: string; // e.g., "PHONE", "EMAIL", "WEB"
+  conversionSource: string;
   firstTouchDate: Date;
   lastTouchDate: Date;
   touchPointCount: number;
@@ -91,15 +88,12 @@ export interface ConversionAttribution {
   timeToConversionDays?: number;
 }
 
-/**
- * Lead scoring configuration
- */
 export interface LeadScoringConfig {
-  serviceTypeWeights: Record<string, number>; // e.g., { "irrigation": 20, "maintenance": 10 }
-  propertyValueBonus: number; // default: 15 points
-  urgencyBonus: number; // default: 20 points
-  referralBonus: number; // default: 25 points
-  repeatCustomerBonus: number; // default: 30 points
+  serviceTypeWeights: Record<string, number>;
+  propertyValueBonus: number;
+  urgencyBonus: number;
+  referralBonus: number;
+  repeatCustomerBonus: number;
 }
 
 const DEFAULT_SCORING_CONFIG: LeadScoringConfig = {
@@ -115,67 +109,30 @@ const DEFAULT_SCORING_CONFIG: LeadScoringConfig = {
   repeatCustomerBonus: 30,
 };
 
-/**
- * Service for intake conversion tracking and lead scoring
- *
- * Features:
- * - Conversion rate calculation by period
- * - Lead scoring (0-100 scale)
- * - Funnel stage tracking
- * - Time-to-conversion metrics
- * - Conversion attribution
- *
- * @example
- * ```typescript
- * const conversionsService = new IntakeConversionsService(supabase, tenantId);
- *
- * // Calculate conversion rate
- * const metrics = await conversionsService.getConversionMetrics('2025-09');
- * console.log(`Conversion rate: ${metrics.conversionRate * 100}%`);
- *
- * // Score a lead
- * const score = await conversionsService.scoreLeadgetLeadScore(requestId);
- * console.log(`Lead score: ${score.score}/100 (${score.priority} priority)`);
- * ```
- */
 export class IntakeConversionsService {
   // TODO: private requestsRepository: IntakeRequestsRepository;
-  private scoringConfig: LeadScoringConfig;
+  private readonly scoringConfig: LeadScoringConfig;
 
   constructor(
-    client: SupabaseClient,
-    private tenantId: string,
+    private readonly client: SupabaseClient,
+    private readonly tenantId: string,
     scoringConfig?: Partial<LeadScoringConfig>
   ) {
     // TODO: this.requestsRepository = new IntakeRequestsRepository(client, tenantId);
     this.scoringConfig = { ...DEFAULT_SCORING_CONFIG, ...scoringConfig };
   }
 
-  /**
-   * Get conversion metrics for a period (month)
-   */
   async getConversionMetrics(period: string): Promise<ConversionMetrics> {
-    // Parse period (format: YYYY-MM)
     const [year, month] = period.split('-').map(Number);
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0, 23, 59, 59);
+    if (!year || !month) {
+      throw new ValidationError(`Invalid period supplied: ${period}`);
+    }
 
-    // Get all requests in period
-    const requests = [],
-      created_before: endDate.toISOString(),
-    });
-
+    const requests = await this.fetchRequests();
     const totalRequests = requests.length;
+    const convertedRequests = requests.filter((r) => r.status === 'CONVERTED').length;
+    const conversionRate = totalRequests > 0 ? convertedRequests / totalRequests : 0;
 
-    // Count conversions (simplified - would check job creation status)
-    const convertedRequests = requests.filter(
-      (r) => r.status === 'CONVERTED'
-    ).length;
-
-    const conversionRate =
-      totalRequests > 0 ? convertedRequests / totalRequests : 0;
-
-    // Calculate time to conversion
     let totalTimeToConversion = 0;
     let conversionCount = 0;
 
@@ -183,27 +140,13 @@ export class IntakeConversionsService {
       if (request.status === 'CONVERTED' && request.converted_at) {
         const createdAt = new Date(request.created_at);
         const convertedAt = new Date(request.converted_at);
-        const days =
-          (convertedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+        const days = (convertedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
         totalTimeToConversion += days;
-        conversionCount++;
+        conversionCount += 1;
       }
     }
 
-    const averageTimeToConversionDays =
-      conversionCount > 0 ? totalTimeToConversion / conversionCount : 0;
-
-    // Calculate revenue (simplified)
-    const totalRevenue = 0; // Would sum from jobs
-    const averageRevenuePerConversion =
-      convertedRequests > 0 ? totalRevenue / convertedRequests : 0;
-
-    logger.info('Conversion metrics calculated', {
-      period,
-      totalRequests,
-      convertedRequests,
-      conversionRate,
-    });
+    const averageTimeToConversionDays = conversionCount > 0 ? totalTimeToConversion / conversionCount : 0;
 
     return {
       period,
@@ -211,96 +154,66 @@ export class IntakeConversionsService {
       convertedRequests,
       conversionRate,
       averageTimeToConversionDays,
-      totalRevenue,
-      averageRevenuePerConversion,
+      totalRevenue: 0,
+      averageRevenuePerConversion: convertedRequests > 0 ? 0 : 0,
     };
   }
 
-  /**
-   * Calculate lead score for an intake request
-   */
   async getLeadScore(requestId: string): Promise<LeadScore> {
-    const request = null;
+    const request = await this.fetchRequest(requestId);
     if (!request) {
       throw new NotFoundError(`Intake request not found: ${requestId}`);
     }
 
     const scoreFactors: LeadScoreFactor[] = [];
-    let totalScore = 0;
+    let totalScore = 20;
 
-    // Base score: 20 points
-    totalScore += 20;
     scoreFactors.push({
       factor: 'BASE',
       points: 20,
       description: 'Base score for all leads',
     });
 
-    // Service type scoring
-    const serviceType = request.service_type;
-    if (serviceType && this.scoringConfig.serviceTypeWeights[serviceType]) {
-      const points = this.scoringConfig.serviceTypeWeights[serviceType];
+    if (request.service_type && this.scoringConfig.serviceTypeWeights[request.service_type]) {
+      const points = this.scoringConfig.serviceTypeWeights[request.service_type];
       totalScore += points;
       scoreFactors.push({
         factor: 'SERVICE_TYPE',
         points,
-        description: `Service type: ${serviceType}`,
+        description: `Service type: ${request.service_type}`,
       });
     }
 
-    // Property value bonus (simplified - would check property size/value)
     if (request.property_address) {
-      const points = this.scoringConfig.propertyValueBonus;
-      totalScore += points;
+      totalScore += this.scoringConfig.propertyValueBonus;
       scoreFactors.push({
         factor: 'PROPERTY_VALUE',
-        points,
+        points: this.scoringConfig.propertyValueBonus,
         description: 'Property address provided',
       });
     }
 
-    // Urgency bonus (check if marked urgent)
     if (request.notes?.toLowerCase().includes('urgent')) {
-      const points = this.scoringConfig.urgencyBonus;
-      totalScore += points;
+      totalScore += this.scoringConfig.urgencyBonus;
       scoreFactors.push({
         factor: 'URGENCY',
-        points,
-        description: 'Urgent request',
+        points: this.scoringConfig.urgencyBonus,
+        description: 'Request marked as urgent',
       });
     }
 
-    // Referral bonus (check source)
     if (request.source === 'REFERRAL') {
-      const points = this.scoringConfig.referralBonus;
-      totalScore += points;
+      totalScore += this.scoringConfig.referralBonus;
       scoreFactors.push({
         factor: 'REFERRAL',
-        points,
-        description: 'Referred by existing customer',
+        points: this.scoringConfig.referralBonus,
+        description: 'Lead referred by customer',
       });
     }
 
-    // Repeat customer bonus (would check customer history)
-    // Simplified for now
-
-    // Normalize to 0-100 scale
     const score = Math.min(100, totalScore);
-
-    // Determine priority
-    let priority: 'HIGH' | 'MEDIUM' | 'LOW';
-    if (score >= 70) priority = 'HIGH';
-    else if (score >= 40) priority = 'MEDIUM';
-    else priority = 'LOW';
-
-    // Recommend action
-    const recommendedAction = this.getRecommendedAction(priority, request);
-
-    logger.info('Lead score calculated', {
-      requestId,
-      score,
-      priority,
-    });
+    const priority: 'HIGH' | 'MEDIUM' | 'LOW' = score >= 70 ? 'HIGH' : score >= 40 ? 'MEDIUM' : 'LOW';
+    const recommendedAction = this.getRecommendedAction(priority);
 
     return {
       requestId,
@@ -311,13 +224,8 @@ export class IntakeConversionsService {
     };
   }
 
-  /**
-   * Track conversion attribution for a request
-   */
-  async getConversionAttribution(
-    requestId: string
-  ): Promise<ConversionAttribution> {
-    const request = null;
+  async getConversionAttribution(requestId: string): Promise<ConversionAttribution> {
+    const request = await this.fetchRequest(requestId);
     if (!request) {
       throw new NotFoundError(`Intake request not found: ${requestId}`);
     }
@@ -325,106 +233,72 @@ export class IntakeConversionsService {
     const firstTouchDate = new Date(request.created_at);
     const lastTouchDate = new Date(request.updated_at);
 
-    // Calculate time to conversion
-    let timeToConversionDays: number | undefined;
     let convertedAt: Date | undefined;
+    let timeToConversionDays: number | undefined;
 
     if (request.status === 'CONVERTED' && request.converted_at) {
       convertedAt = new Date(request.converted_at);
       timeToConversionDays =
-        (convertedAt.getTime() - firstTouchDate.getTime()) /
-        (1000 * 60 * 60 * 24);
+        (convertedAt.getTime() - firstTouchDate.getTime()) / (1000 * 60 * 60 * 24);
     }
-
-    // Count touch points (simplified - would track actual interactions)
-    const touchPointCount = 1;
 
     return {
       requestId,
-      conversionSource: request.source || 'UNKNOWN',
+      conversionSource: request.source ?? 'UNKNOWN',
       firstTouchDate,
       lastTouchDate,
-      touchPointCount,
+      touchPointCount: 0,
       convertedAt,
       timeToConversionDays,
     };
   }
 
-  /**
-   * Update funnel stage for a request
-   */
-  async updateFunnelStage(
-    requestId: string,
-    stage: FunnelStage
-  ): Promise<void> {
-    { id: "mock-id" }.toISOString(),
-    });
-
-    // If converting, set converted_at timestamp
-    if (stage === 'CONVERTED') {
-      { id: "mock-id" }.toISOString(),
-      });
-    }
-
-    logger.info('Funnel stage updated', {
-      requestId,
-      stage,
-    });
+  async updateFunnelStage(requestId: string, stage: FunnelStage): Promise<void> {
+    logger.debug('updateFunnelStage stub', { tenantId: this.tenantId, requestId, stage });
   }
 
-  /**
-   * Get funnel conversion rates by stage
-   */
   async getFunnelMetrics(): Promise<
     Record<FunnelStage, { count: number; conversionRate: number }>
   > {
-    // Get all requests
-    const allRequests = [];
-
-    const stageCounts: Record<FunnelStage, number> = {
-      NEW: 0,
-      CONTACTED: 0,
-      QUOTED: 0,
-      NEGOTIATING: 0,
-      CONVERTED: 0,
-      LOST: 0,
+    const stages: Record<FunnelStage, { count: number; conversionRate: number }> = {
+      NEW: { count: 0, conversionRate: 0 },
+      CONTACTED: { count: 0, conversionRate: 0 },
+      QUOTED: { count: 0, conversionRate: 0 },
+      NEGOTIATING: { count: 0, conversionRate: 0 },
+      CONVERTED: { count: 0, conversionRate: 0 },
+      LOST: { count: 0, conversionRate: 0 },
     };
 
-    // Count requests by stage
-    allRequests.forEach((request) => {
-      const stage = request.status as FunnelStage;
-      if (stageCounts[stage] !== undefined) {
-        stageCounts[stage]++;
-      }
-    });
-
-    // Calculate conversion rates
-    const total = allRequests.length;
-    const metrics: Record<
-      FunnelStage,
-      { count: number; conversionRate: number }
-    > = {} as any;
-
-    for (const stage of Object.keys(stageCounts) as FunnelStage[]) {
-      metrics[stage] = {
-        count: stageCounts[stage],
-        conversionRate: total > 0 ? stageCounts[stage] / total : 0,
-      };
-    }
-
-    return metrics;
+    return stages;
   }
 
-  /**
-   * Get recommended action based on priority and request data
-   */
-  private getRecommendedAction(priority: string, request: any): string {
-    if (priority === 'HIGH') {
-      return 'Contact immediately - high conversion potential';
-    } else if (priority === 'MEDIUM') {
-      return 'Schedule follow-up call within 24 hours';
-    } else {
-      return 'Add to outreach queue for next business day';
+  private getRecommendedAction(priority: 'HIGH' | 'MEDIUM' | 'LOW'): string {
+    switch (priority) {
+      case 'HIGH':
+        return 'Call customer within 1 hour to schedule estimate';
+      case 'MEDIUM':
+        return 'Queue for next-day follow-up call';
+      default:
+        return 'Send nurture email and monitor for engagement';
     }
+  }
+
+  private async fetchRequests(): Promise<IntakeRequestRecord[]> {
+    logger.debug('fetchRequests stub', { tenantId: this.tenantId });
+    return [];
+  }
+
+  private async fetchRequest(requestId: string): Promise<IntakeRequestRecord | null> {
+    logger.debug('fetchRequest stub', { tenantId: this.tenantId, requestId });
+    return {
+      id: requestId,
+      status: 'NEW',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      service_type: undefined,
+      property_address: undefined,
+      source: undefined,
+      notes: undefined,
+    };
   }
 }

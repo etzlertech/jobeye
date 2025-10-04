@@ -3,6 +3,7 @@
  */
 
 import { GET } from '@/app/api/cleanup/tables/orphaned/route';
+import { NextRequest } from 'next/server';
 import { createTestClient, cleanupTestData } from '../test-utils';
 
 describe('GET /api/cleanup/tables/orphaned', () => {
@@ -60,7 +61,7 @@ describe('GET /api/cleanup/tables/orphaned', () => {
 
   it('should return orphaned tables list', async () => {
     const request = new Request('http://localhost:3000/api/cleanup/tables/orphaned');
-    const response = await GET(request);
+    const response = await GET(request as unknown as NextRequest);
     
     expect(response.status).toBe(200);
     
@@ -92,7 +93,7 @@ describe('GET /api/cleanup/tables/orphaned', () => {
 
   it('should calculate total size correctly', async () => {
     const request = new Request('http://localhost:3000/api/cleanup/tables/orphaned');
-    const response = await GET(request);
+    const response = await GET(request as unknown as NextRequest);
     
     expect(response.status).toBe(200);
     
@@ -105,7 +106,7 @@ describe('GET /api/cleanup/tables/orphaned', () => {
 
   it('should not include non-orphaned tables', async () => {
     const request = new Request('http://localhost:3000/api/cleanup/tables/orphaned');
-    const response = await GET(request);
+    const response = await GET(request as unknown as NextRequest);
     
     expect(response.status).toBe(200);
     
@@ -129,7 +130,7 @@ describe('GET /api/cleanup/tables/orphaned', () => {
       .eq('category', 'orphaned');
     
     const request = new Request('http://localhost:3000/api/cleanup/tables/orphaned');
-    const response = await GET(request);
+    const response = await GET(request as unknown as NextRequest);
     
     expect(response.status).toBe(200);
     
@@ -142,7 +143,7 @@ describe('GET /api/cleanup/tables/orphaned', () => {
 
   it('should sort tables by size or name', async () => {
     const request = new Request('http://localhost:3000/api/cleanup/tables/orphaned');
-    const response = await GET(request);
+    const response = await GET(request as unknown as NextRequest);
     
     expect(response.status).toBe(200);
     

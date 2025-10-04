@@ -3,7 +3,8 @@
  */
 
 import { POST } from '@/app/api/cleanup/migration/execute/route';
-import { createTestClient, cleanupTestData, mockRequest } from '../test-utils';
+import { NextRequest } from 'next/server';
+import { createTestClient, cleanupTestData } from '../test-utils';
 
 describe('POST /api/cleanup/migration/execute', () => {
   const client = createTestClient();
@@ -33,7 +34,7 @@ describe('POST /api/cleanup/migration/execute', () => {
     // Track in migration_tracking
     await client.from('migration_tracking').insert({
       table_name: 'test_migration_table',
-      has_tenant_id: true,
+      has_company_id: true,
       has_tenant_id: false,
       row_count: 2,
       migration_status: 'pending'
@@ -54,7 +55,7 @@ describe('POST /api/cleanup/migration/execute', () => {
       body: JSON.stringify({ tableName: 'test_migration_table' })
     });
     
-    const response = await POST(request);
+    const response = await POST(request as unknown as NextRequest);
     
     expect(response.status).toBe(202); // Accepted
     
@@ -80,7 +81,7 @@ describe('POST /api/cleanup/migration/execute', () => {
       })
     });
     
-    const response = await POST(request);
+    const response = await POST(request as unknown as NextRequest);
     
     expect(response.status).toBe(202);
     
@@ -92,7 +93,12 @@ describe('POST /api/cleanup/migration/execute', () => {
       .select('migration_status')
       .eq('table_name', 'test_migration_table')
       .single();
-      
+
+    expect(tracking).toBeTruthy();
+    if (!tracking) {
+      throw new Error('tracking row missing');
+    }
+
     expect(tracking.migration_status).toBe('pending'); // Should still be pending
   });
 
@@ -103,7 +109,7 @@ describe('POST /api/cleanup/migration/execute', () => {
       body: JSON.stringify({ tableName: 'non_existent_table' })
     });
     
-    const response = await POST(request);
+    const response = await POST(request as unknown as NextRequest);
     
     expect(response.status).toBe(400);
     
@@ -124,7 +130,7 @@ describe('POST /api/cleanup/migration/execute', () => {
       body: JSON.stringify({ tableName: 'test_migration_table' })
     });
     
-    const response = await POST(request);
+    const response = await POST(request as unknown as NextRequest);
     
     expect(response.status).toBe(409); // Conflict
   });
@@ -135,7 +141,7 @@ describe('POST /api/cleanup/migration/execute', () => {
       headers: { 'Content-Type': 'application/json' }
     });
     
-    const response = await POST(request);
+    const response = await POST(request as unknown as NextRequest);
     
     expect(response.status).toBe(400);
   });

@@ -1,5 +1,60 @@
 # MEMORY.md - Critical Rules for Every Claude Code Session
 
+## 🚨 CRITICAL: EXACT WORKING METHODS (USE THESE ONLY)
+
+### 1️⃣ DIRECT SUPABASE CONNECTION - PYTHON ONLY
+```python
+#!/usr/bin/env python3
+import requests
+import json
+
+# Get from .env.local
+# Get these from .env.local
+SUPABASE_URL = "<NEXT_PUBLIC_SUPABASE_URL from .env.local>"
+SUPABASE_SERVICE_KEY = "<SUPABASE_SERVICE_ROLE_KEY from .env.local>"
+
+headers = {
+    "apikey": SUPABASE_SERVICE_KEY,
+    "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+    "Content-Type": "application/json"
+}
+
+# Execute SQL - returns 204 on success
+url = f"{SUPABASE_URL}/rest/v1/rpc/exec_sql"
+response = requests.post(url, headers=headers, json={"sql": "YOUR_SQL_HERE"})
+```
+**DO NOT USE**: Node.js/TypeScript scripts - module resolution is broken
+
+### 2️⃣ GIT PUSH - EXACT STEPS
+```bash
+# One-time setup per session
+git remote set-url origin https://<GITHUB_PAT from .env.local>@github.com/etzlertech/jobeye.git
+git config credential.helper store
+echo "https://<GITHUB_PAT>:x-oauth-basic@github.com" > ~/.git-credentials
+
+# Every push
+git add .
+git commit -m "$(cat <<'EOF'
+type: message
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+EOF
+)"
+git push origin main
+```
+
+### 3️⃣ RAILWAY MONITORING - MANUAL METHOD
+```bash
+# After push, note the time
+echo "Pushed at $(date)"
+# Wait 2-3 minutes (not 5!)
+sleep 180
+# Then test with Browser MCP
+```
+**BROKEN**: npm run railway:* scripts due to Node.js dependency issues
+
 ## 🔥 ABSOLUTE DATABASE RULES - NEVER IGNORE
 
 ### 1. ALWAYS CHECK LIVE DATABASE FIRST

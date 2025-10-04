@@ -34,22 +34,34 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/core/logger/voice-logger';
 import { ValidationError } from '@/core/errors/error-types';
 
-/**
- * Duplicate match result
- */
+type IntakeRequestRecord = {
+  id: string;
+  customer_name: string;
+  property_address?: string | null;
+  phone_number?: string | null;
+  email?: string | null;
+  created_at: string;
+};
+
+type CandidateData = {
+  customerName: string;
+  propertyAddress?: string;
+  phoneNumber?: string;
+  email?: string;
+};
+
+type ExistingData = CandidateData;
+
 export interface DuplicateMatchResult {
   requestId: string;
   isDuplicate: boolean;
   matches: DuplicateMatch[];
-  confidence: number; // 0-1
+  confidence: number;
 }
 
-/**
- * Individual duplicate match
- */
 export interface DuplicateMatch {
   matchedRequestId: string;
-  similarityScore: number; // 0-1
+  similarityScore: number;
   matchReasons: string[];
   matchedAt: Date;
   matchedRequest: {
@@ -60,16 +72,13 @@ export interface DuplicateMatch {
   };
 }
 
-/**
- * Matching configuration
- */
 export interface MatchingConfig {
-  nameSimilarityThreshold: number; // default: 0.8 (80%)
-  addressSimilarityThreshold: number; // default: 0.75 (75%)
-  phoneSimilarityThreshold: number; // default: 1.0 (exact match)
-  emailSimilarityThreshold: number; // default: 1.0 (exact match)
-  compositeSimilarityThreshold: number; // default: 0.85 (85%)
-  timeWindowDays: number; // default: 30 days
+  nameSimilarityThreshold: number;
+  addressSimilarityThreshold: number;
+  phoneSimilarityThreshold: number;
+  emailSimilarityThreshold: number;
+  compositeSimilarityThreshold: number;
+  timeWindowDays: number;
 }
 
 const DEFAULT_CONFIG: MatchingConfig = {
@@ -81,70 +90,35 @@ const DEFAULT_CONFIG: MatchingConfig = {
   timeWindowDays: 30,
 };
 
-/**
- * Service for fuzzy duplicate detection of intake requests
- *
- * Features:
- * - Levenshtein distance for name matching
- * - Address similarity (normalized text comparison)
- * - Phone/email exact matching
- * - Composite similarity scoring
- * - Time window filtering (30 days default)
- *
- * @example
- * ```typescript
- * const matchingService = new IntakeDuplicateMatchingService(supabase, tenantId);
- *
- * // Check for duplicates
- * const result = await matchingService.findDuplicates({
- *   customerName: 'John Doe',
- *   propertyAddress: '123 Main St',
- *   phoneNumber: '555-123-4567'
- * });
- *
- * if (result.isDuplicate) {
- *   console.log(`Found ${result.matches.length} potential duplicates`);
- * }
- * ```
- */
 export class IntakeDuplicateMatchingService {
   // TODO: private requestsRepository: IntakeRequestsRepository;
-  private config: MatchingConfig;
+  private readonly config: MatchingConfig;
 
   constructor(
-    client: SupabaseClient,
-    private tenantId: string,
+    private readonly client: SupabaseClient,
+    private readonly companyId: string,
     config?: Partial<MatchingConfig>
   ) {
-    // TODO: this.requestsRepository = new IntakeRequestsRepository(client, tenantId);
+    // TODO: this.requestsRepository = new IntakeRequestsRepository(client, companyId);
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
-  /**
-   * Find duplicate matches for an intake request
-   */
-  async findDuplicates(candidateData: {
-    customerName: string;
-    propertyAddress?: string;
-    phoneNumber?: string;
-    email?: string;
-  }): Promise<DuplicateMatchResult> {
-    // Get recent requests within time window
+  async findDuplicates(candidateData: CandidateData): Promise<DuplicateMatchResult> {
+    this.validateCandidate(candidateData);
+
     const since = new Date();
     since.setDate(since.getDate() - this.config.timeWindowDays);
 
-    const recentRequests = [],
-    });
+    const recentRequests = await this.fetchRecentRequests(since);
 
-    // Calculate similarity for each request
     const matches: DuplicateMatch[] = [];
 
     for (const request of recentRequests) {
       const similarity = this.calculateSimilarity(candidateData, {
         customerName: request.customer_name,
-        propertyAddress: request.property_address || undefined,
-        phoneNumber: request.phone_number || undefined,
-        email: request.email || undefined,
+        propertyAddress: request.property_address ?? undefined,
+        phoneNumber: request.phone_number ?? undefined,
+        email: request.email ?? undefined,
       });
 
       if (similarity.score >= this.config.compositeSimilarityThreshold) {
@@ -155,58 +129,38 @@ export class IntakeDuplicateMatchingService {
           matchedAt: new Date(),
           matchedRequest: {
             customerName: request.customer_name,
-            propertyAddress: request.property_address || undefined,
-            phoneNumber: request.phone_number || undefined,
+            propertyAddress: request.property_address ?? undefined,
+            phoneNumber: request.phone_number ?? undefined,
             createdAt: new Date(request.created_at),
           },
         });
       }
     }
 
-    // Sort matches by similarity score (highest first)
     matches.sort((a, b) => b.similarityScore - a.similarityScore);
 
-    // Calculate overall confidence
-    const confidence = matches.length > 0 ? matches[0].similarityScore : 0;
-    const isDuplicate = matches.length > 0;
-
-    logger.info('Duplicate matching completed', {
-      candidateName: candidateData.customerName,
-      matchesFound: matches.length,
-      isDuplicate,
-      confidence,
-    });
-
     return {
-      requestId: 'candidate', // Would be actual request ID
-      isDuplicate,
+      requestId: 'candidate',
+      isDuplicate: matches.length > 0,
       matches,
-      confidence,
+      confidence: matches.length > 0 ? matches[0].similarityScore : 0,
     };
   }
 
-  /**
-   * Calculate similarity between two intake requests
-   */
-  private calculateSimilarity(
-    candidate: {
-      customerName: string;
-      propertyAddress?: string;
-      phoneNumber?: string;
-      email?: string;
-    },
-    existing: {
-      customerName: string;
-      propertyAddress?: string;
-      phoneNumber?: string;
-      email?: string;
+  private validateCandidate(candidateData: CandidateData): void {
+    if (!candidateData.customerName) {
+      throw new ValidationError('customerName is required for duplicate matching');
     }
+  }
+
+  private calculateSimilarity(
+    candidate: CandidateData,
+    existing: ExistingData
   ): { score: number; reasons: string[] } {
     const reasons: string[] = [];
     let totalWeight = 0;
     let weightedScore = 0;
 
-    // Name similarity (weight: 3)
     const nameWeight = 3;
     const nameSimilarity = this.calculateLevenshteinSimilarity(
       candidate.customerName,
@@ -216,12 +170,9 @@ export class IntakeDuplicateMatchingService {
     weightedScore += nameSimilarity * nameWeight;
 
     if (nameSimilarity >= this.config.nameSimilarityThreshold) {
-      reasons.push(
-        `Name match: ${(nameSimilarity * 100).toFixed(0)}% similar`
-      );
+      reasons.push(`Name match: ${(nameSimilarity * 100).toFixed(0)}% similar`);
     }
 
-    // Address similarity (weight: 2)
     if (candidate.propertyAddress && existing.propertyAddress) {
       const addressWeight = 2;
       const addressSimilarity = this.calculateLevenshteinSimilarity(
@@ -232,18 +183,15 @@ export class IntakeDuplicateMatchingService {
       weightedScore += addressSimilarity * addressWeight;
 
       if (addressSimilarity >= this.config.addressSimilarityThreshold) {
-        reasons.push(
-          `Address match: ${(addressSimilarity * 100).toFixed(0)}% similar`
-        );
+        reasons.push(`Address match: ${(addressSimilarity * 100).toFixed(0)}% similar`);
       }
     }
 
-    // Phone similarity (weight: 2.5, exact match only)
     if (candidate.phoneNumber && existing.phoneNumber) {
       const phoneWeight = 2.5;
-      const normalizedCandidatePhone = this.normalizePhone(candidate.phoneNumber);
-      const normalizedExistingPhone = this.normalizePhone(existing.phoneNumber);
-      const phoneMatch = normalizedCandidatePhone === normalizedExistingPhone ? 1.0 : 0.0;
+      const candidatePhone = this.normalizePhone(candidate.phoneNumber);
+      const existingPhone = this.normalizePhone(existing.phoneNumber);
+      const phoneMatch = candidatePhone === existingPhone ? 1.0 : 0.0;
       totalWeight += phoneWeight;
       weightedScore += phoneMatch * phoneWeight;
 
@@ -252,13 +200,10 @@ export class IntakeDuplicateMatchingService {
       }
     }
 
-    // Email similarity (weight: 2.5, exact match only)
     if (candidate.email && existing.email) {
       const emailWeight = 2.5;
       const emailMatch =
-        candidate.email.toLowerCase() === existing.email.toLowerCase()
-          ? 1.0
-          : 0.0;
+        candidate.email.toLowerCase() === existing.email.toLowerCase() ? 1.0 : 0.0;
       totalWeight += emailWeight;
       weightedScore += emailMatch * emailWeight;
 
@@ -272,9 +217,6 @@ export class IntakeDuplicateMatchingService {
     return { score, reasons };
   }
 
-  /**
-   * Calculate Levenshtein similarity (0-1 range)
-   */
   private calculateLevenshteinSimilarity(str1: string, str2: string): number {
     const s1 = str1.toLowerCase().trim();
     const s2 = str2.toLowerCase().trim();
@@ -287,32 +229,24 @@ export class IntakeDuplicateMatchingService {
     return 1 - distance / maxLength;
   }
 
-  /**
-   * Calculate Levenshtein distance between two strings
-   */
   private levenshteinDistance(str1: string, str2: string): number {
     const m = str1.length;
     const n = str2.length;
 
-    // Create distance matrix
-    const dp: number[][] = Array(m + 1)
-      .fill(0)
-      .map(() => Array(n + 1).fill(0));
+    const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
 
-    // Initialize first row and column
-    for (let i = 0; i <= m; i++) dp[i][0] = i;
-    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    for (let i = 0; i <= m; i += 1) dp[i][0] = i;
+    for (let j = 0; j <= n; j += 1) dp[0][j] = j;
 
-    // Fill matrix
-    for (let i = 1; i <= m; i++) {
-      for (let j = 1; j <= n; j++) {
+    for (let i = 1; i <= m; i += 1) {
+      for (let j = 1; j <= n; j += 1) {
         if (str1[i - 1] === str2[j - 1]) {
           dp[i][j] = dp[i - 1][j - 1];
         } else {
           dp[i][j] = Math.min(
-            dp[i - 1][j] + 1, // deletion
-            dp[i][j - 1] + 1, // insertion
-            dp[i - 1][j - 1] + 1 // substitution
+            dp[i - 1][j] + 1,
+            dp[i][j - 1] + 1,
+            dp[i - 1][j - 1] + 1
           );
         }
       }
@@ -321,9 +255,6 @@ export class IntakeDuplicateMatchingService {
     return dp[m][n];
   }
 
-  /**
-   * Normalize address for comparison
-   */
   private normalizeAddress(address: string): string {
     return address
       .toLowerCase()
@@ -332,10 +263,15 @@ export class IntakeDuplicateMatchingService {
       .trim();
   }
 
-  /**
-   * Normalize phone number for comparison
-   */
   private normalizePhone(phone: string): string {
-    return phone.replace(/\D/g, ''); // Remove all non-digits
+    return phone.replace(/\D/g, '');
+  }
+
+  private async fetchRecentRequests(since: Date): Promise<IntakeRequestRecord[]> {
+    logger.debug('fetchRecentRequests stub invoked', {
+      tenantId: this.companyId,
+      since,
+    });
+    return [];
   }
 }

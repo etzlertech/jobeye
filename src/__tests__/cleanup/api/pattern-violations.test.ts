@@ -3,6 +3,7 @@
  */
 
 import { GET } from '@/app/api/cleanup/patterns/violations/route';
+import { NextRequest } from 'next/server';
 import { createTestClient, cleanupTestData } from '../test-utils';
 
 describe('GET /api/cleanup/patterns/violations', () => {
@@ -48,7 +49,7 @@ describe('GET /api/cleanup/patterns/violations', () => {
 
   it('should return all violations', async () => {
     const request = new Request('http://localhost:3000/api/cleanup/patterns/violations');
-    const response = await GET(request);
+    const response = await GET(request as unknown as NextRequest);
     
     expect(response.status).toBe(200);
     
@@ -81,7 +82,7 @@ describe('GET /api/cleanup/patterns/violations', () => {
 
   it('should filter by pattern type', async () => {
     const request = new Request('http://localhost:3000/api/cleanup/patterns/violations?type=tenant_id_usage');
-    const response = await GET(request);
+    const response = await GET(request as unknown as NextRequest);
     
     expect(response.status).toBe(200);
     
@@ -93,7 +94,7 @@ describe('GET /api/cleanup/patterns/violations', () => {
 
   it('should filter by fix status', async () => {
     const request = new Request('http://localhost:3000/api/cleanup/patterns/violations?fixed=false');
-    const response = await GET(request);
+    const response = await GET(request as unknown as NextRequest);
     
     expect(response.status).toBe(200);
     
@@ -105,7 +106,7 @@ describe('GET /api/cleanup/patterns/violations', () => {
 
   it('should filter by file path prefix', async () => {
     const request = new Request('http://localhost:3000/api/cleanup/patterns/violations?file=src/test/file1');
-    const response = await GET(request);
+    const response = await GET(request as unknown as NextRequest);
     
     expect(response.status).toBe(200);
     
@@ -117,7 +118,7 @@ describe('GET /api/cleanup/patterns/violations', () => {
 
   it('should combine multiple filters', async () => {
     const request = new Request('http://localhost:3000/api/cleanup/patterns/violations?type=tenant_id_usage&fixed=false');
-    const response = await GET(request);
+    const response = await GET(request as unknown as NextRequest);
     
     expect(response.status).toBe(200);
     

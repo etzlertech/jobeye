@@ -57,15 +57,15 @@ export async function getUsersByTenant(tenant_id: string) {
 }
     `);
 
-    const results = await eslint.lintFiles([testFile]);
-    const messages = results[0].messages;
+    const results: ESLint.LintResult[] = await eslint.lintFiles([testFile]);
+    const messages: ESLint.LintMessage[] = results[0].messages;
 
     // Should have multiple tenant_id violations
-    const tenantIdErrors = messages.filter(m => m.ruleId === 'cleanup/no-company-id');
+    const tenantIdErrors = messages.filter((m: ESLint.LintMessage) => m.ruleId === 'cleanup/no-company-id');
     expect(tenantIdErrors.length).toBeGreaterThan(0);
     
     // Each violation should suggest tenant_id
-    tenantIdErrors.forEach(error => {
+    tenantIdErrors.forEach((error: ESLint.LintMessage) => {
       expect(error.message).toContain('tenant_id');
     });
   });
@@ -98,15 +98,15 @@ export class UserRepository extends BaseRepository {
 }
     `);
 
-    const results = await eslint.lintFiles([testFile]);
-    const messages = results[0].messages;
+    const results: ESLint.LintResult[] = await eslint.lintFiles([testFile]);
+    const messages: ESLint.LintMessage[] = results[0].messages;
 
     // Should detect functional repository pattern
-    const repoErrors = messages.filter(m => m.ruleId === 'cleanup/repository-class-pattern');
+    const repoErrors = messages.filter((m: ESLint.LintMessage) => m.ruleId === 'cleanup/repository-class-pattern');
     expect(repoErrors.length).toBeGreaterThan(0);
     
     // Should suggest class-based pattern
-    repoErrors.forEach(error => {
+    repoErrors.forEach((error: ESLint.LintMessage) => {
       expect(error.message).toContain('class');
       expect(error.message).toContain('BaseRepository');
     });
@@ -145,7 +145,7 @@ export async function validateTenant(tenant_id: string): Promise<boolean> {
 }
     `);
 
-    const results = await eslint.lintFiles([testFile]);
+    const results: ESLint.LintResult[] = await eslint.lintFiles([testFile]);
     
     // Should have no violations
     expect(results[0].errorCount).toBe(0);
@@ -181,18 +181,19 @@ export function invalidRepo(tenant_id: string) {
     }
 
     // Lint all files
-    const results = await eslint.lintFiles([testDir + '/*.ts']);
+    const globPattern = testDir + '/*.ts';
+    const results: ESLint.LintResult[] = await eslint.lintFiles([globPattern]);
     
     // Should pass for valid file
-    const validResult = results.find(r => r.filePath.includes('valid-file'));
+    const validResult = results.find((r: ESLint.LintResult) => r.filePath.includes('valid-file'));
     expect(validResult?.errorCount).toBe(0);
     
     // Should fail for invalid file
-    const invalidResult = results.find(r => r.filePath.includes('invalid-file'));
+    const invalidResult = results.find((r: ESLint.LintResult) => r.filePath.includes('invalid-file'));
     expect(invalidResult?.errorCount).toBeGreaterThan(0);
     
     // Can determine if pre-commit should block
-    const hasErrors = results.some(r => r.errorCount > 0);
+    const hasErrors = results.some((r: ESLint.LintResult) => r.errorCount > 0);
     expect(hasErrors).toBe(true); // Should block commit
   });
 
@@ -211,11 +212,11 @@ const config: Config = {
     `);
 
     // Lint with fix option
-    const results = await eslint.lintFiles([testFile]);
+    const results: ESLint.LintResult[] = await eslint.lintFiles([testFile]);
     
     // Check if fixes are available
-    const messages = results[0].messages;
-    const fixableMessages = messages.filter(m => m.fix);
+    const messages: ESLint.LintMessage[] = results[0].messages;
+    const fixableMessages = messages.filter((m: ESLint.LintMessage) => m.fix);
     
     // Some violations should be auto-fixable (simple replacements)
     expect(fixableMessages.length).toBeGreaterThan(0);

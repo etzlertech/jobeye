@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       migrations: migrations.map(m => ({
         id: m.id,
         tableName: m.table_name,
-        hasCompanyId: m.has_tenant_id,
+        hasCompanyId: m.has_company_id,
         hasTenantId: m.has_tenant_id,
         rowCount: m.row_count,
         status: m.migration_status,
