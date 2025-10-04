@@ -129,3 +129,10 @@ Prioritization inside Phase A:
 - 2025-10-05: Restored routing-geofencing.service.ts with stubbed boundary/event fetches; real repositories still pending.
 - 2025-10-05: Restored routing-gps-tracking.service.ts with stubbed breadcrumb persistence/fetch; real GPS repo wiring still outstanding.
 - 2025-10-05: Restored routing-progress.service.ts with stubbed schedule/breadcrumb lookups; ETA/delay calculations await repository hookups.
+- 2025-10-05: Restored business-card-ocr.service.ts with parsing logic, helper modules, VLM fallback, and unit/integration coverage; repository-backed persistence still pending.
+- 2025-10-05: Restored safety-verification.service.ts with YOLO primary logic, Gemini fallback, persistence hooks, and unit/integration coverage; production wiring should adopt createSafetyVerificationService factory to supply Supabase context.
+- 2025-10-05: Restored time-tracking.service.ts with geofence enforcement, overlap prevention, Supabase-aware factory, and unit/integration coverage; downstream API handlers must adopt createTimeTrackingService to pass tenant/job context.
+- 2025-10-05: Restored arrival-workflow.service.ts with safety verification integration, time tracking orchestration, notification hooks, and accompanying factories/tests.
+
+## Phase B-E Detailed Roadmap
+- Detailed execution checklists now live in docs/service-restoration-plan-phases-b-e.md (created 2025-10-05) covering Intake OCR, Safety, Time Tracking, and Job Workflows restorations.
