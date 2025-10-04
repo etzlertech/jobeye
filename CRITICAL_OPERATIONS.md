@@ -69,12 +69,16 @@ git push origin main
 
 ## 🔴 3. RAILWAY MONITORING (ACTIVE, NOT PASSIVE)
 
-### The Problem:
-- Node.js module resolution is broken in WSL environment
-- node_modules directories exist but many are empty
-- This affects all Node.js based scripts
+### Option 1: TypeScript Scripts (if Node modules are working)
+```bash
+# Check latest deployment (needs RAILWAY_TOKEN in .env.local)
+npm run railway:check
 
-### Working Solution - Python Railway Monitor:
+# Monitor specific deployment
+npm run railway:monitor <deployment-id>
+```
+
+### Option 2: Python Railway Monitor (always works)
 ```bash
 # Use the Python monitoring script
 python3 scripts/railway-monitor.py
@@ -86,7 +90,7 @@ python3 scripts/railway-monitor.py
 # - Tell you when deployment should be complete
 ```
 
-### Alternative Manual Method:
+### Option 3: Manual Method
 ```bash
 # 1. Note the time of push
 git push origin main
@@ -141,20 +145,23 @@ sleep 180
 
 ## 🔴 5. DEPENDENCIES ISSUE
 
-### Root Cause:
-- Node.js module resolution is broken in this WSL environment
-- Many node_modules directories exist but are empty (corrupted installation)
-- This affects ALL Node.js scripts including tsx, dotenv, etc.
+### Common WSL Issue - Empty node_modules:
+If Node.js scripts fail with "Cannot find module" errors, the node_modules may be corrupted (directories exist but are empty).
 
-### Working Solutions:
-1. **Database Operations**: Use Python scripts (shown above)
-2. **Git Operations**: Use bash commands directly  
-3. **Railway Monitoring**: Use `python3 scripts/railway-monitor.py`
-4. **Avoid**: Any Node.js based scripts until node_modules are fixed
-
-### To Fix Node Modules (for future sessions):
+### To Fix:
 ```bash
-# Complete reinstall might help
+# Complete reinstall
 rm -rf node_modules package-lock.json
+npm cache clean --force
 npm install
 ```
+
+### Working Alternatives:
+1. **Database Operations**: Python scripts always work (shown above)
+2. **Git Operations**: Bash commands directly
+3. **Railway Monitoring**: Python script as backup
+
+### Note:
+- WSL file system issues can cause empty node_modules
+- Python scripts are more reliable in WSL environments
+- After fixing, all npm scripts should work normally
