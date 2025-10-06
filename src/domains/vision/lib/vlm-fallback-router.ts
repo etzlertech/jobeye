@@ -9,6 +9,11 @@
  */
 
 import { YoloInferenceResult } from './yolo-inference';
+import {
+  VisionDetection,
+  VlmDetection as VisionVlmDetection,
+  VlmDetectionBatch,
+} from './vision-types';
 
 export const CONFIDENCE_THRESHOLD = 0.7; // 70% from spec clarification Q2
 
@@ -20,14 +25,10 @@ export interface VlmRequest {
   context?: string; // Optional context for better detection
 }
 
-export interface VlmDetection {
-  itemType: string;
-  confidence: number;
-  reasoning: string; // Why the VLM thinks this item is present
-  matchedExpectedItem?: string; // Which expected item this matches
-}
+export type VlmDetection = VisionVlmDetection;
 
-export interface VlmResult {
+export interface VlmResult extends VlmDetectionBatch {
+  source: 'cloud_vlm';
   detections: VlmDetection[];
   processingTimeMs: number;
   estimatedCostUsd: number;
@@ -47,11 +48,7 @@ export interface FallbackDecision {
 
 export interface VerificationResult {
   method: 'local_yolo' | 'cloud_vlm';
-  detections: Array<{
-    itemType: string;
-    confidence: number;
-    source: 'yolo' | 'vlm';
-  }>;
+  detections: VisionDetection[];
   totalConfidence: number;
   processingTimeMs: number;
   costUsd: number;
@@ -116,69 +113,43 @@ export function combineDetectionResults(
   yoloResult: YoloInferenceResult,
   vlmResult: VlmResult
 ): VerificationResult {
-  const combinedDetections = new Map<string, {
-    itemType: string;
-    confidence: number;
-    source: 'yolo' | 'vlm' | 'both';
-    yoloConfidence?: number;
-    vlmConfidence?: number;
-  }>();
+  const combined = new Map<string, VisionDetection>();
 
-  // Add YOLO detections
-  yoloResult.detections.forEach(detection => {
+  yoloResult.detections.forEach((detection) => {
+    combined.set(detection.itemType.toLowerCase(), { ...detection });
+  });
+
+  vlmResult.detections.forEach((detection) => {
     const key = detection.itemType.toLowerCase();
-    combinedDetections.set(key, {
-      itemType: detection.itemType,
-      confidence: detection.confidence,
-      source: 'yolo',
-      yoloConfidence: detection.confidence
+    const existing = combined.get(key);
+
+    if (!existing || detection.confidence >= existing.confidence) {
+      combined.set(key, { ...detection });
+      return;
+    }
+
+    combined.set(key, {
+      ...existing,
+      metadata: {
+        ...(existing.metadata ?? {}),
+        vlmConfidence: detection.confidence,
+        vlmReasoning: detection.reasoning,
+      },
     });
   });
 
-  // Add or merge VLM detections
-  vlmResult.detections.forEach(detection => {
-    const key = detection.itemType.toLowerCase();
-    const existing = combinedDetections.get(key);
+  const detections = Array.from(combined.values());
 
-    if (existing) {
-      // Both detected same item - use higher confidence
-      const maxConfidence = Math.max(existing.confidence, detection.confidence);
-      combinedDetections.set(key, {
-        itemType: existing.itemType,
-        confidence: maxConfidence,
-        source: 'both',
-        yoloConfidence: existing.yoloConfidence,
-        vlmConfidence: detection.confidence
-      });
-    } else {
-      // VLM found something YOLO missed
-      combinedDetections.set(key, {
-        itemType: detection.itemType,
-        confidence: detection.confidence,
-        source: 'vlm',
-        vlmConfidence: detection.confidence
-      });
-    }
-  });
-
-  // Convert to array
-  const detections = Array.from(combinedDetections.values()).map(d => ({
-    itemType: d.itemType,
-    confidence: d.confidence,
-    source: d.source === 'both' ? 'vlm' : d.source as 'yolo' | 'vlm'
-  }));
-
-  // Calculate overall confidence (weighted average)
   const totalConfidence = detections.length > 0
-    ? detections.reduce((sum, d) => sum + d.confidence, 0) / detections.length
+    ? detections.reduce((sum, detection) => sum + detection.confidence, 0) / detections.length
     : 0;
 
   return {
     method: 'cloud_vlm',
     detections,
     totalConfidence,
-    processingTimeMs: yoloResult.processingTimeMs + vlmResult.processingTimeMs,
-    costUsd: vlmResult.estimatedCostUsd
+    processingTimeMs: (yoloResult.processingTimeMs ?? 0) + vlmResult.processingTimeMs,
+    costUsd: vlmResult.estimatedCostUsd,
   };
 }
 
@@ -186,22 +157,18 @@ export function combineDetectionResults(
  * Create verification result from YOLO-only detection
  */
 export function createYoloOnlyResult(yoloResult: YoloInferenceResult): VerificationResult {
-  const detections = yoloResult.detections.map(d => ({
-    itemType: d.itemType,
-    confidence: d.confidence,
-    source: 'yolo' as const
-  }));
+  const detections = yoloResult.detections.map((detection) => ({ ...detection }));
 
   const totalConfidence = detections.length > 0
-    ? detections.reduce((sum, d) => sum + d.confidence, 0) / detections.length
+    ? detections.reduce((sum, detection) => sum + detection.confidence, 0) / detections.length
     : 0;
 
   return {
     method: 'local_yolo',
     detections,
     totalConfidence,
-    processingTimeMs: yoloResult.processingTimeMs,
-    costUsd: 0
+    processingTimeMs: yoloResult.processingTimeMs ?? 0,
+    costUsd: 0,
   };
 }
 

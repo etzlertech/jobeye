@@ -15,6 +15,7 @@ import { estimateVlmCost } from './cost-estimator';
 const MODEL = 'gpt-4-vision-preview';
 const MAX_TOKENS = 1000;
 const DETAIL_LEVEL: 'low' | 'high' | 'auto' = 'high';
+const PROVIDER = 'openai-gpt4-vision';
 
 let openaiClient: OpenAI | null = null;
 
@@ -106,10 +107,13 @@ function parseVlmResponse(content: string): VlmDetection[] {
     }
 
     return parsed.detections.map((d: any) => ({
+      source: 'cloud_vlm' as const,
       itemType: d.itemType || d.item_type || 'unknown',
       confidence: Math.max(0, Math.min(1, parseFloat(d.confidence) || 0)),
       reasoning: d.reasoning || d.reason || 'No reasoning provided',
-      matchedExpectedItem: d.matchedExpectedItem || d.matched_expected_item
+      matchedExpectedItem: d.matchedExpectedItem || d.matched_expected_item,
+      provider: PROVIDER,
+      modelVersion: MODEL,
     }));
   } catch (error) {
     console.error('[OpenAI Vision] Failed to parse response:', error);
@@ -177,12 +181,13 @@ export async function callOpenAIVision(request: VlmRequest): Promise<VlmResult> 
     console.log(`[OpenAI Vision] Completed in ${processingTime}ms, ${detections.length} detections, $${estimatedCost.toFixed(4)} cost`);
 
     return {
+      source: 'cloud_vlm',
       detections,
       processingTimeMs: processingTime,
       estimatedCostUsd: estimatedCost,
-      provider: 'openai-gpt4-vision',
+      provider: PROVIDER,
       modelVersion: MODEL,
-      tokensUsed
+      tokensUsed,
     };
   } catch (error) {
     const processingTime = Date.now() - startTime;
@@ -190,11 +195,12 @@ export async function callOpenAIVision(request: VlmRequest): Promise<VlmResult> 
 
     // Return empty result on error
     return {
+      source: 'cloud_vlm',
       detections: [],
       processingTimeMs: processingTime,
       estimatedCostUsd: 0,
-      provider: 'openai-gpt4-vision',
-      modelVersion: MODEL
+      provider: PROVIDER,
+      modelVersion: MODEL,
     };
   }
 }

@@ -54,15 +54,20 @@ describe('VisionVerificationService - remote YOLO integration', () => {
   it('prefers remote YOLO when configured and blob conversion succeeds', async () => {
     imageDataToBlobMock.mockResolvedValue(new Blob(['image']));
     remoteDetectMock.mockResolvedValue({
+      source: 'remote_yolo',
+      provider: 'remote-yolo-v1',
+      modelVersion: 'remote-yolo-v1',
+      processingTimeMs: 150,
       detections: [
         {
-          label: 'helmet',
+          source: 'remote_yolo',
+          itemType: 'helmet',
           confidence: 0.94,
-          bbox: { x: 10, y: 20, width: 30, height: 40 },
+          boundingBox: { x: 10, y: 20, width: 30, height: 40 },
+          provider: 'remote-yolo-v1',
+          modelVersion: 'remote-yolo-v1',
         },
       ],
-      processingTimeMs: 150,
-      modelVersion: 'remote-yolo-v1',
     });
 
     const service = new VisionVerificationService({
@@ -74,25 +79,33 @@ describe('VisionVerificationService - remote YOLO integration', () => {
     const result = await (service as any).runYoloDetection(fakeImageData);
 
     expect(remoteDetectMock).toHaveBeenCalledTimes(1);
-    expect(result.source).toBe('remote');
-    expect(result.detections[0]?.class).toBe('helmet');
+    expect(result.source).toBe('remote_yolo');
+    expect(result.detections[0]).toMatchObject({
+      itemType: 'helmet',
+      source: 'remote_yolo',
+    });
     expect(runYoloInferenceMock).not.toHaveBeenCalled();
   });
 
   it('falls back to local YOLO when remote pathway is unavailable', async () => {
     imageDataToBlobMock.mockResolvedValue(null);
     runYoloInferenceMock.mockResolvedValue({
+      source: 'local_yolo',
+      provider: 'onnxruntime-web',
+      modelVersion: 'yolov11n',
       detections: [
         {
+          source: 'local_yolo',
           itemType: 'vest',
           confidence: 0.81,
           boundingBox: { x: 1, y: 2, width: 3, height: 4 },
+          provider: 'onnxruntime-web',
+          modelVersion: 'yolov11n',
         },
       ],
       processingTimeMs: 90,
-      inputWidth: 2,
-      inputHeight: 2,
-      modelInputSize: 640,
+      imageDimensions: { width: 2, height: 2 },
+      metadata: { modelInputSize: 640 },
     });
 
     const service = new VisionVerificationService({
@@ -105,7 +118,10 @@ describe('VisionVerificationService - remote YOLO integration', () => {
 
     expect(remoteDetectMock).not.toHaveBeenCalled();
     expect(runYoloInferenceMock).toHaveBeenCalledTimes(1);
-    expect(result.source).toBe('local');
-    expect(result.detections[0]?.class).toBe('vest');
+    expect(result.source).toBe('local_yolo');
+    expect(result.detections[0]).toMatchObject({
+      itemType: 'vest',
+      source: 'local_yolo',
+    });
   });
 });

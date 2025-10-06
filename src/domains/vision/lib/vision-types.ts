@@ -9,7 +9,7 @@
 
 // Verification result types
 export type VerificationResult = 'complete' | 'incomplete' | 'failed' | 'unverified';
-export type ProcessingMethod = 'local_yolo' | 'cloud_vlm' | 'manual';
+export type ProcessingMethod = 'local_yolo' | 'remote_yolo' | 'cloud_vlm' | 'manual';
 export type MatchStatus = 'matched' | 'unmatched' | 'uncertain';
 
 // Detection confidence configuration
@@ -19,25 +19,57 @@ export interface DetectionConfig {
   dailyBudgetUsd: number; // default 10.00
 }
 
-// YOLO detection types
-export interface BoundingBox {
+// Unified detection contract
+export type DetectionSource = 'local_yolo' | 'remote_yolo' | 'cloud_vlm';
+
+export interface VisionBoundingBox {
   x: number;
   y: number;
   width: number;
   height: number;
 }
 
-export interface YoloDetection {
+export interface VisionDetectionBase {
+  source: DetectionSource;
   itemType: string;
   confidence: number; // 0.00-1.00
-  boundingBox: BoundingBox;
+  boundingBox?: VisionBoundingBox;
+  modelVersion?: string;
+  provider?: string;
+  metadata?: Record<string, unknown>;
 }
 
-export interface YoloInferenceResult {
-  detections: YoloDetection[];
-  processingTimeMs: number;
-  modelVersion: string;
+export interface YoloDetection extends VisionDetectionBase {
+  source: 'local_yolo' | 'remote_yolo';
+  boundingBox: VisionBoundingBox;
+  classId?: number;
 }
+
+export interface VlmDetection extends VisionDetectionBase {
+  source: 'cloud_vlm';
+  reasoning: string;
+  matchedExpectedItem?: string;
+}
+
+export type VisionDetection = YoloDetection | VlmDetection;
+
+export interface VisionDetectionBatch<TDetection extends VisionDetection = VisionDetection> {
+  source: DetectionSource;
+  detections: TDetection[];
+  modelVersion?: string;
+  provider?: string;
+  processingTimeMs?: number;
+  imageDimensions?: {
+    width: number;
+    height: number;
+  };
+  tokensUsed?: number;
+  estimatedCostUsd?: number;
+  metadata?: Record<string, unknown>;
+}
+
+export type YoloDetectionBatch = VisionDetectionBatch<YoloDetection>;
+export type VlmDetectionBatch = VisionDetectionBatch<VlmDetection>;
 
 // Vision verification record
 export interface VisionVerificationRecord {
@@ -64,7 +96,7 @@ export interface DetectedItem {
   verificationId: string;
   itemType: string;
   confidenceScore: number;
-  boundingBox?: BoundingBox;
+  boundingBox?: VisionBoundingBox;
   matchedKitItemId?: string;
   matchStatus: MatchStatus;
   createdAt: Date;
@@ -93,7 +125,7 @@ export interface VlmAnalysisRequest {
 }
 
 export interface VlmAnalysisResponse {
-  detectedItems: YoloDetection[];
+  detectedItems: VlmDetection[];
   confidence: number;
   processingTimeMs: number;
   actualCost: number;
@@ -179,7 +211,7 @@ export interface FrameCaptureEvent {
 export interface ContainerBoundary {
   containerId: string;
   containerType: 'truck' | 'trailer' | 'bin';
-  boundingBox: BoundingBox;
+  boundingBox: VisionBoundingBox;
   confidence: number;
 }
 

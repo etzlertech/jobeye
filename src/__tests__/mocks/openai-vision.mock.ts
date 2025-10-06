@@ -6,6 +6,9 @@
 
 import { VlmDetection, VlmResult } from '@/domains/vision/lib/vlm-fallback-router';
 
+const PROVIDER = 'openai-gpt4-vision';
+const MODEL_VERSION = 'gpt-4-vision-preview';
+
 /**
  * Generate realistic VLM detections
  */
@@ -20,10 +23,13 @@ export function generateMockVlmDetections(
       // VLM detects all items with high confidence and reasoning
       expectedItems.forEach(item => {
         detections.push({
+          source: 'cloud_vlm',
           itemType: item,
           confidence: 0.90 + Math.random() * 0.10, // 0.90-1.0
           reasoning: `Clear view of ${item.replace(/_/g, ' ')} in image. High certainty based on shape, color, and context.`,
-          matchedExpectedItem: item
+          matchedExpectedItem: item,
+          provider: PROVIDER,
+          modelVersion: MODEL_VERSION,
         });
       });
       break;
@@ -32,10 +38,13 @@ export function generateMockVlmDetections(
       // VLM detects items but with lower confidence
       expectedItems.forEach(item => {
         detections.push({
+          source: 'cloud_vlm',
           itemType: item,
           confidence: 0.60 + Math.random() * 0.20, // 0.60-0.80
           reasoning: `Possible ${item.replace(/_/g, ' ')} visible, but partial occlusion or poor lighting reduces certainty.`,
-          matchedExpectedItem: item
+          matchedExpectedItem: item,
+          provider: PROVIDER,
+          modelVersion: MODEL_VERSION,
         });
       });
       break;
@@ -45,10 +54,13 @@ export function generateMockVlmDetections(
       const detectCount = Math.ceil(expectedItems.length * 0.6);
       expectedItems.slice(0, detectCount).forEach(item => {
         detections.push({
+          source: 'cloud_vlm',
           itemType: item,
           confidence: 0.85 + Math.random() * 0.10,
           reasoning: `${item.replace(/_/g, ' ')} clearly visible with distinctive features.`,
-          matchedExpectedItem: item
+          matchedExpectedItem: item,
+          provider: PROVIDER,
+          modelVersion: MODEL_VERSION,
         });
       });
       break;
@@ -90,12 +102,13 @@ export function createMockOpenAIVision(
       const estimatedCostUsd = inputCost + outputCost + imageCost;
 
       return {
+        source: 'cloud_vlm',
         detections,
         processingTimeMs: processingTime,
         estimatedCostUsd: Math.round(estimatedCostUsd * 10000) / 10000,
-        provider: 'openai-gpt4-vision',
-        modelVersion: 'gpt-4-vision-preview',
-        tokensUsed
+        provider: PROVIDER,
+        modelVersion: MODEL_VERSION,
+        tokensUsed,
       };
     }
   );
@@ -115,12 +128,13 @@ export function createFailingOpenAIVision() {
  */
 export function createCustomOpenAIVision(detections: VlmDetection[]) {
   return jest.fn().mockResolvedValue({
+    source: 'cloud_vlm',
     detections,
     processingTimeMs: 1500,
     estimatedCostUsd: 0.10,
-    provider: 'openai-gpt4-vision',
-    modelVersion: 'gpt-4-vision-preview',
-    tokensUsed: 550
+    provider: PROVIDER,
+    modelVersion: MODEL_VERSION,
+    tokensUsed: 550,
   });
 }
 

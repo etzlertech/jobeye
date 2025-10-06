@@ -48,18 +48,41 @@ export function setupVisionServiceMock() {
     verifyKit: jest.fn().mockImplementation(async (request) => {
       // Simulate YOLO detection
       const detections = request.expectedItems.map((item: string, index: number) => ({
+        source: 'local_yolo' as const,
         itemType: item,
         confidence: 0.85 + Math.random() * 0.15,
-        matchStatus: 'matched' as const
+        boundingBox: {
+          x: index * 10,
+          y: 0,
+          width: 50,
+          height: 50,
+        },
+        provider: 'mock-yolo',
+        modelVersion: 'mock-v1',
       }));
+
+      const detectedItems = detections.map((detection) => ({
+        itemType: detection.itemType,
+        confidence: detection.confidence,
+        matchStatus: 'matched' as const,
+        source: detection.source,
+        provider: detection.provider,
+        modelVersion: detection.modelVersion,
+        boundingBox: detection.boundingBox,
+      }));
+
+      const confidenceScore = detections.length
+        ? detections.reduce((sum: number, d) => sum + d.confidence, 0) / detections.length
+        : 0;
 
       return {
         data: {
           verificationId: `ver-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           verificationResult: detections.length === request.expectedItems.length ? 'complete' : 'incomplete',
           processingMethod: 'local_yolo' as const,
-          confidenceScore: detections.reduce((sum: number, d: any) => sum + d.confidence, 0) / detections.length,
-          detectedItems: detections,
+          confidenceScore,
+          detections,
+          detectedItems,
           missingItems: [],
           unexpectedItems: [],
           costUsd: 0, // YOLO is free
@@ -75,9 +98,12 @@ export function setupVisionServiceMock() {
     }),
 
     runYoloDetection: jest.fn().mockResolvedValue({
+      source: 'local_yolo',
+      provider: 'mock-yolo',
+      modelVersion: 'mock-v1',
       detections: [],
       processingTimeMs: 250,
-      success: true
+      metadata: { mock: true },
     })
   }));
 

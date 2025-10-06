@@ -20,7 +20,7 @@ export const VisionVerificationSchema = z.object({
   kitId: z.string(),
   jobId: z.string().optional(),
   verificationResult: z.enum(['complete', 'incomplete', 'failed', 'unverified']),
-  processingMethod: z.enum(['local_yolo', 'cloud_vlm', 'manual']),
+  processingMethod: z.enum(['local_yolo', 'remote_yolo', 'cloud_vlm', 'manual']),
   confidenceScore: z.number().min(0).max(1),
   detectionCount: z.number().default(0),
   expectedCount: z.number().default(0),

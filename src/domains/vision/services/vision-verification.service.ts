@@ -23,6 +23,14 @@ import {
   RemoteYoloConfig,
 } from '@/domains/vision/services/yolo-remote-client';
 import { imageDataToBlob } from '@/domains/vision/utils/image-data';
+import {
+  DetectionSource,
+  ProcessingMethod,
+  VisionDetection,
+  VlmDetection,
+  YoloDetectionBatch,
+  VisionBoundingBox,
+} from '../lib/vision-types';
 
 export interface VerifyKitRequest {
   kitId: string;
@@ -36,13 +44,10 @@ export interface VerifyKitRequest {
 export interface VerifyKitResult {
   verificationId: string;
   verificationResult: 'complete' | 'incomplete' | 'failed';
-  processingMethod: 'local_yolo' | 'cloud_vlm';
+  processingMethod: ProcessingMethod;
   confidenceScore: number;
-  detectedItems: Array<{
-    itemType: string;
-    confidence: number;
-    matchStatus: 'matched' | 'unmatched' | 'uncertain';
-  }>;
+  detections?: VisionDetection[];
+  detectedItems: DetectionMatchSummary[];
   missingItems: string[];
   unexpectedItems: string[];
   costUsd: number;
@@ -54,27 +59,21 @@ export interface VerifyKitResult {
   };
 }
 
+export interface DetectionMatchSummary {
+  itemType: string;
+  confidence: number;
+  matchStatus: MatchStatus;
+  source?: DetectionSource;
+  provider?: string;
+  modelVersion?: string;
+  reasoning?: string;
+  boundingBox?: VisionBoundingBox;
+}
+
 export interface VerificationError {
   code: 'BUDGET_EXCEEDED' | 'REQUEST_LIMIT_REACHED' | 'YOLO_FAILED' | 'VLM_FAILED' | 'UNKNOWN';
   message: string;
   details?: any;
-}
-
-interface NormalizedYoloDetection {
-  class: string;
-  confidence: number;
-  bbox?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
-}
-
-interface YoloDetectionResult {
-  detections: NormalizedYoloDetection[];
-  processingTimeMs: number;
-  source: 'remote' | 'local';
 }
 
 export interface VisionVerificationOptions {
@@ -199,7 +198,7 @@ export class VisionVerificationService {
 
     try {
       // Step 1: Run YOLO detection
-      let yoloResult: YoloDetectionResult;
+      let yoloResult: YoloDetectionBatch;
       try {
         yoloResult = await this.runYoloDetection(imageData);
       } catch (detectionError) {
@@ -221,8 +220,9 @@ export class VisionVerificationService {
         estimatedVlmCost
       );
 
-      let finalDetections = yoloResult.detections;
-      let processingMethod: 'local_yolo' | 'cloud_vlm' = 'local_yolo';
+      let finalDetections: VisionDetection[] = yoloResult.detections.map((detection) => ({ ...detection }));
+      let processingMethod: ProcessingMethod =
+        yoloResult.source === 'remote_yolo' ? 'remote_yolo' : 'local_yolo';
       let totalCost = 0;
       let vlmResult: VlmResult | null = null;
 
@@ -266,7 +266,8 @@ export class VisionVerificationService {
               tokenCount: vlmResult.tokensUsed,
               costUsd: vlmResult.estimatedCostUsd,
               metadata: {
-                imageSizeBytes: this.getImageSize(imageData)
+                imageSizeBytes: this.getImageSize(imageData),
+                fallbackReason: fallbackDecision.reason,
               }
             });
             }
@@ -308,13 +309,20 @@ export class VisionVerificationService {
         verificationId = verification.id;
 
         // Step 8: Save detected items
-        const itemsToSave = matchingResult.detectedItems.map(item => ({
+        const itemsToSave = matchingResult.detectedItems.map((item) => ({
           verificationId: verificationId,
           itemType: item.itemType,
           itemName: item.itemType, // Use type as name for now
           confidenceScore: item.confidence,
           matchStatus: item.matchStatus,
-          expectedItemId: item.matchStatus === 'matched' ? kitId : undefined
+          expectedItemId: item.matchStatus === 'matched' ? kitId : undefined,
+          boundingBox: item.boundingBox,
+          metadata: {
+            source: item.source,
+            provider: item.provider,
+            modelVersion: item.modelVersion,
+            reasoning: item.reasoning,
+          },
         }));
 
         if (itemsToSave.length > 0) {
@@ -346,6 +354,7 @@ export class VisionVerificationService {
           verificationResult,
           processingMethod,
           confidenceScore,
+          detections: finalDetections,
           detectedItems: matchingResult.detectedItems,
           missingItems: matchingResult.missingItems,
           unexpectedItems: matchingResult.unexpectedItems,
@@ -375,7 +384,7 @@ export class VisionVerificationService {
   /**
    * Run YOLO object detection
    */
-  private async runYoloDetection(imageData: ImageData): Promise<YoloDetectionResult> {
+  private async runYoloDetection(imageData: ImageData): Promise<YoloDetectionBatch> {
     if (this.remoteYoloConfig && isRemoteYoloConfigured(this.remoteYoloConfig)) {
       const blob = await imageDataToBlob(imageData);
 
@@ -385,19 +394,9 @@ export class VisionVerificationService {
         );
       } else {
         try {
-          const remote = await detectWithRemoteYolo(blob, this.remoteYoloConfig, {
+          return await detectWithRemoteYolo(blob, this.remoteYoloConfig, {
             maxDetections: this.remoteYoloConfig.maxDetections,
           });
-
-          return {
-            detections: remote.detections.map((detection) => ({
-              class: detection.label,
-              confidence: detection.confidence,
-              bbox: detection.bbox,
-            })),
-            processingTimeMs: remote.processingTimeMs ?? 0,
-            source: 'remote',
-          };
         } catch (error: any) {
           this.logger.warn('Vision verification: remote YOLO failed, using local fallback.', {
             error: error?.message ?? String(error),
@@ -407,17 +406,7 @@ export class VisionVerificationService {
     }
 
     try {
-      const local = await runYoloInference(imageData);
-
-      return {
-        detections: local.detections.map((detection) => ({
-          class: detection.itemType,
-          confidence: detection.confidence,
-          bbox: detection.boundingBox,
-        })),
-        processingTimeMs: local.processingTimeMs,
-        source: 'local',
-      };
+      return await runYoloInference(imageData);
     } catch (error: any) {
       this.logger.error('Vision verification: local YOLO inference failed.', {
         error: error?.message ?? String(error),
@@ -443,19 +432,36 @@ export class VisionVerificationService {
    * Merge YOLO and VLM detections (VLM takes precedence for conflicts)
    */
   private mergeDetections(
-    yoloDetections: Array<{ class: string; confidence: number }>,
-    vlmDetections: Array<{ itemType: string; confidence: number }>
-  ): Array<{ class: string; confidence: number }> {
-    const merged = new Map<string, { class: string; confidence: number }>();
+    yoloDetections: VisionDetection[],
+    vlmDetections: VlmDetection[]
+  ): VisionDetection[] {
+    if (!vlmDetections.length) {
+      return yoloDetections.map((detection) => ({ ...detection }));
+    }
 
-    // Add YOLO detections
-    yoloDetections.forEach(d => {
-      merged.set(d.class, { class: d.class, confidence: d.confidence });
+    const merged = new Map<string, VisionDetection>();
+
+    yoloDetections.forEach((detection) => {
+      merged.set(detection.itemType.toLowerCase(), { ...detection });
     });
 
-    // VLM overrides YOLO for same items
-    vlmDetections.forEach(d => {
-      merged.set(d.itemType, { class: d.itemType, confidence: d.confidence });
+    vlmDetections.forEach((detection) => {
+      const key = detection.itemType.toLowerCase();
+      const existing = merged.get(key);
+
+      if (!existing || detection.confidence >= existing.confidence) {
+        merged.set(key, { ...detection });
+        return;
+      }
+
+      merged.set(key, {
+        ...existing,
+        metadata: {
+          ...(existing.metadata ?? {}),
+          vlmConfidence: detection.confidence,
+          vlmReasoning: detection.reasoning,
+        },
+      });
     });
 
     return Array.from(merged.values());
@@ -465,26 +471,27 @@ export class VisionVerificationService {
    * Match detected items against expected kit items
    */
   private matchDetectedItems(
-    detections: Array<{ class: string; confidence: number }>,
+    detections: VisionDetection[],
     expectedItems: string[]
   ): {
-    detectedItems: Array<{
-      itemType: string;
-      confidence: number;
-      matchStatus: 'matched' | 'unmatched' | 'uncertain';
-    }>;
+    detectedItems: DetectionMatchSummary[];
     missingItems: string[];
     unexpectedItems: string[];
   } {
-    const detectedItems = detections.map(d => ({
-      itemType: d.class,
-      confidence: d.confidence,
-      matchStatus: this.determineMatchStatus(d.class, expectedItems, d.confidence)
+    const detectedItems = detections.map<DetectionMatchSummary>((detection) => ({
+      itemType: detection.itemType,
+      confidence: detection.confidence,
+      matchStatus: this.determineMatchStatus(detection.itemType, expectedItems, detection.confidence),
+      source: detection.source,
+      provider: detection.provider,
+      modelVersion: detection.modelVersion,
+      reasoning: detection.source === 'cloud_vlm' ? (detection as VlmDetection).reasoning : undefined,
+      boundingBox: detection.boundingBox,
     }));
 
-    const detectedTypes = new Set(detections.map(d => d.class));
-    const missingItems = expectedItems.filter(item => !detectedTypes.has(item));
-    const unexpectedItems = Array.from(detectedTypes).filter(type => !expectedItems.includes(type));
+    const detectedTypes = new Set(detections.map((detection) => detection.itemType));
+    const missingItems = expectedItems.filter((item) => !detectedTypes.has(item));
+    const unexpectedItems = Array.from(detectedTypes).filter((type) => !expectedItems.includes(type));
 
     return { detectedItems, missingItems, unexpectedItems };
   }
@@ -510,7 +517,7 @@ export class VisionVerificationService {
    * Determine overall verification result
    */
   private determineVerificationResult(
-    detectedItems: Array<{ matchStatus: string }>,
+    detectedItems: DetectionMatchSummary[],
     missingItems: string[]
   ): 'complete' | 'incomplete' | 'failed' {
     const matchedCount = detectedItems.filter(d => d.matchStatus === 'matched').length;
@@ -528,9 +535,7 @@ export class VisionVerificationService {
   /**
    * Calculate overall confidence score
    */
-  private calculateOverallConfidence(
-    detectedItems: Array<{ confidence: number; matchStatus: string }>
-  ): number {
+  private calculateOverallConfidence(detectedItems: DetectionMatchSummary[]): number {
     if (detectedItems.length === 0) return 0;
 
     const matchedItems = detectedItems.filter(d => d.matchStatus === 'matched');

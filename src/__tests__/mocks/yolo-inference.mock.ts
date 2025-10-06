@@ -4,7 +4,11 @@
  * @test_type mock
  */
 
-import { YoloDetection, YoloInferenceResult } from '@/domains/vision/lib/yolo-inference';
+import { YoloInferenceResult } from '@/domains/vision/lib/yolo-inference';
+import { YoloDetection } from '@/domains/vision/lib/vision-types';
+
+const PROVIDER = 'mock-yolo';
+const MODEL_VERSION = 'mock-v1';
 
 /**
  * Generate realistic YOLO detections based on expected items
@@ -19,6 +23,7 @@ export function generateMockDetections(
     case 'high_confidence':
       expectedItems.forEach((item, index) => {
         detections.push({
+          source: 'local_yolo',
           itemType: item,
           confidence: 0.85 + Math.random() * 0.15,
           boundingBox: {
@@ -28,6 +33,8 @@ export function generateMockDetections(
             height: 60 + Math.random() * 20,
           },
           classId: index,
+          provider: PROVIDER,
+          modelVersion: MODEL_VERSION,
         });
       });
       break;
@@ -35,6 +42,7 @@ export function generateMockDetections(
     case 'low_confidence':
       expectedItems.forEach((item, index) => {
         detections.push({
+          source: 'local_yolo',
           itemType: item,
           confidence: 0.5 + Math.random() * 0.15,
           boundingBox: {
@@ -44,6 +52,8 @@ export function generateMockDetections(
             height: 60,
           },
           classId: index,
+          provider: PROVIDER,
+          modelVersion: MODEL_VERSION,
         });
       });
       break;
@@ -52,6 +62,7 @@ export function generateMockDetections(
       const halfCount = Math.ceil(expectedItems.length / 2);
       expectedItems.slice(0, halfCount).forEach((item, index) => {
         detections.push({
+          source: 'local_yolo',
           itemType: item,
           confidence: 0.8 + Math.random() * 0.15,
           boundingBox: {
@@ -61,6 +72,8 @@ export function generateMockDetections(
             height: 60,
           },
           classId: index,
+          provider: PROVIDER,
+          modelVersion: MODEL_VERSION,
         });
       });
       break;
@@ -79,11 +92,13 @@ function buildResult(
   processingTimeMs: number
 ): YoloInferenceResult {
   return {
+    source: 'local_yolo',
+    provider: PROVIDER,
+    modelVersion: MODEL_VERSION,
     detections,
     processingTimeMs,
-    inputWidth: imageData.width,
-    inputHeight: imageData.height,
-    modelInputSize: 640,
+    imageDimensions: { width: imageData.width, height: imageData.height },
+    metadata: { modelInputSize: 640 },
   };
 }
 

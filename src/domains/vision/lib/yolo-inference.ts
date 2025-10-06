@@ -10,6 +10,7 @@
 
 import * as ort from 'onnxruntime-web';
 import { loadYoloModel } from './yolo-loader';
+import { YoloDetection, YoloDetectionBatch, VisionBoundingBox } from './vision-types';
 
 // YOLOv11n configuration
 const INPUT_SIZE = 640;
@@ -31,27 +32,10 @@ const CLASS_NAMES = [
   'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
 ];
 
-export interface BoundingBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+const LOCAL_YOLO_PROVIDER = 'onnxruntime-web';
+const LOCAL_MODEL_VERSION = 'yolov11n';
 
-export interface YoloDetection {
-  itemType: string;
-  confidence: number;
-  boundingBox: BoundingBox;
-  classId: number;
-}
-
-export interface YoloInferenceResult {
-  detections: YoloDetection[];
-  processingTimeMs: number;
-  inputWidth: number;
-  inputHeight: number;
-  modelInputSize: number;
-}
+export type YoloInferenceResult = YoloDetectionBatch;
 
 let cachedSession: ort.InferenceSession | null = null;
 
@@ -135,10 +119,13 @@ function parseYoloOutput(output: ort.Tensor, originalWidth: number, originalHeig
     const height = h * scaleY;
 
     detections.push({
+      source: 'local_yolo',
       itemType: CLASS_NAMES[maxClassId] || `class_${maxClassId}`,
       confidence: maxScore,
       boundingBox: { x, y, width, height },
-      classId: maxClassId
+      classId: maxClassId,
+      provider: LOCAL_YOLO_PROVIDER,
+      modelVersion: LOCAL_MODEL_VERSION,
     });
   }
 
@@ -173,7 +160,7 @@ function applyNMS(detections: YoloDetection[], iouThreshold: number): YoloDetect
 /**
  * Calculate Intersection over Union for two bounding boxes
  */
-function calculateIoU(box1: BoundingBox, box2: BoundingBox): number {
+function calculateIoU(box1: VisionBoundingBox, box2: VisionBoundingBox): number {
   const x1 = Math.max(box1.x, box2.x);
   const y1 = Math.max(box1.y, box2.y);
   const x2 = Math.min(box1.x + box1.width, box2.x + box2.width);
@@ -220,24 +207,28 @@ export async function runYoloInference(imageData: ImageData): Promise<YoloInfere
     console.log(`[YOLO Inference] Detected ${detections.length} objects in ${processingTime}ms`);
 
     return {
-      detections,
+      source: 'local_yolo',
+      provider: LOCAL_YOLO_PROVIDER,
+      modelVersion: LOCAL_MODEL_VERSION,
       processingTimeMs: processingTime,
-      inputWidth: imageData.width,
-      inputHeight: imageData.height,
-      modelInputSize: INPUT_SIZE
-    };
+      detections,
+      imageDimensions: { width: imageData.width, height: imageData.height },
+      metadata: { modelInputSize: INPUT_SIZE },
+    } satisfies YoloDetectionBatch;
   } catch (error) {
     const processingTime = Date.now() - startTime;
     console.error('[YOLO Inference] Failed:', error);
 
     // Return empty result on error
     return {
-      detections: [],
+      source: 'local_yolo',
+      provider: LOCAL_YOLO_PROVIDER,
+      modelVersion: LOCAL_MODEL_VERSION,
       processingTimeMs: processingTime,
-      inputWidth: imageData.width,
-      inputHeight: imageData.height,
-      modelInputSize: INPUT_SIZE
-    };
+      detections: [],
+      imageDimensions: { width: imageData.width, height: imageData.height },
+      metadata: { modelInputSize: INPUT_SIZE },
+    } satisfies YoloDetectionBatch;
   }
 }
 

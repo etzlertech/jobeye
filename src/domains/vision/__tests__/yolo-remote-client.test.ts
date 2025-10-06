@@ -74,16 +74,18 @@ describe('yolo-remote-client', () => {
     expect(body.maxDetections).toBe(10);
     expect(body.confidenceThreshold).toBe(0.5);
 
-    expect(result).toEqual({
-      detections: [
-        {
-          label: 'helmet',
-          confidence: 0.92,
-          bbox: { x: 10, y: 20, width: 30, height: 40 },
-        },
-      ],
-      processingTimeMs: 512,
+    expect(result.source).toBe('remote_yolo');
+    expect(result.modelVersion).toBe('remote-yolo-v1');
+    expect(result.provider).toBe('remote-yolo-v1');
+    expect(result.processingTimeMs).toBe(512);
+    expect(result.detections).toHaveLength(1);
+    expect(result.detections[0]).toEqual({
+      itemType: 'helmet',
+      confidence: 0.92,
+      source: 'remote_yolo',
+      provider: 'remote-yolo-v1',
       modelVersion: 'remote-yolo-v1',
+      boundingBox: { x: 10, y: 20, width: 30, height: 40 },
     });
   });
 

@@ -192,6 +192,90 @@ export type Database = {
         };
       };
 
+      auth_audit_log: {
+        Row: {
+          id: string;
+          event_type: string;
+          tenant_id: string | null;
+          user_id: string | null;
+          user_email: string | null;
+          success: boolean | null;
+          reason: string | null;
+          details: Record<string, any> | null;
+          ip_address: string | null;
+          user_agent: string | null;
+          device_type: string | null;
+          created_at: string;
+          metadata: Record<string, any> | null;
+        };
+        Insert: {
+          id?: string;
+          event_type: string;
+          tenant_id?: string | null;
+          user_id?: string | null;
+          user_email?: string | null;
+          success?: boolean | null;
+          reason?: string | null;
+          details?: Record<string, any> | null;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          device_type?: string | null;
+          created_at?: string;
+          metadata?: Record<string, any> | null;
+        };
+        Update: Partial<Database['public']['Tables']['auth_audit_log']['Insert']>;
+      };
+
+      voice_profiles: {
+        Row: {
+          id: string;
+          user_id: string;
+          tenant_id: string | null;
+          wake_word: string | null;
+          speech_rate: number | null;
+          voice_pitch: number | null;
+          preferred_voice: string | null;
+          language_code: string | null;
+          voice_feedback_enabled: boolean | null;
+          voice_feedback_level: string | null;
+          preferred_tts_provider: string | null;
+          confidence_threshold: number | null;
+          noise_cancellation_enabled: boolean | null;
+          voice_commands_enabled: boolean | null;
+          accessibility_voice_navigation: boolean | null;
+          onboarding_completed: boolean | null;
+          voice_samples_collected: number | null;
+          last_voice_training_at: string | null;
+          created_at: string;
+          updated_at: string;
+          metadata: Record<string, any> | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          tenant_id?: string | null;
+          wake_word?: string | null;
+          speech_rate?: number | null;
+          voice_pitch?: number | null;
+          preferred_voice?: string | null;
+          language_code?: string | null;
+          voice_feedback_enabled?: boolean | null;
+          voice_feedback_level?: string | null;
+          preferred_tts_provider?: string | null;
+          confidence_threshold?: number | null;
+          noise_cancellation_enabled?: boolean | null;
+          voice_commands_enabled?: boolean | null;
+          accessibility_voice_navigation?: boolean | null;
+          onboarding_completed?: boolean | null;
+          voice_samples_collected?: number | null;
+          last_voice_training_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          metadata?: Record<string, any> | null;
+        };
+        Update: Partial<Database['public']['Tables']['voice_profiles']['Insert']>;
+      };
+
       voice_transcripts: {
         Row: {
           id: string;
@@ -280,6 +364,19 @@ export type Database = {
         Args: { p_job_id: string };
         Returns: string;
       };
+    };
+
+    Enums: {
+      job_status: JobStatus;
+      job_priority: JobPriority;
+      equipment_status: EquipmentStatus;
+      material_unit: MaterialUnit;
+      transcription_status: TranscriptionStatus;
+      intent_type: IntentType;
+      media_type: MediaType;
+      user_role: UserRole;
+      contact_role: ContactRoleDb;
+      contact_preferred_method: ContactPreferredMethod;
     };
   };
 };

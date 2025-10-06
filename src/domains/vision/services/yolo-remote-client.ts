@@ -17,23 +17,11 @@
 
 import { Buffer } from 'node:buffer';
 import { voiceLogger } from '@/core/logger/voice-logger';
+import { VisionBoundingBox, YoloDetection, YoloDetectionBatch } from '@/domains/vision/lib/vision-types';
 
-export interface RemoteYoloDetection {
-  label: string;
-  confidence: number;
-  bbox?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
-}
+export type RemoteYoloDetection = YoloDetection;
 
-export interface RemoteYoloResponse {
-  detections: RemoteYoloDetection[];
-  processingTimeMs?: number;
-  modelVersion?: string;
-}
+export type RemoteYoloResponse = YoloDetectionBatch;
 
 export interface RemoteYoloConfig {
   endpoint: string;
@@ -53,9 +41,9 @@ interface RemoteYoloApiDetection {
   class?: string;
   confidence?: number;
   score?: number;
-  bbox?: RemoteYoloDetection['bbox'];
-  boundingBox?: RemoteYoloDetection['bbox'];
-  box?: RemoteYoloDetection['bbox'];
+  bbox?: Partial<VisionBoundingBox> & Record<string, number | undefined>;
+  boundingBox?: Partial<VisionBoundingBox> & Record<string, number | undefined>;
+  box?: Partial<VisionBoundingBox> & Record<string, number | undefined>;
 }
 
 interface RemoteYoloApiResponse {
@@ -147,20 +135,31 @@ function normaliseResponse(
   raw: RemoteYoloApiResponse,
   config: RemoteYoloConfig
 ): RemoteYoloResponse {
+  const modelVersion = raw.modelVersion ?? config.model ?? 'remote-yolo';
+  const provider = config.model ?? 'remote_yolo';
   const detections = Array.isArray(raw.detections)
     ? raw.detections
-        .map((item) => normaliseDetection(item))
+        .map((item) => normaliseDetection(item, modelVersion, provider))
         .filter((item): item is RemoteYoloDetection => Boolean(item))
     : [];
 
   return {
+    source: 'remote_yolo',
+    provider,
+    modelVersion,
     detections,
     processingTimeMs: raw.processingTimeMs ?? raw.latencyMs,
-    modelVersion: raw.modelVersion ?? config.model ?? 'remote-yolo',
+    metadata: {
+      rawDetections: Array.isArray(raw.detections) ? raw.detections.length : 0,
+    },
   };
 }
 
-function normaliseDetection(item: RemoteYoloApiDetection | null | undefined): RemoteYoloDetection | null {
+function normaliseDetection(
+  item: RemoteYoloApiDetection | null | undefined,
+  modelVersion: string,
+  provider: string
+): RemoteYoloDetection | null {
   if (!item) return null;
 
   const label = (item.label ?? item.class ?? '').toString().trim();
@@ -172,17 +171,45 @@ function normaliseDetection(item: RemoteYoloApiDetection | null | undefined): Re
   }
 
   const bbox = item.bbox ?? item.boundingBox ?? item.box;
+  if (!bbox) {
+    return null;
+  }
 
-  return {
-    label,
+  const x = toFiniteNumber(bbox.x ?? bbox.left);
+  const y = toFiniteNumber(bbox.y ?? bbox.top);
+  const width = toFiniteNumber(bbox.width ?? bbox.w);
+  const height = toFiniteNumber(bbox.height ?? bbox.h);
+
+  if (x === undefined || y === undefined || width === undefined || height === undefined) {
+    return null;
+  }
+
+  const detection: RemoteYoloDetection = {
+    source: 'remote_yolo',
+    itemType: label,
     confidence,
-    bbox: bbox
-      ? {
-          x: bbox.x ?? bbox.left ?? 0,
-          y: bbox.y ?? bbox.top ?? 0,
-          width: bbox.width ?? bbox.w ?? 0,
-          height: bbox.height ?? bbox.h ?? 0,
-        }
-      : undefined,
+    boundingBox: { x, y, width, height },
+    provider,
+    modelVersion,
   };
+
+  const classId = toFiniteNumber((item as any).classId ?? (item as any).class_id);
+  if (typeof classId === 'number') {
+    detection.classId = Math.round(classId);
+  }
+
+  return detection;
+}
+
+function toFiniteNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  return undefined;
 }
