@@ -1,17 +1,25 @@
-/**
- * @file Main entry point for eslint-plugin-cleanup
- */
+const noCompanyIdRule = require("./rules/no-company-id");
+const repositoryClassPatternRule = require("./rules/repository-class-pattern");
 
 module.exports = {
   rules: {
-    // Rules will be added here as they are created
+    "no-company-id": noCompanyIdRule,
+    "repository-class-pattern": repositoryClassPatternRule,
   },
   configs: {
     recommended: {
-      plugins: ['cleanup'],
+      plugins: {
+        cleanup: {
+          rules: {
+            "no-company-id": noCompanyIdRule,
+            "repository-class-pattern": repositoryClassPatternRule,
+          },
+        },
+      },
       rules: {
-        // Recommended rules will be added here
-      }
-    }
-  }
+        "cleanup/no-company-id": "error",
+        "cleanup/repository-class-pattern": "error",
+      },
+    },
+  },
 };

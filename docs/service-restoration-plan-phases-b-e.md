@@ -56,8 +56,14 @@ _Default wiring available via `createBusinessCardOcrService` (uses Tesseract + G
 4. [x] Reinforce Supabase audit logging through the repository layer with tenant-aware filters (SafetyVerificationRepository records to vision_verifications + detected items).
 5. [x] Restore unit tests at src/__tests__/safety/safety-verification.service.test.ts covering YOLO success, VLM fallback, and failure handling.
 6. [x] Optionally add integration smoke test to verify audit records persist correctly with mocked Supabase client.
-7. [ ] Note follow-up items for reconnecting live YOLO runtime if still disabled.
-8. [ ] Update progress documentation with results and open issues.
+7. [x] Note follow-up items for reconnecting live YOLO runtime if still disabled.
+8. [x] Update progress documentation with results and open issues.
+
+#### Configuration Notes (2025-10-05)
+- Introduced `yolo-remote-client` helper that posts base64 payloads to a configurable endpoint; factory now prefers remote runtime when `SAFETY_YOLO_ENDPOINT` (or `VISION_YOLO_ENDPOINT`) is present, otherwise it falls back to the existing mock detector.
+- `createSafetyVerificationService` accepts `yolo` options and forwards Supabase clients so audit records land in `vision_verifications` / `vision_detected_items`.
+- New environment flags: `SAFETY_YOLO_ENDPOINT`, `SAFETY_YOLO_API_KEY`, `SAFETY_YOLO_MODEL`, `SAFETY_YOLO_TIMEOUT_MS` (with `VISION_YOLO_*` fallbacks) documented for deployment.
+- Follow-ups: load-test remote endpoint latency (<1.5s target), add integration mocks for error handling, wire cost tracking once billing fields are exposed, and confirm VisionVerificationService remote mode runs in browsers that can supply `ImageData` → Blob conversions.
 
 ## Phase D - Time Tracking Domain (Time Tracking Service)
 - Objective: Restore clock-in and clock-out logic with geofence checks, overlap prevention, and break enforcement.
@@ -100,7 +106,7 @@ _Endpoints updated: `/api/field-intelligence/time/clock` now calls `createTimeTr
 | Phase | Primary Service File | Baseline Commit | Test Suites to Restore | Status | Notes |
 |-------|----------------------|-----------------|------------------------|--------|-------|
 | B | business-card-ocr.service.ts | 93c43a5 | Unit, integration smoke | In progress | Service + unit + integration tests restored; helper modules created; repository persistence available via optional context |
-| C | safety-verification.service.ts | 93c43a5 | Unit, optional integration | In progress | Factory wiring added; hook real Supabase audit repository + live YOLO runtime next |
+| C | safety-verification.service.ts | 93c43a5 | Unit, optional integration | In progress | Remote YOLO endpoint wiring added (SAFETY_YOLO_* env). Verify model latency + complete audit dashboards next |
 | D | time-tracking.service.ts | 93c43a5 | Unit and integration | In progress | Service rebuilt with geofence/overlap logic; ensure handler wiring + Supabase integration next |
 | E | arrival-workflow.service.ts | 93c43a5 | Unit and orchestration integration | In progress | Service restored with time-tracking/safety factories; ensure production clients supply Supabase + notifications |
 

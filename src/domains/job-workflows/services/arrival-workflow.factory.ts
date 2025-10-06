@@ -55,11 +55,16 @@ export function createDefaultArrivalDependencies(options: ArrivalWorkflowFactory
   });
 
   const safetyVerificationService = options.safetyVerificationService ?? createSafetyVerificationService({
+    supabaseClient: supabase,
     logger: options.logger,
   });
 
   if (!supabase && !options.jobRepository) {
     voiceLogger.warn('ArrivalWorkflowService factory: job repository using in-memory stub. Provide Supabase client for persistence.');
+  }
+
+  if (!supabase && !options.safetyVerificationService) {
+    voiceLogger.warn('ArrivalWorkflowService factory: safety verification persistence disabled. Provide Supabase client for audit logging.');
   }
 
   return {

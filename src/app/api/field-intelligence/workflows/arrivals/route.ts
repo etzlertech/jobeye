@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       supabaseClient: supabase,
       logger,
       safetyVerificationService: createSafetyVerificationService({
+        supabaseClient: supabase,
         logger,
         vision: {
           apiKey: process.env.GOOGLE_API_KEY,
@@ -123,6 +124,7 @@ export async function GET(request: NextRequest) {
       supabaseClient: supabase,
       logger,
       safetyVerificationService: createSafetyVerificationService({
+        supabaseClient: supabase,
         logger,
         vision: {
           apiKey: process.env.GOOGLE_API_KEY,

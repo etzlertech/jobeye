@@ -252,3 +252,26 @@ export type CustomerSummary = Pick<
   primaryContact?: Contact;
   defaultServiceAddress?: Address;
 };
+export enum OfflineOperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+}
+
+export interface OfflineOperation {
+  id: string;
+  type: OfflineOperationType;
+  entityId: string;
+  data: Record<string, unknown>;
+  tenantId: string;
+  timestamp: Date;
+  version?: number;
+}
+
+export interface SyncConflict {
+  operationId: string;
+  type: 'version_mismatch' | 'entity_exists' | 'entity_not_found';
+  localData?: Record<string, unknown>;
+  remoteData?: Record<string, unknown>;
+  message: string;
+}

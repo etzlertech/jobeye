@@ -20,6 +20,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { detectObjects } from '@/domains/vision/services/yolo-inference.service';
+import { detectWithRemoteYolo, isRemoteYoloConfigured, RemoteYoloConfig } from '@/domains/vision/services/yolo-remote-client';
 import { createVisionBusinessCardClient } from '@/domains/intake/services/business-card-ocr.vision';
 import type {
   SafetyVerificationDependencies,
@@ -36,6 +37,13 @@ export interface SafetyVerificationFactoryOptions {
   repository?: SafetyVerificationRepository;
   confidenceThreshold?: number;
   fallbackConfidenceThreshold?: number;
+  yolo?: {
+    endpoint?: string;
+    apiKey?: string;
+    model?: string;
+    timeoutMs?: number;
+    maxDetections?: number;
+  };
   vision?: {
     model?: string;
     apiKey?: string;
@@ -54,26 +62,53 @@ export function createSafetyVerificationService(
 export function createDefaultSafetyVerificationDependencies(
   options: SafetyVerificationFactoryOptions = {}
 ): SafetyVerificationDependencies {
-  const yoloClient = {
-    async detect(image: Blob, detectOptions?: { confidenceThreshold?: number }) {
-      const { data, error } = await detectObjects(image, {
-        confidenceThreshold: detectOptions?.confidenceThreshold,
-      });
-      if (error || !data) {
-        throw error ?? new Error('YOLO detection failed');
-      }
+  const logger = options.logger ?? voiceLogger;
 
-      return {
-        detections: data.detections.map((detection) => ({
-          label: detection.label,
-          confidence: detection.confidence,
-          bbox: detection.bbox,
-        })),
-        processingTimeMs: data.processingTimeMs,
-        modelVersion: data.modelVersion,
-      };
-    },
-  } satisfies SafetyVerificationDependencies['yoloClient'];
+  const remoteYoloConfig = resolveRemoteYoloConfig(options);
+
+  const yoloClient = remoteYoloConfig
+    ? {
+        async detect(image: Blob, detectOptions?: { confidenceThreshold?: number }) {
+          const result = await detectWithRemoteYolo(image, remoteYoloConfig, {
+            confidenceThreshold: detectOptions?.confidenceThreshold,
+            maxDetections: remoteYoloConfig.maxDetections,
+          });
+
+          return {
+            detections: result.detections.map((detection) => ({
+              label: detection.label,
+              confidence: detection.confidence,
+              bbox: detection.bbox,
+            })),
+            processingTimeMs: result.processingTimeMs ?? 0,
+            modelVersion: result.modelVersion ?? remoteYoloConfig.model ?? 'remote-yolo',
+          };
+        },
+      }
+    : {
+        async detect(image: Blob, detectOptions?: { confidenceThreshold?: number }) {
+          const { data, error } = await detectObjects(image, {
+            confidenceThreshold: detectOptions?.confidenceThreshold,
+          });
+          if (error || !data) {
+            throw error ?? new Error('YOLO detection failed');
+          }
+
+          return {
+            detections: data.detections.map((detection) => ({
+              label: detection.label,
+              confidence: detection.confidence,
+              bbox: detection.bbox,
+            })),
+            processingTimeMs: data.processingTimeMs,
+            modelVersion: data.modelVersion,
+          };
+        },
+      } satisfies SafetyVerificationDependencies['yoloClient'];
+
+  if (!isRemoteYoloConfigured(remoteYoloConfig)) {
+    logger.warn('Safety verification using fallback YOLO stub. Configure SAFETY_YOLO_ENDPOINT for production-grade detection.');
+  }
 
   const visionFallbackClient = createVisionBusinessCardClient({
     model: options.vision?.model,
@@ -122,7 +157,7 @@ export function createDefaultSafetyVerificationDependencies(
     vlmClient,
     confidenceThreshold: options.confidenceThreshold,
     fallbackConfidenceThreshold: options.fallbackConfidenceThreshold,
-    logger: options.logger ?? voiceLogger,
+    logger,
     now: options.now,
     persistResult: repository
       ? async (payload) => {
@@ -130,4 +165,39 @@ export function createDefaultSafetyVerificationDependencies(
         }
       : undefined,
   } satisfies SafetyVerificationDependencies;
+}
+
+function resolveRemoteYoloConfig(
+  options: SafetyVerificationFactoryOptions
+): RemoteYoloConfig | undefined {
+  const endpoint =
+    options.yolo?.endpoint ??
+    process.env.SAFETY_YOLO_ENDPOINT ??
+    process.env.VISION_YOLO_ENDPOINT;
+
+  if (!endpoint) {
+    return undefined;
+  }
+
+  const parsedTimeout = parseInt(
+    options.yolo?.timeoutMs?.toString() ??
+      process.env.SAFETY_YOLO_TIMEOUT_MS ??
+      process.env.VISION_YOLO_TIMEOUT_MS ??
+      '',
+    10
+  );
+
+  return {
+    endpoint,
+    apiKey:
+      options.yolo?.apiKey ??
+      process.env.SAFETY_YOLO_API_KEY ??
+      process.env.VISION_YOLO_API_KEY,
+    model:
+      options.yolo?.model ??
+      process.env.SAFETY_YOLO_MODEL ??
+      process.env.VISION_YOLO_MODEL,
+    maxDetections: options.yolo?.maxDetections,
+    timeoutMs: Number.isNaN(parsedTimeout) ? undefined : parsedTimeout,
+  } satisfies RemoteYoloConfig;
 }

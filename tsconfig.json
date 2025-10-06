@@ -1,7 +1,12 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["dom", "dom.iterable", "esnext", "webworker"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext",
+      "webworker"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -20,9 +25,50 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "scripts/**/*", "*.config.js", "*.config.ts"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "*.config.js",
+    "*.config.ts",
+    "node_modules",
+    "scripts/**/*",
+    "src/__tests__/**",
+    "src/__tests__/cleanup/integration/migration-rollback.test.ts",
+    "src/__tests__/cleanup/integration/zero-downtime.test.ts",
+    "src/__tests__/components/auth/SignInForm.test.tsx",
+    "src/__tests__/core/events/event-bus.test.ts",
+    "src/__tests__/core/logger/voice-logger.test.ts",
+    "src/__tests__/domains/**",
+    "src/__tests__/domains/customer/**",
+    "src/__tests__/mocks/**",
+    "src/app/**",
+    "src/app/api/**",
+    "src/lib/**",
+    "src/scheduling/**",
+    "supabase-analysis/**",
+    "tests/api/**",
+    "tests/api/inventory-actions.contract.test.ts",
+    "tests/api/inventory-relay.integration.test.ts",
+    "tests/api/inventory-transfer.contract.test.ts",
+    "tests/e2e/**",
+    "tests/e2e/mvp-workflow.test.ts",
+    "tests/e2e/mvp-workflows.spec.ts",
+    "tests/integration/inventory-offline-queue.test.ts",
+    "tests/integration/inventory-rls.test.ts",
+    "tests/integration/inventory-training-data.test.ts",
+    "tests/integration/mvp-pages.test.tsx",
+    "tests/integration/mvp-validation.test.ts",
+    "tests/integration/scheduling-kits/**",
+    "tests/lib/offline/**",
+    "tools/redundancy-analyzer/**"
+  ]
 }

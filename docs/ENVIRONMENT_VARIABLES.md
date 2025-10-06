@@ -8,6 +8,14 @@
 
 ### Server-Side Only
 - `SUPABASE_SERVICE_ROLE_KEY` - Service role key with admin access (NEVER expose to client)
+- `SAFETY_YOLO_ENDPOINT` - Remote YOLO inference endpoint used by safety verification (fallback: `VISION_YOLO_ENDPOINT`)
+- `SAFETY_YOLO_API_KEY` - Optional bearer token passed to the YOLO endpoint (fallback: `VISION_YOLO_API_KEY`)
+- `SAFETY_YOLO_MODEL` - Model identifier supplied to the YOLO endpoint (fallback: `VISION_YOLO_MODEL`)
+- `SAFETY_YOLO_TIMEOUT_MS` - Request timeout in milliseconds (fallback: `VISION_YOLO_TIMEOUT_MS`, default 15000)
+- `VISION_YOLO_ENDPOINT` - Remote YOLO inference endpoint for kit verification workflows
+- `VISION_YOLO_API_KEY` - Optional bearer token for the vision YOLO endpoint
+- `VISION_YOLO_MODEL` - Preferred model identifier supplied to the vision YOLO endpoint
+- `VISION_YOLO_TIMEOUT_MS` - Request timeout in milliseconds for kit verification remote YOLO
 
 ## ❌ DO NOT USE These Alternate Names
 
@@ -57,6 +65,7 @@ dotenv.config({ path: '.env.local' });
 3. **No Hardcoding**: Never hardcode URLs or keys in scripts. Always use environment variables.
 
 4. **Single Source of Truth**: Use only the canonical names listed above across all environments.
+5. For safety verification, prefer the `SAFETY_YOLO_*` variables; `VISION_YOLO_*` now powers kit verification and acts as a fallback for safety when the dedicated values are missing.
 
 ## 🔍 Debugging Tips
 
