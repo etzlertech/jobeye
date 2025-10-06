@@ -1,4 +1,4 @@
-// --- AGENT DIRECTIVE BLOCK ---
+﻿// --- AGENT DIRECTIVE BLOCK ---
 // file: /src/domains/customer/types/customer-types.ts
 // phase: 2
 // domain: customer-management
@@ -236,6 +236,10 @@ export const customerCreateSchema = z.object({
 });
 
 export const customerUpdateSchema = customerCreateSchema.partial();
+export type ContactCreate = z.infer<typeof contactSchema>;
+export type CustomerCreate = z.infer<typeof customerCreateSchema>;
+export type CustomerUpdate = z.infer<typeof customerUpdateSchema>;
+
 
 // Utility types
 export type CustomerWithRelations = Customer & {

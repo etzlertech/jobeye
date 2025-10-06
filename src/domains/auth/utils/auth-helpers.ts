@@ -111,9 +111,14 @@ export const isSessionExpired = (session: SupabaseSession | Session | null): boo
   if (!expiresAt) return true;
 
   // Handle both Unix timestamp and ISO string formats
-  const expiryDate = typeof expiresAt === 'number' 
-    ? new Date(expiresAt * 1000)
-    : parseISO(expiresAt.toString());
+  let expiryDate: Date;
+  if (typeof expiresAt === 'number') {
+    expiryDate = new Date(expiresAt * 1000);
+  } else if (typeof expiresAt === 'string') {
+    expiryDate = parseISO(expiresAt);
+  } else {
+    return true;
+  }
 
   return isAfter(new Date(), expiryDate);
 };

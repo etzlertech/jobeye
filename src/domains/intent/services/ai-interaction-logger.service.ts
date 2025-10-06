@@ -83,7 +83,7 @@ export class AIInteractionLogger {
 
   constructor() {
     this.repository = new AIInteractionLogRepository();
-    this.offlineDb = new OfflineDatabase();
+    this.offlineDb = OfflineDatabase.getInstance();
   }
 
   /**

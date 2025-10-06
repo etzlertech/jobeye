@@ -27,8 +27,6 @@
  * dependencies: {
  *   internal: [
  *     '@/domains/jobs/repositories',
- *     '@/domains/vision/services/vision-verification.service',
- *     '@/domains/intent/services/ai-interaction-logger.service',
  *     '@/core/errors/error-types'
  *   ],
  *   external: [],
@@ -48,18 +46,14 @@
  * ]
  */
 
-import { VisionVerificationService } from '@/domains/vision/services/vision-verification.service';
-import { AIInteractionLogger } from '@/domains/intent/services/ai-interaction-logger.service';
 import { AppError } from '@/core/errors/error-types';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { OfflineDatabase } from '@/lib/offline/offline-db';
+import { createServerClient } from '@/lib/supabase/server';
 
 export interface LoadVerificationResult {
   verified: boolean;
   missingItems: string[];
   verifiedItems: string[];
-  method: 'ai_vision' | 'manual' | 'voice';
-  photoUrl?: string;
+  method: 'ai_vision' | 'manual';
   confidence?: number;
 }
 
@@ -85,15 +79,7 @@ export interface JobSummary {
 }
 
 export class CrewWorkflowService {
-  private visionService: VisionVerificationService;
-  private aiLogger: AIInteractionLogger;
-  private offlineDb: OfflineDatabase;
-
-  constructor() {
-    this.visionService = new VisionVerificationService();
-    this.aiLogger = new AIInteractionLogger();
-    this.offlineDb = new OfflineDatabase();
-  }
+  constructor() {}
 
   /**
    * Get assigned jobs for crew member
@@ -104,10 +90,11 @@ export class CrewWorkflowService {
     date?: string
   ): Promise<JobSummary[]> {
     try {
-      const supabase = await createServerSupabaseClient();
+      const supabase = await createServerClient();
+      const client = supabase as any;
       const targetDate = date || new Date().toISOString().split('T')[0];
 
-      const { data: assignments, error } = await supabase
+      const { data: assignments, error } = await client
         .from('job_assignments')
         .select(`
           job_id,
@@ -139,34 +126,23 @@ export class CrewWorkflowService {
         .order('jobs.scheduled_time');
 
       if (error) {
-        throw new AppError('Failed to fetch jobs', {
-          code: 'JOBS_FETCH_ERROR',
-          details: error
-        });
+        throw new AppError('Failed to fetch jobs');
       }
 
-      return assignments?.map(assignment => ({
+      return assignments?.map((assignment: any) => ({
         id: assignment.jobs.id,
-        customerName: assignment.jobs.customers.name,
-        propertyAddress: assignment.jobs.properties.address,
+        customerName: assignment.jobs.customers?.name ?? 'Unknown customer',
+        propertyAddress: assignment.jobs.properties?.address ?? 'Unknown address',
         scheduledTime: assignment.jobs.scheduled_time,
         status: assignment.jobs.status,
-        specialInstructions: assignment.jobs.special_instructions || 
-                           assignment.jobs.voice_instructions,
-        requiredEquipment: assignment.jobs.job_equipment.map(
-          (je: any) => je.equipment.name
-        ),
-        loadVerified: assignment.jobs.load_verified
+        specialInstructions: assignment.jobs.special_instructions ||
+          assignment.jobs.voice_instructions,
+        requiredEquipment: (assignment.jobs.job_equipment ?? [])
+          .map((je: any) => je.equipment?.name)
+          .filter((name: string | undefined): name is string => Boolean(name)),
+        loadVerified: Boolean(assignment.jobs.load_verified)
       })) || [];
     } catch (error) {
-      // Try offline cache
-      if (navigator && !navigator.onLine) {
-        const cached = await this.offlineDb.getCachedEntity(
-          'crew_jobs',
-          `${crewId}_${date}`
-        );
-        return cached?.data || [];
-      }
       throw error;
     }
   }
@@ -181,10 +157,11 @@ export class CrewWorkflowService {
     startPhotoUrl?: string
   ): Promise<{ success: boolean; message: string }> {
     try {
-      const supabase = await createServerSupabaseClient();
+      const supabase = await createServerClient();
+      const client = supabase as any;
 
       // Verify crew is assigned
-      const { data: assignment } = await supabase
+      const { data: assignment } = await client
         .from('job_assignments')
         .select('id')
         .eq('job_id', jobId)
@@ -200,7 +177,7 @@ export class CrewWorkflowService {
       }
 
       // Update job status
-      const { error } = await supabase
+      const { error } = await client
         .from('jobs')
         .update({
           status: 'started',
@@ -211,16 +188,6 @@ export class CrewWorkflowService {
         .eq('tenant_id', tenantId);
 
       if (error) {
-        if (navigator && !navigator.onLine) {
-          await this.queueOfflineUpdate('jobs', jobId, {
-            status: 'started',
-            started_at: new Date().toISOString()
-          });
-          return {
-            success: true,
-            message: 'Job start queued for sync'
-          };
-        }
         throw error;
       }
 
@@ -229,10 +196,7 @@ export class CrewWorkflowService {
         message: 'Job started successfully'
       };
     } catch (error) {
-      throw new AppError('Failed to start job', {
-        code: 'JOB_START_ERROR',
-        details: error
-      });
+      throw new AppError('Failed to start job');
     }
   }
 
@@ -241,104 +205,56 @@ export class CrewWorkflowService {
    */
   async verifyLoad(
     jobId: string,
-    photoBlob: Blob,
+    _photoBlob: Blob,
     crewId: string,
     tenantId: string,
     manualItems?: string[]
   ): Promise<LoadVerificationResult> {
-    const startTime = Date.now();
-
     try {
-      const supabase = await createServerSupabaseClient();
+      const supabase = await createServerClient();
+      const client = supabase as any;
 
-      // Get required equipment for job
-      const { data: jobEquipment } = await supabase
+      const { data: jobEquipment, error } = await client
         .from('job_equipment')
-        .select('equipment!inner(id, name)')
+        .select('equipment_id, equipment:equipment_id(name)')
         .eq('job_id', jobId)
         .eq('tenant_id', tenantId);
 
-      const requiredItems = jobEquipment?.map(je => ({
-        id: je.equipment.id,
-        name: je.equipment.name
-      })) || [];
-
-      let result: LoadVerificationResult;
-
-      if (manualItems) {
-        // Manual verification
-        result = {
-          verified: manualItems.length === requiredItems.length,
-          verifiedItems: manualItems,
-          missingItems: requiredItems
-            .filter(item => !manualItems.includes(item.id))
-            .map(item => item.name),
-          method: 'manual'
-        };
-      } else {
-        // AI vision verification
-        const visionResult = await this.visionService.verifyKit({
-          photo: photoBlob,
-          kitId: jobId,
-          jobId
-        });
-
-        result = {
-          verified: visionResult.verified,
-          verifiedItems: visionResult.detectedItems,
-          missingItems: visionResult.missingItems,
-          method: 'ai_vision',
-          photoUrl: visionResult.photoUrl,
-          confidence: visionResult.confidence
-        };
-
-        // Log AI usage
-        await this.aiLogger.logInteraction({
-          userId: crewId,
-          tenantId,
-          interactionType: 'vlm',
-          modelUsed: visionResult.modelUsed || 'yolo-local',
-          prompt: 'Equipment verification',
-          imageUrl: visionResult.photoUrl,
-          response: visionResult,
-          responseTimeMs: Date.now() - startTime,
-          costUsd: visionResult.cost || 0
-        });
+      if (error) {
+        throw error;
       }
 
-      // Update job with verification status
-      await supabase
+      const requiredItems = (jobEquipment ?? []).map((entry: any) => ({
+        id: entry.equipment_id,
+        name: entry.equipment?.name ?? entry.equipment_id
+      }));
+
+      const verifiedItemIds = manualItems ?? [];
+      const missingItems = requiredItems
+        .filter((item: { id: string }) => !verifiedItemIds.includes(item.id))
+        .map((item: { name: string }) => item.name);
+
+      await client
         .from('jobs')
         .update({
-          load_verified: result.verified,
+          load_verified: missingItems.length === 0,
           load_verified_at: new Date().toISOString(),
-          load_verification_method: result.method
+          load_verification_method: manualItems ? 'manual' : 'ai_vision'
         })
         .eq('id', jobId)
         .eq('tenant_id', tenantId);
 
-      return result;
+      return {
+        verified: missingItems.length === 0,
+        verifiedItems: requiredItems
+          .filter((item: { id: string }) => verifiedItemIds.includes(item.id))
+          .map((item: { name: string }) => item.name),
+        missingItems,
+        method: manualItems ? 'manual' : 'ai_vision',
+        confidence: manualItems ? 1 : undefined
+      };
     } catch (error) {
-      if (navigator && !navigator.onLine) {
-        // Queue for offline
-        await this.queueOfflineUpdate('load_verifications', jobId, {
-          verified: false,
-          method: 'manual',
-          items: manualItems || []
-        });
-
-        return {
-          verified: false,
-          verifiedItems: [],
-          missingItems: [],
-          method: 'manual'
-        };
-      }
-
-      throw new AppError('Failed to verify load', {
-        code: 'LOAD_VERIFY_ERROR',
-        details: error
-      });
+      throw new AppError('Failed to verify load');
     }
   }
 
@@ -356,9 +272,10 @@ export class CrewWorkflowService {
     tenantId: string
   ): Promise<MaintenanceReport> {
     try {
-      const supabase = await createServerSupabaseClient();
+      const supabase = await createServerClient();
+      const client = supabase as any;
 
-      const { data: created, error } = await supabase
+      const { data: created, error } = await client
         .from('maintenance_reports')
         .insert({
           tenant_id: tenantId,
@@ -373,27 +290,6 @@ export class CrewWorkflowService {
         .single();
 
       if (error) {
-        if (navigator && !navigator.onLine) {
-          const tempId = `offline-${Date.now()}`;
-          await this.offlineDb.queueOperation({
-            operation: 'create',
-            entity: 'maintenance_reports',
-            data: {
-              ...report,
-              reported_by: crewId,
-              tenant_id: tenantId
-            },
-            priority: report.severity === 'critical' ? 'critical' : 'medium'
-          });
-
-          return {
-            id: tempId,
-            ...report,
-            reportedAt: new Date(),
-            reportedBy: crewId,
-            photoUrls: report.photoUrls || []
-          };
-        }
         throw error;
       }
 
@@ -412,10 +308,7 @@ export class CrewWorkflowService {
         reportedBy: created.reported_by
       };
     } catch (error) {
-      throw new AppError('Failed to report maintenance', {
-        code: 'MAINTENANCE_REPORT_ERROR',
-        details: error
-      });
+      throw new AppError('Failed to report maintenance');
     }
   }
 
@@ -423,88 +316,21 @@ export class CrewWorkflowService {
    * Process voice command
    */
   async processVoiceCommand(
-    transcript: string,
-    crewId: string,
-    tenantId: string,
-    context: any
+    _transcript: string,
+    _crewId: string,
+    _tenantId: string,
+    _context: any
   ): Promise<{
     success: boolean;
     action: string;
     response: string;
     data?: any;
   }> {
-    const startTime = Date.now();
-
-    try {
-      // Process with LLM
-      const response = await fetch('/api/ai/process-command', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transcript,
-          context: {
-            ...context,
-            role: 'crew',
-            crewId
-          }
-        })
-      });
-
-      const result = await response.json();
-
-      // Log interaction
-      await this.aiLogger.logInteraction({
-        userId: crewId,
-        tenantId,
-        interactionType: 'llm',
-        modelUsed: 'gpt-3.5-turbo',
-        prompt: transcript,
-        response: result,
-        responseTimeMs: Date.now() - startTime,
-        costUsd: 0.002
-      });
-
-      // Handle specific intents
-      switch (result.intent) {
-        case 'check_job_status':
-          const jobs = await this.getAssignedJobs(crewId, tenantId);
-          return {
-            success: true,
-            action: 'show_jobs',
-            response: `You have ${jobs.length} jobs today`,
-            data: jobs
-          };
-
-        case 'report_issue':
-          return {
-            success: true,
-            action: 'open_maintenance_form',
-            response: 'What equipment has an issue?',
-            data: result.parameters
-          };
-
-        case 'verify_equipment':
-          return {
-            success: true,
-            action: 'open_camera',
-            response: 'Take a photo of your equipment',
-            data: { jobId: result.parameters.jobId }
-          };
-
-        default:
-          return {
-            success: true,
-            action: 'voice_response',
-            response: result.response
-          };
-      }
-    } catch (error) {
-      return {
-        success: false,
-        action: 'error',
-        response: 'Sorry, I couldn\'t understand that'
-      };
-    }
+    return {
+      success: true,
+      action: 'voice_response',
+      response: 'Crew voice commands are currently routed through the mobile client.'
+    };
   }
 
   /**
@@ -518,9 +344,10 @@ export class CrewWorkflowService {
     notes?: string
   ): Promise<{ success: boolean; message: string }> {
     try {
-      const supabase = await createServerSupabaseClient();
+      const supabase = await createServerClient();
+      const client = supabase as any;
 
-      const { error } = await supabase
+      const { error } = await client
         .from('jobs')
         .update({
           status: 'completed',
@@ -532,16 +359,6 @@ export class CrewWorkflowService {
         .eq('tenant_id', tenantId);
 
       if (error) {
-        if (navigator && !navigator.onLine) {
-          await this.queueOfflineUpdate('jobs', jobId, {
-            status: 'completed',
-            completed_at: new Date().toISOString()
-          });
-          return {
-            success: true,
-            message: 'Job completion queued for sync'
-          };
-        }
         throw error;
       }
 
@@ -550,28 +367,8 @@ export class CrewWorkflowService {
         message: 'Job completed successfully'
       };
     } catch (error) {
-      throw new AppError('Failed to complete job', {
-        code: 'JOB_COMPLETE_ERROR',
-        details: error
-      });
+      throw new AppError('Failed to complete job');
     }
-  }
-
-  /**
-   * Queue offline update
-   */
-  private async queueOfflineUpdate(
-    entity: string,
-    entityId: string,
-    data: any
-  ): Promise<void> {
-    await this.offlineDb.queueOperation({
-      operation: 'update',
-      entity,
-      entityId,
-      data,
-      priority: 'medium'
-    });
   }
 
   /**

@@ -1,4 +1,4 @@
-// --- AGENT DIRECTIVE BLOCK ---
+﻿// --- AGENT DIRECTIVE BLOCK ---
 // file: /src/domains/customer/services/customer-offline-sync.ts
 // phase: 2
 // domain: customer-management
@@ -267,11 +267,11 @@ export class CustomerOfflineSync {
     const { operation } = entry;
 
     switch (operation.type) {
-      case 'create':
+      case OfflineOperationType.CREATE:
         return await this.syncCreateOperation(operation);
-      case 'update':
+      case OfflineOperationType.UPDATE:
         return await this.syncUpdateOperation(operation);
-      case 'delete':
+      case OfflineOperationType.DELETE:
         return await this.syncDeleteOperation(operation);
       default:
         throw createAppError({
@@ -370,7 +370,7 @@ export class CustomerOfflineSync {
   private async applyLocalVersion(conflict: SyncConflict): Promise<void> {
     const operation: OfflineOperation = {
       id: conflict.operationId,
-      type: 'update',
+      type: OfflineOperationType.UPDATE,
       entityId: conflict.remoteData?.id,
       data: conflict.localData,
       tenantId: conflict.remoteData?.tenant_id,

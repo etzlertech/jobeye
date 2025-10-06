@@ -110,6 +110,7 @@ export interface OfflineQueueItem {
   syncStatus: 'pending' | 'syncing' | 'completed' | 'failed';
   retryCount: number;
   error?: string;
+  priority?: 'low' | 'medium' | 'high';
 }
 
 export class OfflineDatabase {
@@ -226,6 +227,7 @@ export class OfflineDatabase {
     
     const item: OfflineQueueItem = {
       ...operation,
+      priority: operation.priority ?? 'medium',
       timestamp: Date.now(),
       syncStatus: 'pending',
       retryCount: 0

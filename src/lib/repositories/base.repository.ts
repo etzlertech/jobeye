@@ -1,4 +1,4 @@
-/*
+﻿/*
 AGENT DIRECTIVE BLOCK
 file: /src/lib/repositories/base.repository.ts
 phase: 1
@@ -31,7 +31,7 @@ tasks:
 */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/lib/supabase/types';
+import type { Database } from '@/types/database';
 
 export class RepositoryError extends Error {
   constructor(

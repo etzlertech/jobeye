@@ -1,4 +1,4 @@
-/*
+﻿/*
 AGENT DIRECTIVE BLOCK
 file: /src/lib/supabase/types.ts
 phase: 1
@@ -54,6 +54,35 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['customers']['Insert']>;
       };
       
+      contacts: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          customer_id: string;
+          role: ContactRoleDb;
+          first_name: string;
+          last_name: string;
+          email: string | null;
+          phone: string | null;
+          mobile_phone: string | null;
+          is_primary: boolean;
+          can_receive_sms: boolean;
+          can_receive_email: boolean;
+          preferred_contact_method: ContactPreferredMethod;
+          voice_recognition_id: string | null;
+          notes: string | null;
+          metadata: Record<string, any> | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['contacts']['Row'], 'id' | 'created_at' | 'updated_at'> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['contacts']['Insert']>;
+      };
+
       properties: {
         Row: {
           id: string;
@@ -304,6 +333,10 @@ export type IntentType =
 export type MediaType = 'image' | 'video' | 'audio' | 'document' | 'signature';
 
 export type UserRole = 'admin' | 'manager' | 'technician' | 'viewer';
+
+export type ContactRoleDb = 'primary' | 'billing' | 'service' | 'emergency' | 'other';
+
+export type ContactPreferredMethod = 'phone' | 'email' | 'sms';
 
 // Helper types
 export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];

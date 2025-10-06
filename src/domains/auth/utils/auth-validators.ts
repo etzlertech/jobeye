@@ -56,7 +56,7 @@
 // --- END DIRECTIVE BLOCK ---
 
 import { z } from 'zod';
-import { Role, type LoginDto, type RegisterDto } from '../types/auth-types';
+import { Role, type LoginDto, type RegisterDto, type UserProfile } from '../types/auth-types';
 
 /**
  * Email validation schema with normalization
@@ -121,12 +121,12 @@ export const roleSchema = z.nativeEnum(Role, {
 /**
  * Voice preferences validation schema
  */
-export const voicePreferencesSchema = z.object({
+export const voicePreferencesSchema: z.ZodType<UserProfile['voice_preferences']> = z.object({
   wake_word: z.string().min(2).max(20).optional(),
-  speech_rate: z.number().min(0.5).max(2.0).default(1.0),
-  preferred_language: z.string().min(2).max(10).default('en-US'),
-  voice_feedback_enabled: z.boolean().default(true),
-  preferred_tts_provider: z.enum(['google', 'openai', 'system']).default('system')
+  speech_rate: z.number().min(0.5).max(2.0),
+  preferred_language: z.string().min(2).max(10),
+  voice_feedback_enabled: z.boolean(),
+  preferred_tts_provider: z.enum(['google', 'openai', 'system'])
 });
 
 /**

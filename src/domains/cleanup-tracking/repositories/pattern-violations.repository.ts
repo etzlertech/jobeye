@@ -191,7 +191,12 @@ export class PatternViolationsRepository {
       throw new Error(`Failed to get summary: ${error.message}`);
     }
 
-    const summary = {
+    const summary: {
+      total: number;
+      fixed: number;
+      pending: number;
+      byType: Record<PatternViolation['pattern_type'], number>;
+    } = {
       total: data.length,
       fixed: 0,
       pending: 0,
@@ -201,16 +206,17 @@ export class PatternViolationsRepository {
         missing_rls: 0,
         direct_db_access: 0,
         wrong_rls_path: 0
-      } as Record<PatternViolation['pattern_type'], number>
+      }
     };
 
-    data.forEach(item => {
+    (data ?? []).forEach((item) => {
+      const violation = item as Pick<PatternViolation, 'pattern_type' | 'is_fixed'>;
       if (item.is_fixed) {
         summary.fixed++;
       } else {
         summary.pending++;
       }
-      summary.byType[item.pattern_type]++;
+      summary.byType[violation.pattern_type] += 1;
     });
 
     return summary;

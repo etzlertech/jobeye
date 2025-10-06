@@ -1,62 +1,87 @@
-/**
- * Server-side Supabase client
- * For use in API routes and server components
- */
+﻿// --- AGENT DIRECTIVE BLOCK ---
+// file: /src/lib/supabase/server.ts
+// phase: 1
+// domain: core-infrastructure
+// purpose: Create Supabase clients for server-side workflows with cookie support
+// spec_ref: v4-blueprint
+// version: 2025-08-1
+// complexity_budget: 120 LoC
+// offline_capability: N/A
+//
+// dependencies:
+//   external:
+//     - @supabase/ssr
+//     - @supabase/supabase-js
+//     - next/headers
+//   internal:
+//     - /src/types/database
+//
+// exports:
+//   - createClient
+//   - createServiceClient
+//   - createServerClient
+//
+// voice_considerations: N/A - infrastructure helper
+//
+// test_requirements:
+//   coverage: 90%
+//   test_file: __tests__/lib/supabase/server.test.ts
+//
+// tasks:
+//   1. Provide server-side Supabase client with cookie persistence
+//   2. Expose service-role client factory
+//   3. Maintain compatibility with legacy imports
+// --- END DIRECTIVE BLOCK ---
 
+import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
+}
 
 /**
- * Create a Supabase client for server-side use
- * Uses cookies for authentication when available
+ * Create a Supabase client for server-side use with cookie support.
  */
 export async function createClient() {
   try {
-    // Try to use cookies (production/server component)
     const cookieStore = await cookies();
 
-    return createSupabaseClient<Database>(supabaseUrl, supabaseAnonKey, {
+    return createSupabaseServerClient<Database>(supabaseUrl, supabaseAnonKey, {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: any) {
-          try {
-            cookieStore.set({ name, value, ...options });
-          } catch (error) {
-            // Ignore - can happen in API routes
-          }
-        },
-        remove(name: string, options: any) {
-          try {
-            cookieStore.delete({ name, ...options });
-          } catch (error) {
-            // Ignore - can happen in API routes
-          }
+        getAll: () => cookieStore.getAll().map(({ name, value }) => ({ name, value })),
+        setAll: (cookieList) => {
+          cookieList.forEach(({ name, value, options }) => {
+            try {
+              cookieStore.set({ name, value, ...options });
+            } catch {
+              // Ignore errors when headers are immutable (e.g., in API routes)
+            }
+          });
         }
       }
     });
   } catch (error) {
-    // Fallback for test environment or when cookies() throws
-    return createSupabaseClient<Database>(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
+    // Fallback for tests or environments without Next.js cookies helper
+    return createSupabaseServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll: () => [],
+        setAll: () => undefined
       }
     });
   }
 }
 
 /**
- * Create a Supabase client with service role key
- * Use only for admin operations that bypass RLS
+ * Create a Supabase client with service role key for admin operations.
  */
 export function createServiceClient() {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!serviceKey) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set');
@@ -71,6 +96,6 @@ export function createServiceClient() {
 }
 
 /**
- * Alias for createClient to match expected import name in API routes
+ * Alias retained for legacy imports expecting createServerClient name.
  */
 export const createServerClient = createClient;

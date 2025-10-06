@@ -194,27 +194,33 @@ export class RepositoryInventoryRepository {
       throw new Error(`Failed to get summary: ${error.message}`);
     }
 
-    const summary = {
+    const summary: {
+      total: number;
+      byPattern: Record<RepositoryInventory['pattern_type'], number>;
+      byStatus: Record<RepositoryInventory['migration_status'], number>;
+      byDomain: Record<string, number>;
+    } = {
       total: data.length,
       byPattern: {
         class_based: 0,
         functional: 0,
         singleton: 0,
         mixed: 0
-      } as Record<RepositoryInventory['pattern_type'], number>,
+      },
       byStatus: {
         pending: 0,
         in_progress: 0,
         completed: 0,
         failed: 0
-      } as Record<RepositoryInventory['migration_status'], number>,
-      byDomain: {} as Record<string, number>
+      },
+      byDomain: {}
     };
 
-    data.forEach(item => {
-      summary.byPattern[item.pattern_type]++;
-      summary.byStatus[item.migration_status]++;
-      summary.byDomain[item.domain] = (summary.byDomain[item.domain] || 0) + 1;
+    (data ?? []).forEach((item) => {
+      const record = item as Pick<RepositoryInventory, 'pattern_type' | 'migration_status' | 'domain'>;
+      summary.byPattern[record.pattern_type] += 1;
+      summary.byStatus[record.migration_status] += 1;
+      summary.byDomain[record.domain] = (summary.byDomain[record.domain] || 0) + 1;
     });
 
     return summary;
