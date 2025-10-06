@@ -4,10 +4,11 @@
  * @domain Vision
  * @purpose Repository for VLM cost tracking with budget enforcement (class-based)
  * @complexity_budget 300
- * @test_coverage ≥80%
+ * @test_coverage >=80%
  */
 
-import { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 import { BaseRepository } from '@/lib/repositories/base.repository';
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
 import { z } from 'zod';
@@ -69,8 +70,8 @@ export interface BudgetStatus {
   remainingRequests: number;
 }
 
-export class CostRecordRepository extends BaseRepository<CostRecord> {
-  constructor(supabaseClient: SupabaseClient) {
+export class CostRecordRepository extends BaseRepository<'vision_cost_records'> {
+  constructor(supabaseClient: SupabaseClient<Database>) {
     super('vision_cost_records', supabaseClient);
   }
 
@@ -79,7 +80,7 @@ export class CostRecordRepository extends BaseRepository<CostRecord> {
    */
   async findById(id: string): Promise<CostRecord | null> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('id', id)
@@ -111,7 +112,7 @@ export class CostRecordRepository extends BaseRepository<CostRecord> {
     offset?: number;
   }): Promise<{ data: CostRecord[]; count: number }> {
     try {
-      let query = this.supabaseClient
+      let query = this.supabase
         .from(this.tableName)
         .select('*', { count: 'exact' });
 
@@ -167,7 +168,7 @@ export class CostRecordRepository extends BaseRepository<CostRecord> {
     try {
       const validated = CostRecordCreateSchema.parse(data);
 
-      const { data: created, error } = await this.supabaseClient
+      const { data: created, error } = await this.supabase
         .from(this.tableName)
         .insert(this.mapToDb(validated))
         .select()
@@ -197,7 +198,7 @@ export class CostRecordRepository extends BaseRepository<CostRecord> {
       today.setUTCHours(0, 0, 0, 0);
       const todayISO = today.toISOString();
 
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('cost_usd')
         .eq('tenant_id', tenantId)
@@ -229,7 +230,7 @@ export class CostRecordRepository extends BaseRepository<CostRecord> {
     endDate: string
   ): Promise<DailyCostSummary[]> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('created_at, cost_usd')
         .eq('tenant_id', tenantId)
@@ -284,7 +285,7 @@ export class CostRecordRepository extends BaseRepository<CostRecord> {
     endDate?: string
   ): Promise<{ totalCost: number; requestCount: number }> {
     try {
-      let query = this.supabaseClient
+      let query = this.supabase
         .from(this.tableName)
         .select('cost_usd')
         .eq('tenant_id', tenantId);
@@ -367,7 +368,7 @@ export class CostRecordRepository extends BaseRepository<CostRecord> {
     endDate?: string
   ): Promise<ProviderStats[]> {
     try {
-      let query = this.supabaseClient
+      let query = this.supabase
         .from(this.tableName)
         .select('provider, cost_usd')
         .eq('tenant_id', tenantId);

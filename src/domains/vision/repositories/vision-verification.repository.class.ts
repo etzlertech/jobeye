@@ -4,10 +4,11 @@
  * @domain Vision
  * @purpose Repository for vision verification records with RLS (class-based)
  * @complexity_budget 300
- * @test_coverage ≥80%
+ * @test_coverage >=80%
  */
 
-import { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 import { BaseRepository } from '@/lib/repositories/base.repository';
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
 import { z } from 'zod';
@@ -57,8 +58,8 @@ export interface VisionVerificationFilter {
   offset?: number;
 }
 
-export class VisionVerificationRepository extends BaseRepository<VisionVerification> {
-  constructor(supabaseClient: SupabaseClient) {
+export class VisionVerificationRepository extends BaseRepository<'vision_verifications'> {
+  constructor(supabaseClient: SupabaseClient<Database>) {
     super('vision_verifications', supabaseClient);
   }
 
@@ -67,7 +68,7 @@ export class VisionVerificationRepository extends BaseRepository<VisionVerificat
    */
   async findById(id: string): Promise<VisionVerification | null> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('id', id)
@@ -99,7 +100,7 @@ export class VisionVerificationRepository extends BaseRepository<VisionVerificat
     offset?: number;
   }): Promise<{ data: VisionVerification[]; count: number }> {
     try {
-      let query = this.supabaseClient
+      let query = this.supabase
         .from(this.tableName)
         .select('*', { count: 'exact' });
 
@@ -164,7 +165,7 @@ export class VisionVerificationRepository extends BaseRepository<VisionVerificat
     try {
       const validated = VisionVerificationCreateSchema.parse(data);
 
-      const { data: created, error } = await this.supabaseClient
+      const { data: created, error } = await this.supabase
         .from(this.tableName)
         .insert(this.mapToDb(validated))
         .select()
@@ -191,7 +192,7 @@ export class VisionVerificationRepository extends BaseRepository<VisionVerificat
     try {
       const validated = VisionVerificationUpdateSchema.parse(data);
 
-      const { data: updated, error } = await this.supabaseClient
+      const { data: updated, error } = await this.supabase
         .from(this.tableName)
         .update({
           ...this.mapToDb(validated),
@@ -220,7 +221,7 @@ export class VisionVerificationRepository extends BaseRepository<VisionVerificat
    */
   async delete(id: string): Promise<void> {
     try {
-      const { error } = await this.supabaseClient
+      const { error } = await this.supabase
         .from(this.tableName)
         .delete()
         .eq('id', id);
@@ -254,7 +255,7 @@ export class VisionVerificationRepository extends BaseRepository<VisionVerificat
     avgConfidence: number;
   }> {
     try {
-      let query = this.supabaseClient
+      let query = this.supabase
         .from(this.tableName)
         .select('verification_result, processing_method, confidence_score')
         .eq('tenant_id', tenantId);
@@ -307,7 +308,7 @@ export class VisionVerificationRepository extends BaseRepository<VisionVerificat
    */
   async findLatestVerificationForKit(kitId: string): Promise<VisionVerification | null> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('kit_id', kitId)

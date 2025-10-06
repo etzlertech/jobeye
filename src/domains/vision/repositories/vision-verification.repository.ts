@@ -4,12 +4,12 @@
  * @domain Vision
  * @purpose Repository for vision verification records with RLS
  * @complexity_budget 300
- * @test_coverage ≥80%
+ * @test_coverage >=80%
  * @dependencies @supabase/supabase-js
  */
 
 import { supabase } from '@/lib/supabase/client';
-import { Database } from '@/types/database.types';
+import { Database } from '@/types/database';
 
 type VisionVerification = Database['public']['Tables']['vision_verifications']['Row'];
 type VisionVerificationInsert = Database['public']['Tables']['vision_verifications']['Insert'];

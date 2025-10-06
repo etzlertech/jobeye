@@ -4,10 +4,11 @@
  * @domain Vision
  * @purpose Repository for detected items in vision verifications (class-based)
  * @complexity_budget 250
- * @test_coverage ≥80%
+ * @test_coverage >=80%
  */
 
-import { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 import { BaseRepository } from '@/lib/repositories/base.repository';
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
 import { z } from 'zod';
@@ -54,8 +55,8 @@ export interface DetectedItemFilter {
   offset?: number;
 }
 
-export class DetectedItemRepository extends BaseRepository<DetectedItem> {
-  constructor(supabaseClient: SupabaseClient) {
+export class DetectedItemRepository extends BaseRepository<'vision_detected_items'> {
+  constructor(supabaseClient: SupabaseClient<Database>) {
     super('vision_detected_items', supabaseClient);
   }
 
@@ -64,7 +65,7 @@ export class DetectedItemRepository extends BaseRepository<DetectedItem> {
    */
   async findById(id: string): Promise<DetectedItem | null> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('id', id)
@@ -96,7 +97,7 @@ export class DetectedItemRepository extends BaseRepository<DetectedItem> {
     offset?: number;
   }): Promise<{ data: DetectedItem[]; count: number }> {
     try {
-      let query = this.supabaseClient
+      let query = this.supabase
         .from(this.tableName)
         .select('*', { count: 'exact' });
 
@@ -150,7 +151,7 @@ export class DetectedItemRepository extends BaseRepository<DetectedItem> {
    */
   async findByVerificationId(verificationId: string): Promise<DetectedItem[]> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('verification_id', verificationId)
@@ -177,7 +178,7 @@ export class DetectedItemRepository extends BaseRepository<DetectedItem> {
     try {
       const validated = DetectedItemCreateSchema.parse(data);
 
-      const { data: created, error } = await this.supabaseClient
+      const { data: created, error } = await this.supabase
         .from(this.tableName)
         .insert(this.mapToDb(validated))
         .select()
@@ -204,7 +205,7 @@ export class DetectedItemRepository extends BaseRepository<DetectedItem> {
     try {
       const validated = items.map(item => DetectedItemCreateSchema.parse(item));
 
-      const { data: created, error } = await this.supabaseClient
+      const { data: created, error } = await this.supabase
         .from(this.tableName)
         .insert(validated.map(item => this.mapToDb(item)))
         .select();
@@ -230,7 +231,7 @@ export class DetectedItemRepository extends BaseRepository<DetectedItem> {
     try {
       const validated = DetectedItemUpdateSchema.parse(data);
 
-      const { data: updated, error } = await this.supabaseClient
+      const { data: updated, error } = await this.supabase
         .from(this.tableName)
         .update({
           ...this.mapToDb(validated),
@@ -259,7 +260,7 @@ export class DetectedItemRepository extends BaseRepository<DetectedItem> {
    */
   async delete(id: string): Promise<void> {
     try {
-      const { error } = await this.supabaseClient
+      const { error } = await this.supabase
         .from(this.tableName)
         .delete()
         .eq('id', id);
@@ -281,7 +282,7 @@ export class DetectedItemRepository extends BaseRepository<DetectedItem> {
    */
   async deleteByVerificationId(verificationId: string): Promise<void> {
     try {
-      const { error } = await this.supabaseClient
+      const { error } = await this.supabase
         .from(this.tableName)
         .delete()
         .eq('verification_id', verificationId);

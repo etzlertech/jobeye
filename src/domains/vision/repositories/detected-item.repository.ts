@@ -4,12 +4,12 @@
  * @domain Vision
  * @purpose Repository for detected items in vision verifications
  * @complexity_budget 250
- * @test_coverage ≥80%
+ * @test_coverage >=80%
  * @dependencies @supabase/supabase-js
  */
 
 import { supabase } from '@/lib/supabase/client';
-import { Database } from '@/types/database.types';
+import { Database } from '@/types/database';
 
 type DetectedItem = Database['public']['Tables']['vision_detected_items']['Row'];
 type DetectedItemInsert = Database['public']['Tables']['vision_detected_items']['Insert'];

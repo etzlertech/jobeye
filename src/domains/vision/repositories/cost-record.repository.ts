@@ -4,12 +4,12 @@
  * @domain Vision
  * @purpose Repository for VLM cost tracking with budget enforcement
  * @complexity_budget 300
- * @test_coverage ≥80%
+ * @test_coverage >=80%
  * @dependencies @supabase/supabase-js
  */
 
 import { supabase } from '@/lib/supabase/client';
-import { Database } from '@/types/database.types';
+import { Database } from '@/types/database';
 
 type CostRecord = Database['public']['Tables']['vision_cost_records']['Row'];
 type CostRecordInsert = Database['public']['Tables']['vision_cost_records']['Insert'];
