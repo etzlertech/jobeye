@@ -7,7 +7,9 @@
  * @test_coverage ≥80%
  */
 
-import { runYoloInference, YoloInferenceResult } from '../lib/yolo-inference';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { voiceLogger } from '@/core/logger/voice-logger';
+import { runYoloInference } from '../lib/yolo-inference';
 import { evaluateFallbackNeed, VlmRequest, VlmResult } from '../lib/vlm-fallback-router';
 import { callOpenAIVision } from '../lib/openai-vision-adapter';
 import { estimateCost } from '../lib/cost-estimator';
@@ -15,6 +17,12 @@ import { VisionVerificationRepository } from '../repositories/vision-verificatio
 import { DetectedItemRepository } from '../repositories/detected-item.repository.class';
 import { CostRecordRepository } from '../repositories/cost-record.repository.class';
 import { createSupabaseClient } from '@/lib/supabase/client';
+import {
+  detectWithRemoteYolo,
+  isRemoteYoloConfigured,
+  RemoteYoloConfig,
+} from '@/domains/vision/services/yolo-remote-client';
+import { imageDataToBlob } from '@/domains/vision/utils/image-data';
 
 export interface VerifyKitRequest {
   kitId: string;
@@ -52,19 +60,131 @@ export interface VerificationError {
   details?: any;
 }
 
+interface NormalizedYoloDetection {
+  class: string;
+  confidence: number;
+  bbox?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
+interface YoloDetectionResult {
+  detections: NormalizedYoloDetection[];
+  processingTimeMs: number;
+  source: 'remote' | 'local';
+}
+
+export interface VisionVerificationOptions {
+  supabaseClient?: SupabaseClient;
+  repositories?: {
+    verificationRepo?: VisionVerificationRepository;
+    detectedItemRepo?: DetectedItemRepository;
+    costRecordRepo?: CostRecordRepository;
+  };
+  yolo?: {
+    endpoint?: string;
+    apiKey?: string;
+    model?: string;
+    timeoutMs?: number;
+    maxDetections?: number;
+  };
+  logger?: typeof voiceLogger;
+}
+
+function normalizeOptions(
+  input?: VisionVerificationOptions | SupabaseClient | null
+): VisionVerificationOptions {
+  if (!input) {
+    return {};
+  }
+
+  if (isSupabaseClient(input)) {
+    return { supabaseClient: input };
+  }
+
+  return input;
+}
+
+function isSupabaseClient(value: unknown): value is SupabaseClient {
+  return Boolean(value) && typeof (value as SupabaseClient).from === 'function';
+}
+
+function resolveRemoteYoloConfig(
+  options: VisionVerificationOptions
+): RemoteYoloConfig | undefined {
+  const endpoint =
+    options.yolo?.endpoint ??
+    process.env.VISION_YOLO_ENDPOINT ??
+    process.env.SAFETY_YOLO_ENDPOINT;
+
+  if (!endpoint) {
+    return undefined;
+  }
+
+  const timeoutSource =
+    options.yolo?.timeoutMs?.toString() ??
+    process.env.VISION_YOLO_TIMEOUT_MS ??
+    process.env.SAFETY_YOLO_TIMEOUT_MS ??
+    '';
+  const timeoutMs = parseInt(timeoutSource, 10);
+
+  return {
+    endpoint,
+    apiKey:
+      options.yolo?.apiKey ??
+      process.env.VISION_YOLO_API_KEY ??
+      process.env.SAFETY_YOLO_API_KEY,
+    model:
+      options.yolo?.model ??
+      process.env.VISION_YOLO_MODEL ??
+      process.env.SAFETY_YOLO_MODEL,
+    maxDetections: options.yolo?.maxDetections,
+    timeoutMs: Number.isNaN(timeoutMs) ? undefined : timeoutMs,
+  } satisfies RemoteYoloConfig;
+}
+
 /**
  * Main verification service - orchestrates YOLO, VLM, and repository operations
  */
 export class VisionVerificationService {
-  private verificationRepo: VisionVerificationRepository;
-  private detectedItemRepo: DetectedItemRepository;
-  private costRecordRepo: CostRecordRepository;
+  private readonly verificationRepo: VisionVerificationRepository;
+  private readonly detectedItemRepo: DetectedItemRepository;
+  private readonly costRecordRepo: CostRecordRepository;
+  private readonly logger: typeof voiceLogger;
+  private readonly remoteYoloConfig?: RemoteYoloConfig;
 
-  constructor() {
-    const supabase = createSupabaseClient();
-    this.verificationRepo = new VisionVerificationRepository(supabase);
-    this.detectedItemRepo = new DetectedItemRepository(supabase);
-    this.costRecordRepo = new CostRecordRepository(supabase);
+  constructor(optionsOrClient?: VisionVerificationOptions | SupabaseClient | null) {
+    const options = normalizeOptions(optionsOrClient);
+    this.logger = options.logger ?? voiceLogger;
+    this.remoteYoloConfig = resolveRemoteYoloConfig(options);
+
+    const needsSupabase =
+      !options.repositories?.verificationRepo ||
+      !options.repositories?.detectedItemRepo ||
+      !options.repositories?.costRecordRepo;
+
+    const supabase = options.supabaseClient ?? (needsSupabase ? createSupabaseClient() : undefined);
+
+    if (!options.repositories?.verificationRepo) {
+      this.verificationRepo = new VisionVerificationRepository(supabase!);
+    } else {
+      this.verificationRepo = options.repositories.verificationRepo;
+    }
+
+    if (!options.repositories?.detectedItemRepo) {
+      this.detectedItemRepo = new DetectedItemRepository(supabase!);
+    } else {
+      this.detectedItemRepo = options.repositories.detectedItemRepo;
+    }
+
+    if (!options.repositories?.costRecordRepo) {
+      this.costRecordRepo = new CostRecordRepository(supabase!);
+    } else {
+      this.costRecordRepo = options.repositories.costRecordRepo;
+    }
   }
 
   /**
@@ -79,15 +199,17 @@ export class VisionVerificationService {
 
     try {
       // Step 1: Run YOLO detection
-      const yoloResult = await this.runYoloDetection(imageData);
-      if (!yoloResult.success) {
+      let yoloResult: YoloDetectionResult;
+      try {
+        yoloResult = await this.runYoloDetection(imageData);
+      } catch (detectionError) {
         return {
           data: null,
           error: {
             code: 'YOLO_FAILED',
             message: 'YOLO detection failed',
-            details: yoloResult
-          }
+            details: detectionError instanceof Error ? detectionError.message : detectionError,
+          },
         };
       }
 
@@ -253,16 +375,55 @@ export class VisionVerificationService {
   /**
    * Run YOLO object detection
    */
-  private async runYoloDetection(imageData: ImageData): Promise<YoloInferenceResult> {
+  private async runYoloDetection(imageData: ImageData): Promise<YoloDetectionResult> {
+    if (this.remoteYoloConfig && isRemoteYoloConfigured(this.remoteYoloConfig)) {
+      const blob = await imageDataToBlob(imageData);
+
+      if (!blob) {
+        this.logger.warn(
+          'Vision verification: unable to serialise ImageData for remote YOLO. Falling back to local inference.'
+        );
+      } else {
+        try {
+          const remote = await detectWithRemoteYolo(blob, this.remoteYoloConfig, {
+            maxDetections: this.remoteYoloConfig.maxDetections,
+          });
+
+          return {
+            detections: remote.detections.map((detection) => ({
+              class: detection.label,
+              confidence: detection.confidence,
+              bbox: detection.bbox,
+            })),
+            processingTimeMs: remote.processingTimeMs ?? 0,
+            source: 'remote',
+          };
+        } catch (error: any) {
+          this.logger.warn('Vision verification: remote YOLO failed, using local fallback.', {
+            error: error?.message ?? String(error),
+          });
+        }
+      }
+    }
+
     try {
-      return await runYoloInference(imageData);
-    } catch (error: any) {
+      const local = await runYoloInference(imageData);
+
       return {
-        success: false,
-        detections: [],
-        processingTimeMs: 0,
-        error: error.message
+        detections: local.detections.map((detection) => ({
+          class: detection.itemType,
+          confidence: detection.confidence,
+          bbox: detection.boundingBox,
+        })),
+        processingTimeMs: local.processingTimeMs,
+        source: 'local',
       };
+    } catch (error: any) {
+      this.logger.error('Vision verification: local YOLO inference failed.', {
+        error: error?.message ?? String(error),
+      });
+
+      throw error instanceof Error ? error : new Error(String(error));
     }
   }
 

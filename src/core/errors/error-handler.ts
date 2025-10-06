@@ -178,7 +178,8 @@ export class ErrorHandler {
   }
 
   private generateErrorHash(error: AppError): string {
-    return `${error.code}-${error.category}-${error.message}`;
+    const category = error.category ?? 'unknown';
+    return `${error.code}-${category}-${error.message}`;
   }
 
   private shouldDeduplicate(hash: string, context: ErrorContext): boolean {
@@ -207,19 +208,39 @@ export class ErrorHandler {
 
   private logError(error: AppError, context: ErrorContext): void {
     const sanitizedError = this.sanitizeError(error);
-    const logLevel = this.getLogLevel(error.severity);
-
-    logger[logLevel](sanitizedError.message, {
+    const payload = {
       code: sanitizedError.code,
       category: sanitizedError.category,
       severity: sanitizedError.severity,
       context: this.sanitizeContext(context),
-    });
+    };
+
+    switch (error.severity) {
+      case ErrorSeverity.CRITICAL:
+      case ErrorSeverity.HIGH:
+        logger.error(sanitizedError.message, payload);
+        break;
+      case ErrorSeverity.MEDIUM:
+        logger.warn(sanitizedError.message, payload);
+        break;
+      case ErrorSeverity.LOW:
+        logger.info(sanitizedError.message, payload);
+        break;
+      default:
+        if (typeof logger.debug === 'function') {
+          logger.debug(sanitizedError.message, payload);
+        } else {
+          logger.info(sanitizedError.message, payload);
+        }
+    }
   }
 
   private sanitizeError(error: AppError): AppError {
     // Remove sensitive information
-    const sanitized = { ...error };
+    const sanitized = Object.assign(
+      Object.create(Object.getPrototypeOf(error)),
+      error
+    ) as AppError;
     
     // Remove any paths, credentials, or internal details
     if (sanitized.message) {
@@ -265,15 +286,15 @@ export class ErrorHandler {
 
   private async queueErrorNotification(error: AppError, context: ErrorContext): Promise<void> {
     // Check if voice notification is needed
-    const needsVoiceNotification = 
+    const needsVoiceNotification =
       error.severity === ErrorSeverity.CRITICAL ||
-      (error.severity === ErrorSeverity.HIGH && context.voiceSessionId);
+      (error.severity === ErrorSeverity.HIGH && Boolean(context.voiceSessionId));
 
     const notification: ErrorNotification = {
       errorId: `err-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       message: this.formatUserMessage(error),
       severity: error.severity,
-      category: error.category,
+      category: error.category ?? ErrorCategory.SYSTEM,
       context,
       timestamp: new Date(),
       isVoiceEnabled: needsVoiceNotification,
@@ -289,10 +310,13 @@ export class ErrorHandler {
   private formatUserMessage(error: AppError): string {
     // Create user-friendly message
     let message = error.userMessage || error.message;
-    
-    // Add recovery suggestions
-    if (error.metadata?.suggestions) {
-      message += `. ${error.metadata.suggestions.join('. ')}`;
+
+    const suggestions = Array.isArray((error.metadata as any)?.suggestions)
+      ? ((error.metadata as any).suggestions as string[])
+      : undefined;
+
+    if (suggestions?.length) {
+      message += `. ${suggestions.join('. ')}`;
     }
 
     return message;
@@ -337,7 +361,6 @@ export class ErrorHandler {
     
     await voiceLogger.speakError(voiceMessage, {
       priority: notification.severity === ErrorSeverity.CRITICAL ? 'high' : 'normal',
-      interruptible: notification.severity !== ErrorSeverity.CRITICAL,
     });
   }
 
@@ -357,7 +380,7 @@ export class ErrorHandler {
   }
 
   private async attemptRecovery(error: AppError, context: ErrorContext): Promise<void> {
-    const strategies = this.recoveryStrategies.get(error.code) || [];
+    const strategies = this.recoveryStrategies.get(String(error.code)) || [];
     
     for (const strategy of strategies) {
       try {

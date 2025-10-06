@@ -74,7 +74,7 @@ const VoiceContext = createContext<VoiceContextValue | undefined>(undefined);
 export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const recognitionRef = useRef<any>(null);
+  const subscriptionsRef = useRef<Array<() => void>>([]);
 
   const [voiceState, setVoiceState] = useState<VoiceState>({
     isEnabled: false,
@@ -99,31 +99,33 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         await voiceProcessor.initialize();
 
         // Set up voice processor callbacks
-        voiceProcessor.onTranscriptUpdate((transcript) => {
-          setVoiceState(prev => ({ ...prev, transcript }));
+        const transcriptUnsub = voiceProcessor.onTranscriptUpdate((transcript) => {
+          setVoiceState((prev) => ({ ...prev, transcript }));
         });
 
-        voiceProcessor.onCommandProcessed((result) => {
-          setVoiceState(prev => ({
+        const commandUnsub = voiceProcessor.onCommandProcessed(({ command, response }) => {
+          setVoiceState((prev) => ({
             ...prev,
-            lastCommand: result.command,
-            isProcessing: false
+            lastCommand: command.transcript,
+            isProcessing: false,
           }));
 
-          // Handle navigation commands
-          if (result.action?.type === 'navigate' && result.action.target) {
-            router.push(result.action.target);
+          const navigationAction = response.actions?.find((action) => action.type === 'navigate');
+          if (navigationAction?.target) {
+            router.push(navigationAction.target);
           }
         });
 
-        voiceProcessor.onError((error) => {
-          setVoiceState(prev => ({
+        const errorUnsub = voiceProcessor.onError((errorMessage) => {
+          setVoiceState((prev) => ({
             ...prev,
-            lastError: error,
+            lastError: errorMessage,
             isListening: false,
-            isProcessing: false
+            isProcessing: false,
           }));
         });
+
+        subscriptionsRef.current.push(transcriptUnsub, commandUnsub, errorUnsub);
 
         // Initialize voice navigator
         voiceNavigator.setRouter((path: string) => {
@@ -145,6 +147,8 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
 
     // Cleanup
     return () => {
+      subscriptionsRef.current.forEach((unsubscribe) => unsubscribe());
+      subscriptionsRef.current = [];
       voiceProcessor.stopListening();
       voiceNavigator.deactivate();
     };
@@ -209,7 +213,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         timestamp: Date.now(),
         context: {
           page: pathname,
-          userRole: 'crew' // This should come from auth context
+          role: 'crew', // TODO: replace with authenticated user role
         }
       });
 

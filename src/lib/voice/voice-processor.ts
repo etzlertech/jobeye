@@ -68,8 +68,8 @@ export interface VoiceCommand {
   };
   context?: {
     page: string;
-    userId: string;
-    role: string;
+    userId?: string;
+    role?: string;
     jobId?: string;
   };
 }
@@ -125,6 +125,23 @@ export class VoiceProcessor {
       VoiceProcessor.instance = new VoiceProcessor(options);
     }
     return VoiceProcessor.instance;
+  }
+
+  async initialize(options?: Partial<VoiceProcessorOptions>): Promise<void> {
+    if (options) {
+      this.options = {
+        ...this.options,
+        ...options,
+      };
+    }
+
+    if (!this.recognition) {
+      this.initializeSpeechRecognition();
+    }
+
+    if (!this.synthesis) {
+      this.initializeSpeechSynthesis();
+    }
   }
 
   private initializeSpeechRecognition(): void {
@@ -593,6 +610,38 @@ export class VoiceProcessor {
     const handler = (event: CustomEvent) => callback(event.detail);
     window.addEventListener('voice:commandprocessed', handler);
     return () => window.removeEventListener('voice:commandprocessed', handler);
+  }
+
+  onTranscriptUpdate(callback: (transcript: string) => void): () => void {
+    return this.onVoiceResult(({ transcript }) => callback(transcript));
+  }
+
+  onError(callback: (error: string) => void): () => void {
+    const handler = (event: CustomEvent) => {
+      const detail = event.detail as { error?: string } | undefined;
+      callback(detail?.error ?? 'unknown');
+    };
+    window.addEventListener('voice:voiceerror', handler);
+    return () => window.removeEventListener('voice:voiceerror', handler);
+  }
+
+  async processCommand(input: {
+    transcript: string;
+    confidence?: number;
+    timestamp?: number;
+    context?: VoiceCommand['context'];
+    audioBlob?: Blob;
+  }): Promise<VoiceResponse> {
+    const command: VoiceCommand = {
+      id: `voice-${input.timestamp ?? Date.now()}`,
+      transcript: input.transcript,
+      confidence: input.confidence ?? 1,
+      timestamp: input.timestamp ?? Date.now(),
+      context: input.context,
+      audioBlob: input.audioBlob,
+    };
+
+    return this.processVoiceCommand(command);
   }
 
   onSpeechStart(callback: (data: { text: string }) => void): () => void {

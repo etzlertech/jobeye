@@ -152,7 +152,7 @@ export function AccessibilityPreferences() {
     }
   }, [settings]);
 
-  const saveSettings = async () => {
+  async function saveSettings() {
     setIsSaving(true);
     try {
       localStorage.setItem('accessibilitySettings', JSON.stringify(settings));
@@ -166,7 +166,7 @@ export function AccessibilityPreferences() {
     } finally {
       setIsSaving(false);
     }
-  };
+  }
 
   const resetSettings = () => {
     setSettings(defaultSettings);

@@ -185,9 +185,9 @@ export function JobCard({
       {/* Offline/Online Indicator */}
       <div className="absolute top-2 right-2 flex items-center gap-2">
         {isOffline ? (
-          <WifiOff className="w-4 h-4 text-orange-500" title="Offline" />
+          <WifiOff className="w-4 h-4 text-orange-500" aria-hidden="true" />
         ) : (
-          <Wifi className="w-4 h-4 text-emerald-500" title="Online" />
+          <Wifi className="w-4 h-4 text-emerald-500" aria-hidden="true" />
         )}
         
         {/* Voice Command Button */}

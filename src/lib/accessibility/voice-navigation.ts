@@ -79,6 +79,8 @@ export class VoiceNavigator {
   private audioDescriptions: Map<string, AudioDescription> = new Map();
   private focusStack: string[] = [];
   private lastAnnouncement: number = 0;
+  private router: ((path: string) => void) | null = null;
+  private commandUnsubscribe?: () => void;
 
   private constructor() {
     this.initializeCommands();
@@ -192,7 +194,7 @@ export class VoiceNavigator {
     voiceLogger.info('Voice navigation activated');
 
     // Start listening for voice commands
-    voiceProcessor.onCommandProcessed(this.handleVoiceCommand.bind(this));
+    this.commandUnsubscribe = voiceProcessor.onCommandProcessed(this.handleVoiceCommand.bind(this));
 
     // Announce activation
     await this.announce('Voice navigation activated. Say "what can I do" for help.');
@@ -214,6 +216,10 @@ export class VoiceNavigator {
     // Stop voice processor
     voiceProcessor.stopListening();
     voiceProcessor.stopSpeaking();
+    if (this.commandUnsubscribe) {
+      this.commandUnsubscribe();
+      this.commandUnsubscribe = undefined;
+    }
 
     // Announce deactivation
     await this.announce('Voice navigation deactivated.');
@@ -228,22 +234,39 @@ export class VoiceNavigator {
   }
 
   private async handleVoiceCommand(data: { command: any; response: any }): Promise<void> {
-    const transcript = data.command.transcript.toLowerCase();
-    
-    // Find matching navigation command
-    const command = this.findBestMatch(transcript);
-    
+    const transcript = typeof data.command?.transcript === 'string'
+      ? data.command.transcript.toLowerCase()
+      : '';
+
+    if (!transcript) {
+      return;
+    }
+
+    const handled = await this.handleCommand(transcript);
+    if (!handled) {
+      await this.handleUnrecognizedCommand(transcript);
+    }
+  }
+
+  async handleCommand(transcript: string): Promise<boolean> {
+    const normalised = transcript.toLowerCase().trim();
+    if (!normalised) {
+      return false;
+    }
+
+    const command = this.findBestMatch(normalised);
+
     if (command) {
-      voiceLogger.info('Voice navigation command recognized', { 
+      voiceLogger.info('Voice navigation command recognized', {
         command: command.command,
-        target: command.target 
+        target: command.target,
       });
 
       await this.executeCommand(command);
-    } else {
-      // Try to extract navigation intent
-      await this.handleUnrecognizedCommand(transcript);
+      return true;
     }
+
+    return false;
   }
 
   private findBestMatch(transcript: string): NavigationCommand | null {
@@ -366,7 +389,9 @@ export class VoiceNavigator {
     await this.announce(`Navigating to ${this.getPageName(path)}`);
     
     // Use Next.js router if available, otherwise fallback to window.location
-    if (typeof window !== 'undefined') {
+    if (this.router) {
+      this.router(path);
+    } else if (typeof window !== 'undefined') {
       window.location.href = path;
     }
   }
@@ -833,6 +858,20 @@ export class VoiceNavigator {
   // Public API
   isNavigationActive(): boolean {
     return this.isActive;
+  }
+
+  setRouter(router: (path: string) => void): void {
+    this.router = router;
+  }
+
+  updateContext(context: { currentPath?: string; focusElementId?: string }): void {
+    if (context.currentPath) {
+      this.currentPage = context.currentPath;
+    }
+
+    if (context.focusElementId) {
+      this.updateFocusStack(context.focusElementId);
+    }
   }
 
   setCurrentPage(page: string): void {

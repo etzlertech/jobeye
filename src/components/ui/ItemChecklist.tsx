@@ -294,7 +294,7 @@ interface ItemRowProps {
   isSelected: boolean;
   onSelect: (itemId: string | null) => void;
   missingNotes: Record<string, string>;
-  onNotesChange: (notes: Record<string, string>) => void;
+  onNotesChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   getStatusIcon: (item: ChecklistItem) => React.ReactNode;
   getStatusColor: (item: ChecklistItem) => string;
   getMethodBadge: (item: ChecklistItem) => React.ReactNode;

@@ -103,7 +103,11 @@ export class AppError extends Error {
   public readonly severity: ErrorSeverity;
   public readonly voiceMessage: string;
   public readonly timestamp: Date;
-  
+  public category?: ErrorCategory;
+  public userMessage?: string;
+  public metadata?: Record<string, unknown>;
+  public originalError?: Error;
+
   constructor(
     message: string,
     code: ErrorCode = ErrorCode.UNKNOWN,
@@ -221,10 +225,10 @@ export function createAppError(options: ErrorOptions): AppError {
   );
   
   // Add additional properties
-  (error as any).category = options.category;
-  (error as any).userMessage = options.userMessage;
-  (error as any).metadata = options.metadata;
-  (error as any).originalError = options.originalError;
+  error.category = options.category;
+  error.userMessage = options.userMessage;
+  error.metadata = options.metadata;
+  error.originalError = options.originalError;
   
   return error;
 }

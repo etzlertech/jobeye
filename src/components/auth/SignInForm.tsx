@@ -94,7 +94,7 @@ export default function SignInForm() {
       
       // Log failed auth attempt
       if (formData.email) {
-        await supabase.from('auth_audit_log').insert({
+        const { error: auditError } = await supabase.from('auth_audit_log').insert({
           event_type: 'sign_in',
           user_email: formData.email,
           success: false,
@@ -102,7 +102,11 @@ export default function SignInForm() {
           ip_address: null,
           user_agent: navigator.userAgent,
           device_type: /Mobile/.test(navigator.userAgent) ? 'mobile' : 'desktop',
-        }).catch(() => {}); // Ignore logging errors
+        });
+
+        if (auditError) {
+          console.warn('Failed to log auth audit entry', auditError);
+        }
       }
     } finally {
       setIsLoading(false);
