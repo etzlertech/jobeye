@@ -2,10 +2,9 @@
 -- Scheduling core tables: day_plans, schedule_events, crew_assignments, job_kits
 -- Part of 003-scheduling-kits feature
 
--- Day Plans: Represents a technician's daily work plan
 CREATE TABLE IF NOT EXISTS public.day_plans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   user_id UUID NOT NULL,
   plan_date DATE NOT NULL,
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'in_progress', 'completed', 'cancelled')),
@@ -19,13 +18,13 @@ CREATE TABLE IF NOT EXISTS public.day_plans (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (company_id, user_id, plan_date)
+  UNIQUE (tenant_id, user_id, plan_date)
 );
 
 -- Schedule Events: Individual events within a day plan
 CREATE TABLE IF NOT EXISTS public.schedule_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   day_plan_id UUID NOT NULL REFERENCES public.day_plans(id) ON DELETE CASCADE,
   event_type TEXT NOT NULL CHECK (event_type IN ('job', 'break', 'travel', 'maintenance', 'meeting')),
   job_id TEXT, -- External reference
@@ -47,7 +46,7 @@ CREATE TABLE IF NOT EXISTS public.schedule_events (
 -- Crew Assignments: Track which team members are assigned to schedule events
 CREATE TABLE IF NOT EXISTS public.crew_assignments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   schedule_event_id UUID NOT NULL REFERENCES public.schedule_events(id) ON DELETE CASCADE,
   user_id UUID NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('lead', 'helper', 'trainee')),
@@ -64,7 +63,7 @@ CREATE TABLE IF NOT EXISTS public.crew_assignments (
 -- Job Kits: Links kits to specific jobs (replacing kit_assignments)
 CREATE TABLE IF NOT EXISTS public.job_kits (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   job_id TEXT NOT NULL,
   kit_id UUID NOT NULL REFERENCES public.kits(id) ON DELETE CASCADE,
   variant_id UUID REFERENCES public.kit_variants(id) ON DELETE SET NULL,
@@ -77,18 +76,19 @@ CREATE TABLE IF NOT EXISTS public.job_kits (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (company_id, job_id, kit_id)
+  UNIQUE (tenant_id, job_id, kit_id)
 );
 
 -- Update kit_override_logs to match expected schema
 ALTER TABLE public.kit_override_logs 
+  ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES public.tenants(id) ON DELETE CASCADE,
   DROP COLUMN IF EXISTS assignment_id CASCADE,
   DROP COLUMN IF EXISTS delta CASCADE,
-  ADD COLUMN IF NOT EXISTS job_id TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS job_id TEXT,
   ADD COLUMN IF NOT EXISTS kit_id UUID,
   ADD COLUMN IF NOT EXISTS item_id TEXT,
-  ADD COLUMN IF NOT EXISTS technician_id UUID NOT NULL,
-  ADD COLUMN IF NOT EXISTS override_reason TEXT NOT NULL,
+  ADD COLUMN IF NOT EXISTS technician_id UUID,
+  ADD COLUMN IF NOT EXISTS override_reason TEXT,
   ADD COLUMN IF NOT EXISTS supervisor_id UUID,
   ADD COLUMN IF NOT EXISTS supervisor_notified_at TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS notification_method TEXT,
@@ -133,14 +133,14 @@ CREATE TRIGGER kit_override_logs_set_updated_at
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS idx_day_plans_company_user_date ON public.day_plans(company_id, user_id, plan_date);
+CREATE INDEX IF NOT EXISTS idx_day_plans_tenant_user_date ON public.day_plans(tenant_id, user_id, plan_date);
 CREATE INDEX IF NOT EXISTS idx_day_plans_status ON public.day_plans(status) WHERE status != 'completed';
 CREATE INDEX IF NOT EXISTS idx_schedule_events_plan_sequence ON public.schedule_events(day_plan_id, sequence_order);
 CREATE INDEX IF NOT EXISTS idx_schedule_events_job ON public.schedule_events(job_id) WHERE job_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_schedule_events_location USING GIST (location_data);
 CREATE INDEX IF NOT EXISTS idx_crew_assignments_user_date ON public.crew_assignments(user_id, assigned_at);
 CREATE INDEX IF NOT EXISTS idx_job_kits_job ON public.job_kits(job_id);
-CREATE INDEX IF NOT EXISTS idx_kit_override_logs_job_kit ON public.kit_override_logs(job_id, kit_id);
+CREATE INDEX IF NOT EXISTS idx_kit_override_logs_tenant_job ON public.kit_override_logs(tenant_id, job_id);
 
 -- Enable RLS
 ALTER TABLE public.day_plans ENABLE ROW LEVEL SECURITY;
@@ -154,20 +154,20 @@ ALTER TABLE public.job_kits FORCE ROW LEVEL SECURITY;
 
 -- RLS Policies - Tenant Access
 CREATE POLICY day_plans_tenant_access ON public.day_plans
-  USING (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id')
-  WITH CHECK (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id');
+  USING (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'))
+  WITH CHECK (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'));
 
 CREATE POLICY schedule_events_tenant_access ON public.schedule_events
-  USING (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id')
-  WITH CHECK (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id');
+  USING (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'))
+  WITH CHECK (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'));
 
 CREATE POLICY crew_assignments_tenant_access ON public.crew_assignments
-  USING (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id')
-  WITH CHECK (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id');
+  USING (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'))
+  WITH CHECK (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'));
 
 CREATE POLICY job_kits_tenant_access ON public.job_kits
-  USING (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id')
-  WITH CHECK (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id');
+  USING (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'))
+  WITH CHECK (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'));
 
 -- RLS Policies - Service Role Bypass
 CREATE POLICY day_plans_service_role ON public.day_plans
@@ -191,11 +191,11 @@ CREATE OR REPLACE FUNCTION check_job_limit(p_day_plan_id UUID)
 RETURNS BOOLEAN AS $$
 DECLARE
   v_job_count INTEGER;
-  v_company_id UUID;
+  v_tenant_id UUID;
   v_max_jobs INTEGER := 6; -- Default max
 BEGIN
-  -- Get company_id from day plan
-  SELECT company_id INTO v_company_id
+  -- Get tenant_id from day plan
+  SELECT tenant_id INTO v_tenant_id
   FROM public.day_plans
   WHERE id = p_day_plan_id;
 
@@ -215,7 +215,7 @@ $$ LANGUAGE plpgsql;
 
 -- Analytics function for override patterns
 CREATE OR REPLACE FUNCTION get_override_analytics(
-  p_company_id UUID,
+  p_tenant_id UUID,
   p_start_date TIMESTAMP,
   p_end_date TIMESTAMP
 )
@@ -230,7 +230,7 @@ BEGIN
       COUNT(DISTINCT kit_id) as unique_kits,
       COUNT(DISTINCT item_id) as unique_items
     FROM public.kit_override_logs
-    WHERE company_id = p_company_id
+    WHERE tenant_id = p_tenant_id
       AND created_at BETWEEN p_start_date AND p_end_date
   ),
   by_item AS (
@@ -239,7 +239,7 @@ BEGIN
       COUNT(*) as count,
       array_agg(DISTINCT override_reason) as reasons
     FROM public.kit_override_logs
-    WHERE company_id = p_company_id
+    WHERE tenant_id = p_tenant_id
       AND created_at BETWEEN p_start_date AND p_end_date
     GROUP BY item_id
     ORDER BY count DESC
@@ -257,7 +257,7 @@ BEGIN
         'reasons', i.reasons
       )
     ),
-    'company_id', p_company_id
+    'tenant_id', p_tenant_id
   ) INTO v_result
   FROM override_stats s
   CROSS JOIN LATERAL (

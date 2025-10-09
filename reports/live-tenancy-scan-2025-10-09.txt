@@ -1,0 +1,111 @@
+active_jobs_view.tenant_id
+audit_logs.tenant_id
+auth_audit_log.tenant_id
+companies.tenant_id
+conflict_logs.company_id
+customer_feedback.tenant_id
+customers.tenant_id
+daily_reports.tenant_id
+day_plans.company_id
+equipment_incidents.company_id
+equipment_maintenance.tenant_id
+geofence_events.tenant_id
+geofences.tenant_id
+gps_tracking_records.tenant_id
+intake_documents.tenant_id
+intake_requests.tenant_id
+inventory_images.company_id
+invoices.tenant_id
+item_availability.tenant_id
+item_transactions.tenant_id
+items.tenant_id
+job_reschedules.tenant_id
+jobs.tenant_id
+kit_assignments.tenant_id
+kit_items.tenant_id
+kit_variants.tenant_id
+kits.tenant_id
+maintenance_schedule.company_id
+maintenance_tickets.tenant_id
+material_requests.tenant_id
+notification_queue.company_id
+notifications.tenant_id
+ocr_documents.company_id
+ocr_jobs.company_id
+ocr_line_items.company_id
+ocr_note_entities.tenant_id
+properties.tenant_id
+quality_audits.company_id
+role_permissions.tenant_id
+routing_schedules.company_id
+routing_schedules.tenant_id
+safety_checklists.tenant_id
+tenant_assignments.tenant_id
+training_certificates.company_id
+training_sessions.company_id
+travel_logs.tenant_id
+user_activity_logs.company_id
+user_assignments.tenant_id
+user_invitations.tenant_id
+user_sessions.tenant_id
+users_extended.tenant_id
+vendor_aliases.tenant_id
+vendor_locations.tenant_id
+vendors.tenant_id
+workflow_tasks.tenant_id
+
+Summary by table:
+active_jobs_view: tenant_id
+audit_logs: tenant_id
+auth_audit_log: tenant_id
+companies: tenant_id
+conflict_logs: company_id
+customer_feedback: tenant_id
+customers: tenant_id
+daily_reports: tenant_id
+day_plans: company_id
+equipment_incidents: company_id
+equipment_maintenance: tenant_id
+geofence_events: tenant_id
+geofences: tenant_id
+gps_tracking_records: tenant_id
+intake_documents: tenant_id
+intake_requests: tenant_id
+inventory_images: company_id
+invoices: tenant_id
+item_availability: tenant_id
+item_transactions: tenant_id
+items: tenant_id
+job_reschedules: tenant_id
+jobs: tenant_id
+kit_assignments: tenant_id
+kit_items: tenant_id
+kit_variants: tenant_id
+kits: tenant_id
+maintenance_schedule: company_id
+maintenance_tickets: tenant_id
+material_requests: tenant_id
+notification_queue: company_id
+notifications: tenant_id
+ocr_documents: company_id
+ocr_jobs: company_id
+ocr_line_items: company_id
+ocr_note_entities: tenant_id
+properties: tenant_id
+quality_audits: company_id
+role_permissions: tenant_id
+routing_schedules: company_id, tenant_id
+safety_checklists: tenant_id
+tenant_assignments: tenant_id
+training_certificates: company_id
+training_sessions: company_id
+travel_logs: tenant_id
+user_activity_logs: company_id
+user_assignments: tenant_id
+user_invitations: tenant_id
+user_sessions: tenant_id
+users_extended: tenant_id
+vendor_aliases: tenant_id
+vendor_locations: tenant_id
+vendors: tenant_id
+workflow_tasks: tenant_id

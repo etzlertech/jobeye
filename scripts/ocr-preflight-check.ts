@@ -71,7 +71,7 @@ const TABLE_EXPECTATIONS: TableExpectation[] = [
     description: 'Vendor master data required for OCR associations',
     requiredColumns: [
       { name: 'id', description: 'Primary key for vendor' },
-      { name: 'company_id', description: 'Owning company identifier' },
+      { name: 'tenant_id', description: 'Owning tenant identifier' },
       { name: 'name', description: 'Vendor display name' }
     ]
   },
@@ -81,7 +81,7 @@ const TABLE_EXPECTATIONS: TableExpectation[] = [
     description: 'Source images used for OCR ingestion',
     requiredColumns: [
       { name: 'id', description: 'Primary key for inventory image' },
-      { name: 'company_id', description: 'Owning company identifier' },
+      { name: 'tenant_id', description: 'Owning tenant identifier' },
       { name: 'file_path', description: 'Image location' }
     ]
   },
@@ -91,7 +91,7 @@ const TABLE_EXPECTATIONS: TableExpectation[] = [
     description: 'Inbound OCR job requests',
     requiredColumns: [
       { name: 'id', description: 'Primary key for job' },
-      { name: 'company_id', description: 'Tenant scoping for job' },
+      { name: 'tenant_id', description: 'Tenant scoping for job' },
       { name: 'status', description: 'Processing status for job' }
     ]
   },
@@ -102,7 +102,7 @@ const TABLE_EXPECTATIONS: TableExpectation[] = [
     requiredColumns: [
       { name: 'id', description: 'Primary key for document' },
       { name: 'ocr_job_id', description: 'Associated OCR job' },
-      { name: 'company_id', description: 'Tenant scoping for document' }
+      { name: 'tenant_id', description: 'Tenant scoping for document' }
     ]
   },
   {
@@ -112,7 +112,7 @@ const TABLE_EXPECTATIONS: TableExpectation[] = [
     requiredColumns: [
       { name: 'id', description: 'Primary key for line item' },
       { name: 'ocr_document_id', description: 'Owning OCR document' },
-      { name: 'company_id', description: 'Tenant scoping for line item' }
+      { name: 'tenant_id', description: 'Tenant scoping for line item' }
     ]
   },
   {
@@ -122,7 +122,7 @@ const TABLE_EXPECTATIONS: TableExpectation[] = [
     requiredColumns: [
       { name: 'id', description: 'Primary key for note entity' },
       { name: 'ocr_document_id', description: 'Associated OCR document' },
-      { name: 'company_id', description: 'Tenant scoping for note entity' }
+      { name: 'tenant_id', description: 'Tenant scoping for note entity' }
     ]
   },
   {
@@ -132,7 +132,7 @@ const TABLE_EXPECTATIONS: TableExpectation[] = [
     requiredColumns: [
       { name: 'id', description: 'Primary key for vendor alias' },
       { name: 'vendor_id', description: 'Linked vendor record' },
-      { name: 'company_id', description: 'Tenant scoping for alias' }
+      { name: 'tenant_id', description: 'Tenant scoping for alias' }
     ]
   },
   {
@@ -142,7 +142,7 @@ const TABLE_EXPECTATIONS: TableExpectation[] = [
     requiredColumns: [
       { name: 'id', description: 'Primary key for vendor location' },
       { name: 'vendor_id', description: 'Linked vendor record' },
-      { name: 'company_id', description: 'Tenant scoping for location' }
+      { name: 'tenant_id', description: 'Tenant scoping for location' }
     ]
   }
 ];
@@ -244,17 +244,34 @@ function buildReportContent(tables: TableReport[], issues: PreflightIssue[], sta
   lines.push(`Supabase URL: ${supabaseUrl}`);
   lines.push('');
 
-  if (issues.length > 0) {
-    lines.push('## Issues Detected');
+  if (issues.length === 0) {
+    lines.push('## Status');
+    lines.push('✅ **PASSED** – All OCR dependency tables expose `tenant_id` as required. No missing columns detected.');
+    lines.push('');
+  } else {
+    lines.push('## Status');
+    lines.push('❌ **FAILED** – Issues detected (see below).');
+    lines.push('');
+    lines.push('### Issues');
     for (const issue of issues) {
       lines.push(`- **${issue.table}**: ${issue.message}`);
     }
     lines.push('');
-  } else {
-    lines.push('## Issues Detected');
-    lines.push('- None (all clear)');
-    lines.push('');
   }
+
+  lines.push('## Table Snapshot');
+  lines.push('| Table | Row count | Tenant column | Notes |');
+  lines.push('|-------|-----------|---------------|-------|');
+  for (const table of tables) {
+    const rowCount = table.rowCount ?? 'N/A';
+    const hasTenantColumn = table.columns.some((col) => col.column_name === 'tenant_id');
+    let notes = 'OK';
+    if (table.missingColumns.length > 0) {
+      notes = `Missing: ${table.missingColumns.map((c) => c.name).join(', ')}`;
+    }
+    lines.push(`| \`${table.table}\` | ${rowCount} | ${hasTenantColumn ? 'Present' : 'Missing'} | ${notes} |`);
+  }
+  lines.push('');
 
   lines.push('## Table Details');
 

@@ -9,11 +9,11 @@ update_policy: Regenerate via TodoWrite utility before planning work.
 # Scheduling Kits Task Checklist
 
 Total: 84
-Completed: 0
-Pending: 84
+Completed: 2
+Pending: 82
 
-- [ ] T001 Create scheduling module directory structure at src/scheduling/
-- [ ] T002 Install dependencies: npm install @supabase/supabase-js @tanstack/react-query twilio mapbox-sdk dexie workbox-core
+- [x] T001 Create scheduling module directory structure at src/scheduling/
+- [x] T002 Install dependencies: npm install @supabase/supabase-js @tanstack/react-query twilio mapbox-sdk dexie workbox-core
 - [ ] T003 [P] Configure PostGIS extension in Supabase dashboard
 - [ ] T004 [P] Set up environment variables for Mapbox and Twilio in .env.local (PowerSync deferred to Phase 2)
 - [ ] T005 Create database migration at supabase/migrations/035_scheduling_kits_schema.sql with all 8 tables
@@ -98,8 +98,7 @@ Pending: 84
 - [ ] T077 GDPR compliance validation checklist in src/scheduling/compliance/gdpr-checklist.ts
 
 ## Next Up
-- T001 Create scheduling module directory structure at src/scheduling/
-- T002 Install dependencies: npm install @supabase/supabase-js @tanstack/react-query twilio mapbox-sdk dexie workbox-core
+- Run `npm run check:db-actual` and capture findings before any new migrations (Constitution Rule 1)
 - T003 [P] Configure PostGIS extension in Supabase dashboard
 - T004 [P] Set up environment variables for Mapbox and Twilio in .env.local (PowerSync deferred to Phase 2)
 - T005 Create database migration at supabase/migrations/035_scheduling_kits_schema.sql with all 8 tables

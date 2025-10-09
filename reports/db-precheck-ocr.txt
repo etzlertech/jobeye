@@ -1,10 +1,22 @@
 # OCR Migration Preflight Report
 
-Timestamp: 2025-10-03T16:48:27.539Z
+Timestamp: 2025-10-09T13:03:59.371Z
 Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
 
-## Issues Detected
-- None (all clear)
+## Status
+✅ **PASSED** – All OCR dependency tables expose `tenant_id` as required. No missing columns detected.
+
+## Table Snapshot
+| Table | Row count | Tenant column | Notes |
+|-------|-----------|---------------|-------|
+| `vendors` | 1 | Present | OK |
+| `inventory_images` | 1 | Present | OK |
+| `ocr_jobs` | 1 | Present | OK |
+| `ocr_documents` | 1 | Present | OK |
+| `ocr_line_items` | 1 | Present | OK |
+| `ocr_note_entities` | 1 | Present | OK |
+| `vendor_aliases` | 1 | Present | OK |
+| `vendor_locations` | 1 | Present | OK |
 
 ## Table Details
 ### vendors
@@ -14,12 +26,12 @@ Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
 - Missing columns: None
 - Columns:
   - id: uuid, nullable=NO (default: gen_random_uuid())
-  - company_id: text, nullable=NO
   - name: text, nullable=NO
   - is_active: boolean, nullable=YES (default: true)
   - created_at: timestamp with time zone, nullable=YES (default: now())
   - updated_at: timestamp with time zone, nullable=YES (default: now())
   - intake_session_id: uuid, nullable=YES
+  - tenant_id: uuid, nullable=YES
 - Indexes:
   - vendors_pkey: CREATE UNIQUE INDEX vendors_pkey ON public.vendors USING btree (id)
 
@@ -30,7 +42,7 @@ Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
 - Missing columns: None
 - Columns:
   - id: uuid, nullable=NO (default: gen_random_uuid())
-  - company_id: text, nullable=NO
+  - tenant_id: text, nullable=NO
   - media_id: uuid, nullable=YES
   - file_path: text, nullable=NO
   - mime_type: text, nullable=YES
@@ -46,7 +58,7 @@ Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
 - Missing columns: None
 - Columns:
   - id: uuid, nullable=NO (default: gen_random_uuid())
-  - company_id: text, nullable=NO
+  - tenant_id: text, nullable=NO
   - vendor_id: uuid, nullable=YES
   - status: text, nullable=NO
   - created_at: timestamp with time zone, nullable=YES (default: now())
@@ -61,7 +73,7 @@ Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
 - Missing columns: None
 - Columns:
   - id: uuid, nullable=NO (default: gen_random_uuid())
-  - company_id: text, nullable=NO
+  - tenant_id: text, nullable=NO
   - ocr_job_id: uuid, nullable=YES
   - file_path: text, nullable=NO
   - page_count: integer, nullable=YES
@@ -76,7 +88,7 @@ Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
 - Missing columns: None
 - Columns:
   - id: uuid, nullable=NO (default: gen_random_uuid())
-  - company_id: text, nullable=NO
+  - tenant_id: text, nullable=NO
   - ocr_document_id: uuid, nullable=YES
   - line_index: integer, nullable=NO
   - sku: text, nullable=YES
@@ -94,10 +106,10 @@ Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
 - Missing columns: None
 - Columns:
   - id: uuid, nullable=NO (default: gen_random_uuid())
-  - company_id: text, nullable=NO
   - ocr_document_id: uuid, nullable=YES
   - label: text, nullable=NO
   - value: text, nullable=YES
+  - tenant_id: uuid, nullable=YES
 - Indexes:
   - ocr_note_entities_pkey: CREATE UNIQUE INDEX ocr_note_entities_pkey ON public.ocr_note_entities USING btree (id)
 
@@ -108,9 +120,9 @@ Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
 - Missing columns: None
 - Columns:
   - id: uuid, nullable=NO (default: gen_random_uuid())
-  - company_id: text, nullable=NO
   - vendor_id: uuid, nullable=NO
   - alias: text, nullable=NO
+  - tenant_id: uuid, nullable=YES
 - Indexes:
   - vendor_aliases_pkey: CREATE UNIQUE INDEX vendor_aliases_pkey ON public.vendor_aliases USING btree (id)
 
@@ -121,12 +133,12 @@ Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
 - Missing columns: None
 - Columns:
   - id: uuid, nullable=NO (default: gen_random_uuid())
-  - company_id: text, nullable=NO
   - vendor_id: uuid, nullable=NO
   - address: text, nullable=YES
   - city: text, nullable=YES
   - state: text, nullable=YES
   - postal_code: text, nullable=YES
   - country: text, nullable=YES
+  - tenant_id: uuid, nullable=YES
 - Indexes:
   - vendor_locations_pkey: CREATE UNIQUE INDEX vendor_locations_pkey ON public.vendor_locations USING btree (id)

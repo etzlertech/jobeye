@@ -1,11 +1,10 @@
 -- 038_kit_override_notification_trigger.sql
--- Notification trigger for kit override logs
--- Part of 003-scheduling-kits feature
+-- Notification queue + triggers aligned with tenant_id standard
 
 -- Create notification queue table if not exists
 CREATE TABLE IF NOT EXISTS public.notification_queue (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   recipient_id UUID NOT NULL,
   type TEXT NOT NULL,
   priority TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
@@ -26,10 +25,16 @@ ALTER TABLE public.notification_queue ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_queue FORCE ROW LEVEL SECURITY;
 
 -- RLS policies for notification queue
+DROP POLICY IF EXISTS notification_queue_tenant_access ON public.notification_queue;
 CREATE POLICY notification_queue_tenant_access ON public.notification_queue
-  USING (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id')
-  WITH CHECK (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id');
+  USING (
+    tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id')
+  )
+  WITH CHECK (
+    tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id')
+  );
 
+DROP POLICY IF EXISTS notification_queue_service_role ON public.notification_queue;
 CREATE POLICY notification_queue_service_role ON public.notification_queue
   USING (auth.role() = 'service_role')
   WITH CHECK (auth.role() = 'service_role');
@@ -39,7 +44,6 @@ CREATE OR REPLACE FUNCTION notify_supervisor_on_kit_override()
 RETURNS TRIGGER AS $$
 DECLARE
   v_kit_name TEXT;
-  v_technician_name TEXT;
   v_message TEXT;
 BEGIN
   -- Only notify if supervisor_id is set
@@ -63,14 +67,14 @@ BEGIN
 
   -- Insert into notification queue
   INSERT INTO public.notification_queue (
-    company_id,
+    tenant_id,
     recipient_id,
     type,
     priority,
     message,
     data
   ) VALUES (
-    NEW.company_id,
+    NEW.tenant_id,
     NEW.supervisor_id,
     'kit_override',
     'high',
@@ -103,7 +107,7 @@ CREATE TRIGGER kit_override_notify_supervisor
 CREATE OR REPLACE FUNCTION check_break_compliance(p_day_plan_id UUID)
 RETURNS JSONB AS $$
 DECLARE
-  v_company_id TEXT;
+  v_tenant_id UUID;
   v_user_id UUID;
   v_work_start TIMESTAMPTZ;
   v_last_break TIMESTAMPTZ;
@@ -114,8 +118,8 @@ DECLARE
   v_message TEXT;
 BEGIN
   -- Get day plan details
-  SELECT company_id, user_id, actual_start_time
-  INTO v_company_id, v_user_id, v_work_start
+  SELECT tenant_id, user_id, actual_start_time
+  INTO v_tenant_id, v_user_id, v_work_start
   FROM public.day_plans
   WHERE id = p_day_plan_id;
 
@@ -154,16 +158,15 @@ BEGIN
     v_compliant := FALSE;
     v_message := format('Technician has worked %.1f hours without a break', v_hours_since_break);
 
-    -- Queue warning notification
     INSERT INTO public.notification_queue (
-      company_id,
+      tenant_id,
       recipient_id,
       type,
       priority,
       message,
       data
     ) VALUES (
-      v_company_id,
+      v_tenant_id,
       v_user_id,
       'break_warning',
       'high',
@@ -199,7 +202,6 @@ RETURNS TRIGGER AS $$
 DECLARE
   v_job_count INTEGER;
   v_user_id UUID;
-  v_supervisor_id UUID;
   v_max_jobs INTEGER := 6;
 BEGIN
   -- Only check for job events
@@ -221,19 +223,16 @@ BEGIN
 
   -- Notify at 5 jobs (approaching limit)
   IF v_job_count = 5 THEN
-    -- TODO: Get supervisor_id from company/team structure
-    -- For now, use a placeholder
-    
     INSERT INTO public.notification_queue (
-      company_id,
+      tenant_id,
       recipient_id,
       type,
       priority,
       message,
       data
     ) VALUES (
-      NEW.company_id,
-      v_user_id, -- Notify technician for now
+      NEW.tenant_id,
+      v_user_id,
       'job_limit_warning',
       'medium',
       format('Technician has %s of %s jobs scheduled for today', v_job_count, v_max_jobs),
@@ -249,14 +248,14 @@ BEGIN
   -- Notify at limit
   IF v_job_count >= v_max_jobs THEN
     INSERT INTO public.notification_queue (
-      company_id,
+      tenant_id,
       recipient_id,
       type,
       priority,
       message,
       data
     ) VALUES (
-      NEW.company_id,
+      NEW.tenant_id,
       v_user_id,
       'job_limit_reached',
       'high',
@@ -273,7 +272,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create trigger for job limit notifications
+-- Trigger for job limit notifications
 DROP TRIGGER IF EXISTS schedule_events_job_limit_check ON public.schedule_events;
 CREATE TRIGGER schedule_events_job_limit_check
   AFTER INSERT ON public.schedule_events
@@ -281,12 +280,12 @@ CREATE TRIGGER schedule_events_job_limit_check
   WHEN (NEW.event_type = 'job')
   EXECUTE FUNCTION notify_job_limit_approaching();
 
--- Index for notification queue
-CREATE INDEX IF NOT EXISTS idx_notification_queue_pending ON public.notification_queue(status, created_at) 
+-- Indexes and trigger for notification queue
+CREATE INDEX IF NOT EXISTS idx_notification_queue_pending ON public.notification_queue(status, created_at)
   WHERE status = 'pending';
 CREATE INDEX IF NOT EXISTS idx_notification_queue_recipient ON public.notification_queue(recipient_id, created_at);
 
--- Update trigger for notification queue
+DROP TRIGGER IF EXISTS notification_queue_set_updated_at ON public.notification_queue;
 CREATE TRIGGER notification_queue_set_updated_at
   BEFORE UPDATE ON public.notification_queue
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();

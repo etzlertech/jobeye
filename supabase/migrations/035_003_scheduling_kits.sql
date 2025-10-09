@@ -27,7 +27,7 @@ $$;
 -- Kits master table
 CREATE TABLE IF NOT EXISTS public.kits (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   kit_code VARCHAR(50) NOT NULL,
   name VARCHAR(255) NOT NULL,
   description TEXT,
@@ -36,13 +36,13 @@ CREATE TABLE IF NOT EXISTS public.kits (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (company_id, kit_code)
+  UNIQUE (tenant_id, kit_code)
 );
 
 -- Items that belong to kits
 CREATE TABLE IF NOT EXISTS public.kit_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   kit_id UUID NOT NULL REFERENCES public.kits(id) ON DELETE CASCADE,
   item_type TEXT NOT NULL CHECK (item_type IN ('equipment', 'material', 'tool')),
   quantity NUMERIC(12,2) NOT NULL DEFAULT 1,
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS public.kit_items (
 -- Optional kit variants (seasonal, etc.)
 CREATE TABLE IF NOT EXISTS public.kit_variants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   kit_id UUID NOT NULL REFERENCES public.kits(id) ON DELETE CASCADE,
   variant_code VARCHAR(50) NOT NULL,
   name VARCHAR(255) NOT NULL,
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS public.kit_variants (
 -- Kit assignments (placeholder link via external_ref)
 CREATE TABLE IF NOT EXISTS public.kit_assignments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
   kit_id UUID NOT NULL REFERENCES public.kits(id) ON DELETE CASCADE,
   variant_id UUID REFERENCES public.kit_variants(id) ON DELETE SET NULL,
   external_ref TEXT NOT NULL,
@@ -78,19 +78,30 @@ CREATE TABLE IF NOT EXISTS public.kit_assignments (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (company_id, external_ref)
+  UNIQUE (tenant_id, external_ref)
 );
 
 -- Technician overrides when kit items are missing
 CREATE TABLE IF NOT EXISTS public.kit_override_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
-  assignment_id UUID NOT NULL REFERENCES public.kit_assignments(id) ON DELETE CASCADE,
-  item_id UUID REFERENCES public.kit_items(id) ON DELETE SET NULL,
-  reason TEXT NOT NULL,
-  delta JSONB NOT NULL DEFAULT '{}'::jsonb,
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  job_id TEXT NOT NULL,
+  kit_id UUID,
+  item_id TEXT,
+  technician_id UUID NOT NULL,
+  override_reason TEXT NOT NULL,
+  supervisor_id UUID,
+  supervisor_notified_at TIMESTAMPTZ,
+  notification_method TEXT,
+  notification_status TEXT,
+  notification_attempts JSONB,
+  sla_seconds INTEGER,
+  sla_met BOOLEAN,
+  notification_latency_ms INTEGER,
+  voice_initiated BOOLEAN DEFAULT FALSE,
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Update triggers
@@ -120,10 +131,11 @@ END;
 $$;
 
 -- Useful indexes
-CREATE INDEX IF NOT EXISTS kits_company_name_idx ON public.kits(company_id, name);
+CREATE INDEX IF NOT EXISTS kits_tenant_name_idx ON public.kits(tenant_id, name);
 CREATE INDEX IF NOT EXISTS kit_items_kit_idx ON public.kit_items(kit_id);
 CREATE INDEX IF NOT EXISTS kit_variants_kit_idx ON public.kit_variants(kit_id);
-CREATE INDEX IF NOT EXISTS kit_override_logs_assignment_idx ON public.kit_override_logs(assignment_id);
+CREATE INDEX IF NOT EXISTS kit_assignments_tenant_idx ON public.kit_assignments(tenant_id);
+CREATE INDEX IF NOT EXISTS kit_override_logs_job_kit_idx ON public.kit_override_logs(job_id, kit_id);
 
 -- Enforce Row Level Security
 ALTER TABLE public.kits ENABLE ROW LEVEL SECURITY;
@@ -140,28 +152,28 @@ ALTER TABLE public.kit_override_logs FORCE ROW LEVEL SECURITY;
 -- Tenant-scoped policies
 DROP POLICY IF EXISTS kits_tenant_access ON public.kits;
 CREATE POLICY kits_tenant_access ON public.kits
-  USING (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id')
-  WITH CHECK (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id');
+  USING (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'))
+  WITH CHECK (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'));
 
 DROP POLICY IF EXISTS kit_items_tenant_access ON public.kit_items;
 CREATE POLICY kit_items_tenant_access ON public.kit_items
-  USING (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id')
-  WITH CHECK (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id');
+  USING (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'))
+  WITH CHECK (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'));
 
 DROP POLICY IF EXISTS kit_variants_tenant_access ON public.kit_variants;
 CREATE POLICY kit_variants_tenant_access ON public.kit_variants
-  USING (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id')
-  WITH CHECK (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id');
+  USING (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'))
+  WITH CHECK (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'));
 
 DROP POLICY IF EXISTS kit_assignments_tenant_access ON public.kit_assignments;
 CREATE POLICY kit_assignments_tenant_access ON public.kit_assignments
-  USING (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id')
-  WITH CHECK (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id');
+  USING (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'))
+  WITH CHECK (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'));
 
 DROP POLICY IF EXISTS kit_override_logs_tenant_access ON public.kit_override_logs;
 CREATE POLICY kit_override_logs_tenant_access ON public.kit_override_logs
-  USING (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id')
-  WITH CHECK (company_id::text = current_setting('request.jwt.claims', true)::json->>'company_id');
+  USING (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'))
+  WITH CHECK (tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id'));
 
 -- service_role bypass policies
 DROP POLICY IF EXISTS kits_service_role ON public.kits;
