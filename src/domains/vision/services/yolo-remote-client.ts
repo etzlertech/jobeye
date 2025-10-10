@@ -15,7 +15,7 @@
  * END AGENT DIRECTIVE BLOCK
  */
 
-import { Buffer } from 'node:buffer';
+import { Buffer } from 'buffer';
 import { voiceLogger } from '@/core/logger/voice-logger';
 import { VisionBoundingBox, YoloDetection, YoloDetectionBatch } from '@/domains/vision/lib/vision-types';
 
