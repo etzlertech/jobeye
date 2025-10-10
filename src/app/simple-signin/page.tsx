@@ -44,21 +44,6 @@ export default function SimpleSignInPage() {
     }
   };
 
-  const handleDemoLogin = async (role: 'supervisor' | 'crew') => {
-    const credentials = {
-      supervisor: { email: 'demo.supervisor@jobeye.app', password: 'demo123' },
-      crew: { email: 'demo.crew@jobeye.app', password: 'demo123' }
-    };
-
-    setEmail(credentials[role].email);
-    setPassword(credentials[role].password);
-    
-    // Auto-submit after setting credentials
-    setTimeout(() => {
-      document.getElementById('signin-form')?.requestSubmit();
-    }, 100);
-  };
-
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
@@ -111,26 +96,13 @@ export default function SimpleSignInPage() {
           </button>
         </form>
 
-        <div className="space-y-3">
-          <p className="text-center text-gray-400">Quick Demo Access</p>
-          <button
-            onClick={() => handleDemoLogin('supervisor')}
-            className="w-full py-2 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700"
-          >
-            Sign in as Supervisor
-          </button>
-          <button
-            onClick={() => handleDemoLogin('crew')}
-            className="w-full py-2 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700"
-          >
-            Sign in as Crew
-          </button>
-        </div>
-
-        <div className="text-center text-xs text-gray-500">
-          <p>Demo Credentials:</p>
-          <p>Supervisor: demo.supervisor@jobeye.app / demo123</p>
-          <p>Crew: demo.crew@jobeye.app / demo123</p>
+        <div className="space-y-2 rounded-lg border border-gray-800 bg-gray-900/40 p-4">
+          <p className="text-center text-gray-400">Test Accounts</p>
+          <div className="space-y-1 text-sm text-gray-300">
+            <p>Supervisor: super@tophand.tech / demo123</p>
+            <p>Crew: crew@tophand.tech / demo123</p>
+            <p>Admin: admin@tophand.tech / demo123</p>
+          </div>
         </div>
       </div>
     </div>

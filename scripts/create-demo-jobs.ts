@@ -15,7 +15,7 @@ async function createDemoJobs() {
   const authClient = createClient(supabaseUrl, supabaseAnonKey);
   
   const { data: authData, error: authError } = await authClient.auth.signInWithPassword({
-    email: 'demo.supervisor@jobeye.app',
+    email: 'super@tophand.tech',
     password: 'demo123'
   });
 

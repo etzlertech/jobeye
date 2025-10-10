@@ -164,50 +164,6 @@ export default function SignInPage() {
     }
   };
 
-  const handleDemoLogin = async (role: 'crew' | 'supervisor' | 'admin') => {
-    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      // Map roles to demo user emails
-      const demoCredentials = {
-        crew: { email: 'demo.crew@jobeye.app', password: 'demo123' },
-        supervisor: { email: 'demo.supervisor@jobeye.app', password: 'demo123' },
-        admin: { email: 'demo.supervisor@jobeye.app', password: 'demo123' } // Admin uses supervisor for now
-      };
-
-      const credentials = demoCredentials[role];
-      
-      // Authenticate with real Supabase using demo credentials
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: credentials.email,
-        password: credentials.password
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.user) {
-        // Check app_metadata first (where we store the role), then user_metadata
-        const userRole = data.user.app_metadata?.role || data.user.user_metadata?.role || role;
-        setDetectedRole(userRole);
-        setAuthState(prev => ({ ...prev, success: `Demo access granted! Redirecting to ${userRole} dashboard...` }));
-        
-        // Small delay to show role detection
-        setTimeout(() => {
-          router.push(roleRoutes[userRole as keyof typeof roleRoutes]);
-        }, 2000);
-      }
-
-    } catch (error) {
-      setAuthState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: `Demo login failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      }));
-    }
-  };
-
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && authState.email && authState.password && !authState.isLoading) {
       handleSignIn();
@@ -395,71 +351,22 @@ export default function SignInPage() {
         </form>
       </div>
 
-      {/* Demo Access */}
-      <div className="container-section demo-container">
-        <h2 className="section-title demo-title">🎭 Quick Demo Access</h2>
-        
-        <div className="demo-grid">
-          <button
-            onClick={() => handleDemoLogin('crew')}
-            disabled={authState.isLoading}
-            className="demo-card crew-card"
-          >
-            <div className="card-header">
-              <Wrench className="card-icon" />
-              <span className="card-title">Crew Member</span>
-            </div>
-            <p className="card-description">
-              Job execution, equipment verification, voice control
-            </p>
-          </button>
-          
-          <button
-            onClick={() => handleDemoLogin('supervisor')}
-            disabled={authState.isLoading}
-            className="demo-card supervisor-card"
-          >
-            <div className="card-header">
-              <Shield className="card-icon" />
-              <span className="card-title">Supervisor</span>
-            </div>
-            <p className="card-description">
-              Job creation, inventory management, crew oversight
-            </p>
-          </button>
-          
-          <button
-            onClick={() => handleDemoLogin('admin')}
-            disabled={authState.isLoading}
-            className="demo-card admin-card"
-          >
-            <div className="card-header">
-              <Crown className="card-icon" />
-              <span className="card-title">Admin</span>
-            </div>
-            <p className="card-description">
-              System administration and configuration
-            </p>
-          </button>
-        </div>
-      </div>
-
-      {/* Demo Credentials Info */}
+      {/* Test Account Info */}
       <div className="container-section info-container">
-        <h2 className="section-title info-title">💡 Demo Credentials</h2>
+        <h2 className="section-title info-title">🧪 Test Accounts</h2>
         
         <div className="credentials-info">
           <div className="credential-item">
-            <span className="credential-label">Crew:</span>
-            <span className="credential-value">demo.crew@jobeye.app / demo123</span>
+            <span className="credential-label">Supervisor:</span>
+            <span className="credential-value">super@tophand.tech / demo123</span>
           </div>
           <div className="credential-item">
-            <span className="credential-label">Supervisor:</span>
-            <span className="credential-value">demo.supervisor@jobeye.app / demo123</span>
+            <span className="credential-label">Crew:</span>
+            <span className="credential-value">crew@tophand.tech / demo123</span>
           </div>
           <div className="credential-item">
             <span className="credential-label">Admin:</span>
-            <span className="credential-value">demo.supervisor@jobeye.app / demo123</span>
+            <span className="credential-value">admin@tophand.tech / demo123</span>
           </div>
         </div>
       </div>

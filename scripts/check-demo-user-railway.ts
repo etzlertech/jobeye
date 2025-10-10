@@ -13,9 +13,16 @@ async function checkDemoUser() {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 
-  console.log('🔍 Checking demo supervisor user in Railway Supabase...\n');
+  console.log('🔍 Checking demo test users in Railway Supabase...\n');
 
-  // Check if demo supervisor exists in auth
+  const demoUsers = [
+    { email: 'super@tophand.tech', role: 'supervisor', name: 'Supervisor Demo' },
+    { email: 'crew@tophand.tech', role: 'crew', name: 'Crew Demo' },
+    { email: 'admin@tophand.tech', role: 'admin', name: 'Admin Demo' }
+  ] as const;
+
+  const tenantId = '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e';
+
   const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
   
   if (listError) {
@@ -23,71 +30,95 @@ async function checkDemoUser() {
     return;
   }
 
-  const demoSupervisor = users?.find(u => u.email === 'demo.supervisor@jobeye.app');
-  
-  if (!demoSupervisor) {
-    console.log('❌ Demo supervisor user not found in Railway Supabase!');
-    console.log('\n📝 Creating demo users...');
-    
-    // Create demo supervisor
-    const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-      email: 'demo.supervisor@jobeye.app',
-      password: 'demo123',
-      email_confirm: true,
-      app_metadata: {
-        role: 'supervisor',
-        company_id: '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e',
-        tenant_id: '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'
-      },
-      user_metadata: {
-        name: 'Mrs Supervisor',
-        role: 'supervisor'
+  for (const demoUser of demoUsers) {
+    console.log(`\n👤 Checking ${demoUser.email} (${demoUser.role})...`);
+
+    const existing = users?.find(u => u.email === demoUser.email);
+
+    let targetUserId = existing?.id;
+
+    if (!existing) {
+      console.log('  ❌ User not found. Creating...');
+
+      const { data: created, error: createError } = await supabase.auth.admin.createUser({
+        email: demoUser.email,
+        password: 'demo123',
+        email_confirm: true,
+        app_metadata: {
+          role: demoUser.role,
+          company_id: tenantId,
+          tenant_id: tenantId
+        },
+        user_metadata: {
+          name: demoUser.name,
+          role: demoUser.role
+        }
+      });
+
+      if (createError) {
+        console.error('  ❌ Failed to create demo user:', createError);
+        continue;
       }
-    });
 
-    if (createError) {
-      console.error('❌ Failed to create demo user:', createError);
+      targetUserId = created.user?.id ?? undefined;
+      console.log('  ✅ Created user:', targetUserId);
     } else {
-      console.log('✅ Created demo supervisor user');
-      console.log('   ID:', newUser.user?.id);
-    }
-  } else {
-    console.log('✅ Demo supervisor exists');
-    console.log('   ID:', demoSupervisor.id);
-    console.log('   Email:', demoSupervisor.email);
-    console.log('   App Metadata:', demoSupervisor.app_metadata);
-    console.log('   User Metadata:', demoSupervisor.user_metadata);
-  }
+      console.log('  ✅ User exists:', existing.id);
 
-  // Check tenant assignment
-  if (demoSupervisor) {
+      const { error: updateError } = await supabase.auth.admin.updateUserById(existing.id, {
+        app_metadata: {
+          ...existing.app_metadata,
+          role: demoUser.role,
+          company_id: tenantId,
+          tenant_id: tenantId
+        },
+        user_metadata: {
+          ...existing.user_metadata,
+          name: demoUser.name,
+          role: demoUser.role
+        }
+      });
+
+      if (updateError) {
+        console.error('  ❌ Failed to update user metadata:', updateError.message);
+      } else {
+        console.log('  ✅ Metadata synced');
+      }
+
+      targetUserId = existing.id;
+    }
+
+    if (!targetUserId) {
+      console.log('  ⚠️ Could not determine user id for tenant assignment');
+      continue;
+    }
+
     const { data: assignment, error: assignError } = await supabase
       .from('tenant_assignments')
       .select('*')
-      .eq('user_id', demoSupervisor.id)
-      .single();
+      .eq('user_id', targetUserId)
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
 
-    if (assignError) {
-      console.log('\n⚠️  No tenant assignment found');
-      
-      // Create tenant assignment
+    if (assignError || !assignment) {
+      console.log('  ⚠️ No tenant assignment found. Creating...');
       const { error: createAssignError } = await supabase
         .from('tenant_assignments')
         .insert({
-          user_id: demoSupervisor.id,
-          tenant_id: '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e',
-          role: 'supervisor',
+          user_id: targetUserId,
+          tenant_id: tenantId,
+          role: demoUser.role,
           is_primary: true,
           is_active: true
         });
 
       if (createAssignError) {
-        console.error('❌ Failed to create tenant assignment:', createAssignError);
+        console.error('  ❌ Failed to create tenant assignment:', createAssignError.message);
       } else {
-        console.log('✅ Created tenant assignment');
+        console.log('  ✅ Tenant assignment created');
       }
     } else {
-      console.log('\n✅ Tenant assignment exists:', assignment);
+      console.log('  ✅ Tenant assignment exists');
     }
   }
 }

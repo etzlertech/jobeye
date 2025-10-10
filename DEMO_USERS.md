@@ -2,18 +2,25 @@
 
 ## Demo User Credentials
 
-### 👩‍💼 Mrs Supervisor
-- **Email**: `demo.supervisor@jobeye.app`
+### 👩‍💼 Supervisor Demo
+- **Email**: `super@tophand.tech`
 - **Password**: `demo123`
 - **Role**: Supervisor
 - **Access**: Full supervisor dashboard with job creation, customer management, crew oversight
 - **Tenant**: `demo-tenant-12345` (isolated demo data)
 
-### 👨‍🔧 Mr Crew
-- **Email**: `demo.crew@jobeye.app`
+### 👨‍🔧 Crew Demo
+- **Email**: `crew@tophand.tech`
 - **Password**: `demo123`
 - **Role**: Crew
 - **Access**: Crew dashboard with job execution, equipment verification, voice control
+- **Tenant**: `demo-tenant-12345` (isolated demo data)
+
+### 🛠️ Admin Demo
+- **Email**: `admin@tophand.tech`
+- **Password**: `demo123`
+- **Role**: Admin
+- **Access**: System administration, configuration workflows
 - **Tenant**: `demo-tenant-12345` (isolated demo data)
 
 ## Live CRUD Operations
@@ -25,12 +32,6 @@
 ✅ **Security**: RLS policies enforced for tenant isolation
 
 ## Usage
-
-### Quick Demo Access (Railway Production)
-1. Go to: https://jobeye-production.up.railway.app/sign-in
-2. Click "Supervisor" or "Crew Member" under "Quick Demo Access"
-3. Automatically logs in with demo credentials
-4. Full access to respective dashboard with live CRUD operations
 
 ### Manual Login
 1. Go to: https://jobeye-production.up.railway.app/sign-in

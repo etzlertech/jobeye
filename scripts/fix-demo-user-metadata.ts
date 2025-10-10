@@ -18,8 +18,9 @@ async function fixDemoUserMetadata() {
   console.log('🔧 Fixing demo user metadata for proper authentication...\n');
 
   const demoUsers = [
-    { email: 'demo.supervisor@jobeye.app', role: 'supervisor' },
-    { email: 'demo.crew@jobeye.app', role: 'crew' }
+    { email: 'super@tophand.tech', role: 'supervisor' },
+    { email: 'crew@tophand.tech', role: 'crew' },
+    { email: 'admin@tophand.tech', role: 'admin' }
   ];
 
   // Get the correct tenant ID we're using for demo data
@@ -76,8 +77,9 @@ async function fixDemoUserMetadata() {
   console.log(`- role: supervisor/crew\n`);
   
   console.log('You should now be able to sign in with:');
-  console.log('📧 demo.supervisor@jobeye.app / demo123');
-  console.log('📧 demo.crew@jobeye.app / demo123');
+  console.log('📧 super@tophand.tech / demo123');
+  console.log('📧 crew@tophand.tech / demo123');
+  console.log('📧 admin@tophand.tech / demo123');
 }
 
 fixDemoUserMetadata().catch(console.error);

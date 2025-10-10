@@ -167,7 +167,7 @@ async function proveLiveCrud() {
   console.log(`📊 Jobs Created: ${jobs?.length || 0}`);
   console.log(`📊 Relationships: ${relationships.length}`);
   console.log(`🏗️ Tenant: ${demoTenantId}`);
-  console.log(`🔐 Auth Users: demo.supervisor@jobeye.app & demo.crew@jobeye.app`);
+  console.log(`🔐 Auth Users: super@tophand.tech, crew@tophand.tech, admin@tophand.tech`);
 
   console.log('\n🚀 CONCLUSION: Demo mode performs 100% LIVE CRUD operations!');
 }

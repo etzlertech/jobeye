@@ -13,8 +13,9 @@ async function testDemoUsers() {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   const demoUsers = [
-    { email: 'demo.supervisor@jobeye.app', role: 'supervisor' },
-    { email: 'demo.crew@jobeye.app', role: 'crew' }
+    { email: 'super@tophand.tech', role: 'supervisor' },
+    { email: 'crew@tophand.tech', role: 'crew' },
+    { email: 'admin@tophand.tech', role: 'admin' }
   ];
 
   for (const user of demoUsers) {

@@ -24,11 +24,12 @@ async function useExistingTenant() {
     
     // Update demo users to use the existing tenant ID
     const demoUsers = [
-      'demo.supervisor@jobeye.app',
-      'demo.crew@jobeye.app'
+      { email: 'super@tophand.tech', role: 'supervisor' },
+      { email: 'crew@tophand.tech', role: 'crew' },
+      { email: 'admin@tophand.tech', role: 'admin' }
     ];
 
-    for (const email of demoUsers) {
+    for (const { email, role } of demoUsers) {
       console.log(`Updating ${email} with existing tenant ID...`);
       
       // Get user by email
@@ -42,7 +43,7 @@ async function useExistingTenant() {
             ...user.app_metadata,
             tenant_id: existingTenantId,
             company_id: existingTenantId,
-            role: user.user_metadata?.role || (email.includes('supervisor') ? 'supervisor' : 'crew')
+            role: user.user_metadata?.role || role
           }
         });
 

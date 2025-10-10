@@ -15,7 +15,7 @@ const RAILWAY_DEMO_TENANT_ID = '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e';
 interface DemoUser {
   email: string;
   password: string;
-  role: 'supervisor' | 'crew';
+  role: 'supervisor' | 'crew' | 'admin';
   name: string;
 }
 
@@ -27,20 +27,26 @@ async function createDemoUsersInRailway() {
     }
   });
 
-  const demoUsers: DemoUser[] = [
+  const demoUsers = [
     {
-      email: 'demo.supervisor@jobeye.app',
+      email: 'super@tophand.tech',
       password: 'demo123',
       role: 'supervisor',
-      name: 'Mrs Supervisor'
+      name: 'Supervisor Demo'
     },
     {
-      email: 'demo.crew@jobeye.app',
+      email: 'crew@tophand.tech',
       password: 'demo123',
       role: 'crew',
-      name: 'Mr Crew'
+      name: 'Crew Demo'
+    },
+    {
+      email: 'admin@tophand.tech',
+      password: 'demo123',
+      role: 'admin',
+      name: 'Admin Demo'
     }
-  ];
+  ] satisfies DemoUser[];
 
   console.log('🚂 Creating demo users in Railway\'s Supabase...\n');
 
@@ -161,8 +167,9 @@ async function createDemoUsersInRailway() {
 
   console.log('\n🎉 Demo users setup complete!\n');
   console.log('📝 Demo Credentials:');
-  console.log('   Supervisor: demo.supervisor@jobeye.app / demo123');
-  console.log('   Crew: demo.crew@jobeye.app / demo123');
+  console.log('   Supervisor: super@tophand.tech / demo123');
+  console.log('   Crew: crew@tophand.tech / demo123');
+  console.log('   Admin: admin@tophand.tech / demo123');
   console.log('\n🌐 Railway URL: https://jobeye-production.up.railway.app');
   console.log('🔐 Sign in at: https://jobeye-production.up.railway.app/sign-in');
 }

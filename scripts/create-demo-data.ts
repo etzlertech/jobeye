@@ -14,9 +14,9 @@ async function createDemoData() {
   // First authenticate as demo supervisor
   const authClient = createClient(supabaseUrl, supabaseAnonKey);
   
-  console.log('🔐 Authenticating as demo supervisor...');
+  console.log('🔐 Authenticating as supervisor demo user...');
   const { data: authData, error: authError } = await authClient.auth.signInWithPassword({
-    email: 'demo.supervisor@jobeye.app',
+    email: 'super@tophand.tech',
     password: 'demo123'
   });
 
@@ -25,7 +25,7 @@ async function createDemoData() {
     return;
   }
 
-  console.log('✅ Authenticated successfully as Mrs Supervisor');
+  console.log('✅ Authenticated successfully as Supervisor Demo');
   const tenantId = authData.user.app_metadata?.tenant_id;
   console.log(`Tenant ID: ${tenantId}\n`);
 

@@ -12,9 +12,9 @@ async function testRailwayAuth() {
   const client = createClient(RAILWAY_SUPABASE_URL, RAILWAY_SUPABASE_ANON_KEY);
 
   // Try to sign in with demo credentials
-  console.log('🔐 Attempting to sign in with demo.supervisor@jobeye.app...');
+  console.log('🔐 Attempting to sign in with super@tophand.tech...');
   const { data, error } = await client.auth.signInWithPassword({
-    email: 'demo.supervisor@jobeye.app',
+    email: 'super@tophand.tech',
     password: 'demo123'
   });
 

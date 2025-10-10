@@ -32,7 +32,7 @@ async function createDemoCustomer() {
     is_active: true,
     metadata: {
       created_via: 'UI Demo',
-      demo_user: 'demo.supervisor@jobeye.app'
+      demo_user: 'super@tophand.tech'
     }
   };
 

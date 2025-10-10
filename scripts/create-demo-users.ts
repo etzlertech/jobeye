@@ -19,27 +19,39 @@ async function createDemoUsers() {
 
   const demoUsers = [
     {
-      email: 'demo.supervisor@jobeye.app',
+      email: 'super@tophand.tech',
       password: 'demo123',
       role: 'supervisor',
-      name: 'Mrs Supervisor',
+      name: 'Supervisor Demo',
       metadata: {
         role: 'supervisor',
         demo_user: true,
-        full_name: 'Mrs Supervisor',
-        company_name: 'Demo Company'
+        full_name: 'Supervisor Demo',
+        company_name: 'Tophand Demo Company'
       }
     },
     {
-      email: 'demo.crew@jobeye.app', 
+      email: 'crew@tophand.tech',
       password: 'demo123',
       role: 'crew',
-      name: 'Mr Crew',
+      name: 'Crew Demo',
       metadata: {
         role: 'crew',
         demo_user: true,
-        full_name: 'Mr Crew',
-        company_name: 'Demo Company'
+        full_name: 'Crew Demo',
+        company_name: 'Tophand Demo Company'
+      }
+    },
+    {
+      email: 'admin@tophand.tech',
+      password: 'demo123',
+      role: 'admin',
+      name: 'Admin Demo',
+      metadata: {
+        role: 'admin',
+        demo_user: true,
+        full_name: 'Admin Demo',
+        company_name: 'Tophand Demo Company'
       }
     }
   ];
@@ -89,8 +101,9 @@ async function createDemoUsers() {
 
   console.log('\n🎯 Demo users setup complete!');
   console.log('\n📋 Demo Credentials:');
-  console.log('👩‍💼 Supervisor: demo.supervisor@jobeye.app / demo123');
-  console.log('👨‍🔧 Crew:       demo.crew@jobeye.app / demo123');
+  console.log('👩‍💼 Supervisor: super@tophand.tech / demo123');
+  console.log('👨‍🔧 Crew:       crew@tophand.tech / demo123');
+  console.log('🛠️  Admin:      admin@tophand.tech / demo123');
   console.log('\n✅ These users can now perform live CRUD operations in demo mode!');
 }
 

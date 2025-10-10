@@ -20,8 +20,9 @@ async function setupDemoTenant() {
   
   // First, update demo users with the demo tenant ID in their app_metadata
   const demoUsers = [
-    'demo.supervisor@jobeye.app',
-    'demo.crew@jobeye.app'
+    'super@tophand.tech',
+    'crew@tophand.tech',
+    'admin@tophand.tech'
   ];
 
   for (const email of demoUsers) {
@@ -38,7 +39,7 @@ async function setupDemoTenant() {
           ...user.app_metadata,
           tenant_id: demoTenantId,
           company_id: demoTenantId,
-          role: user.user_metadata?.role || (email.includes('supervisor') ? 'supervisor' : 'crew')
+          role: user.user_metadata?.role || (email.includes('admin') ? 'admin' : email.includes('super') ? 'supervisor' : 'crew')
         }
       });
 

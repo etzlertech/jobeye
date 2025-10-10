@@ -19,11 +19,12 @@ async function fixDemoTenantUuid() {
 
   // Update demo users with the proper UUID
   const demoUsers = [
-    'demo.supervisor@jobeye.app',
-    'demo.crew@jobeye.app'
+    { email: 'super@tophand.tech', role: 'supervisor' },
+    { email: 'crew@tophand.tech', role: 'crew' },
+    { email: 'admin@tophand.tech', role: 'admin' }
   ];
 
-  for (const email of demoUsers) {
+  for (const { email, role } of demoUsers) {
     console.log(`Updating ${email} with UUID tenant ID...`);
     
     // Get user by email
@@ -37,7 +38,7 @@ async function fixDemoTenantUuid() {
           ...user.app_metadata,
           tenant_id: demoTenantUuid,
           company_id: demoTenantUuid,
-          role: user.user_metadata?.role || (email.includes('supervisor') ? 'supervisor' : 'crew')
+          role: user.user_metadata?.role || role
         }
       });
 
