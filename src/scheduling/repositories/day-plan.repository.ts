@@ -113,12 +113,13 @@ export class DayPlanRepository {
     query = query.order('plan_date', { ascending: false })
                  .order('created_at', { ascending: false });
 
-    if (filters?.limit) {
-      query = query.limit(filters.limit);
-    }
+    const hasLimit = typeof filters?.limit === 'number' && Number.isFinite(filters.limit) && filters.limit > 0;
+    const hasOffset = typeof filters?.offset === 'number' && Number.isFinite(filters.offset) && filters.offset >= 0;
 
-    if (filters?.offset) {
-      query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+    if (hasLimit || hasOffset) {
+      const effectiveLimit = hasLimit ? (filters?.limit as number) : 20;
+      const effectiveOffset = hasOffset ? (filters?.offset as number) : 0;
+      query = query.range(effectiveOffset, effectiveOffset + effectiveLimit - 1);
     }
 
     const { data, error } = await query;
@@ -130,6 +131,38 @@ export class DayPlanRepository {
   // Alias for findAll to match API route usage
   async findByFilters(filters?: DayPlanFilters): Promise<DayPlan[]> {
     return this.findAll(filters);
+  }
+
+  async count(filters?: DayPlanFilters): Promise<number> {
+    let query = this.supabase
+      .from('day_plans')
+      .select('id', { count: 'exact', head: true });
+
+    if (filters?.user_id) {
+      query = query.eq('user_id', filters.user_id);
+    }
+
+    if (filters?.plan_date) {
+      query = query.eq('plan_date', filters.plan_date);
+    }
+
+    if (filters?.date_from && filters?.date_to) {
+      query = query.gte('plan_date', filters.date_from)
+                   .lte('plan_date', filters.date_to);
+    } else if (filters?.date_from) {
+      query = query.gte('plan_date', filters.date_from);
+    } else if (filters?.date_to) {
+      query = query.lte('plan_date', filters.date_to);
+    }
+
+    if (filters?.status) {
+      query = query.eq('status', filters.status);
+    }
+
+    const { count, error } = await query;
+
+    if (error) throw error;
+    return count ?? 0;
   }
 
   async create(dayPlan: DayPlanInsert): Promise<DayPlan> {

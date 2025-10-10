@@ -30,7 +30,7 @@
  *   - Support batch event creation
  */
 
-import { DayPlanRepository } from '@/scheduling/repositories/day-plan.repository';
+import { DayPlanRepository, type DayPlanFilters } from '@/scheduling/repositories/day-plan.repository';
 import { ScheduleEventRepository } from '@/scheduling/repositories/schedule-event.repository';
 import { createClient } from '@/lib/supabase/server';
 
@@ -59,53 +59,115 @@ function createResponse(data: any, status: number) {
 
 export async function GET(request: Request) {
   try {
-    // Handle different request types
     let authHeader: string | undefined;
-    let url: URL;
+    const query: Record<string, string> = {};
+
+    const setQueryValue = (key: string, value: unknown) => {
+      if (value === undefined || value === null) {
+        return;
+      }
+
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          return;
+        }
+        query[key] = String(value[value.length - 1]);
+        return;
+      }
+
+      query[key] = String(value);
+    };
 
     if (typeof request.headers?.get === 'function') {
-      // Next.js Request
-      authHeader = request.headers.get('authorization') || undefined;
-      url = new URL(request.url);
+      authHeader = request.headers.get('authorization') || request.headers.get('Authorization') || undefined;
+      const requestUrl = new URL(request.url);
+      requestUrl.searchParams.forEach((value, key) => {
+        setQueryValue(key, value);
+      });
     } else {
-      // Test mock request
       const mockReq = request as any;
-      authHeader = mockReq.headers?.authorization;
-      url = new URL(mockReq.url || 'http://localhost/api/scheduling/day-plans');
+      const headers = mockReq.headers || {};
+      authHeader = headers.authorization || headers.Authorization;
+
+      if (typeof mockReq.url === 'string' && mockReq.url.length > 0) {
+        const baseUrl = mockReq.url.startsWith('http')
+          ? mockReq.url
+          : `http://localhost${mockReq.url.startsWith('/') ? '' : '/'}${mockReq.url}`;
+        const mockUrl = new URL(baseUrl);
+        mockUrl.searchParams.forEach((value: string, key: string) => {
+          setQueryValue(key, value);
+        });
+      }
+
+      if (mockReq.query) {
+        Object.entries(mockReq.query).forEach(([key, value]) => {
+          setQueryValue(key, value as unknown);
+        });
+      }
     }
 
-    // Check authorization
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
       return createResponse({ error: 'Unauthorized' }, 401);
     }
 
-    // Get query parameters
-    const params = url.searchParams;
-    const userId = params.get('user_id') || undefined;
-    const startDate = params.get('start_date') || undefined;
-    const endDate = params.get('end_date') || undefined;
-    const limit = parseInt(params.get('limit') || '20');
-    const offset = parseInt(params.get('offset') || '0');
+    const parseInteger = (value: string | undefined) => {
+      if (!value) return undefined;
+      const parsed = Number.parseInt(value, 10);
+      return Number.isNaN(parsed) ? undefined : parsed;
+    };
 
-    // Use real database
+    const rawLimit = query.limit ?? query.pageSize;
+    const rawPage = query.page;
+    const rawOffset = query.offset;
+
+    const limit = (() => {
+      const parsed = parseInteger(rawLimit);
+      const base = parsed && parsed > 0 ? parsed : 20;
+      return Math.min(base, 100);
+    })();
+
+    const page = (() => {
+      const parsed = parseInteger(rawPage);
+      return parsed && parsed > 0 ? parsed : 1;
+    })();
+
+    const offset = (() => {
+      const parsed = parseInteger(rawOffset);
+      if (parsed !== undefined && parsed >= 0) {
+        return parsed;
+      }
+      return (page - 1) * limit;
+    })();
+
+    const filters: DayPlanFilters = {
+      user_id: query.user_id ?? query.userId,
+      plan_date: query.plan_date ?? query.date ?? undefined,
+      date_from: query.date_from ?? query.start_date ?? undefined,
+      date_to: query.date_to ?? query.end_date ?? undefined,
+      status: query.status as DayPlanFilters['status'],
+      limit,
+      offset
+    };
+
+    const countFilters: DayPlanFilters = {
+      user_id: filters.user_id,
+      plan_date: filters.plan_date,
+      date_from: filters.date_from,
+      date_to: filters.date_to,
+      status: filters.status
+    };
+
     const supabase = await createClient();
     const repository = new DayPlanRepository(supabase);
 
-    const plans = await repository.findByFilters({
-      user_id: userId,
-      date_from: startDate,
-      date_to: endDate,
-      limit,
-      offset
-    });
-
-    // Get total count (would need a separate countByFilters method for exact total)
-    const total = plans.length;
+    const plans = await repository.findByFilters(filters);
+    const total = await repository.count(countFilters);
 
     return createResponse({
       plans,
       total,
       limit,
+      page,
       offset
     }, 200);
   } catch (error: any) {

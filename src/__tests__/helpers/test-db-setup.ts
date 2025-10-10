@@ -52,6 +52,27 @@ export async function setupTestDatabase() {
   console.log('Setting up test database...');
 
   try {
+    // 0. Ensure tenant exists (required for FK constraints)
+    const { error: tenantError } = await supabase
+      .from('tenants')
+      .upsert(
+        {
+          id: TEST_IDS.company,
+          name: 'Test Tenant',
+          settings: {},
+          active: true
+        },
+        {
+          onConflict: 'id',
+          ignoreDuplicates: false
+        }
+      );
+
+    if (tenantError && tenantError.code !== '23505') {
+      console.error('Tenant creation error:', tenantError);
+      throw tenantError;
+    }
+
     // 1. Create test company
     const { error: companyError } = await supabase
       .from('companies')

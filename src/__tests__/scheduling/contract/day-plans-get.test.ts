@@ -4,31 +4,39 @@
  * @coverage_target ≥90%
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
 import { createMocks } from 'node-mocks-http';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { NextRequest } from 'next/server';
+import type { Database } from '@/types/supabase';
 import { setupTestDatabase, cleanupTestDatabase, TEST_IDS, createTestDayPlan } from '@/__tests__/helpers/test-db-setup';
 
 import handler from '@/app/api/scheduling/day-plans/route';
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+  throw new Error('Contract test requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to be set');
+}
+
+const serviceClient = createSupabaseClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
+
+jest.mock('@/lib/supabase/server', () => ({
+  __esModule: true,
+  createClient: async () => serviceClient,
+  createServiceClient: () => serviceClient,
+  createServerClient: async () => serviceClient
+}));
+
 describe('GET /api/scheduling/day-plans', () => {
   beforeAll(async () => {
     await setupTestDatabase();
-
-    // Create some test day plans
-    await createTestDayPlan({
-      user_id: TEST_IDS.user1,
-      plan_date: '2024-01-15',
-      status: 'published',
-      total_distance_miles: 5.2,
-      estimated_duration_minutes: 45
-    });
-
-    await createTestDayPlan({
-      user_id: TEST_IDS.user1,
-      plan_date: '2024-01-16',
-      status: 'draft'
-    });
   });
 
   afterAll(async () => {
@@ -52,6 +60,10 @@ describe('GET /api/scheduling/day-plans', () => {
       plan_date: '2024-01-16',
       status: 'draft'
     });
+  });
+
+  afterEach(async () => {
+    await cleanupTestDatabase();
   });
 
   it('should return day plans for authenticated company', async () => {
