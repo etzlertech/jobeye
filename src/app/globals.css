@@ -1,21 +1,61 @@
+
+@import "tw-animate-css";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 10, 10, 10;
-  --background-end-rgb: 10, 10, 10;
+  --radius: 0.75rem;
+
+  /* JobEye Dark Theme - Golden Accent */
+  --background: 0 0% 3.9%;           /* #0a0a0a - Deep black */
+  --foreground: 0 0% 98%;            /* #fafafa - White text */
+
+  --card: 0 0% 7%;                   /* #121212 - Elevated surfaces */
+  --card-foreground: 0 0% 98%;
+
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 98%;
+
+  --primary: 48 96% 53%;             /* #FFD700 - Golden primary */
+  --primary-foreground: 0 0% 9%;     /* Black text on golden */
+
+  --secondary: 0 0% 14.9%;           /* #262626 - Dark gray */
+  --secondary-foreground: 0 0% 98%;
+
+  --muted: 0 0% 14.9%;
+  --muted-foreground: 0 0% 63.9%;    /* #a3a3a3 - Muted text */
+
+  --accent: 48 96% 53%;              /* Golden accent same as primary */
+  --accent-foreground: 0 0% 9%;
+
+  --destructive: 0 84% 60%;          /* #ef4444 - Red */
+  --destructive-foreground: 0 0% 98%;
+
+  --success: 142 76% 36%;            /* #16a34a - Green */
+  --success-foreground: 0 0% 98%;
+
+  --warning: 38 92% 50%;             /* #f59e0b - Orange/Amber */
+  --warning-foreground: 0 0% 9%;
+
+  --border: 0 0% 14.9%;              /* #262626 - Border color */
+  --input: 0 0% 14.9%;
+  --ring: 48 96% 53%;                /* Golden focus ring */
+
+  /* Charts */
+  --chart-1: 48 96% 53%;             /* Golden */
+  --chart-2: 142 76% 36%;            /* Green */
+  --chart-3: 221 83% 53%;            /* Blue */
+  --chart-4: 0 84% 60%;              /* Red */
+  --chart-5: 280 65% 60%;            /* Purple */
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
   font-family: system-ui, -apple-system, sans-serif;
   cursor: crosshair;
 }
@@ -24,7 +64,7 @@ body {
 html {
   /* Golden orbital cursor - visible on black backgrounds */
   --golden-cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="none" stroke="%23FFD700" stroke-width="2" opacity="0.8"/><circle cx="16" cy="16" r="8" fill="none" stroke="%23FFD700" stroke-width="1.5" opacity="0.6"/><circle cx="16" cy="16" r="3" fill="%23FFD700" opacity="0.9"/><circle cx="16" cy="16" r="1" fill="%23FFFFFF"/></svg>') 16 16, crosshair;
-  
+
   /* Golden pointer for interactive elements */
   --golden-pointer: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M8 3 L8 20 L12 16 L16 23 L19 22 L15 15 L22 15 Z" fill="%23FFD700" stroke="%23FFA500" stroke-width="1.5"/><circle cx="8" cy="3" r="2" fill="%23FFD700" opacity="0.8"/></svg>') 8 3, pointer;
 }
@@ -104,4 +144,73 @@ textarea {
   font-family: 'JetBrains Mono', 'Monaco', 'Consolas', monospace;
   font-size: 14px;
   line-height: 1.6;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+.dark {
+  /* Dark mode is default - same as root */
+  --background: 0 0% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 48 96% 53%;
+  --primary-foreground: 0 0% 9%;
+  --secondary: 0 0% 14.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 14.9%;
+  --muted-foreground: 0 0% 63.9%;
+  --accent: 48 96% 53%;
+  --accent-foreground: 0 0% 9%;
+  --destructive: 0 84% 60%;
+  --border: 0 0% 14.9%;
+  --input: 0 0% 14.9%;
+  --ring: 48 96% 53%;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }

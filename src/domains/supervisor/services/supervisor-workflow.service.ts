@@ -51,7 +51,7 @@
 import { IntentClassificationService } from '@/domains/intent/services/intent-classification.service';
 import { AIInteractionLogger } from '@/domains/intent/services/ai-interaction-logger.service';
 import { AppError } from '@/core/errors/error-types';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/supabase/server';
 
 export interface WorkflowResult {
   success: boolean;
@@ -130,7 +130,7 @@ export class SupervisorWorkflowService {
     userId: string
   ): Promise<WorkflowResult> {
     try {
-      const supabase = await createServerSupabaseClient();
+      const supabase = await createServerClient();
 
       // Check for duplicates
       const { data: existing } = await supabase
@@ -201,7 +201,7 @@ export class SupervisorWorkflowService {
     userId: string
   ): Promise<WorkflowResult> {
     try {
-      const supabase = await createServerSupabaseClient();
+      const supabase = await createServerClient();
 
       // Validate crew assignments don't exceed limits
       if (request.assignedCrewIds && request.assignedCrewIds.length > 0) {
@@ -290,7 +290,7 @@ export class SupervisorWorkflowService {
     userId: string
   ): Promise<WorkflowResult> {
     try {
-      const supabase = await createServerSupabaseClient();
+      const supabase = await createServerClient();
 
       // Get job details
       const { data: job } = await supabase
@@ -370,7 +370,7 @@ export class SupervisorWorkflowService {
    * Get dashboard status
    */
   async getDashboardStatus(tenantId: string): Promise<DashboardStatus> {
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createServerClient();
     const today = new Date().toISOString().split('T')[0];
 
     // Get today's jobs
@@ -438,18 +438,23 @@ export class SupervisorWorkflowService {
     }) || [];
 
     // Get inventory alerts (simplified)
-    const { data: lowStock } = await supabase
+    const { data: inventoryItems } = await supabase
       .from('inventory')
       .select('id, name, quantity, min_quantity')
-      .eq('tenant_id', tenantId)
-      .lt('quantity', supabase.sql`min_quantity`);
+      .eq('tenant_id', tenantId);
 
-    const inventoryAlerts = lowStock?.map(item => ({
-      itemId: item.id,
-      itemName: item.name,
-      alertType: 'low_stock' as const,
-      severity: item.quantity === 0 ? 'high' as const : 'medium' as const
-    })) || [];
+    const inventoryAlerts = (inventoryItems || [])
+      .filter(item =>
+        typeof item.quantity === 'number' &&
+        typeof item.min_quantity === 'number' &&
+        item.quantity < item.min_quantity
+      )
+      .map(item => ({
+        itemId: item.id,
+        itemName: item.name,
+        alertType: 'low_stock' as const,
+        severity: item.quantity === 0 ? 'high' as const : 'medium' as const
+      }));
 
     // Get recent activity
     const { data: recentLogs } = await supabase
@@ -564,7 +569,7 @@ export class SupervisorWorkflowService {
     message: string;
     violations?: any[];
   }> {
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createServerClient();
 
     // Get existing assignments for the date
     const { data: existingAssignments } = await supabase

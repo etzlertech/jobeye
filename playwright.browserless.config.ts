@@ -1,33 +1,52 @@
-import { defineConfig, devices } from '@playwright/test';
+/**
+ * AGENT DIRECTIVE BLOCK
+ *
+ * file: /playwright.browserless.config.ts
+ * phase: 3
+ * domain: testing
+ * purpose: Configure Playwright to run E2E suites locally or via Browserless.
+ * spec_ref: E2E_TEST_SETUP_REQUIRED.md
+ * dependencies: ['@playwright/test']
+ * update_policy: Keep Browserless endpoint handling in sync with .env guidance.
+ */
 
-const wsEndpoint = process.env.BROWSERLESS_WS_ENDPOINT;
-const apiKey = process.env.BROWSERLESS_API_KEY;
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'https://jobeye-production.up.railway.app';
+import { defineConfig, devices } from "@playwright/test";
 
-if (!wsEndpoint) {
-  throw new Error('BROWSERLESS_WS_ENDPOINT is required to run browserless Playwright tests.');
-}
+const rawBrowserlessEndpoint =
+  process.env.BROWSERLESS_WS_ENDPOINT ?? process.env.browserless_ws_endpoint;
+
+const wsEndpoint = rawBrowserlessEndpoint
+  ? `${rawBrowserlessEndpoint.replace(/\/+$/, "")}/chrome?blockAds=false&stealth=false`
+  : undefined;
+
+const baseURL =
+  process.env.PLAYWRIGHT_TEST_BASE_URL ??
+  process.env.BASE_URL ??
+  "http://localhost:3000";
 
 export default defineConfig({
-  testDir: 'tests/e2e',
-  timeout: 120 * 1000,
+  testDir: "./tests/e2e",
   fullyParallel: false,
-  reporter: [['list']],
+  forbidOnly: !!process.env.CI,
+  retries: 0,
+  workers: 1,
+  reporter: "html",
+  
   use: {
-    baseURL,
-    trace: 'retain-on-failure',
-    video: 'on-first-retry',
-    screenshot: 'only-on-failure',
-    connectOptions: {
+    connectOptions: wsEndpoint ? {
       wsEndpoint,
-      headers: apiKey ? { 'x-api-key': apiKey } : undefined,
-      timeout: 30 * 1000
-    }
+      timeout: 30000,
+    } : undefined,
+    baseURL,
+    trace: "on",
+    screenshot: "on",
+    video: "on",
   },
+
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
-    }
-  ]
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+    },
+  ],
 });
