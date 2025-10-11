@@ -118,6 +118,25 @@ export default function SignInPage() {
     }
   }, []);
 
+  // Sync Supabase session cookies with server routes
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (typeof fetch !== 'function') return;
+
+      void fetch('/auth/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event, session })
+      }).catch(error => {
+        console.error('Failed to sync auth session', error);
+      });
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, [supabase]);
+
   const handleSignIn = async () => {
     if (!authState.email || !authState.password) {
       setAuthState(prev => ({ ...prev, error: 'Please enter both email and password' }));
@@ -140,6 +159,18 @@ export default function SignInPage() {
         // Clear any lingering demo cookies
         document.cookie = 'isDemo=; Max-Age=0; path=/';
         document.cookie = 'demoRole=; Max-Age=0; path=/';
+
+        if (data.session && typeof fetch === 'function') {
+          try {
+            await fetch('/auth/callback', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ event: 'SIGNED_IN', session: data.session })
+            });
+          } catch (sessionError) {
+            console.error('Failed to persist Supabase session', sessionError);
+          }
+        }
 
         // Check both app_metadata and user_metadata for role
         const role = data.user.app_metadata?.role || data.user.user_metadata?.role || 'crew';
