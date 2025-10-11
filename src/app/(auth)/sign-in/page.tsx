@@ -94,9 +94,13 @@ export default function SignInPage() {
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (typeof fetch !== 'function') return;
+      if (!['SIGNED_IN', 'TOKEN_REFRESHED', 'SIGNED_OUT'].includes(event)) {
+        return;
+      }
 
       void fetch('/auth/callback', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ event, session })
       }).catch(error => {
@@ -136,6 +140,7 @@ export default function SignInPage() {
           try {
             await fetch('/auth/callback', {
               method: 'POST',
+              credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ event: 'SIGNED_IN', session: data.session })
             });
