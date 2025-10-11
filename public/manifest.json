@@ -21,7 +21,10 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["business", "productivity"],
+  "categories": [
+    "business",
+    "productivity"
+  ],
   "lang": "en-US",
   "dir": "ltr",
   "scope": "/",
@@ -51,33 +54,53 @@
       "short_name": "Camera",
       "description": "Open camera with AI intent recognition",
       "url": "/supervisor/inventory?camera=true",
-      "icons": [{ "src": "/icons/camera-intent.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/icons/camera-intent.png",
+          "sizes": "96x96"
+        }
+      ]
     },
     {
       "name": "Voice Command",
       "short_name": "Voice",
       "description": "Start voice command mode",
       "url": "/?voice=true",
-      "icons": [{ "src": "/icons/voice-command.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/icons/voice-command.png",
+          "sizes": "96x96"
+        }
+      ]
     },
     {
       "name": "Load Verify",
       "short_name": "Verify",
       "description": "Verify equipment load with AI vision",
       "url": "/crew/load-verify",
-      "icons": [{ "src": "/icons/load-verify.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/icons/load-verify.png",
+          "sizes": "96x96"
+        }
+      ]
     },
     {
       "name": "My Jobs",
       "short_name": "Jobs",
       "description": "View assigned jobs",
       "url": "/crew",
-      "icons": [{ "src": "/icons/jobs.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/icons/jobs.png",
+          "sizes": "96x96"
+        }
+      ]
     }
   ],
   "features": [
     "screen-wake-lock",
-    "idle-detection", 
+    "idle-detection",
     "web-share",
     "camera",
     "microphone",
@@ -93,7 +116,7 @@
   ],
   "protocol_handlers": [
     {
-      "protocol": "jobeye",
+      "protocol": "web+jobeye",
       "url": "/?intent=%s"
     }
   ],
@@ -101,8 +124,17 @@
     {
       "action": "/upload",
       "accept": {
-        "image/*": [".jpg", ".jpeg", ".png", ".webp"],
-        "audio/*": [".wav", ".mp3", ".m4a"]
+        "image/*": [
+          ".jpg",
+          ".jpeg",
+          ".png",
+          ".webp"
+        ],
+        "audio/*": [
+          ".wav",
+          ".mp3",
+          ".m4a"
+        ]
       }
     }
   ],
@@ -126,11 +158,15 @@
       "files": [
         {
           "name": "photo",
-          "accept": ["image/*"]
+          "accept": [
+            "image/*"
+          ]
         },
         {
           "name": "voice",
-          "accept": ["audio/*"]
+          "accept": [
+            "audio/*"
+          ]
         }
       ]
     }

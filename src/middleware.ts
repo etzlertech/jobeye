@@ -120,9 +120,12 @@ export async function middleware(request: NextRequest) {
       const requestHeaders = new Headers(request.headers);
       requestHeaders.set('x-user-id', userId);
       requestHeaders.set('x-user-role', userRole);
-      requestHeaders.set('x-tenant-id', session?.user?.app_metadata?.tenant_id || 'demo-company');
+      const tenantId = session?.user?.app_metadata?.tenant_id || session?.user?.user_metadata?.tenant_id || 'demo-company';
+      requestHeaders.set('x-tenant-id', tenantId);
       requestHeaders.set('x-is-demo', isDemo ? 'true' : 'false');
-      
+      if (session?.user?.user_metadata) {
+        requestHeaders.set('x-user-metadata', JSON.stringify(session.user.user_metadata));
+      }
       return NextResponse.next({
         request: {
           headers: requestHeaders
