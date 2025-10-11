@@ -54,16 +54,14 @@ import {
   AlertCircle, 
   Loader2,
   Shield,
-  Users,
   Wrench,
   Crown,
   CheckCircle,
-  ArrowLeft,
-  Home,
   WifiOff,
   HelpCircle
 } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { resolveDashboardRoute } from '@/lib/auth/role-routing';
 
 interface AuthState {
   email: string;
@@ -78,12 +76,6 @@ const roleIcons = {
   admin: Crown,
   supervisor: Shield,
   crew: Wrench
-};
-
-const roleRoutes = {
-  admin: '/admin',
-  supervisor: '/supervisor',
-  crew: '/crew'
 };
 
 const roleDescriptions = {
@@ -156,7 +148,7 @@ export default function SignInPage() {
         
         // Small delay to show role detection
         setTimeout(() => {
-          router.push(roleRoutes[role as keyof typeof roleRoutes]);
+          router.push(resolveDashboardRoute(role));
         }, 2000);
       }
     } catch (error) {
@@ -193,7 +185,7 @@ export default function SignInPage() {
                 <span className="capitalize">{detectedRole}</span>
               </div>
               <p className="text-gray-400 text-sm">
-                {roleDescriptions[detectedRole as keyof typeof roleDescriptions]}
+                {roleDescriptions[detectedRole as keyof typeof roleDescriptions] ?? 'Redirecting to your dashboard.'}
               </p>
             </>
           ) : (
@@ -250,9 +242,9 @@ export default function SignInPage() {
     <div className="mobile-container">
       {/* Header */}
       <div className="container-section header-container">
-        <div className="company-name">JobEye Dev Hub</div>
+        <div className="company-name">JobEye</div>
         <div className="header-info">
-          Railway Production • Authentication<br />
+          Railway Production • Sign-In Portal<br />
           Status: <span style={{color: '#FFC107', fontWeight: 600}}>{isOffline ? 'Offline' : 'Live'}</span>
         </div>
       </div>
@@ -378,17 +370,11 @@ export default function SignInPage() {
       {/* Bottom Actions */}
       <div className="bottom-actions">
         <button
-          onClick={() => router.push('/')}
-          className="btn-secondary flex-1"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Back to Hub
-        </button>
-        <button
           onClick={() => window.open('https://github.com/anthropics/claude-code/issues', '_blank')}
           className="btn-help"
         >
           <HelpCircle className="w-5 h-5" />
+          Need help?
         </button>
       </div>
 
@@ -673,33 +659,18 @@ export default function SignInPage() {
           margin-top: auto;
         }
 
-        .btn-secondary {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0.875rem 1.5rem;
-          background: rgba(255, 255, 255, 0.1);
-          color: white;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 0.5rem;
-          font-weight: 600;
-          font-size: 1rem;
-          cursor: pointer;
-          transition: background-color 0.2s;
-        }
-        .btn-secondary:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
-
         .btn-help {
           display: flex;
           align-items: center;
           justify-content: center;
+          gap: 0.5rem;
           padding: 0.875rem;
           background: rgba(255, 215, 0, 0.1);
           color: #FFD700;
           border: 1px solid rgba(255, 215, 0, 0.3);
           border-radius: 0.5rem;
+          font-weight: 600;
+          width: 100%;
           cursor: pointer;
           transition: background-color 0.2s;
         }

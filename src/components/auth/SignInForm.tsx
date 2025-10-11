@@ -33,6 +33,7 @@ tasks:
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+import { resolveDashboardRoute } from '@/lib/auth/role-routing';
 
 interface SignInFormData {
   email: string;
@@ -86,7 +87,11 @@ export default function SignInForm() {
         if (!voiceProfile?.onboarding_completed) {
           router.push('/onboarding/voice');
         } else {
-          router.push('/dashboard');
+          const role =
+            (data.user.app_metadata?.role as string | undefined) ||
+            (data.user.user_metadata?.role as string | undefined);
+
+          router.push(resolveDashboardRoute(role));
         }
       }
     } catch (err: any) {

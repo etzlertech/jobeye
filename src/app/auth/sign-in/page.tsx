@@ -32,6 +32,7 @@ tasks:
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createServerClient, getUser } from '@/lib/supabase/client';
+import { resolveDashboardRoute } from '@/lib/auth/role-routing';
 import SignInForm from '@/components/auth/SignInForm';
 
 export const metadata: Metadata = {
@@ -56,7 +57,7 @@ export default async function SignInPage() {
       redirect('/onboarding/voice');
     }
     
-    redirect('/dashboard');
+    redirect(resolveDashboardRoute(user.role as string | undefined));
   }
 
   return (
