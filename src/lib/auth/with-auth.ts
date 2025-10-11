@@ -1,90 +1,72 @@
-/**
- * @file with-auth.ts
- * @domain Authentication
- * @purpose Simple auth wrapper for API routes
- */
+/*
+AGENT DIRECTIVE BLOCK
+file: /src/lib/auth/with-auth.ts
+phase: 1
+domain: authentication
+purpose: Server-side auth wrapper that enforces Supabase session and tenant context
+spec_ref: auth-routing-simplification
+complexity_budget: 120
+dependencies:
+  external:
+    - next/headers
+    - next/server
+    - @supabase/auth-helpers-nextjs
+  internal:
+    - /src/types/database
+voice_considerations:
+  - Voice endpoints reuse this guard, so errors must be voice-friendly upstream
+*/
 
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-
-export interface AuthenticatedRequest extends NextRequest {
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-    tenant_id: string;
-  };
-}
-
-export interface User {
-  id: string;
-  email: string;
-  app_metadata?: {
-    role?: string;
-    crew_id?: string;
-    tenant_id?: string;
-  };
-}
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import type { User } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 
 export type AuthenticatedHandler = (
   user: User,
   tenantId: string
 ) => Promise<NextResponse>;
 
-/**
- * Simple auth wrapper for API routes
- * For now, this is a stub that passes through all requests
- * In production, this would validate JWT tokens, check permissions, etc.
- */
 export async function withAuth(
-  req: NextRequest,
+  _req: NextRequest,
   handler: AuthenticatedHandler
 ): Promise<NextResponse> {
   try {
-    // For now, create a mock user
-    // In production, this would:
-    // 1. Extract JWT from Authorization header
-    // 2. Validate token with Supabase
-    // 3. Get user info and permissions
-    // 4. Extract tenant ID from user context
-    
-    const mockUser: User = {
-      id: 'mock-user-id',
-      email: 'demo@jobeye.com',
-      app_metadata: {
-        role: 'crew',
-        crew_id: 'mock-crew-id',
-        tenant_id: 'mock-company-id'
-      }
-    };
+    const cookieStore = await cookies();
+    const supabase = createRouteHandlerClient<Database>({
+      cookies: () => cookieStore
+    });
 
-    const tenantId = mockUser.app_metadata?.tenant_id || 'mock-company-id';
+    const {
+      data: { session },
+      error
+    } = await supabase.auth.getSession();
 
-    return await handler(mockUser, tenantId);
-  } catch (error) {
-    console.error('[Auth] Error in withAuth wrapper:', error);
+    if (error) {
+      console.error('[Auth] Failed to fetch session:', error);
+      return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
+    }
+
+    const user = session?.user;
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const tenantId = user.app_metadata?.tenant_id;
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'Tenant context missing for user' },
+        { status: 403 }
+      );
+    }
+
+    return await handler(user, tenantId);
+  } catch (authError) {
+    console.error('[Auth] Error resolving user session:', authError);
     return NextResponse.json(
       { error: 'Authentication failed' },
       { status: 401 }
     );
   }
-}
-
-/**
- * Role-based auth wrapper
- */
-export function withRole(allowedRoles: string[]) {
-  return function (handler: AuthenticatedHandler) {
-    return withAuth(async (req: AuthenticatedRequest, context?: any) => {
-      const userRole = req.user?.role;
-      
-      if (!userRole || !allowedRoles.includes(userRole)) {
-        return NextResponse.json(
-          { error: 'Insufficient permissions' },
-          { status: 403 }
-        );
-      }
-
-      return await handler(req, context);
-    });
-  };
 }
