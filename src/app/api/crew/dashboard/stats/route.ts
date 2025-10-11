@@ -27,39 +27,58 @@
  * tasks: [
  *   'Return dashboard statistics',
  *   'Include equipment and vehicle status',
- *   'Support demo mode'
  * ]
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/core/errors/error-handler';
+import { createServerClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   try {
-    const isDemo = request.headers.get('x-is-demo') === 'true';
+    const supabase = await createServerClient();
+    const userId = request.headers.get('x-user-id');
 
-    if (isDemo || true) { // Always return demo data for now
-      return NextResponse.json({
-        stats: {
-          todayJobs: {
-            total: 3,
-            completed: 0,
-            inProgress: 0,
-            remaining: 3
-          },
-          equipment: {
-            verified: false,
-            missingItems: [],
-            issuesReported: 0
-          },
-          vehicle: {
-            fuelLevel: 85,
-            maintenanceAlerts: 0
-          }
-        }
-      });
+    if (!userId) {
+      return NextResponse.json({ error: 'Missing user context' }, { status: 400 });
     }
 
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data: assignments, error: jobError } = await supabase
+      .from('job_assignments')
+      .select('job_id, jobs(status, scheduled_date)')
+      .eq('crew_id', userId)
+      .eq('jobs.scheduled_date', today);
+
+    if (jobError) throw jobError;
+
+    const totalJobs = assignments?.length ?? 0;
+    const completedJobs =
+      assignments?.filter(a => a.jobs?.status === 'completed').length ?? 0;
+    const inProgressJobs =
+      assignments?.filter(a => a.jobs?.status === 'in_progress').length ?? 0;
+    const remainingJobs = totalJobs - completedJobs - inProgressJobs;
+
+    return NextResponse.json({
+      stats: {
+        todayJobs: {
+          total: totalJobs,
+          completed: completedJobs,
+          inProgress: inProgressJobs,
+          remaining: Math.max(remainingJobs, 0)
+        },
+        equipment: {
+          verified: false,
+          missingItems: [],
+          issuesReported: 0
+        },
+        vehicle: {
+          fuelLevel: null,
+          maintenanceAlerts: 0
+        }
+      }
+    });
   } catch (error) {
     return handleApiError(error);
   }

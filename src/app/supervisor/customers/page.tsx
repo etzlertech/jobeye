@@ -162,32 +162,10 @@ export default function SupervisorCustomersPage() {
     loadCustomers();
   }, []);
 
-  // Demo auth helper
-  const authenticateAsDemo = async () => {
-    try {
-      // Call demo auth API
-      const response = await fetch('/api/demo/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (response.ok) {
-        // Reload to trigger middleware with demo auth
-        window.location.reload();
-      } else {
-        setError('Failed to activate demo mode');
-      }
-    } catch (err) {
-      console.error('Demo auth error:', err);
-      setError('Failed to activate demo mode');
-    }
-  };
-
   const loadCustomers = async () => {
     try {
       setIsLoading(true);
-      // Add demo parameter for unauthenticated access
-      const response = await fetch('/api/supervisor/customers?demo=true');
+      const response = await fetch('/api/supervisor/customers');
       const data = await response.json();
 
       if (!response.ok) throw new Error(data.message);
@@ -243,14 +221,13 @@ export default function SupervisorCustomersPage() {
 
       const method = view === 'edit' ? 'PUT' : 'POST';
 
-      console.log('Submitting customer data:', { ...formData, demo: true });
+      console.log('Submitting customer data:', formData);
       console.log('API URL:', url, 'Method:', method);
 
-      // Add demo flag to body for unauthenticated access
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, demo: true })
+        body: JSON.stringify(formData)
       });
 
       const data = await response.json();
@@ -293,16 +270,8 @@ export default function SupervisorCustomersPage() {
     if (!confirm('Are you sure you want to delete this customer?')) return;
 
     try {
-      // Add tenant ID header for demo mode
-      const headers: HeadersInit = {};
-      const isDemo = document.cookie.includes('isDemo=true');
-      if (isDemo) {
-        headers['x-tenant-id'] = '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'; // Demo tenant ID
-      }
-
       const response = await fetch(`/api/supervisor/customers/${customerId}`, {
-        method: 'DELETE',
-        headers
+        method: 'DELETE'
       });
 
       if (!response.ok) {

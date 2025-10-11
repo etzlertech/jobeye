@@ -46,104 +46,9 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const status = searchParams.get('status');
 
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
     const tenantId = request.headers.get('x-tenant-id');
-
-    if (isDemo) {
-      // Return mock inventory for demo mode
-      const mockInventory = [
-        {
-          id: '1',
-          name: 'Lawn Mower - Commercial',
-          category: 'equipment',
-          quantity: 3,
-          min_quantity: 2,
-          status: 'in_stock',
-          container: 'Truck 1 - Main Bay',
-          thumbnail_url: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          name: 'Trimmer Line 0.095"',
-          category: 'materials',
-          quantity: 1,
-          min_quantity: 5,
-          status: 'low_stock',
-          container: 'Storage - Shelf A',
-          thumbnail_url: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '3',
-          name: 'Safety Goggles',
-          category: 'safety',
-          quantity: 0,
-          min_quantity: 10,
-          status: 'out_of_stock',
-          container: 'Storage - Safety Cabinet',
-          thumbnail_url: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '4',
-          name: 'Hedge Trimmer',
-          category: 'equipment',
-          quantity: 2,
-          min_quantity: 1,
-          status: 'in_stock',
-          container: 'Truck 2 - Tool Box',
-          thumbnail_url: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '5',
-          name: 'Fertilizer - Granular',
-          category: 'materials',
-          quantity: 8,
-          min_quantity: 3,
-          status: 'in_stock',
-          container: 'Storage - Chemical Room',
-          thumbnail_url: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
-
-      let filtered = mockInventory;
-
-      // Apply filters
-      if (category && category !== 'all') {
-        filtered = filtered.filter(item => item.category === category);
-      }
-
-      if (search) {
-        filtered = filtered.filter(item => 
-          item.name.toLowerCase().includes(search.toLowerCase()) ||
-          item.category.toLowerCase().includes(search.toLowerCase()) ||
-          item.container?.toLowerCase().includes(search.toLowerCase())
-        );
-      }
-
-      if (status && status !== 'all') {
-        filtered = filtered.filter(item => item.status === status);
-      }
-
-      return NextResponse.json({
-        items: filtered,
-        total_count: filtered.length,
-        stats: {
-          total_items: mockInventory.length,
-          in_stock: mockInventory.filter(i => i.status === 'in_stock').length,
-          low_stock: mockInventory.filter(i => i.status === 'low_stock').length,
-          out_of_stock: mockInventory.filter(i => i.status === 'out_of_stock').length
-        }
-      });
+    if (!tenantId) {
+      return validationError('Tenant ID required');
     }
 
     // Build query for real database
@@ -164,16 +69,14 @@ export async function GET(request: NextRequest) {
       `, { count: 'exact' });
 
     // Add filters
-    if (tenantId) {
-      query = query.eq('tenant_id', tenantId);
-    }
+    query = query.eq('tenant_id', tenantId);
 
     if (category && category !== 'all') {
       query = query.eq('category', category);
     }
 
     if (search) {
-      query = query.or(`name.ilike.%${search}%, category.ilike.%${search}%, container.ilike.%${search}%`);
+      query = query.or(`name.ilike.%${search}%, category.ilike.%${search}%`);
     }
 
     if (status && status !== 'all') {
@@ -193,9 +96,7 @@ export async function GET(request: NextRequest) {
       .from('inventory_items')
       .select('status, current_quantity, reorder_level', { count: 'exact' });
 
-    if (tenantId) {
-      statsQuery.eq('tenant_id', tenantId);
-    }
+    statsQuery.eq('tenant_id', tenantId);
 
     const { data: allItems } = await statsQuery;
     
@@ -244,29 +145,6 @@ export async function POST(request: NextRequest) {
       return validationError('Company ID required');
     }
 
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
-    if (isDemo) {
-      // Return mock response for demo mode
-      return NextResponse.json({
-        item: {
-          id: Date.now().toString(),
-          name: body.name,
-          category: body.category,
-          current_quantity: body.quantity || 1,
-          reorder_level: body.min_quantity || 5,
-          status: 'active',
-          type: body.category === 'equipment' ? 'equipment' : 'material',
-          tracking_mode: body.category === 'equipment' ? 'individual' : 'quantity',
-          tenant_id: tenantId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        message: 'Item added successfully (demo mode - not saved to database)',
-        isDemoMode: true
-      }, { status: 201 });
-    }
-
     // Determine item type and tracking mode
     const type = body.category === 'equipment' ? 'equipment' : 'material';
     const trackingMode = type === 'equipment' ? 'individual' : 'quantity';
@@ -298,8 +176,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       item,
-      message: 'Item added successfully and saved to database',
-      isDemoMode: false
+      message: 'Item added successfully and saved to database'
     }, { status: 201 });
 
   } catch (error) {

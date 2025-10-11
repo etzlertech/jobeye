@@ -27,7 +27,6 @@
  * tasks: [
  *   'Fetch assigned jobs for crew member',
  *   'Include customer and property details',
- *   'Support demo mode'
  * ]
  */
 
@@ -38,56 +37,12 @@ import { handleApiError } from '@/core/errors/error-handler';
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerClient();
-    
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
     const userId = request.headers.get('x-user-id');
     const tenantId = request.headers.get('x-tenant-id');
     const today = new Date().toISOString().split('T')[0];
 
-    if (isDemo) {
-      // Return mock jobs for demo mode
-      const mockJobs = [
-        {
-          id: '1',
-          customer_name: 'Johnson Family',
-          property_address: '123 Main St, Anytown, USA',
-          scheduled_date: today,
-          scheduled_time: '9:00 AM',
-          status: 'assigned',
-          special_instructions: 'Gate code: 1234',
-          template_name: 'Standard Lawn Service',
-          estimated_duration: '45 mins'
-        },
-        {
-          id: '2',
-          customer_name: 'Smith Residence',
-          property_address: '456 Oak Ave, Somewhere, USA',
-          scheduled_date: today,
-          scheduled_time: '10:30 AM',
-          status: 'assigned',
-          special_instructions: 'Dog in backyard - friendly',
-          template_name: 'Full Service Package',
-          estimated_duration: '1 hour'
-        },
-        {
-          id: '3',
-          customer_name: 'Green Acres HOA',
-          property_address: '789 Park Blvd, Elsewhere, USA',
-          scheduled_date: today,
-          scheduled_time: '1:00 PM',
-          status: 'assigned',
-          special_instructions: 'Common areas only',
-          template_name: 'Commercial Property',
-          estimated_duration: '2 hours'
-        }
-      ];
-
-      return NextResponse.json({
-        jobs: mockJobs,
-        total_count: mockJobs.length,
-        date: today
-      });
+    if (!userId || !tenantId) {
+      return NextResponse.json({ error: 'Missing user context' }, { status: 400 });
     }
 
     // Get jobs assigned to this crew member for today

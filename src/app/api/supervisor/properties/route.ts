@@ -45,53 +45,9 @@ export async function GET(request: NextRequest) {
     const customerId = searchParams.get('customer_id');
     const search = searchParams.get('search');
 
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
     const tenantId = request.headers.get('x-tenant-id');
-
-    if (isDemo) {
-      // Return mock properties for demo mode
-      const mockProperties = [
-        {
-          id: '1',
-          customer_id: '1',
-          address: '123 Main St, Anytown, USA',
-          type: 'residential',
-          size: '0.25 acres',
-          notes: 'Front and back lawn, flower beds',
-          customer: { name: 'Johnson Family' },
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '2', 
-          customer_id: '1',
-          address: '125 Main St, Anytown, USA',
-          type: 'commercial',
-          size: '0.5 acres',
-          notes: 'Business property with parking lot',
-          customer: { name: 'Johnson Family' },
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '3',
-          customer_id: '2',
-          address: '456 Oak Ave, Somewhere, USA',
-          type: 'residential',
-          size: '0.33 acres',
-          notes: 'Large backyard, pool area',
-          customer: { name: 'Smith Residence' },
-          created_at: new Date().toISOString()
-        }
-      ];
-
-      const filtered = customerId 
-        ? mockProperties.filter(p => p.customer_id === customerId)
-        : mockProperties;
-
-      return NextResponse.json({
-        properties: filtered,
-        total_count: filtered.length
-      });
+    if (!tenantId) {
+      return validationError('Tenant ID required');
     }
 
     // Build query
@@ -100,9 +56,7 @@ export async function GET(request: NextRequest) {
       .select('*, customer:customers(name)', { count: 'exact' });
 
     // Add filters
-    if (tenantId) {
-      query = query.eq('tenant_id', tenantId);
-    }
+    query = query.eq('tenant_id', tenantId);
 
     if (customerId) {
       query = query.eq('customer_id', customerId);
@@ -151,22 +105,6 @@ export async function POST(request: NextRequest) {
       return validationError('Company ID required');
     }
 
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
-    if (isDemo) {
-      // Return mock response for demo mode
-      return NextResponse.json({
-        property: {
-          id: Date.now().toString(),
-          ...body,
-          tenant_id: tenantId,
-          created_at: new Date().toISOString()
-        },
-        message: 'Property created successfully (demo mode - not saved to database)',
-        isDemoMode: true
-      }, { status: 201 });
-    }
-
     // Create property
     const { data: property, error } = await supabase
       .from('properties')
@@ -181,8 +119,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       property,
-      message: 'Property created successfully and saved to database',
-      isDemoMode: false
+      message: 'Property created successfully and saved to database'
     }, { status: 201 });
 
   } catch (error) {

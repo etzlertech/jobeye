@@ -289,12 +289,7 @@ export default function SupervisorInventoryPage() {
         params.append('search', searchQuery);
       }
 
-      const response = await fetch(`/api/supervisor/inventory?${params}`, {
-        headers: {
-          'x-is-demo': 'false',
-          'x-tenant-id': '123e4567-e89b-12d3-a456-426614174000'
-        }
-      });
+      const response = await fetch(`/api/supervisor/inventory?${params}`);
       const data = await response.json();
       
       if (!response.ok) throw new Error(data.message);
@@ -493,9 +488,7 @@ export default function SupervisorInventoryPage() {
       const response = await fetch('/api/supervisor/inventory', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'x-is-demo': 'false',
-          'x-tenant-id': '123e4567-e89b-12d3-a456-426614174000'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           name: newItem.name,

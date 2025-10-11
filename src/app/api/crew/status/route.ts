@@ -27,7 +27,6 @@
  * tasks: [
  *   'Get crew member status',
  *   'Include job counts',
- *   'Support demo mode'
  * ]
  */
 
@@ -37,19 +36,9 @@ import { handleApiError } from '@/core/errors/error-handler';
 
 export async function GET(request: NextRequest) {
   try {
-    const isDemo = request.headers.get('x-is-demo') === 'true';
     const userId = request.headers.get('x-user-id');
-
-    if (isDemo) {
-      return NextResponse.json({
-        status: {
-          memberName: 'John Doe',
-          currentJob: null,
-          totalJobsToday: 3,
-          completedJobs: 0,
-          hoursWorked: 0
-        }
-      });
+    if (!userId) {
+      return NextResponse.json({ error: 'Missing user context' }, { status: 400 });
     }
 
     const supabase = await createServerClient();

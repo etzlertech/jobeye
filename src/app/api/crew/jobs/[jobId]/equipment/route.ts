@@ -28,7 +28,6 @@
  * tasks: [
  *   'Get equipment list from job checklist_items',
  *   'Update equipment checklist items',
- *   'Support demo mode'
  * ]
  */
 
@@ -52,56 +51,6 @@ export async function GET(
   try {
     const supabase = await createServerClient();
     const { jobId } = params;
-    
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
-
-    if (isDemo) {
-      // Return varied mock equipment for demo jobs
-      const demoEquipment: Record<string, EquipmentItem[]> = {
-        '1': [
-          { name: 'Walk-Behind Mower', checked: false, category: 'primary', icon: '🚜' },
-          { name: 'String Trimmer', checked: false, category: 'primary', icon: '✂️' },
-          { name: 'Leaf Blower', checked: false, category: 'primary', icon: '💨' },
-          { name: 'Safety Glasses', checked: false, category: 'safety', icon: '🥽' },
-          { name: 'Hearing Protection', checked: false, category: 'safety', icon: '🎧' },
-          { name: 'Gas Can (2 gal)', checked: false, category: 'support', icon: '⛽' },
-          { name: 'Hand Tools Bag', checked: false, category: 'support', icon: '🧰' },
-          { name: 'Trash Bags', checked: false, category: 'materials', quantity: 10, icon: '🗑️' }
-        ],
-        '2': [
-          { name: 'Zero-Turn Mower', checked: false, category: 'primary', icon: '🚜' },
-          { name: 'String Trimmer', checked: false, category: 'primary', icon: '✂️' },
-          { name: 'Edger', checked: false, category: 'primary', icon: '🔪' },
-          { name: 'Backpack Blower', checked: false, category: 'primary', icon: '🎒' },
-          { name: 'Safety Kit', checked: false, category: 'safety', icon: '🦺' },
-          { name: 'Gas Can (5 gal)', checked: false, category: 'support', icon: '⛽' },
-          { name: '2-Cycle Oil', checked: false, category: 'support', quantity: 2, icon: '🛢️' },
-          { name: 'Trimmer Line', checked: false, category: 'materials', icon: '🧵' },
-          { name: 'First Aid Kit', checked: false, category: 'safety', icon: '🏥' },
-          { name: 'Water Cooler', checked: false, category: 'support', icon: '💧' }
-        ],
-        '3': [
-          { name: 'Commercial Mower (60")', checked: false, category: 'primary', icon: '🚜' },
-          { name: 'Zero-Turn Mower', checked: false, category: 'primary', icon: '🚜' },
-          { name: 'String Trimmer', checked: false, category: 'primary', quantity: 2, icon: '✂️' },
-          { name: 'Edger', checked: false, category: 'primary', quantity: 2, icon: '🔪' },
-          { name: 'Backpack Blower', checked: false, category: 'primary', quantity: 2, icon: '🎒' },
-          { name: 'Safety Cones', checked: false, category: 'safety', quantity: 6, icon: '🚧' },
-          { name: 'Team Safety Gear', checked: false, category: 'safety', quantity: 2, icon: '🦺' },
-          { name: 'Gas Can (5 gal)', checked: false, category: 'support', quantity: 2, icon: '⛽' },
-          { name: '2-Cycle Mix', checked: false, category: 'support', quantity: 4, icon: '🛢️' },
-          { name: 'Trailer', checked: false, category: 'support', icon: '🚛' },
-          { name: 'Hedge Trimmer', checked: false, category: 'primary', icon: '✂️' },
-          { name: 'Mulch (bags)', checked: false, category: 'materials', quantity: 20, icon: '🌿' }
-        ]
-      };
-
-      return NextResponse.json({
-        equipment: demoEquipment[jobId] || demoEquipment['1'],
-        job_id: jobId
-      });
-    }
 
     // Get job with checklist_items
     const { data: job, error } = await supabase
@@ -133,17 +82,6 @@ export async function PUT(
     const supabase = await createServerClient();
     const { jobId } = params;
     const body = await request.json();
-    
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
-    
-    if (isDemo) {
-      // In demo mode, just return success
-      return NextResponse.json({
-        success: true,
-        message: 'Equipment updated (demo mode)'
-      });
-    }
 
     const { equipment } = body;
 

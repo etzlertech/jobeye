@@ -27,7 +27,6 @@
  * tasks: [
  *   'Save verification results',
  *   'Update job status',
- *   'Support demo mode'
  * ]
  */
 
@@ -51,25 +50,11 @@ export async function POST(
       return validationError('Invalid verified_items');
     }
 
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
     const userId = request.headers.get('x-user-id');
     const tenantId = request.headers.get('x-tenant-id');
 
-    if (isDemo) {
-      // Return mock response for demo mode
-      return NextResponse.json({
-        verification: {
-          id: Date.now().toString(),
-          job_id: jobId,
-          crew_id: userId,
-          verified_items,
-          verification_time: verification_time || new Date().toISOString(),
-          verification_method: verification_method || 'camera_ai',
-          created_at: new Date().toISOString()
-        },
-        job_updated: true
-      }, { status: 201 });
+    if (!userId || !tenantId) {
+      return validationError('Missing user context');
     }
 
     // Start a transaction to save verification and update job

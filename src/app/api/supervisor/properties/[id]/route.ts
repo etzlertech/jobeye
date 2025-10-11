@@ -44,24 +44,9 @@ export async function GET(
     const supabase = await createServerClient();
     const propertyId = params.id;
 
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
     const tenantId = request.headers.get('x-tenant-id');
-
-    if (isDemo) {
-      // Return mock property for demo mode
-      return NextResponse.json({
-        property: {
-          id: propertyId,
-          customer_id: '1',
-          address: '123 Main St, Anytown, USA',
-          type: 'residential',
-          size: '0.25 acres',
-          notes: 'Front and back lawn, flower beds',
-          customer: { name: 'Johnson Family' },
-          created_at: new Date().toISOString()
-        }
-      });
+    if (!tenantId) {
+      return validationError('Tenant ID required');
     }
 
     // Get property with customer info
@@ -70,9 +55,7 @@ export async function GET(
       .select('*, customer:customers(name)')
       .eq('id', propertyId);
 
-    if (tenantId) {
-      query = query.eq('tenant_id', tenantId);
-    }
+    query = query.eq('tenant_id', tenantId);
 
     const { data: property, error } = await query.single();
 
@@ -106,21 +89,6 @@ export async function PUT(
     const tenantId = request.headers.get('x-tenant-id');
     if (!tenantId) {
       return validationError('Company ID required');
-    }
-
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
-    if (isDemo) {
-      // Return mock response for demo mode - simulate successful update
-      return NextResponse.json({
-        property: {
-          id: propertyId,
-          ...body,
-          tenant_id: tenantId,
-          updated_at: new Date().toISOString()
-        },
-        message: 'Property updated successfully in demo mode'
-      });
     }
 
     // Validate required fields if provided
@@ -175,15 +143,6 @@ export async function DELETE(
     const tenantId = request.headers.get('x-tenant-id');
     if (!tenantId) {
       return validationError('Company ID required');
-    }
-
-    // Check if demo mode
-    const isDemo = request.headers.get('x-is-demo') === 'true';
-    if (isDemo) {
-      // Return mock response for demo mode
-      return NextResponse.json({
-        message: 'Property deleted successfully in demo mode'
-      });
     }
 
     // Delete property with company verification

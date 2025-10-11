@@ -68,31 +68,19 @@ export async function middleware(request: NextRequest) {
       return res;
     }
 
-    // Check for demo mode cookies
-    const demoRole = request.cookies.get('demoRole')?.value;
-    const isDemoCookie = request.cookies.get('isDemo')?.value === 'true';
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-    let userRole: string | undefined;
-    let userId: string | undefined;
-    let session: any = null;
-
-    const { data: { session: authSession } } = await supabase.auth.getSession();
-
-    if (authSession) {
-      session = authSession;
-      userRole = (session.user.app_metadata?.role || session.user.user_metadata?.role) as string | undefined;
-      userId = session.user.id;
-    } else if (isDemoCookie && demoRole) {
-      userRole = demoRole;
-      userId = `demo-${demoRole}-user`;
-    } else {
+    if (sessionError || !session) {
       if (pathname.startsWith('/api/')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
       }
       const signInUrl = new URL('/sign-in', request.url);
       signInUrl.searchParams.set('redirectTo', pathname);
       return NextResponse.redirect(signInUrl);
     }
+
+    const userRole = (session.user.app_metadata?.role || session.user.user_metadata?.role) as string | undefined;
+    const userId = session.user.id;
 
     if (!userRole) {
       if (pathname.startsWith('/api/')) {
@@ -102,17 +90,6 @@ export async function middleware(request: NextRequest) {
       signInUrl.searchParams.set('error', 'no_role_assigned');
       return NextResponse.redirect(signInUrl);
     }
-
-    if (!userId) {
-      if (pathname.startsWith('/api/')) {
-        return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-      }
-      const signInUrl = new URL('/sign-in', request.url);
-      signInUrl.searchParams.set('error', 'unauthorized');
-      return NextResponse.redirect(signInUrl);
-    }
-
-    const isDemo = !session && isDemoCookie;
 
     // Check route access permissions
     const accessResult = checkRouteAccess(pathname, userRole);
@@ -132,7 +109,6 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set('x-user-role', userRole);
       const tenantId = session?.user?.app_metadata?.tenant_id || session?.user?.user_metadata?.tenant_id || 'demo-company';
       requestHeaders.set('x-tenant-id', tenantId);
-      requestHeaders.set('x-is-demo', isDemo ? 'true' : 'false');
       if (session?.user?.user_metadata) {
         requestHeaders.set('x-user-metadata', JSON.stringify(session.user.user_metadata));
       }

@@ -47,13 +47,10 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const offset = (page - 1) * limit;
 
-    // Get tenant ID (no more demo mode - all users use live database)
-    let tenantId = request.headers.get('x-tenant-id');
-    
-    // Allow demo mode override
-    const isDemoParam = searchParams.get('demo') === 'true';
-    if (isDemoParam && !tenantId) {
-      tenantId = '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'; // Demo tenant ID
+    const tenantId = request.headers.get('x-tenant-id');
+
+    if (!tenantId) {
+      return validationError('Tenant ID required');
     }
 
     // Build query - map billing_address to address for UI compatibility
@@ -70,10 +67,7 @@ export async function GET(request: NextRequest) {
         properties(count)
       `, { count: 'exact' });
 
-    // Add tenant filter (use tenant_id instead of tenant_id)
-    if (tenantId) {
-      query = query.eq('tenant_id', tenantId);
-    }
+    query = query.eq('tenant_id', tenantId);
 
     // Add search filter
     if (search) {
@@ -127,14 +121,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Get tenant ID from headers
-    let tenantId = request.headers.get('x-tenant-id');
-    
-    // Allow demo mode override
-    const isDemoBody = body.demo === true;
-    if (isDemoBody && !tenantId) {
-      tenantId = '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'; // Demo tenant ID
-    }
+    const tenantId = request.headers.get('x-tenant-id');
     
     if (!tenantId) {
       return validationError('Tenant ID required');

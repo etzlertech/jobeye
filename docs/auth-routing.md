@@ -84,14 +84,9 @@ Role-specific API prefixes that require authentication.
 - `/api/intent`, `/api/inventory`, `/api/scheduling` - follow service-specific policies (default: supervisor)
 - `/api/vision/*` - supervisor or admin
 
-## Demo Mode
-
-When `isDemo=true` cookie is present, middleware should trust the `demoRole` cookie for role enforcement. Demo users must still follow the above route restrictions.
-
 ## Testing Checklist
 
 - Seed users for each role with `app_metadata.role` and `app_metadata.tenant_id`
-- Verify middleware unit tests cover public, crew, supervisor, admin, and demo flows
+- Verify middleware unit tests cover public, crew, supervisor, and admin flows
 - Confirm UI hides navigation to disallowed routes per role
 - Validate Supabase RLS policies match this matrix via integration tests
-
