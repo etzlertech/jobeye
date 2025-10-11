@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Users, Plus, Trash2, Edit, Check, X, Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
 
 interface Customer {
   id: string;
@@ -18,30 +19,65 @@ export default function DemoCRUDPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [newCustomer, setNewCustomer] = useState({ name: '', email: '', phone: '' });
+  const [tenantId, setTenantId] = useState<string | null>(null);
 
-  // Load customers on mount
-  useEffect(() => {
-    loadCustomers();
-  }, []);
-
-  const loadCustomers = async () => {
+  const loadCustomers = useCallback(async (tenant: string) => {
     try {
       setLoading(true);
-      const response = await fetch('/api/supervisor/customers?demo=true');
+      const response = await fetch('/api/supervisor/customers?demo=true', {
+        headers: {
+          'x-tenant-id': tenant
+        }
+      });
       const data = await response.json();
-      
-      if (data.customers) {
+
+      if (response.ok && data.customers) {
         setCustomers(data.customers);
         setMessage(`Loaded ${data.customers.length} customers`);
+      } else {
+        setMessage(data.error || 'Failed to fetch customers');
       }
     } catch (error) {
       setMessage('Error loading customers');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Initialize tenant context and load customers
+  useEffect(() => {
+    const init = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase.auth.getSession();
+        if (error || !data.session) {
+          setMessage('Please sign in via /simple-signin?redirectTo=/demo-crud');
+          return;
+        }
+
+        const tenant =
+          (data.session.user.app_metadata?.tenant_id as string | undefined) ||
+          (data.session.user.user_metadata?.tenant_id as string | undefined) ||
+          'demo-company';
+
+        setTenantId(tenant);
+        await loadCustomers(tenant);
+      } catch (err) {
+        setMessage('Unable to initialize session.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    init();
+  }, [loadCustomers]);
 
   const createCustomer = async () => {
+    if (!tenantId) {
+      setMessage('Missing tenant context');
+      return;
+    }
+
     if (!newCustomer.name || !newCustomer.email) {
       setMessage('Name and email are required');
       return;
@@ -51,15 +87,18 @@ export default function DemoCRUDPage() {
       setLoading(true);
       const response = await fetch('/api/supervisor/customers?demo=true', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': tenantId
+        },
         body: JSON.stringify(newCustomer)
       });
-      
+
       const data = await response.json();
       if (response.ok) {
         setMessage('Customer created successfully!');
         setNewCustomer({ name: '', email: '', phone: '' });
-        loadCustomers();
+        await loadCustomers(tenantId);
       } else {
         setMessage(`Error: ${data.message || 'Failed to create customer'}`);
       }
@@ -71,18 +110,29 @@ export default function DemoCRUDPage() {
   };
 
   const updateCustomer = async (id: string) => {
+    if (!tenantId) {
+      setMessage('Missing tenant context');
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await fetch(`/api/supervisor/customers/${id}?demo=true`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': tenantId
+        },
         body: JSON.stringify({ customer_name: editName })
       });
-      
+
       if (response.ok) {
         setMessage('Customer updated successfully!');
         setEditingId(null);
-        loadCustomers();
+        await loadCustomers(tenantId);
+      } else {
+        const data = await response.json();
+        setMessage(data.error || 'Failed to update customer');
       }
     } catch (error) {
       setMessage('Error updating customer');
@@ -92,17 +142,28 @@ export default function DemoCRUDPage() {
   };
 
   const deleteCustomer = async (id: string, name: string) => {
+    if (!tenantId) {
+      setMessage('Missing tenant context');
+      return;
+    }
+
     if (!confirm(`Delete customer "${name}"?`)) return;
 
     try {
       setLoading(true);
       const response = await fetch(`/api/supervisor/customers/${id}?demo=true`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'x-tenant-id': tenantId
+        }
       });
-      
+
       if (response.ok) {
         setMessage('Customer deleted successfully!');
-        loadCustomers();
+        await loadCustomers(tenantId);
+      } else {
+        const data = await response.json();
+        setMessage(data.error || 'Failed to delete customer');
       }
     } catch (error) {
       setMessage('Error deleting customer');
@@ -115,7 +176,10 @@ export default function DemoCRUDPage() {
     <div className="min-h-screen bg-black text-white p-4 max-w-4xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-yellow-400 mb-2">JobEye CRUD Demo</h1>
-        <p className="text-gray-400">Railway Production - Direct Supabase Operations</p>
+        <p className="text-gray-400">
+          Railway Production - Direct Supabase Operations (ensure you sign in via 
+          <span className="underline">/simple-signin?redirectTo=/demo-crud</span>)
+        </p>
       </div>
 
       {message && (
@@ -165,8 +229,8 @@ export default function DemoCRUDPage() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-blue-400">Customer List</h2>
           <button
-            onClick={loadCustomers}
-            disabled={loading}
+            onClick={() => tenantId && loadCustomers(tenantId)}
+            disabled={loading || !tenantId}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded-lg transition-colors"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
@@ -199,62 +263,51 @@ export default function DemoCRUDPage() {
                     <button
                       onClick={() => updateCustomer(customer.id)}
                       disabled={loading}
-                      className="p-1 text-green-400 hover:text-green-300"
+                      className="p-2 bg-green-600 hover:bg-green-700 rounded text-white"
                     >
                       <Check className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => setEditingId(null)}
-                      className="p-1 text-red-400 hover:text-red-300"
+                      onClick={() => {
+                        setEditingId(null);
+                        setEditName('');
+                      }}
+                      className="p-2 bg-red-600 hover:bg-red-700 rounded text-white"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                 ) : (
-                  <>
-                    <div>
-                      <div className="font-semibold">{customer.name}</div>
-                      <div className="text-sm text-gray-400">{customer.email}</div>
-                      {customer.phone && <div className="text-sm text-gray-500">{customer.phone}</div>}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingId(customer.id);
-                          setEditName(customer.name);
-                        }}
-                        className="p-2 text-blue-400 hover:text-blue-300"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => deleteCustomer(customer.id, customer.name)}
-                        disabled={loading}
-                        className="p-2 text-red-400 hover:text-red-300"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </>
+                  <div>
+                    <p className="font-semibold text-lg">{customer.name}</p>
+                    <p className="text-sm text-gray-300">{customer.email}</p>
+                    {customer.phone && <p className="text-sm text-gray-400">{customer.phone}</p>}
+                  </div>
+                )}
+
+                {editingId !== customer.id && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingId(customer.id);
+                        setEditName(customer.name);
+                      }}
+                      className="p-2 bg-blue-600 hover:bg-blue-700 rounded text-white"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => deleteCustomer(customer.id, customer.name)}
+                      className="p-2 bg-red-600 hover:bg-red-700 rounded text-white"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
           </div>
         )}
-      </div>
-
-      {/* CRUD Summary */}
-      <div className="mt-8 p-4 bg-gray-900 border border-yellow-600 rounded-lg">
-        <h3 className="text-lg font-semibold text-yellow-400 mb-2">CRUD Operations Demo</h3>
-        <ul className="space-y-1 text-sm text-gray-300">
-          <li>✅ <strong>CREATE:</strong> Add new customers with the form above</li>
-          <li>✅ <strong>READ:</strong> View all customers in the list</li>
-          <li>✅ <strong>UPDATE:</strong> Click edit icon to modify customer names</li>
-          <li>✅ <strong>DELETE:</strong> Click trash icon to remove customers</li>
-        </ul>
-        <p className="mt-3 text-xs text-gray-500">
-          Connected to Railway Supabase: rtwigjwqufozqfwozpvo
-        </p>
       </div>
     </div>
   );

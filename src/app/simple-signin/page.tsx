@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 
 export default function SimpleSignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,15 +32,19 @@ export default function SimpleSignInPage() {
 
         // Get role from app_metadata or user_metadata
         const role = data.user.app_metadata?.role || data.user.user_metadata?.role || 'crew';
-        
-        // Redirect based on role
+
+        // Redirect based on role or provided redirect target
         const roleRoutes: Record<string, string> = {
           admin: '/admin',
           supervisor: '/supervisor',
           crew: '/crew'
         };
 
-        router.push(roleRoutes[role] || '/');
+        const redirectParam = searchParams?.get('redirectTo');
+        const hasSafeRedirect = redirectParam?.startsWith('/');
+        const targetRoute = hasSafeRedirect ? redirectParam! : roleRoutes[role] || '/';
+
+        router.push(targetRoute);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in');
