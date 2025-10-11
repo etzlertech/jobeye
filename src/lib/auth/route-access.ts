@@ -57,6 +57,7 @@ export const routeAccessConfig: RouteAccessMatrix = {
     '/sign-in',
     '/simple-signin',
     '/sign-up',
+    '/auth/callback',
     '/reset-password',
     '/demo-crud',
     '/mobile',
@@ -194,4 +195,3 @@ export function listProtectedPrefixes(): string[] {
   const apiRoutes = routeAccessConfig.apiProtected.map(withWildcard);
   return Array.from(new Set([...protectedRoutes, ...sharedRoutes, ...apiRoutes]));
 }
-
