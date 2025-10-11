@@ -145,6 +145,10 @@ export default function SignInPage() {
       }
 
       if (data.user) {
+        // Clear any lingering demo cookies
+        document.cookie = 'isDemo=; Max-Age=0; path=/';
+        document.cookie = 'demoRole=; Max-Age=0; path=/';
+
         // Check both app_metadata and user_metadata for role
         const role = data.user.app_metadata?.role || data.user.user_metadata?.role || 'crew';
         setDetectedRole(role);

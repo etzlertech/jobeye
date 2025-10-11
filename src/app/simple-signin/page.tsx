@@ -25,6 +25,10 @@ export default function SimpleSignInPage() {
       if (error) throw error;
 
       if (data.user) {
+        // Clear any lingering demo cookies
+        document.cookie = 'isDemo=; Max-Age=0; path=/';
+        document.cookie = 'demoRole=; Max-Age=0; path=/';
+
         // Get role from app_metadata or user_metadata
         const role = data.user.app_metadata?.role || data.user.user_metadata?.role || 'crew';
         

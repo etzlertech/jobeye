@@ -68,41 +68,51 @@ export async function middleware(request: NextRequest) {
       return res;
     }
 
-    // Check for demo mode first
+    // Check for demo mode cookies
     const demoRole = request.cookies.get('demoRole')?.value;
-    const isDemo = request.cookies.get('isDemo')?.value === 'true';
+    const isDemoCookie = request.cookies.get('isDemo')?.value === 'true';
 
-    let userRole: string;
-    let userId: string;
+    let userRole: string | undefined;
+    let userId: string | undefined;
     let session: any = null;
 
-    if (isDemo && demoRole) {
-      // Demo mode - bypass authentication
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+
+    if (authSession) {
+      session = authSession;
+      userRole = (session.user.app_metadata?.role || session.user.user_metadata?.role) as string | undefined;
+      userId = session.user.id;
+    } else if (isDemoCookie && demoRole) {
       userRole = demoRole;
       userId = `demo-${demoRole}-user`;
     } else {
-      // Normal authentication flow
-      const { data: { session: authSession }, error } = await supabase.auth.getSession();
-
-      if (error || !authSession) {
-        // Redirect to sign-in for protected routes
-        const signInUrl = new URL('/sign-in', request.url);
-        signInUrl.searchParams.set('redirectTo', pathname);
-        return NextResponse.redirect(signInUrl);
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-
-      session = authSession;
-      // Check both app_metadata and user_metadata for role (demo users use user_metadata)
-      userRole = (session.user.app_metadata?.role || session.user.user_metadata?.role) as string;
-      userId = session.user.id;
+      const signInUrl = new URL('/sign-in', request.url);
+      signInUrl.searchParams.set('redirectTo', pathname);
+      return NextResponse.redirect(signInUrl);
     }
 
     if (!userRole) {
-      // User has no role assigned - redirect to sign-in
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'no_role_assigned' }, { status: 403 });
+      }
       const signInUrl = new URL('/sign-in', request.url);
       signInUrl.searchParams.set('error', 'no_role_assigned');
       return NextResponse.redirect(signInUrl);
     }
+
+    if (!userId) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+      }
+      const signInUrl = new URL('/sign-in', request.url);
+      signInUrl.searchParams.set('error', 'unauthorized');
+      return NextResponse.redirect(signInUrl);
+    }
+
+    const isDemo = !session && isDemoCookie;
 
     // Check route access permissions
     const accessResult = checkRouteAccess(pathname, userRole);
