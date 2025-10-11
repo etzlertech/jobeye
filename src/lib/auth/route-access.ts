@@ -69,35 +69,26 @@ export const routeAccessConfig: RouteAccessMatrix = {
     '/api/demo-crud'
   ],
   protected: {
-    admin: ['/admin', '/control-tower', '/control-tower/', '/vision/admin'],
+    admin: ['/admin*', '/control-tower*', '/vision/admin*'],
     supervisor: [
-      '/supervisor',
-      '/supervisor/dashboard',
-      '/supervisor/customers',
-      '/supervisor/properties',
-      '/supervisor/jobs',
-      '/supervisor/inventory',
-      '/jobs',
-      '/jobs/',
-      '/crew/job-load',
-      '/crew/jobs',
-      '/crew/load-verify',
-      '/mobile/equipment-verification',
-      '/mobile/job-load-checklist-start'
+      '/supervisor*',
+      '/jobs*',
+      '/crew/job-load*',
+      '/crew/jobs*',
+      '/crew/load-verify*',
+      '/mobile/equipment-verification*',
+      '/mobile/job-load-checklist-start*'
     ],
     crew: [
-      '/crew',
-      '/crew/jobs',
-      '/crew/job-load',
-      '/crew/load-verify',
-      '/mobile/equipment-verification',
-      '/mobile/job-load-checklist-start',
-      '/mobile/loading-complete'
+      '/crew*',
+      '/mobile/equipment-verification*',
+      '/mobile/job-load-checklist-start*',
+      '/mobile/loading-complete*'
     ]
   },
   shared: {
-    'admin,supervisor': ['/reports', '/analytics'],
-    'supervisor,crew': ['/equipment', '/profile']
+    'admin,supervisor': ['/reports*', '/analytics*'],
+    'supervisor,crew': ['/equipment*', '/profile*']
   },
   apiProtected: ['/api/admin', '/api/supervisor', '/api/crew', '/api/intent', '/api/inventory', '/api/scheduling', '/api/vision']
 };
@@ -126,9 +117,12 @@ export function checkRouteAccess(pathname: string, userRole: UserRole): {
   reason?: string;
 } {
   let deniedReason: string | undefined;
+  let foundMatchingRoute = false;
 
+  // Check protected routes first
   for (const [role, routes] of Object.entries(routeAccessConfig.protected)) {
     if (routes.some(route => matchesRoute(pathname, route))) {
+      foundMatchingRoute = true;
       const allowedRoles = ROLE_HIERARCHY[role as UserRole] || [];
       if (allowedRoles.includes(userRole)) {
         return { allowed: true };
@@ -137,8 +131,10 @@ export function checkRouteAccess(pathname: string, userRole: UserRole): {
     }
   }
 
+  // Check shared routes
   for (const [roles, routes] of Object.entries(routeAccessConfig.shared)) {
     if (routes.some(route => matchesRoute(pathname, route))) {
+      foundMatchingRoute = true;
       const allowed = roles.split(',');
       if (allowed.includes(userRole)) {
         return { allowed: true };
@@ -147,12 +143,15 @@ export function checkRouteAccess(pathname: string, userRole: UserRole): {
     }
   }
 
+  // Handle API routes
   if (pathname.startsWith('/api/')) {
     const protectedPrefix = routeAccessConfig.apiProtected.find(apiRoute => pathname.startsWith(apiRoute));
     if (!protectedPrefix) {
+      // API route not in protected list - allow authenticated users
       return { allowed: true };
     }
 
+    foundMatchingRoute = true;
     const apiRole = protectedPrefix.split('/')[2] as UserRole | undefined;
     if (!apiRole || !ROLE_HIERARCHY[apiRole]) {
       return { allowed: true };
@@ -164,9 +163,16 @@ export function checkRouteAccess(pathname: string, userRole: UserRole): {
     }
 
     deniedReason = `Role ${userRole} cannot access ${protectedPrefix}`;
+    return { allowed: false, reason: deniedReason };
   }
 
-  return { allowed: false, reason: deniedReason ?? 'Route not found in access control list' };
+  // If no matching route found, ALLOW by default for authenticated users
+  // This prevents breaking on new routes not yet in the config
+  if (!foundMatchingRoute) {
+    return { allowed: true };
+  }
+
+  return { allowed: false, reason: deniedReason ?? 'Access denied' };
 }
 
 export function canAccessRoute(pathname: string, userRole: UserRole): boolean {
