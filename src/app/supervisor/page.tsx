@@ -65,6 +65,7 @@ import {
 import { JobCard } from '@/components/ui/JobCard';
 import { ButtonLimiter, useButtonActions } from '@/components/ui/ButtonLimiter';
 import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
+import { supabase } from '@/lib/supabase/client';
 
 interface DashboardData {
   todayJobs: {
@@ -118,6 +119,7 @@ export default function SupervisorDashboard() {
   const [isOffline, setIsOffline] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [voiceResponse, setVoiceResponse] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ name?: string | null; email?: string | null } | null>(null);
 
   // Setup button actions
   useEffect(() => {
@@ -197,6 +199,29 @@ export default function SupervisorDashboard() {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  // Resolve authenticated user for header display
+  useEffect(() => {
+    let isMounted = true;
+
+    supabase.auth.getUser().then(({ data, error }) => {
+      if (!isMounted || error || !data.user) {
+        return;
+      }
+
+      const rawName =
+        (data.user.user_metadata as Record<string, unknown> | undefined)?.name;
+
+      setCurrentUser({
+        name: typeof rawName === 'string' ? rawName : null,
+        email: data.user.email
+      });
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Handle voice commands
   const handleVoiceCommand = async (transcript: string) => {
@@ -286,12 +311,20 @@ export default function SupervisorDashboard() {
           </p>
         </div>
         
-        {/* Offline indicator */}
-        {isOffline && (
-          <div className="flex items-center gap-2">
-            <WifiOff className="w-5 h-5 text-orange-500" />
-          </div>
-        )}
+        <div className="header-actions">
+          {isOffline && (
+            <div className="offline-indicator">
+              <WifiOff className="w-4 h-4" />
+              <span>Offline</span>
+            </div>
+          )}
+          {currentUser?.email && (
+            <div className="user-pill" title={currentUser.email ?? undefined}>
+              <Users className="w-4 h-4" />
+              <span>{currentUser.name || currentUser.email}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -501,6 +534,46 @@ export default function SupervisorDashboard() {
           padding: 1rem;
           border-bottom: 1px solid #333;
           background: rgba(0, 0, 0, 0.9);
+        }
+
+        .header-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .offline-indicator {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.35rem 0.6rem;
+          border-radius: 9999px;
+          background: rgba(249, 115, 22, 0.12);
+          color: #fb923c;
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .user-pill {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.45rem 0.8rem;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          font-size: 0.75rem;
+          color: #f9fafb;
+          max-width: 180px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .user-pill span {
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .notification-bar {
