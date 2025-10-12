@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
       tenant_id: tenantId,
       status: body.status || 'draft',
       priority: body.priority || 'low',
-      created_by: body.created_by || 'demo-user'
+      job_number: body.job_number // Ensure job_number is included
     };
 
     // Validate required fields
