@@ -174,7 +174,9 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
                 Upload Image
               </button>
             </div>
-            
+          )}
+          
+          {!previewUrl && (
             <p className="text-sm text-gray-500 text-center mt-2">
               Supported formats: JPEG, PNG, GIF, WebP
             </p>
