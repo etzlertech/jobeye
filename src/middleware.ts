@@ -107,7 +107,7 @@ export async function middleware(request: NextRequest) {
       const requestHeaders = new Headers(request.headers);
       requestHeaders.set('x-user-id', userId);
       requestHeaders.set('x-user-role', userRole);
-      const tenantId = session?.user?.app_metadata?.tenant_id || session?.user?.user_metadata?.tenant_id || 'demo-company';
+      const tenantId = session?.user?.app_metadata?.tenant_id || session?.user?.user_metadata?.tenant_id || '00000000-0000-0000-0000-000000000000';
       requestHeaders.set('x-tenant-id', tenantId);
       if (session?.user?.user_metadata) {
         requestHeaders.set('x-user-metadata', JSON.stringify(session.user.user_metadata));

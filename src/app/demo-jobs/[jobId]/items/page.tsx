@@ -68,7 +68,7 @@ export default function JobItemsPage() {
     try {
       const res = await fetch('/api/supervisor/items', {
         headers: {
-          'x-tenant-id': 'demo-company'
+          'x-tenant-id': '00000000-0000-0000-0000-000000000000'  // Default tenant UUID
         }
       });
       const data = await res.json();
@@ -91,7 +91,10 @@ export default function JobItemsPage() {
     try {
       const res = await fetch(`/api/supervisor/jobs/${jobId}/items`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-tenant-id': '00000000-0000-0000-0000-000000000000'
+        },
         body: JSON.stringify({
           item_id: selectedItem.id,
           item_name: selectedItem.name,

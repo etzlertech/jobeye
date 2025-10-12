@@ -31,7 +31,7 @@ export default function DemoItemsPage() {
     try {
       const res = await fetch('/api/supervisor/items', {
         headers: {
-          'x-tenant-id': 'demo-company'
+          'x-tenant-id': '00000000-0000-0000-0000-000000000000'  // Default tenant UUID
         }
       });
       const data = await res.json();
@@ -55,7 +55,7 @@ export default function DemoItemsPage() {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-tenant-id': 'demo-company'
+          'x-tenant-id': '00000000-0000-0000-0000-000000000000'  // Default tenant UUID
         },
         body: JSON.stringify({
           name,
