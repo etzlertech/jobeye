@@ -173,6 +173,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     console.log('Jobs API POST request body:', JSON.stringify(body, null, 2));
+    console.log('Body keys:', Object.keys(body));
+    console.log('customer_id value:', body.customer_id);
+    console.log('customer_id type:', typeof body.customer_id);
 
     // Get tenant ID from headers, use demo default if not provided
     // Using a proper UUID for demo tenant
@@ -194,13 +197,21 @@ export async function POST(request: NextRequest) {
       job_number: body.job_number // Ensure job_number is included
     };
 
-    // Validate required fields
+    // Validate required fields - customer_id is NOT NULL in database
     const requiredFields = ['title', 'customer_id'];
     const missingFields = requiredFields.filter(field => !jobData[field]);
 
     if (missingFields.length > 0) {
       return validationError('Missing required fields', { 
-        missing_fields: missingFields 
+        missing_fields: missingFields,
+        note: 'customer_id is required and cannot be null'
+      });
+    }
+    
+    // Ensure customer_id is not null (double check)
+    if (!jobData.customer_id) {
+      return validationError('customer_id is required', {
+        message: 'Jobs table requires a valid customer_id'
       });
     }
 

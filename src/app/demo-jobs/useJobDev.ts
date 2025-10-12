@@ -182,6 +182,17 @@ export function useJobDev({ tenantId, tenantHeaders, requireSignIn, setAlertMess
 
     if (!form.customerId || !form.title.trim() || !form.scheduledDate) {
       setAlertMessage('Customer, title, and scheduled date are required', 'error');
+      console.error('Validation failed:', {
+        customerId: form.customerId,
+        title: form.title,
+        scheduledDate: form.scheduledDate
+      });
+      return;
+    }
+    
+    // Double check customer ID is valid UUID format
+    if (!form.customerId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      setAlertMessage('Invalid customer ID format', 'error');
       return;
     }
 
