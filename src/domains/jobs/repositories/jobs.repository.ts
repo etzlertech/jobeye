@@ -33,7 +33,6 @@
  * ]
  */
 
-import { BaseRepository } from '@/lib/repositories/base.repository';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
@@ -66,10 +65,8 @@ export interface JobFilters {
   offset?: number;
 }
 
-export class JobsRepository extends BaseRepository<Job, JobInsert, JobUpdate> {
-  constructor(client: SupabaseClient<Database>) {
-    super(client, 'jobs');
-  }
+export class JobsRepository {
+  constructor(private client: SupabaseClient<Database>) {}
 
   /**
    * Find jobs with related customer and property data
@@ -252,5 +249,79 @@ export class JobsRepository extends BaseRepository<Job, JobInsert, JobUpdate> {
     }
 
     return this.update(id, updateData, { tenant_id: tenantId });
+  }
+
+  /**
+   * Basic CRUD operations
+   */
+  async findById(id: string, filters: { tenant_id: string }): Promise<Job | null> {
+    const { data, error } = await this.client
+      .from('jobs')
+      .select('*')
+      .eq('id', id)
+      .eq('tenant_id', filters.tenant_id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      throw error;
+    }
+
+    return data;
+  }
+
+  async create(jobData: JobInsert): Promise<Job | null> {
+    const { data, error } = await this.client
+      .from('jobs')
+      .insert(jobData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating job:', error);
+      throw error;
+    }
+
+    return data;
+  }
+
+  async update(
+    id: string,
+    updateData: JobUpdate,
+    filters: { tenant_id: string }
+  ): Promise<Job | null> {
+    const { data, error } = await this.client
+      .from('jobs')
+      .update(updateData)
+      .eq('id', id)
+      .eq('tenant_id', filters.tenant_id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      throw error;
+    }
+
+    return data;
+  }
+
+  async delete(id: string, filters: { tenant_id: string }): Promise<boolean> {
+    const { error } = await this.client
+      .from('jobs')
+      .delete()
+      .eq('id', id)
+      .eq('tenant_id', filters.tenant_id);
+
+    if (error) {
+      console.error('Error deleting job:', error);
+      throw error;
+    }
+
+    return true;
   }
 }
