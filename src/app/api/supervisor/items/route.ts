@@ -24,26 +24,30 @@ export async function GET(request: NextRequest) {
     // Parse query params
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = (page - 1) * limit;
     const search = searchParams.get('search') || undefined;
     const itemType = searchParams.get('item_type') || undefined;
     const category = searchParams.get('category') || undefined;
     const status = searchParams.get('status') || undefined;
     
     const result = await itemRepo.findAll({
-      tenant_id: tenantId,
-      page,
-      limit,
+      tenantId,  // camelCase
       filters: {
-        search,
-        item_type: itemType as any,
+        searchTerm: search,  // camelCase from ItemFilters
+        itemType: itemType as any,  // camelCase
         category,
         status: status as any
-      }
+      },
+      limit,
+      offset
     });
     
     return NextResponse.json({
       items: result.data,
-      pagination: result.pagination
+      count: result.count,
+      page,
+      limit,
+      totalPages: Math.ceil(result.count / limit)
     });
     
   } catch (error) {
@@ -81,18 +85,18 @@ export async function POST(request: NextRequest) {
       });
     }
     
-    // Build item data
+    // Build item data with camelCase for repository
     const itemData = {
-      tenant_id: tenantId,
-      item_type: body.item_type,
+      tenantId,  // camelCase
+      itemType: body.item_type,  // camelCase
       category: body.category,
       name: body.name.trim(),
       description: body.description?.trim() || null,
-      tracking_mode: body.tracking_mode,
-      current_quantity: body.current_quantity || 0,
-      unit_of_measure: body.unit_of_measure,
-      min_quantity: body.min_quantity || null,
-      reorder_point: body.reorder_point || null,
+      trackingMode: body.tracking_mode,  // camelCase
+      currentQuantity: body.current_quantity || 0,  // camelCase
+      unitOfMeasure: body.unit_of_measure,  // camelCase
+      minQuantity: body.min_quantity || null,  // camelCase
+      reorderPoint: body.reorder_point || null,  // camelCase
       manufacturer: body.manufacturer || null,
       model: body.model || null,
       sku: body.sku || null,
@@ -111,21 +115,17 @@ export async function POST(request: NextRequest) {
     console.log('✅ Item created:', item.id);
     
     // If initial quantity > 0, create a check-in transaction
-    if (item.current_quantity > 0) {
+    if (item.currentQuantity > 0) {  // camelCase from repository
       const { ItemTransactionRepository } = await import('@/domains/shared/repositories/item-transaction.repository');
       const txRepo = new ItemTransactionRepository(supabase);
       
       const transaction = await txRepo.create({
-        tenant_id: tenantId,
-        item_id: item.id,
-        transaction_type: 'check_in',
-        quantity: item.current_quantity,
-        location_type: 'ground',
-        location_id: null,
-        reference_type: 'manual',
-        reference_id: null,
+        tenantId,  // camelCase
+        transactionType: 'check_in',  // camelCase
+        itemId: item.id,  // camelCase
+        quantity: item.currentQuantity,  // camelCase
         notes: 'Initial inventory',
-        user_id: null
+        createdBy: null
       });
       
       console.log('Initial transaction created:', transaction?.id);

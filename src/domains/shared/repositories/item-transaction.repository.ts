@@ -43,7 +43,7 @@ export class ItemTransactionRepository extends BaseRepository<ItemTransaction> {
    */
   async create(data: TransactionCreate): Promise<ItemTransaction> {
     try {
-      const { data: created, error } = await this.supabaseClient
+      const { data: created, error } = await this.supabase
         .from(this.tableName)
         .insert(this.mapToDb(data))
         .select()
@@ -73,7 +73,7 @@ export class ItemTransactionRepository extends BaseRepository<ItemTransaction> {
     offset?: number;
   }): Promise<{ data: ItemTransaction[]; count: number }> {
     try {
-      let query = this.supabaseClient
+      let query = this.supabase
         .from(this.tableName)
         .select('*', { count: 'exact' })
         .eq('tenant_id', options.tenantId);
@@ -140,7 +140,7 @@ export class ItemTransactionRepository extends BaseRepository<ItemTransaction> {
    */
   async getItemHistory(itemId: string, tenantId: string, limit = 50): Promise<ItemTransaction[]> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('tenant_id', tenantId)
@@ -167,7 +167,7 @@ export class ItemTransactionRepository extends BaseRepository<ItemTransaction> {
    */
   async getLocationActivity(locationId: string, tenantId: string, limit = 50): Promise<ItemTransaction[]> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('tenant_id', tenantId)
@@ -194,7 +194,7 @@ export class ItemTransactionRepository extends BaseRepository<ItemTransaction> {
    */
   async getJobTransactions(jobId: string, tenantId: string): Promise<ItemTransaction[]> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('tenant_id', tenantId)
@@ -225,7 +225,7 @@ export class ItemTransactionRepository extends BaseRepository<ItemTransaction> {
     groupBy: 'transaction_type' | 'item_id' | 'job_id'
   ): Promise<Array<{ group: string; count: number; total_quantity: number }>> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .rpc('get_transaction_summary', {
           p_tenant_id: tenantId,
           p_date_from: dateFrom,
