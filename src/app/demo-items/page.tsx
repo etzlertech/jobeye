@@ -63,8 +63,8 @@ export default function DemoItemsPage() {
         }
       });
       const data = await res.json();
-      if (res.ok && data.items) {
-        setItems(data.items);
+      if (res.ok && data.data) {
+        setItems(data.data);
       } else {
         setMessage('Failed to load items');
       }
@@ -264,9 +264,9 @@ export default function DemoItemsPage() {
               {items.map((item) => (
                 <tr key={item.id} className="border-b">
                   <td className="py-2">
-                    {item.thumbnailUrl || item.primaryImageUrl ? (
+                    {item.thumbnail_url || item.primary_image_url ? (
                       <img 
-                        src={item.thumbnailUrl || item.primaryImageUrl} 
+                        src={item.thumbnail_url || item.primary_image_url} 
                         alt={item.name}
                         className="w-16 h-16 object-cover rounded"
                       />
