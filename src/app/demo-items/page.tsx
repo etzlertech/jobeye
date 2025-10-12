@@ -264,14 +264,14 @@ export default function DemoItemsPage() {
               {items.map((item) => (
                 <tr key={item.id} className="border-b">
                   <td className="py-2">
-                    {item.thumbnail_url || item.primary_image_url ? (
+                    {item.thumbnailUrl || item.primaryImageUrl ? (
                       <img 
-                        src={item.thumbnail_url || item.primary_image_url} 
+                        src={item.thumbnailUrl || item.primaryImageUrl} 
                         alt={item.name}
-                        className="w-12 h-12 object-cover rounded"
+                        className="w-16 h-16 object-cover rounded"
                       />
                     ) : (
-                      <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">
+                      <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">
                         No image
                       </div>
                     )}

@@ -94,11 +94,13 @@ useEffect(() => {
 ### 5. Image Size Optimization
 **Issue**: Large image files (1.5MB+) from camera capture.
 
-**Solution**: Three-tier image processing:
+**Initial Solution**: Three-tier image processing (too small for practical use)
+
+**Updated Solution** (based on user feedback):
 ```javascript
-- Thumbnail: 32x32px (~1-5KB) for lists
-- Medium: 256x256px (~10-50KB) for cards  
-- Full: 1024x1024px (~100-500KB) for detail views
+- Thumbnail: 256x256px (~30-50KB) for lists - large enough to see item details
+- Medium: 1024x1024px (~300-500KB) for cards and standard viewing
+- Full: 2048x2048px (~1-2MB) for zooming, inspection, and archival
 ```
 
 **Lesson**: Always process images client-side before upload to:

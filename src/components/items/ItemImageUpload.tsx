@@ -89,7 +89,7 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
       const xOffset = (video.videoWidth - size) / 2;
       const yOffset = (video.videoHeight - size) / 2;
 
-      // Set canvas to capture at high resolution
+      // Set canvas to capture at high resolution (matching our largest size)
       canvas.width = 2048;
       canvas.height = 2048;
 

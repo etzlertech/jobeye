@@ -4,16 +4,16 @@
  */
 
 export interface ProcessedImages {
-  thumbnail: string;  // 32x32 ~5KB
-  medium: string;     // 256x256 ~50KB
-  full: string;       // 1024x1024 ~500KB max
+  thumbnail: string;  // 256x256 ~30-50KB
+  medium: string;     // 1024x1024 ~300-500KB
+  full: string;       // 2048x2048 ~1-2MB max
 }
 
 export interface ImageProcessorOptions {
-  maxFullSize?: number;      // Max dimension for full image (default 1024)
-  targetFullSizeKB?: number; // Target KB for full image (default 500)
-  thumbnailSize?: number;    // Thumbnail dimension (default 32)
-  mediumSize?: number;       // Medium dimension (default 256)
+  maxFullSize?: number;      // Max dimension for full image (default 2048)
+  targetFullSizeKB?: number; // Target KB for full image (default 1500)
+  thumbnailSize?: number;    // Thumbnail dimension (default 256)
+  mediumSize?: number;       // Medium dimension (default 1024)
 }
 
 export class ItemImageProcessor {
@@ -21,10 +21,10 @@ export class ItemImageProcessor {
 
   constructor(options: ImageProcessorOptions = {}) {
     this.options = {
-      maxFullSize: options.maxFullSize || 1024,
-      targetFullSizeKB: options.targetFullSizeKB || 500,
-      thumbnailSize: options.thumbnailSize || 32,
-      mediumSize: options.mediumSize || 256,
+      maxFullSize: options.maxFullSize || 2048,
+      targetFullSizeKB: options.targetFullSizeKB || 1500,
+      thumbnailSize: options.thumbnailSize || 256,
+      mediumSize: options.mediumSize || 1024,
     };
   }
 
@@ -73,25 +73,25 @@ export class ItemImageProcessor {
   }
 
   /**
-   * Create thumbnail version (32x32)
+   * Create thumbnail version (256x256)
    */
   private async createThumbnail(img: HTMLImageElement): Promise<string> {
     const size = this.options.thumbnailSize;
     const canvas = this.createSquareCanvas(img, size);
     
-    // For tiny thumbnails, use lower quality
-    return canvas.toDataURL('image/jpeg', 0.7);
+    // For thumbnails, use good quality for clarity in lists
+    return canvas.toDataURL('image/jpeg', 0.85);
   }
 
   /**
-   * Create medium version (256x256)
+   * Create medium version (1024x1024)
    */
   private async createMedium(img: HTMLImageElement): Promise<string> {
     const size = this.options.mediumSize;
     const canvas = this.createSquareCanvas(img, size);
     
-    // Medium quality for preview images
-    return canvas.toDataURL('image/jpeg', 0.8);
+    // High quality for detail views
+    return canvas.toDataURL('image/jpeg', 0.9);
   }
 
   /**
@@ -105,10 +105,10 @@ export class ItemImageProcessor {
     const canvas = this.createSquareCanvas(img, maxSize);
     
     // Try different quality levels to achieve target size
-    let quality = 0.9;
+    let quality = 0.95;  // Start with high quality for large images
     let dataUrl = '';
     let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 15;  // More attempts for finer control
     
     while (attempts < maxAttempts) {
       dataUrl = canvas.toDataURL('image/jpeg', quality);
@@ -119,12 +119,12 @@ export class ItemImageProcessor {
       }
       
       // Reduce quality or size
-      if (quality > 0.3) {
-        quality -= 0.1;
+      if (quality > 0.5) {
+        quality -= 0.05;
       } else {
-        // If quality is too low, reduce canvas size
-        const newSize = Math.floor(canvas.width * 0.8);
-        if (newSize < 512) break; // Don't go below 512px
+        // If quality is too low, reduce canvas size slightly
+        const newSize = Math.floor(canvas.width * 0.9);
+        if (newSize < 1536) break; // Don't go below 1536px (75% of 2048)
         
         const newCanvas = this.createSquareCanvas(img, newSize);
         canvas.width = newCanvas.width;
