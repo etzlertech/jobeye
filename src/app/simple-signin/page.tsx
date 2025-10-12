@@ -115,6 +115,36 @@ function SignInForm() {
             <p className="font-mono">Admin: admin@tophand.tech / demo123</p>
           </div>
         </div>
+
+        <div className="space-y-4 rounded-xl border-2 border-gray-700 bg-gray-900/60 p-6">
+          <p className="text-center text-gray-300 text-lg font-medium">Demo Pages (No Sign-in Required)</p>
+          <div className="grid grid-cols-2 gap-4">
+            <a
+              href="/demo-crud"
+              className="block text-center py-3 px-4 bg-gray-800 text-gray-200 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Demo CRUD
+            </a>
+            <a
+              href="/demo-properties"
+              className="block text-center py-3 px-4 bg-gray-800 text-gray-200 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Properties
+            </a>
+            <a
+              href="/demo-jobs"
+              className="block text-center py-3 px-4 bg-gray-800 text-gray-200 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Jobs
+            </a>
+            <a
+              href="/demo-items"
+              className="block text-center py-3 px-4 bg-gray-800 text-gray-200 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Inventory
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );
