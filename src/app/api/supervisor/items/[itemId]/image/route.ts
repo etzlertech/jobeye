@@ -8,7 +8,8 @@ export async function POST(
 ) {
   try {
     const { itemId } = params;
-    console.log('Image upload API called for item:', itemId);
+    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
+    console.log('Image upload API called for item:', itemId, 'tenant:', tenantId);
     
     const body = await request.json();
     const { images } = body;
@@ -87,6 +88,7 @@ export async function POST(
         medium_url: imageUrls.medium_url
       })
       .eq('id', itemId)
+      .eq('tenant_id', tenantId)
       .select()
       .single();
 

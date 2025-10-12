@@ -108,6 +108,7 @@ export default function ItemProfilePage() {
   const [editData, setEditData] = useState<Partial<Item>>({});
   
   async function loadItemProfile() {
+    console.log('Loading item profile for:', itemId);
     try {
       // Load item details
       const itemRes = await fetch(`/api/supervisor/items/${itemId}`, {
@@ -122,6 +123,12 @@ export default function ItemProfilePage() {
       }
       
       const itemData = await itemRes.json();
+      console.log('Loaded item data:', itemData.item);
+      console.log('Item image URLs:', {
+        primary: itemData.item?.primary_image_url,
+        medium: itemData.item?.medium_url,
+        thumbnail: itemData.item?.thumbnail_url
+      });
       setItem(itemData.item);
       setEditData(itemData.item);
       
@@ -209,6 +216,11 @@ export default function ItemProfilePage() {
       if (res.ok) {
         const responseData = await res.json();
         console.log('Upload successful, response:', responseData);
+        console.log('Image URLs from upload:', responseData.imageUrls);
+        
+        // Add a small delay before reloading to ensure DB is updated
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         await loadItemProfile(); // Reload to get new image URLs
         setUploadingImage(false); // Close the upload interface
       } else {
