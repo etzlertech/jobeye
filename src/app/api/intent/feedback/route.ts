@@ -67,9 +67,10 @@ const feedbackResponseSchema = z.object({
 
 export async function POST(req: NextRequest) {
   return withAuth(req, async (user, tenantId) => {
+    let body: any;
     try {
       // Parse and validate request
-      const body = await req.json();
+      body = await req.json();
       const validatedData = feedbackRequestSchema.parse(body);
 
       // Validate that correctedIntent is provided when feedback is 'incorrect'

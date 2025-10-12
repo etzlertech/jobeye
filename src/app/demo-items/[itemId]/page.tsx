@@ -57,10 +57,10 @@ interface Item {
   attributes?: Record<string, any>;
   tags?: string[];
   custom_fields?: Record<string, any>;
-  primary_image_url?: string;
-  image_urls?: string[];
-  thumbnail_url?: string;
-  medium_url?: string;
+  primaryImageUrl?: string;
+  imageUrls?: string[];
+  thumbnailUrl?: string;
+  mediumUrl?: string;
   created_at: string;
   created_by?: string;
   updated_at: string;
@@ -125,9 +125,9 @@ export default function ItemProfilePage() {
       const itemData = await itemRes.json();
       console.log('Loaded item data:', itemData.item);
       console.log('Item image URLs:', {
-        primary: itemData.item?.primary_image_url,
-        medium: itemData.item?.medium_url,
-        thumbnail: itemData.item?.thumbnail_url
+        primary: itemData.item?.primaryImageUrl,
+        medium: itemData.item?.mediumUrl,
+        thumbnail: itemData.item?.thumbnailUrl
       });
       setItem(itemData.item);
       setEditData(itemData.item);

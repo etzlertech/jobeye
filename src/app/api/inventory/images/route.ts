@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         aspectRatio: validation.data.aspectRatio,
         originalWidth: validation.data.originalWidth,
         originalHeight: validation.data.originalHeight,
-        cropBox: validation.data.cropBox,
+        cropBox: validation.data.cropBox ?? undefined,
         isPrimary: validation.data.isPrimary,
         metadata: validation.data.metadata,
         capturedBy: auth.session.user.id,
