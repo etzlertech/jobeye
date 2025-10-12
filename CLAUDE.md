@@ -68,3 +68,35 @@ git push origin main
 - Investigate the schema directly using Supabase client methods
 - Use `client.rpc('exec_sql', { sql: '...' })` for direct database operations
 - Always check the actual database schema before making assumptions
+
+## 🏢 TENANT MANAGEMENT CONTEXT (NEW)
+
+### Context Resolution Pattern
+```typescript
+// In all API routes and server components:
+import { getRequestContext } from '@/lib/auth/context';
+
+// Always get tenant context first
+const context = await getRequestContext(request);
+// context = { tenantId, roles, source }
+
+// Header fallback will log warning - this is intentional during migration
+```
+
+### Tenant-Related Tech Stack
+- **Auth**: Supabase Auth with JWT app_metadata
+- **Session**: Next.js 14 SSR/SSG with Supabase session
+- **Database**: PostgreSQL with RLS via Supabase
+- **Testing**: Vitest (unit), Playwright (integration)
+
+### Key Tenant Files
+- `/src/lib/auth/context.ts` - getRequestContext helper
+- `/src/domains/tenant/*` - Tenant domain (repos, services, types)
+- `/scripts/backfill-metadata.ts` - One-time migration script
+- `/specs/002-tenant-management-rework/*` - Full specification
+
+### Migration Notes
+1. Currently using x-tenant-id header (dev mode)
+2. Transitioning to session-based (JWT app_metadata)
+3. Run backfill script before deploying changes
+4. Header fallback logs warnings - expected behavior
