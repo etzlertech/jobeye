@@ -338,7 +338,7 @@ export default function ItemProfilePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                   <input
                     type="text"
-                    value={editData.name || ''}
+                    value={editData.name ?? ''}
                     onChange={(e) => setEditData({...editData, name: e.target.value})}
                     className="w-full border rounded px-3 py-2"
                     placeholder="Item name"
@@ -348,7 +348,7 @@ export default function ItemProfilePage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                   <textarea
-                    value={editData.description || ''}
+                    value={editData.description ?? ''}
                     onChange={(e) => setEditData({...editData, description: e.target.value})}
                     className="w-full border rounded px-3 py-2"
                     rows={3}
@@ -361,7 +361,7 @@ export default function ItemProfilePage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                     <select
-                      value={editData.itemType || ''}
+                      value={editData.itemType ?? ''}
                       onChange={(e) => setEditData({...editData, itemType: e.target.value})}
                       className="w-full border rounded px-3 py-2"
                     >
@@ -375,7 +375,7 @@ export default function ItemProfilePage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                     <input
                       type="text"
-                      value={editData.category || ''}
+                      value={editData.category ?? ''}
                       onChange={(e) => setEditData({...editData, category: e.target.value})}
                       className="w-full border rounded px-3 py-2"
                       placeholder="Category"
@@ -389,7 +389,7 @@ export default function ItemProfilePage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Manufacturer</label>
                     <input
                       type="text"
-                      value={editData.manufacturer || ''}
+                      value={editData.manufacturer ?? ''}
                       onChange={(e) => setEditData({...editData, manufacturer: e.target.value})}
                       className="w-full border rounded px-3 py-2"
                       placeholder="Manufacturer"
@@ -399,7 +399,7 @@ export default function ItemProfilePage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
                     <input
                       type="text"
-                      value={editData.model || ''}
+                      value={editData.model ?? ''}
                       onChange={(e) => setEditData({...editData, model: e.target.value})}
                       className="w-full border rounded px-3 py-2"
                       placeholder="Model"
@@ -413,7 +413,7 @@ export default function ItemProfilePage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Serial Number</label>
                     <input
                       type="text"
-                      value={editData.serialNumber || ''}
+                      value={editData.serialNumber ?? ''}
                       onChange={(e) => setEditData({...editData, serialNumber: e.target.value})}
                       className="w-full border rounded px-3 py-2"
                       placeholder="Serial #"
@@ -423,7 +423,7 @@ export default function ItemProfilePage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
                     <input
                       type="text"
-                      value={editData.sku || ''}
+                      value={editData.sku ?? ''}
                       onChange={(e) => setEditData({...editData, sku: e.target.value})}
                       className="w-full border rounded px-3 py-2"
                       placeholder="SKU"
@@ -433,7 +433,7 @@ export default function ItemProfilePage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Barcode</label>
                     <input
                       type="text"
-                      value={editData.barcode || ''}
+                      value={editData.barcode ?? ''}
                       onChange={(e) => setEditData({...editData, barcode: e.target.value})}
                       className="w-full border rounded px-3 py-2"
                       placeholder="Barcode"
@@ -489,7 +489,7 @@ export default function ItemProfilePage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                   <select
-                    value={editData.status || 'active'}
+                    value={editData.status ?? 'active'}
                     onChange={(e) => setEditData({...editData, status: e.target.value})}
                     className="w-full border rounded px-3 py-2"
                   >
@@ -502,7 +502,7 @@ export default function ItemProfilePage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Condition</label>
                   <select
-                    value={editData.condition || 'good'}
+                    value={editData.condition ?? 'good'}
                     onChange={(e) => setEditData({...editData, condition: e.target.value})}
                     className="w-full border rounded px-3 py-2"
                   >
@@ -516,7 +516,7 @@ export default function ItemProfilePage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tracking Mode</label>
                   <select
-                    value={editData.trackingMode || 'quantity'}
+                    value={editData.trackingMode ?? 'quantity'}
                     onChange={(e) => setEditData({...editData, trackingMode: e.target.value})}
                     className="w-full border rounded px-3 py-2"
                   >
@@ -611,7 +611,7 @@ export default function ItemProfilePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
                   <input
                     type="text"
-                    value={editData.unitOfMeasure || 'each'}
+                    value={editData.unitOfMeasure ?? 'each'}
                     onChange={(e) => setEditData({...editData, unitOfMeasure: e.target.value})}
                     className="w-full border rounded px-3 py-2"
                     placeholder="each, lbs, etc"
