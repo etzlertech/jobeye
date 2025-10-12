@@ -55,9 +55,14 @@ export async function GET(request: NextRequest) {
     // Log for debugging
     console.log('Jobs API - TenantID:', tenantId);
     
-    // For demo pages without auth, use service client
+    // Get appropriate Supabase client
     const isDemoRequest = !request.headers.get('authorization');
-    const supabase = isDemoRequest ? createServiceClient() : await createServerClient();
+    let supabase;
+    if (isDemoRequest) {
+      supabase = createServiceClient();
+    } else {
+      supabase = await createServerClient();
+    }
     
     const jobsRepo = new JobsRepository(supabase);
     
@@ -87,9 +92,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // For demo pages without auth, use service client
+    // Get appropriate Supabase client
     const isDemoRequest = !request.headers.get('authorization');
-    const supabase = isDemoRequest ? createServiceClient() : await createServerClient();
+    let supabase;
+    if (isDemoRequest) {
+      supabase = createServiceClient();
+    } else {
+      supabase = await createServerClient();
+    }
     const body = await request.json();
 
     // Get tenant ID from headers, use demo default if not provided

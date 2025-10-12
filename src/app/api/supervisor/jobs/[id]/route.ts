@@ -44,9 +44,14 @@ export async function GET(
   try {
     const tenantId = request.headers.get('x-tenant-id') || 'demo-company';
     
-    // For demo pages without auth, use service client
+    // Get appropriate Supabase client
     const isDemoRequest = !request.headers.get('authorization');
-    const supabase = isDemoRequest ? createServiceClient() : await createServerClient();
+    let supabase;
+    if (isDemoRequest) {
+      supabase = createServiceClient();
+    } else {
+      supabase = await createServerClient();
+    }
     
     const jobsRepo = new JobsRepository(supabase);
     const job = await jobsRepo.findByIdWithRelations(params.id, tenantId);
@@ -70,9 +75,14 @@ export async function PUT(
     const tenantId = request.headers.get('x-tenant-id') || 'demo-company';
     const body = await request.json();
     
-    // For demo pages without auth, use service client
+    // Get appropriate Supabase client
     const isDemoRequest = !request.headers.get('authorization');
-    const supabase = isDemoRequest ? createServiceClient() : await createServerClient();
+    let supabase;
+    if (isDemoRequest) {
+      supabase = createServiceClient();
+    } else {
+      supabase = await createServerClient();
+    }
     
     const jobsRepo = new JobsRepository(supabase);
 
@@ -116,9 +126,14 @@ export async function DELETE(
   try {
     const tenantId = request.headers.get('x-tenant-id') || 'demo-company';
     
-    // For demo pages without auth, use service client
+    // Get appropriate Supabase client
     const isDemoRequest = !request.headers.get('authorization');
-    const supabase = isDemoRequest ? createServiceClient() : await createServerClient();
+    let supabase;
+    if (isDemoRequest) {
+      supabase = createServiceClient();
+    } else {
+      supabase = await createServerClient();
+    }
     
     const jobsRepo = new JobsRepository(supabase);
 
