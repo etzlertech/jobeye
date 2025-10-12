@@ -9,15 +9,15 @@ import type { ProcessedImages } from '@/utils/image-processor';
 interface Item {
   id: string;
   name: string;
-  item_type: string;
+  itemType: string;
   category: string;
-  tracking_mode: string;
-  current_quantity: number;
-  unit_of_measure: string;
+  trackingMode: string;
+  currentQuantity: number;
+  unitOfMeasure: string;
   status: string;
-  primary_image_url?: string;
-  thumbnail_url?: string;
-  medium_url?: string;
+  primaryImageUrl?: string;
+  thumbnailUrl?: string;
+  mediumUrl?: string;
 }
 
 export default function DemoItemsPage() {
@@ -63,9 +63,12 @@ export default function DemoItemsPage() {
         }
       });
       const data = await res.json();
+      console.log('Items API response:', data);
       if (res.ok && data.data) {
+        console.log('Setting items:', data.data);
         setItems(data.data);
       } else {
+        console.log('Failed to load items:', data);
         setMessage('Failed to load items');
       }
     } catch (error) {
@@ -87,11 +90,11 @@ export default function DemoItemsPage() {
         },
         body: JSON.stringify({
           name,
-          item_type: itemType,
+          itemType: itemType,
           category,
-          tracking_mode: trackingMode,
-          current_quantity: parseFloat(quantity),
-          unit_of_measure: unit
+          trackingMode: trackingMode,
+          currentQuantity: parseFloat(quantity),
+          unitOfMeasure: unit
         })
       });
       
@@ -284,11 +287,11 @@ export default function DemoItemsPage() {
                       {item.name}
                     </Link>
                   </td>
-                  <td className="py-2">{item.item_type}</td>
+                  <td className="py-2">{item.itemType}</td>
                   <td className="py-2">{item.category}</td>
-                  <td className="py-2">{item.tracking_mode}</td>
-                  <td className="py-2">{item.current_quantity}</td>
-                  <td className="py-2">{item.unit_of_measure}</td>
+                  <td className="py-2">{item.trackingMode}</td>
+                  <td className="py-2">{item.currentQuantity}</td>
+                  <td className="py-2">{item.unitOfMeasure}</td>
                   <td className="py-2">
                     <span className={`px-2 py-1 rounded text-xs ${
                       item.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100'
