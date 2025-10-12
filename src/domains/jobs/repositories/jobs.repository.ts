@@ -33,7 +33,7 @@
  * ]
  */
 
-import { BaseRepository } from '@/domains/shared/repositories/base.repository';
+import { BaseRepository } from '@/lib/repositories/base.repository';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
