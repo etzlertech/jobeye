@@ -1,0 +1,147 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createServerClient, createServiceClient } from '@/lib/supabase/server';
+import { ItemRepository } from '@/domains/shared/repositories/item.repository';
+import { handleApiError, validationError } from '@/core/errors/error-handler';
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
+    
+    console.log('Items API GET - TenantID:', tenantId);
+    
+    // Get appropriate Supabase client
+    const isDemoRequest = !request.headers.get('authorization');
+    let supabase;
+    if (isDemoRequest) {
+      supabase = createServiceClient();
+    } else {
+      supabase = await createServerClient();
+    }
+    
+    const itemRepo = new ItemRepository(supabase);
+    
+    // Parse query params
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const search = searchParams.get('search') || undefined;
+    const itemType = searchParams.get('item_type') || undefined;
+    const category = searchParams.get('category') || undefined;
+    const status = searchParams.get('status') || undefined;
+    
+    const result = await itemRepo.findAll({
+      tenant_id: tenantId,
+      page,
+      limit,
+      filters: {
+        search,
+        item_type: itemType as any,
+        category,
+        status: status as any
+      }
+    });
+    
+    return NextResponse.json({
+      items: result.data,
+      pagination: result.pagination
+    });
+    
+  } catch (error) {
+    console.error('Items API GET error:', error);
+    return handleApiError(error);
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
+    
+    console.log('Items API POST - Request:', JSON.stringify(body, null, 2));
+    console.log('TenantID:', tenantId);
+    
+    // Get appropriate Supabase client
+    const isDemoRequest = !request.headers.get('authorization');
+    let supabase;
+    if (isDemoRequest) {
+      supabase = createServiceClient();
+    } else {
+      supabase = await createServerClient();
+    }
+    
+    const itemRepo = new ItemRepository(supabase);
+    
+    // Validate required fields
+    const requiredFields = ['item_type', 'category', 'name', 'tracking_mode', 'unit_of_measure'];
+    const missingFields = requiredFields.filter(field => !body[field]);
+    
+    if (missingFields.length > 0) {
+      return validationError('Missing required fields', {
+        missing_fields: missingFields
+      });
+    }
+    
+    // Build item data
+    const itemData = {
+      tenant_id: tenantId,
+      item_type: body.item_type,
+      category: body.category,
+      name: body.name.trim(),
+      description: body.description?.trim() || null,
+      tracking_mode: body.tracking_mode,
+      current_quantity: body.current_quantity || 0,
+      unit_of_measure: body.unit_of_measure,
+      min_quantity: body.min_quantity || null,
+      reorder_point: body.reorder_point || null,
+      manufacturer: body.manufacturer || null,
+      model: body.model || null,
+      sku: body.sku || null,
+      barcode: body.barcode || null,
+      status: body.status || 'active'
+    };
+    
+    console.log('Creating item with data:', itemData);
+    
+    const item = await itemRepo.create(itemData);
+    
+    if (!item) {
+      throw new Error('Failed to create item');
+    }
+    
+    console.log('✅ Item created:', item.id);
+    
+    // If initial quantity > 0, create a check-in transaction
+    if (item.current_quantity > 0) {
+      const { ItemTransactionRepository } = await import('@/domains/shared/repositories/item-transaction.repository');
+      const txRepo = new ItemTransactionRepository(supabase);
+      
+      const transaction = await txRepo.create({
+        tenant_id: tenantId,
+        item_id: item.id,
+        transaction_type: 'check_in',
+        quantity: item.current_quantity,
+        location_type: 'ground',
+        location_id: null,
+        reference_type: 'manual',
+        reference_id: null,
+        notes: 'Initial inventory',
+        user_id: null
+      });
+      
+      console.log('Initial transaction created:', transaction?.id);
+    }
+    
+    return NextResponse.json({
+      item,
+      message: 'Item created successfully'
+    }, { status: 201 });
+    
+  } catch (error) {
+    console.error('Items API POST error:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    return handleApiError(error);
+  }
+}
