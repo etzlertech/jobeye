@@ -61,6 +61,7 @@ export const routeAccessConfig: RouteAccessMatrix = {
     '/reset-password',
     '/demo-crud',
     '/demo-properties',
+    '/demo-jobs',
     '/mobile',
     '/mobile/loading-complete',
     '/api/health',
@@ -69,7 +70,8 @@ export const routeAccessConfig: RouteAccessMatrix = {
     '/api/test-crud',
     '/api/demo-crud',
     '/api/supervisor/customers*',
-    '/api/supervisor/properties*'
+    '/api/supervisor/properties*',
+    '/api/supervisor/jobs*'
   ],
   protected: {
     admin: ['/admin*', '/control-tower*', '/vision/admin*'],
