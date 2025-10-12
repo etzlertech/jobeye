@@ -21,7 +21,6 @@ export interface JobFormState {
   scheduledDate: string;
   scheduledTime: string;
   priority: 'low' | 'normal' | 'high' | 'urgent';
-  notes: string;
 }
 
 export function buildJobPayload(form: JobFormState) {
@@ -40,8 +39,8 @@ export function buildJobPayload(form: JobFormState) {
     description: form.description.trim() || null,
     scheduled_start: scheduled_start,
     priority: form.priority,
-    notes: form.notes.trim() || null,
     status: 'scheduled'
+    // Note: 'notes' field doesn't exist in jobs table
   };
 }
 

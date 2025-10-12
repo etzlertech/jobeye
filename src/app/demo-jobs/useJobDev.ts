@@ -42,8 +42,7 @@ export function useJobDev({ tenantId, tenantHeaders, requireSignIn, setAlertMess
     description: '',
     scheduledDate: new Date().toISOString().split('T')[0],
     scheduledTime: '',
-    priority: 'normal',
-    notes: ''
+    priority: 'normal'
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
@@ -169,8 +168,7 @@ export function useJobDev({ tenantId, tenantHeaders, requireSignIn, setAlertMess
       description: '',
       scheduledDate: new Date().toISOString().split('T')[0],
       scheduledTime: '',
-      priority: 'normal',
-      notes: ''
+      priority: 'normal'
     }));
   }, [customers]);
 

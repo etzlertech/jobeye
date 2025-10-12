@@ -201,21 +201,6 @@ export function JobForm({
           </div>
         </div>
 
-        {/* Notes */}
-        <div className="md:col-span-2">
-          <label htmlFor="notes" className="mb-1 block text-sm font-medium text-gray-300">
-            Notes
-          </label>
-          <textarea
-            id="notes"
-            value={draft.notes}
-            onChange={(e) => onDraftChange('notes', e.target.value)}
-            placeholder="Additional notes or special instructions..."
-            rows={2}
-            className="w-full rounded-md bg-gray-800 px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={disabled}
-          />
-        </div>
       </div>
 
       {/* Actions */}
