@@ -29,10 +29,16 @@ export default function DemoItemsPage() {
   async function loadItems() {
     setLoading(true);
     try {
-      const res = await fetch('/api/debug/items');
+      const res = await fetch('/api/supervisor/items', {
+        headers: {
+          'x-tenant-id': 'demo-company'
+        }
+      });
       const data = await res.json();
-      if (data.sampleData?.items) {
-        setItems(data.sampleData.items);
+      if (res.ok && data.items) {
+        setItems(data.items);
+      } else {
+        setMessage('Failed to load items');
       }
     } catch (error) {
       setMessage('Failed to load items');
@@ -45,17 +51,19 @@ export default function DemoItemsPage() {
     setLoading(true);
     setMessage('');
     try {
-      const res = await fetch('/api/debug/items', {
+      const res = await fetch('/api/supervisor/items', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-tenant-id': 'demo-company'
+        },
         body: JSON.stringify({
           name,
           item_type: itemType,
           category,
           tracking_mode: trackingMode,
           current_quantity: parseFloat(quantity),
-          unit_of_measure: unit,
-          createTransaction: true
+          unit_of_measure: unit
         })
       });
       
@@ -88,22 +96,22 @@ export default function DemoItemsPage() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
+            <label className="block text-lg font-semibold mb-2">Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full rounded-md border border-gray-400 bg-white px-4 py-3 text-lg leading-7 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
               placeholder="e.g. Fertilizer 20-10-10"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-1">Type</label>
+            <label className="block text-lg font-semibold mb-2">Type</label>
             <select
               value={itemType}
               onChange={(e) => setItemType(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full rounded-md border border-gray-400 bg-white px-4 py-3 text-lg leading-7 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
             >
               <option value="equipment">Equipment</option>
               <option value="material">Material</option>
@@ -113,22 +121,22 @@ export default function DemoItemsPage() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-1">Category</label>
+            <label className="block text-lg font-semibold mb-2">Category</label>
             <input
               type="text"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full rounded-md border border-gray-400 bg-white px-4 py-3 text-lg leading-7 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
               placeholder="e.g. lawn-care"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-1">Tracking Mode</label>
+            <label className="block text-lg font-semibold mb-2">Tracking Mode</label>
             <select
               value={trackingMode}
               onChange={(e) => setTrackingMode(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full rounded-md border border-gray-400 bg-white px-4 py-3 text-lg leading-7 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
             >
               <option value="individual">Individual (Serial #)</option>
               <option value="quantity">Quantity</option>
@@ -137,23 +145,23 @@ export default function DemoItemsPage() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-1">Quantity</label>
+            <label className="block text-lg font-semibold mb-2">Quantity</label>
             <input
               type="number"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full rounded-md border border-gray-400 bg-white px-4 py-3 text-lg leading-7 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
               disabled={trackingMode === 'individual'}
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-1">Unit</label>
+            <label className="block text-lg font-semibold mb-2">Unit</label>
             <input
               type="text"
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full rounded-md border border-gray-400 bg-white px-4 py-3 text-lg leading-7 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
               placeholder="e.g. pound, gallon"
             />
           </div>
@@ -163,7 +171,7 @@ export default function DemoItemsPage() {
           <button
             onClick={createItem}
             disabled={loading || !name}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="px-6 py-3 bg-blue-600 text-white text-lg font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
           >
             {loading ? 'Creating...' : 'Create Item'}
           </button>

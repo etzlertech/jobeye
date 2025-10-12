@@ -36,19 +36,27 @@ response1 = requests.post(
     json={"sql": query1}
 )
 
-if response1.status_code == 204:
-    print("✅ job_checklist_items table EXISTS")
-    
-    # Get column details
-    response1b = requests.post(
-        f"{SUPABASE_URL}/rest/v1/rpc/exec_sql",
-        headers=headers,
-        json={"sql": "SELECT column_name FROM information_schema.columns WHERE table_name = 'job_checklist_items' ORDER BY ordinal_position"}
-    )
-    if response1b.status_code == 200:
-        print("Columns:", response1b.json())
+print(f"Response status: {response1.status_code}")
+if response1.status_code == 200:
+    data = response1.json()
+    if data and len(data) > 0:
+        print("✅ job_checklist_items table EXISTS")
+        print("\nColumns:")
+        for row in data:
+            nullable = "NULL" if row['is_nullable'] == 'YES' else "NOT NULL"
+            default = f"DEFAULT {row['column_default']}" if row['column_default'] else ""
+            print(f"  - {row['column_name']} ({row['data_type']}) {nullable} {default}")
+    else:
+        print("❌ job_checklist_items table NOT FOUND in schema")
+elif response1.status_code == 204:
+    print("⚠️  Got 204 No Content - query returned no results")
+    print("❌ job_checklist_items table likely does NOT exist")
 else:
-    print("❌ job_checklist_items table NOT FOUND")
+    print(f"❌ Error checking table: {response1.status_code}")
+    try:
+        print(f"Response: {response1.json()}")
+    except:
+        print(f"Response text: {response1.text}")
 
 # Check for any job-item relationship tables
 query2 = """

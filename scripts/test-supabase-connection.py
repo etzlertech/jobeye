@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 import requests
-import json
+import os
+from dotenv import load_dotenv
 
-# Supabase credentials
-SUPABASE_URL = "https://rtwigjwqufozqfwozpvo.supabase.co"
-SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d2lnandxdWZvenFmd296cHZvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDI1MDMwMCwiZXhwIjoyMDY5ODI2MzAwfQ.e4U3aDv5GDIFiPlY_JcveGwbAT9p-ahiW_0hhoOUoY0"
+# Load environment variables
+load_dotenv(dotenv_path='.env.local')
+
+SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
+SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 
 headers = {
     "apikey": SUPABASE_SERVICE_KEY,
@@ -12,43 +15,72 @@ headers = {
     "Content-Type": "application/json"
 }
 
-# Test 1: Check if we can access customers table
-print("Testing connection to Supabase...")
-print("\n1. Trying to fetch customers:")
-url = f"{SUPABASE_URL}/rest/v1/customers?select=*"
-response = requests.get(url, headers=headers)
-print(f"Status: {response.status_code}")
-print(f"Response: {response.text[:200]}...")
+print("🔍 Testing Supabase connection...\n")
 
-# Test 2: Check RPC functions
-print("\n2. Checking available RPC functions:")
-url = f"{SUPABASE_URL}/rest/v1/rpc/"
-response = requests.get(url, headers=headers)
-print(f"Status: {response.status_code}")
-print(f"Response: {response.text[:500]}...")
+# Try to query items table directly
+print("1. Testing direct REST API query to items table:")
+response = requests.get(
+    f"{SUPABASE_URL}/rest/v1/items?limit=1",
+    headers=headers
+)
+print(f"   Status: {response.status_code}")
+if response.status_code == 200:
+    data = response.json()
+    if data:
+        print(f"   ✅ Items table accessible, found {len(data)} records")
+    else:
+        print("   Items table exists but is empty")
+else:
+    print(f"   Error: {response.text}")
 
-# Test 3: Try to get policies using SQL
-print("\n3. Trying direct SQL query on customers policies:")
-url = f"{SUPABASE_URL}/rest/v1/"
-sql_query = "SELECT policyname FROM pg_policies WHERE tablename = 'customers'"
-# Try using PostgREST query
-url = f"{SUPABASE_URL}/rest/v1/pg_policies?tablename=eq.customers&select=policyname"
-response = requests.get(url, headers=headers)
-print(f"Status: {response.status_code}")
-print(f"Response: {response.text[:500]}...")
+# Try to query jobs table
+print("\n2. Testing direct REST API query to jobs table:")
+response = requests.get(
+    f"{SUPABASE_URL}/rest/v1/jobs?limit=1",
+    headers=headers
+)
+print(f"   Status: {response.status_code}")
+if response.status_code == 200:
+    print(f"   ✅ Jobs table accessible")
+else:
+    print(f"   Error: {response.text}")
 
-# Test 4: Check if exec_sql function exists
-print("\n4. Testing exec_sql RPC function:")
-url = f"{SUPABASE_URL}/rest/v1/rpc/exec_sql"
-payload = {"sql": "SELECT 1"}
-response = requests.post(url, headers=headers, json=payload)
-print(f"Status: {response.status_code}")
-print(f"Response: {response.text}")
+# Try job_checklist_items
+print("\n3. Testing job_checklist_items table:")
+response = requests.get(
+    f"{SUPABASE_URL}/rest/v1/job_checklist_items?limit=1",
+    headers=headers
+)
+print(f"   Status: {response.status_code}")
+if response.status_code == 200:
+    print("   ✅ Table EXISTS!")
+    print(f"   Response: {response.json()}")
+elif response.status_code == 404:
+    print("   ❌ Table NOT FOUND (404)")
+else:
+    print(f"   Error: {response.text}")
 
-# Test 5: Try different approach - use the query endpoint
-print("\n5. Testing query via SQL Editor API:")
-url = f"{SUPABASE_URL}/rest/v1/query"
-payload = {"query": "SELECT policyname FROM pg_policies WHERE tablename = 'customers'"}
-response = requests.post(url, headers=headers, json=payload)
-print(f"Status: {response.status_code}")
-print(f"Response: {response.text[:500]}...")
+# Check item_transactions for job linkage
+print("\n4. Testing item_transactions table structure:")
+response = requests.get(
+    f"{SUPABASE_URL}/rest/v1/item_transactions?limit=0",
+    headers=headers
+)
+print(f"   Status: {response.status_code}")
+if response.status_code == 200:
+    # Get column info from OPTIONS request
+    response_options = requests.options(
+        f"{SUPABASE_URL}/rest/v1/item_transactions",
+        headers=headers
+    )
+    print("   ✅ Table exists")
+    
+print("\n5. Checking if exec_sql RPC function exists:")
+response = requests.post(
+    f"{SUPABASE_URL}/rest/v1/rpc/exec_sql",
+    headers=headers,
+    json={"sql": "SELECT 1 as test"}
+)
+print(f"   Status: {response.status_code}")
+if response.status_code == 404:
+    print("   ❌ exec_sql function NOT FOUND - need to create it")

@@ -27,7 +27,7 @@ export class ItemRepository extends BaseRepository<Item> {
    */
   async findById(id: string): Promise<Item | null> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('id', id)
@@ -60,7 +60,7 @@ export class ItemRepository extends BaseRepository<Item> {
     offset?: number;
   }): Promise<{ data: Item[]; count: number }> {
     try {
-      let query = this.supabaseClient
+      let query = this.supabase
         .from(this.tableName)
         .select('*', { count: 'exact' })
         .eq('tenant_id', options.tenantId);
@@ -169,7 +169,7 @@ export class ItemRepository extends BaseRepository<Item> {
    */
   async findByIdentifier(identifier: string, tenantId: string): Promise<Item | null> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('tenant_id', tenantId)
@@ -220,7 +220,7 @@ export class ItemRepository extends BaseRepository<Item> {
         }
       }
 
-      const { data: created, error } = await this.supabaseClient
+      const { data: created, error } = await this.supabase
         .from(this.tableName)
         .insert(this.mapToDb(validated))
         .select()
@@ -248,7 +248,7 @@ export class ItemRepository extends BaseRepository<Item> {
       // Validate input
       const validated = ItemUpdateSchema.parse(data);
 
-      const { data: updated, error } = await this.supabaseClient
+      const { data: updated, error } = await this.supabase
         .from(this.tableName)
         .update({
           ...this.mapToDb(validated),
@@ -278,7 +278,7 @@ export class ItemRepository extends BaseRepository<Item> {
    */
   async delete(id: string, tenantId: string): Promise<void> {
     try {
-      const { error } = await this.supabaseClient
+      const { error } = await this.supabase
         .from(this.tableName)
         .update({ 
           status: 'retired',
@@ -363,7 +363,7 @@ export class ItemRepository extends BaseRepository<Item> {
    */
   async getItemsNeedingReorder(tenantId: string): Promise<Item[]> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('tenant_id', tenantId)
@@ -393,7 +393,7 @@ export class ItemRepository extends BaseRepository<Item> {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('tenant_id', tenantId)
@@ -431,7 +431,7 @@ export class ItemRepository extends BaseRepository<Item> {
 
     if (conditions.length === 0) return false;
 
-    const { data, error } = await this.supabaseClient
+    const { data, error } = await this.supabase
       .from(this.tableName)
       .select('id')
       .eq('tenant_id', tenantId)
