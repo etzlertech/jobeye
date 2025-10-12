@@ -32,47 +32,56 @@ interface CustomerFormProps {
 
 export function CustomerForm({ draft, onChange, onSubmit, onClear, disabled }: CustomerFormProps) {
   return (
-    <section className="mb-8 rounded-xl border border-gray-800 bg-gray-900 p-6">
-      <h2 className="mb-4 text-xl font-semibold text-green-400">Create New Customer</h2>
-      <div className="grid gap-4 md:grid-cols-3">
-        <input
-          type="text"
-          placeholder="Customer Name"
-          value={draft.name}
-          onChange={(event) => onChange('name', event.target.value)}
-          className="rounded-lg border border-gray-700 bg-gray-950 px-4 py-2 text-white focus:border-green-400 focus:outline-none"
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={draft.email}
-          onChange={(event) => onChange('email', event.target.value)}
-          className="rounded-lg border border-gray-700 bg-gray-950 px-4 py-2 text-white focus:border-green-400 focus:outline-none"
-        />
-        <input
-          type="tel"
-          placeholder="Phone (optional)"
-          value={draft.phone}
-          onChange={(event) => onChange('phone', event.target.value)}
-          className="rounded-lg border border-gray-700 bg-gray-950 px-4 py-2 text-white focus:border-green-400 focus:outline-none"
-        />
+    <section className="mb-10 rounded-2xl border-2 border-gray-700 bg-gray-900 p-8 shadow-xl">
+      <h2 className="mb-6 text-2xl font-bold text-green-400">Create New Customer</h2>
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-300">Name</label>
+          <input
+            type="text"
+            placeholder="Enter customer name"
+            value={draft.name}
+            onChange={(event) => onChange('name', event.target.value)}
+            className="w-full rounded-xl border-2 border-gray-700 bg-gray-950 px-5 py-4 text-lg text-white placeholder-gray-500 focus:border-green-400 focus:outline-none focus:ring-4 focus:ring-green-400/20"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-300">Email</label>
+          <input
+            type="email"
+            placeholder="customer@example.com"
+            value={draft.email}
+            onChange={(event) => onChange('email', event.target.value)}
+            className="w-full rounded-xl border-2 border-gray-700 bg-gray-950 px-5 py-4 text-lg text-white placeholder-gray-500 focus:border-green-400 focus:outline-none focus:ring-4 focus:ring-green-400/20"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-300">Phone (optional)</label>
+          <input
+            type="tel"
+            placeholder="(555) 123-4567"
+            value={draft.phone}
+            onChange={(event) => onChange('phone', event.target.value)}
+            className="w-full rounded-xl border-2 border-gray-700 bg-gray-950 px-5 py-4 text-lg text-white placeholder-gray-500 focus:border-green-400 focus:outline-none focus:ring-4 focus:ring-green-400/20"
+          />
+        </div>
       </div>
-      <div className="mt-4 flex flex-wrap gap-3">
+      <div className="mt-8 flex flex-wrap gap-4">
         <button
           type="button"
           onClick={onSubmit}
           disabled={disabled}
-          className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:opacity-60"
+          className="flex items-center gap-3 rounded-xl bg-green-600 px-6 py-4 text-lg font-semibold text-white transition hover:bg-green-700 disabled:opacity-60 shadow-lg hover:shadow-xl"
         >
-          {disabled ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          {disabled ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
           Save Customer
         </button>
         <button
           type="button"
           onClick={onClear}
-          className="flex items-center gap-2 rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-gray-200 transition hover:bg-gray-700"
+          className="flex items-center gap-3 rounded-xl bg-gray-700 px-6 py-4 text-lg font-medium text-gray-200 transition hover:bg-gray-600"
         >
-          <X className="h-4 w-4" />
+          <X className="h-5 w-5" />
           Clear
         </button>
       </div>

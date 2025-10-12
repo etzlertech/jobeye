@@ -54,22 +54,22 @@ function SignInForm() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-yellow-400">JobEye</h1>
-          <p className="mt-2 text-gray-400">Simple Sign In</p>
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-8">
+      <div className="w-full max-w-lg space-y-10">
+        <div className="text-center space-y-3">
+          <h1 className="text-5xl font-bold text-yellow-400">JobEye</h1>
+          <p className="text-xl text-gray-300">Simple Sign In</p>
         </div>
 
         {error && (
-          <div className="bg-red-900/20 border border-red-500 rounded-lg p-4 text-red-400">
+          <div className="bg-red-900/20 border-2 border-red-500 rounded-xl p-6 text-red-400 text-lg">
             {error}
           </div>
         )}
 
-        <form id="signin-form" onSubmit={handleSignIn} className="space-y-6">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-400 mb-2">
+        <form id="signin-form" onSubmit={handleSignIn} className="space-y-8">
+          <div className="space-y-3">
+            <label htmlFor="email" className="block text-lg font-medium text-gray-300">
               Email
             </label>
             <input
@@ -77,13 +77,14 @@ function SignInForm() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="w-full px-6 py-4 text-lg bg-gray-800 border-2 border-gray-700 rounded-xl focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-yellow-400 text-white placeholder-gray-500"
+              placeholder="Enter your email"
               required
             />
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-400 mb-2">
+          <div className="space-y-3">
+            <label htmlFor="password" className="block text-lg font-medium text-gray-300">
               Password
             </label>
             <input
@@ -91,7 +92,8 @@ function SignInForm() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="w-full px-6 py-4 text-lg bg-gray-800 border-2 border-gray-700 rounded-xl focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-yellow-400 text-white placeholder-gray-500"
+              placeholder="Enter your password"
               required
             />
           </div>
@@ -99,18 +101,18 @@ function SignInForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-5 text-xl bg-yellow-500 text-black font-bold rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 shadow-lg hover:shadow-xl"
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <div className="space-y-2 rounded-lg border border-gray-800 bg-gray-900/40 p-4">
-          <p className="text-center text-gray-400">Test Accounts</p>
-          <div className="space-y-1 text-sm text-gray-300">
-            <p>Supervisor: super@tophand.tech / demo123</p>
-            <p>Crew: crew@tophand.tech / demo123</p>
-            <p>Admin: admin@tophand.tech / demo123</p>
+        <div className="space-y-4 rounded-xl border-2 border-gray-700 bg-gray-900/60 p-6">
+          <p className="text-center text-gray-300 text-lg font-medium">Test Accounts</p>
+          <div className="space-y-2 text-base text-gray-200">
+            <p className="font-mono">Supervisor: super@tophand.tech / demo123</p>
+            <p className="font-mono">Crew: crew@tophand.tech / demo123</p>
+            <p className="font-mono">Admin: admin@tophand.tech / demo123</p>
           </div>
         </div>
       </div>
