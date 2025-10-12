@@ -45,6 +45,7 @@ export default function JobItemsPage() {
   const [message, setMessage] = useState('');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState('1');
+  const [loadError, setLoadError] = useState('');
 
   async function loadJobItems() {
     setLoading(true);
@@ -66,17 +67,30 @@ export default function JobItemsPage() {
 
   async function loadAvailableItems() {
     try {
+      console.log('Loading available items...');
       const res = await fetch('/api/supervisor/items', {
         headers: {
           'x-tenant-id': '00000000-0000-0000-0000-000000000000'  // Default tenant UUID
         }
       });
+      
+      console.log('Response status:', res.status);
       const data = await res.json();
+      console.log('Response data:', data);
+      
       if (res.ok && data.items) {
         setAvailableItems(data.items);
+        console.log(`Loaded ${data.items.length} items`);
+        if (data.items.length === 0) {
+          setLoadError('No items found. Please create some items first.');
+        }
+      } else {
+        console.error('Failed to load items:', data.error || 'Unknown error');
+        setLoadError(data.error || 'Failed to load items');
       }
     } catch (error) {
-      console.error('Failed to load available items');
+      console.error('Failed to load available items:', error);
+      setLoadError('Error loading items: ' + error);
     }
   }
 
@@ -175,6 +189,12 @@ export default function JobItemsPage() {
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Add Item to Job</h2>
         
+        {loadError && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {loadError}
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
             <label className="block text-lg font-semibold mb-2">Select Item</label>
@@ -184,6 +204,9 @@ export default function JobItemsPage() {
               className="w-full rounded-md border border-gray-400 bg-white px-4 py-3 text-lg leading-7 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
             >
               <option value="">Choose an item...</option>
+              {availableItems.length === 0 && (
+                <option disabled>No items available</option>
+              )}
               {availableItems.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.name} - {item.item_type} ({item.current_quantity} {item.unit_of_measure} available)
@@ -219,6 +242,15 @@ export default function JobItemsPage() {
             </span>
           )}
         </div>
+      </div>
+
+      {/* Debug Info */}
+      <div className="bg-gray-100 rounded-lg p-4 mb-4 text-sm">
+        <p>Debug: Available items count: {availableItems.length}</p>
+        <p>Debug: Loading state: {loading ? 'Loading...' : 'Not loading'}</p>
+        {availableItems.length > 0 && (
+          <p>Debug: First item: {availableItems[0].name}</p>
+        )}
       </div>
 
       {/* Assigned Items */}

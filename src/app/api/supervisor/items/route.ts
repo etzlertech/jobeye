@@ -12,13 +12,23 @@ export async function GET(request: NextRequest) {
     
     // Get appropriate Supabase client
     const isDemoRequest = !request.headers.get('authorization');
+    console.log('Is demo request:', isDemoRequest);
+    
     let supabase;
-    if (isDemoRequest) {
-      supabase = createServiceClient();
-    } else {
-      supabase = await createServerClient();
+    try {
+      if (isDemoRequest) {
+        console.log('Creating service client for demo request');
+        supabase = createServiceClient();
+      } else {
+        console.log('Creating server client for authenticated request');
+        supabase = await createServerClient();
+      }
+    } catch (clientError) {
+      console.error('Failed to create Supabase client:', clientError);
+      throw clientError;
     }
     
+    console.log('Supabase client created successfully');
     const itemRepo = new ItemRepository(supabase);
     
     // Parse query params
@@ -52,6 +62,17 @@ export async function GET(request: NextRequest) {
     
   } catch (error) {
     console.error('Items API GET error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    // Return more detailed error for debugging
+    if (error instanceof Error) {
+      return NextResponse.json({
+        error: error.message,
+        details: error.stack,
+        type: error.constructor.name
+      }, { status: 500 });
+    }
+    
     return handleApiError(error);
   }
 }

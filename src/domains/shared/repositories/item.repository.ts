@@ -104,11 +104,10 @@ export class ItemRepository extends BaseRepository<Item> {
       }
 
       // Apply pagination
-      if (options.limit) {
+      if (options.offset !== undefined && options.limit) {
+        query = query.range(options.offset, options.offset + options.limit - 1);
+      } else if (options.limit) {
         query = query.limit(options.limit);
-      }
-      if (options.offset) {
-        query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
       }
 
       // Order by updated_at desc
