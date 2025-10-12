@@ -209,11 +209,10 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to create job');
     }
 
-    // Fetch with relations
-    const jobWithRelations = await jobsRepo.findByIdWithRelations(job.id, tenantId);
-
+    // Skip fetching with relations for now due to production issue
+    // Just return the created job
     return NextResponse.json({ 
-      job: jobWithRelations,
+      job: job,
       message: 'Job created successfully'
     }, { status: 201 });
 

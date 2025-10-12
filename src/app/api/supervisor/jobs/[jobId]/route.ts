@@ -54,7 +54,8 @@ export async function GET(
     }
     
     const jobsRepo = new JobsRepository(supabase);
-    const job = await jobsRepo.findByIdWithRelations(params.jobId, tenantId);
+    // Use findById without relations for now
+    const job = await jobsRepo.findById(params.jobId, { tenant_id: tenantId });
 
     if (!job) {
       return notFound('Job not found');
@@ -106,11 +107,10 @@ export async function PUT(
       throw new Error('Failed to update job');
     }
 
-    // Fetch with relations
-    const jobWithRelations = await jobsRepo.findByIdWithRelations(params.jobId, tenantId);
-
+    // Skip fetching with relations for now due to production issue
+    // Just return the updated job
     return NextResponse.json({ 
-      job: jobWithRelations,
+      job: updatedJob,
       message: 'Job updated successfully'
     });
 
