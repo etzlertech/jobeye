@@ -26,8 +26,8 @@ import type { ReactNode } from 'react';
 const NAV_ITEMS = [
   { href: '/demo-crud', label: 'Customers' },
   { href: '/demo-properties', label: 'Properties' },
-  { href: '/demo-jobs', label: 'Jobs (coming soon)' },
-  { href: '/demo-inventory', label: 'Inventory (coming soon)' }
+  { href: '/demo-jobs', label: 'Jobs' },
+  { href: '/demo-items', label: 'Inventory' }
 ];
 
 interface DevLayoutProps {
