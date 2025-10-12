@@ -1,7 +1,7 @@
 /**
  * AGENT DIRECTIVE BLOCK
  * 
- * file: /src/app/api/supervisor/jobs/[id]/route.ts
+ * file: /src/app/api/supervisor/jobs/[jobId]/route.ts
  * phase: 4
  * domain: jobs
  * purpose: API endpoints for individual job operations
@@ -23,7 +23,7 @@
  * voice_considerations: None - API endpoint
  * test_requirements: {
  *   coverage: 85,
- *   unit_tests: 'tests/api/supervisor/jobs/[id].test.ts'
+ *   unit_tests: 'tests/api/supervisor/jobs/[jobId].test.ts'
  * }
  * tasks: [
  *   'Get single job',
@@ -39,7 +39,7 @@ import { JobsRepository } from '@/domains/jobs/repositories/jobs.repository';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { jobId: string } }
 ) {
   try {
     const tenantId = request.headers.get('x-tenant-id') || 'demo-company';
@@ -54,7 +54,7 @@ export async function GET(
     }
     
     const jobsRepo = new JobsRepository(supabase);
-    const job = await jobsRepo.findByIdWithRelations(params.id, tenantId);
+    const job = await jobsRepo.findByIdWithRelations(params.jobId, tenantId);
 
     if (!job) {
       return notFound('Job not found');
@@ -69,7 +69,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { jobId: string } }
 ) {
   try {
     const tenantId = request.headers.get('x-tenant-id') || 'demo-company';
@@ -87,14 +87,14 @@ export async function PUT(
     const jobsRepo = new JobsRepository(supabase);
 
     // Check if job exists
-    const existingJob = await jobsRepo.findById(params.id, { tenant_id: tenantId });
+    const existingJob = await jobsRepo.findById(params.jobId, { tenant_id: tenantId });
     if (!existingJob) {
       return notFound('Job not found');
     }
 
     // Update job
     const updatedJob = await jobsRepo.update(
-      params.id,
+      params.jobId,
       {
         ...body,
         updated_at: new Date().toISOString()
@@ -107,7 +107,7 @@ export async function PUT(
     }
 
     // Fetch with relations
-    const jobWithRelations = await jobsRepo.findByIdWithRelations(params.id, tenantId);
+    const jobWithRelations = await jobsRepo.findByIdWithRelations(params.jobId, tenantId);
 
     return NextResponse.json({ 
       job: jobWithRelations,
@@ -121,7 +121,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { jobId: string } }
 ) {
   try {
     const tenantId = request.headers.get('x-tenant-id') || 'demo-company';
@@ -138,7 +138,7 @@ export async function DELETE(
     const jobsRepo = new JobsRepository(supabase);
 
     // Check if job exists
-    const existingJob = await jobsRepo.findById(params.id, { tenant_id: tenantId });
+    const existingJob = await jobsRepo.findById(params.jobId, { tenant_id: tenantId });
     if (!existingJob) {
       return notFound('Job not found');
     }
@@ -151,7 +151,7 @@ export async function DELETE(
     }
 
     // Delete job
-    const deleted = await jobsRepo.delete(params.id, { tenant_id: tenantId });
+    const deleted = await jobsRepo.delete(params.jobId, { tenant_id: tenantId });
 
     if (!deleted) {
       throw new Error('Failed to delete job');
