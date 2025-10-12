@@ -8,12 +8,26 @@ export async function POST(
 ) {
   try {
     const { itemId } = params;
+    console.log('Image upload API called for item:', itemId);
+    
     const body = await request.json();
     const { images } = body;
 
     if (!images || !images.thumbnail || !images.medium || !images.full) {
+      console.error('Missing image data:', { 
+        hasImages: !!images,
+        hasThumbnail: !!images?.thumbnail,
+        hasMedium: !!images?.medium,
+        hasFull: !!images?.full
+      });
       return NextResponse.json({ error: 'No images provided' }, { status: 400 });
     }
+
+    console.log('Received images:', {
+      thumbnailLength: images.thumbnail.length,
+      mediumLength: images.medium.length,
+      fullLength: images.full.length
+    });
 
     const supabase = createServiceClient();
     const timestamp = Date.now();
@@ -44,12 +58,16 @@ export async function POST(
           upsert: true
         });
 
+      console.log(`Uploading ${size.name} image to: ${fileName}`);
+      
       if (uploadError) {
         console.error(`Upload error for ${size.name}:`, uploadError);
         return NextResponse.json({ 
-          error: `Failed to upload ${size.name} image` 
+          error: `Failed to upload ${size.name} image: ${uploadError.message}` 
         }, { status: 500 });
       }
+      
+      console.log(`Successfully uploaded ${size.name} image`);
 
       // Get public URL
       const { data: { publicUrl } } = supabase
@@ -72,11 +90,15 @@ export async function POST(
       .select()
       .single();
 
+    console.log('Updating item with URLs:', imageUrls);
+    
     if (updateError) {
       console.error('Update error:', updateError);
-      return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
+      return NextResponse.json({ error: `Failed to update item: ${updateError.message}` }, { status: 500 });
     }
 
+    console.log('Item updated successfully:', item?.id);
+    
     return NextResponse.json({
       imageUrls,
       message: 'Images uploaded successfully'

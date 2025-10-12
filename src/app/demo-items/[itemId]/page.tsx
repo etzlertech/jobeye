@@ -187,7 +187,14 @@ export default function ItemProfilePage() {
   }
   
   async function handleImageUpload(images: ProcessedImages) {
+    console.log('handleImageUpload called with images:', {
+      thumbnailLength: images.thumbnail.length,
+      mediumLength: images.medium.length,
+      fullLength: images.full.length
+    });
+    
     try {
+      console.log('Sending POST request to upload images...');
       const res = await fetch(`/api/supervisor/items/${itemId}/image`, {
         method: 'POST',
         headers: {
@@ -197,11 +204,16 @@ export default function ItemProfilePage() {
         body: JSON.stringify({ images })
       });
       
+      console.log('Upload response status:', res.status);
+      
       if (res.ok) {
+        const responseData = await res.json();
+        console.log('Upload successful, response:', responseData);
         await loadItemProfile(); // Reload to get new image URLs
         setUploadingImage(false); // Close the upload interface
       } else {
-        console.error('Failed to upload image:', await res.text());
+        const errorText = await res.text();
+        console.error('Failed to upload image:', errorText);
         alert('Failed to upload image. Please try again.');
       }
     } catch (error) {

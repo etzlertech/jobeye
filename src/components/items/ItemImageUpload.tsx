@@ -104,10 +104,17 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
       console.log('Captured image data URL length:', imageDataUrl.length);
       
       // Process to create all three sizes
+      console.log('Starting image processing...');
       const processedImages = await imageProcessor.processImage(imageDataUrl);
+      console.log('Image processing complete:', {
+        thumbnailLength: processedImages.thumbnail.length,
+        mediumLength: processedImages.medium.length,
+        fullLength: processedImages.full.length
+      });
       
       setPreviewUrl(processedImages.medium);
       stopCamera();
+      console.log('Calling onImageCapture callback...');
       onImageCapture(processedImages);
     } catch (error) {
       console.error('Error capturing photo:', error);
