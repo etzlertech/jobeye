@@ -136,6 +136,9 @@ export async function POST(request: NextRequest) {
     console.log('✅ Item created:', item.id);
     
     // If initial quantity > 0, create a check-in transaction
+    // TODO: Fix transaction creation - currently causing 500 errors
+    // Temporarily disabled to allow item creation to work
+    /*
     if (item.currentQuantity > 0) {  // camelCase from repository
       const { ItemTransactionRepository } = await import('@/domains/shared/repositories/item-transaction.repository');
       const txRepo = new ItemTransactionRepository(supabase);
@@ -151,6 +154,7 @@ export async function POST(request: NextRequest) {
       
       console.log('Initial transaction created:', transaction?.id);
     }
+    */
     
     return NextResponse.json({
       item,
