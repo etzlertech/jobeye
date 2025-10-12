@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import TenantUserInfo from '@/components/demo/TenantUserInfo';
+import ItemImageUpload from '@/components/items/ItemImageUpload';
 
 interface Item {
   id: string;
@@ -12,6 +13,7 @@ interface Item {
   current_quantity: number;
   unit_of_measure: string;
   status: string;
+  primary_image_url?: string;
 }
 
 export default function DemoItemsPage() {
@@ -26,6 +28,27 @@ export default function DemoItemsPage() {
   const [trackingMode, setTrackingMode] = useState('quantity');
   const [quantity, setQuantity] = useState('10');
   const [unit, setUnit] = useState('each');
+  const [capturedImage, setCapturedImage] = useState<string>('');
+  const [createdItemId, setCreatedItemId] = useState<string | null>(null);
+
+  async function uploadItemImage(itemId: string, imageDataUrl: string) {
+    try {
+      const res = await fetch(`/api/supervisor/items/${itemId}/image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'
+        },
+        body: JSON.stringify({ imageDataUrl })
+      });
+
+      if (!res.ok) {
+        console.error('Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    }
+  }
 
   async function loadItems() {
     setLoading(true);
@@ -71,7 +94,17 @@ export default function DemoItemsPage() {
       const data = await res.json();
       if (res.ok) {
         setMessage('Item created successfully!');
+        setCreatedItemId(data.item?.id);
+        
+        // Upload image if captured
+        if (capturedImage && data.item?.id) {
+          await uploadItemImage(data.item.id, capturedImage);
+        }
+        
+        // Reset form
         setName('');
+        setCapturedImage('');
+        setCreatedItemId(null);
         loadItems();
       } else {
         setMessage(`Error: ${data.error || 'Failed to create'}`);
@@ -170,6 +203,13 @@ export default function DemoItemsPage() {
           </div>
         </div>
         
+        <div className="mt-6">
+          <ItemImageUpload 
+            onImageCapture={(imageDataUrl) => setCapturedImage(imageDataUrl)}
+            currentImageUrl={capturedImage}
+          />
+        </div>
+        
         <div className="mt-4 flex items-center gap-4">
           <button
             onClick={createItem}
@@ -206,6 +246,7 @@ export default function DemoItemsPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b">
+                <th className="py-2">Image</th>
                 <th className="py-2">Name</th>
                 <th className="py-2">Type</th>
                 <th className="py-2">Category</th>
@@ -218,6 +259,19 @@ export default function DemoItemsPage() {
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="border-b">
+                  <td className="py-2">
+                    {item.primary_image_url ? (
+                      <img 
+                        src={item.primary_image_url} 
+                        alt={item.name}
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">
+                        No image
+                      </div>
+                    )}
+                  </td>
                   <td className="py-2">{item.name}</td>
                   <td className="py-2">{item.item_type}</td>
                   <td className="py-2">{item.category}</td>
