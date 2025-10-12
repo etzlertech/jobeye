@@ -16,7 +16,8 @@ voice_considerations:
   - List optimized for voice navigation
 */
 
-import { Edit2, Trash2, Calendar, Clock, User, Home, AlertCircle, RefreshCcw, Loader2 } from 'lucide-react';
+import { Edit2, Trash2, Calendar, Clock, User, Home, AlertCircle, RefreshCcw, Loader2, Package } from 'lucide-react';
+import Link from 'next/link';
 import { formatJobStatus, formatJobPriority, formatJobDateTime, getStatusColor, getPriorityColor } from '@/app/demo-jobs/utils';
 
 export interface JobRecord {
@@ -141,6 +142,13 @@ export function JobList({
 
                 {editingId !== job.id && (
                   <div className="flex gap-2">
+                    <Link
+                      href={`/demo-jobs/${job.id}/items`}
+                      className="rounded p-1 text-gray-400 hover:bg-gray-700 hover:text-blue-400"
+                      title="Manage items"
+                    >
+                      <Package className="h-4 w-4" />
+                    </Link>
                     <button
                       onClick={() => onStartEdit(job.id, job.title)}
                       className="rounded p-1 text-gray-400 hover:bg-gray-700 hover:text-white"
