@@ -63,8 +63,7 @@ export async function GET(request: NextRequest) {
         phone,
         billing_address,
         notes,
-        created_at,
-        properties(count)
+        created_at
       `, { count: 'exact' });
 
     query = query.eq('tenant_id', tenantId);
@@ -90,7 +89,7 @@ export async function GET(request: NextRequest) {
       address: customer.billing_address 
         ? `${customer.billing_address.street}, ${customer.billing_address.city}, ${customer.billing_address.state} ${customer.billing_address.zip}`.replace(/N\/A,?\s*/g, '').replace(/,\s*$/, '')
         : null,
-      property_count: customer.properties?.length || 0
+      property_count: 0 // Removed properties relation for now
     }));
 
     return NextResponse.json({
