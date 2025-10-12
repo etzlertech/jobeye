@@ -25,13 +25,20 @@ export interface JobFormState {
 }
 
 export function buildJobPayload(form: JobFormState) {
+  // Combine date and time into scheduled_start
+  let scheduled_start = form.scheduledDate;
+  if (form.scheduledTime) {
+    scheduled_start = `${form.scheduledDate}T${form.scheduledTime}:00`;
+  } else {
+    scheduled_start = `${form.scheduledDate}T09:00:00`; // Default to 9 AM
+  }
+
   return {
     customer_id: form.customerId,
     property_id: form.propertyId || null,
     title: form.title.trim(),
-    description: form.description.trim(),
-    scheduled_date: form.scheduledDate,
-    scheduled_time: form.scheduledTime || null,
+    description: form.description.trim() || null,
+    scheduled_start: scheduled_start,
     priority: form.priority,
     notes: form.notes.trim() || null,
     status: 'scheduled'
@@ -60,25 +67,27 @@ export function formatJobPriority(priority: string): string {
   return priorityMap[priority] || priority;
 }
 
-export function formatJobDateTime(date: string | null, time: string | null): string {
-  if (!date) return 'Not scheduled';
+export function formatJobDateTime(scheduledStart: string | null): string {
+  if (!scheduledStart) return 'Not scheduled';
   
-  const dateObj = new Date(date);
+  const dateObj = new Date(scheduledStart);
+  
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) return 'Invalid date';
+  
   const formattedDate = dateObj.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric'
   });
   
-  if (!time) return formattedDate;
+  const hours = dateObj.getHours();
+  const minutes = dateObj.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const displayHour = hours % 12 || 12;
+  const displayMinutes = minutes.toString().padStart(2, '0');
   
-  // Parse time (HH:MM:SS or HH:MM format)
-  const [hours, minutes] = time.split(':');
-  const hour = parseInt(hours, 10);
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const displayHour = hour % 12 || 12;
-  
-  return `${formattedDate} at ${displayHour}:${minutes} ${ampm}`;
+  return `${formattedDate} at ${displayHour}:${displayMinutes} ${ampm}`;
 }
 
 export function getStatusColor(status: string): string {

@@ -133,9 +133,9 @@ export function useJobDev({ tenantId, tenantHeaders, requireSignIn, setAlertMess
           description: job.description,
           status: job.status,
           priority: job.priority,
-          scheduled_date: job.scheduled_date,
-          scheduled_time: job.scheduled_time,
-          customerName: job.customer?.name || 'Unknown customer',
+          scheduled_start: job.scheduled_start,
+          scheduled_end: job.scheduled_end,
+          customerName: job.customer?.name || job.customer_id || 'Unknown customer',
           propertyName: job.property?.name || job.property?.address?.street || undefined,
           created_at: job.created_at
         }));
@@ -169,7 +169,7 @@ export function useJobDev({ tenantId, tenantHeaders, requireSignIn, setAlertMess
       description: '',
       scheduledDate: new Date().toISOString().split('T')[0],
       scheduledTime: '',
-      priority: 'medium',
+      priority: 'normal',
       notes: ''
     }));
   }, [customers]);

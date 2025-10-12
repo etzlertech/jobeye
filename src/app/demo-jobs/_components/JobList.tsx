@@ -26,8 +26,8 @@ export interface JobRecord {
   description?: string;
   status: string;
   priority: string;
-  scheduled_date?: string;
-  scheduled_time?: string;
+  scheduled_start?: string;
+  scheduled_end?: string;
   customerName: string;
   propertyName?: string;
   created_at: string;
@@ -180,7 +180,7 @@ export function JobList({
                 {/* Schedule */}
                 <div className="flex items-center gap-1 text-gray-400">
                   <Calendar className="h-3.5 w-3.5" />
-                  <span>{formatJobDateTime(job.scheduled_date || null, job.scheduled_time || null)}</span>
+                  <span>{formatJobDateTime(job.scheduled_start || null)}</span>
                 </div>
 
                 {/* Customer */}
