@@ -39,8 +39,13 @@ import { JobsRepository } from '@/domains/jobs/repositories/jobs.repository';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get query parameters
+    // Health check
     const searchParams = request.nextUrl.searchParams;
+    if (searchParams.get('health') === 'true') {
+      return NextResponse.json({ status: 'ok', timestamp: new Date().toISOString() });
+    }
+    
+    // Get query parameters
     const customerId = searchParams.get('customer_id');
     const propertyId = searchParams.get('property_id');
     const status = searchParams.get('status');
@@ -86,6 +91,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
+    console.error('Jobs API GET error:', error);
     return handleApiError(error);
   }
 }
@@ -147,6 +153,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
 
   } catch (error) {
+    console.error('Jobs API POST error:', error);
     return handleApiError(error);
   }
 }
