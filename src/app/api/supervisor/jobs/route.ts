@@ -45,6 +45,39 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ status: 'ok', timestamp: new Date().toISOString() });
     }
     
+    // Debug test
+    if (searchParams.get('debug') === 'true') {
+      try {
+        const isDemoRequest = !request.headers.get('authorization');
+        let supabase;
+        if (isDemoRequest) {
+          supabase = createServiceClient();
+        } else {
+          supabase = await createServerClient();
+        }
+        
+        // Simple test query
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('id, title')
+          .eq('tenant_id', 'demo-company')
+          .limit(1);
+          
+        return NextResponse.json({ 
+          debug: true,
+          isDemoRequest,
+          hasSupabase: !!supabase,
+          queryResult: { data, error }
+        });
+      } catch (debugError) {
+        return NextResponse.json({ 
+          debug: true, 
+          error: String(debugError),
+          stack: (debugError as Error).stack
+        });
+      }
+    }
+    
     // Get query parameters
     const customerId = searchParams.get('customer_id');
     const propertyId = searchParams.get('property_id');
