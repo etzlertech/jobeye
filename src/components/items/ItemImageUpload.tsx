@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { Camera, Upload, X, Check } from 'lucide-react';
+import { Camera, Upload, X, Check, Loader2 } from 'lucide-react';
+import { imageProcessor, type ProcessedImages } from '@/utils/image-processor';
 
 interface ItemImageUploadProps {
-  onImageCapture: (imageDataUrl: string) => void;
+  onImageCapture: (images: ProcessedImages) => void;
   currentImageUrl?: string;
 }
 
@@ -12,6 +13,7 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
   const [mode, setMode] = useState<'preview' | 'camera' | 'upload'>('preview');
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,76 +48,68 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
   }, []);
 
   // Capture photo from camera
-  const capturePhoto = useCallback(() => {
+  const capturePhoto = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
 
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-    
-    if (!context) return;
+    setIsProcessing(true);
+    try {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+      
+      if (!context) return;
 
-    // Get the smaller dimension to create a square
-    const size = Math.min(video.videoWidth, video.videoHeight);
-    const xOffset = (video.videoWidth - size) / 2;
-    const yOffset = (video.videoHeight - size) / 2;
+      // Get the smaller dimension to create a square
+      const size = Math.min(video.videoWidth, video.videoHeight);
+      const xOffset = (video.videoWidth - size) / 2;
+      const yOffset = (video.videoHeight - size) / 2;
 
-    // Set canvas to square
-    canvas.width = 512;
-    canvas.height = 512;
+      // Set canvas to capture at high resolution
+      canvas.width = 2048;
+      canvas.height = 2048;
 
-    // Draw cropped square image
-    context.drawImage(
-      video,
-      xOffset, yOffset, size, size,  // Source (crop to square)
-      0, 0, 512, 512                  // Destination (512x512)
-    );
+      // Draw cropped square image
+      context.drawImage(
+        video,
+        xOffset, yOffset, size, size,  // Source (crop to square)
+        0, 0, 2048, 2048               // Destination (high res for processing)
+      );
 
-    const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    setPreviewUrl(imageDataUrl);
-    stopCamera();
-    onImageCapture(imageDataUrl);
+      const imageDataUrl = canvas.toDataURL('image/jpeg', 1.0);
+      
+      // Process to create all three sizes
+      const processedImages = await imageProcessor.processImage(imageDataUrl);
+      
+      setPreviewUrl(processedImages.medium);
+      stopCamera();
+      onImageCapture(processedImages);
+    } catch (error) {
+      console.error('Error capturing photo:', error);
+      alert('Failed to process image. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   }, [onImageCapture, stopCamera]);
 
   // Handle file upload
-  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        if (!canvasRef.current) return;
-
-        const canvas = canvasRef.current;
-        const context = canvas.getContext('2d');
-        if (!context) return;
-
-        // Get the smaller dimension to create a square
-        const size = Math.min(img.width, img.height);
-        const xOffset = (img.width - size) / 2;
-        const yOffset = (img.height - size) / 2;
-
-        // Set canvas to square
-        canvas.width = 512;
-        canvas.height = 512;
-
-        // Draw cropped square image
-        context.drawImage(
-          img,
-          xOffset, yOffset, size, size,  // Source (crop to square)
-          0, 0, 512, 512                  // Destination (512x512)
-        );
-
-        const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-        setPreviewUrl(imageDataUrl);
-        setMode('preview');
-        onImageCapture(imageDataUrl);
-      };
-      img.src = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    setIsProcessing(true);
+    try {
+      // Process to create all three sizes
+      const processedImages = await imageProcessor.processImage(file);
+      
+      setPreviewUrl(processedImages.medium);
+      setMode('preview');
+      onImageCapture(processedImages);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      alert('Failed to process image. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   }, [onImageCapture]);
 
   return (
@@ -134,7 +128,7 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
               <button
                 onClick={() => {
                   setPreviewUrl(null);
-                  onImageCapture('');
+                  onImageCapture({ thumbnail: '', medium: '', full: '' });
                 }}
                 className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600"
               >
@@ -201,6 +195,16 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
       />
 
       <canvas ref={canvasRef} className="hidden" />
+      
+      {isProcessing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 flex flex-col items-center">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-2" />
+            <p className="text-gray-700">Processing image...</p>
+            <p className="text-sm text-gray-500">Creating optimized versions</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

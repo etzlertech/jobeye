@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import TenantUserInfo from '@/components/demo/TenantUserInfo';
 import ItemImageUpload from '@/components/items/ItemImageUpload';
+import type { ProcessedImages } from '@/utils/image-processor';
 
 interface Item {
   id: string;
@@ -14,6 +15,8 @@ interface Item {
   unit_of_measure: string;
   status: string;
   primary_image_url?: string;
+  thumbnail_url?: string;
+  medium_url?: string;
 }
 
 export default function DemoItemsPage() {
@@ -28,10 +31,10 @@ export default function DemoItemsPage() {
   const [trackingMode, setTrackingMode] = useState('quantity');
   const [quantity, setQuantity] = useState('10');
   const [unit, setUnit] = useState('each');
-  const [capturedImage, setCapturedImage] = useState<string>('');
+  const [capturedImages, setCapturedImages] = useState<ProcessedImages | null>(null);
   const [createdItemId, setCreatedItemId] = useState<string | null>(null);
 
-  async function uploadItemImage(itemId: string, imageDataUrl: string) {
+  async function uploadItemImage(itemId: string, images: ProcessedImages) {
     try {
       const res = await fetch(`/api/supervisor/items/${itemId}/image`, {
         method: 'POST',
@@ -39,7 +42,7 @@ export default function DemoItemsPage() {
           'Content-Type': 'application/json',
           'x-tenant-id': '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'
         },
-        body: JSON.stringify({ imageDataUrl })
+        body: JSON.stringify({ images })
       });
 
       if (!res.ok) {
@@ -97,13 +100,13 @@ export default function DemoItemsPage() {
         setCreatedItemId(data.item?.id);
         
         // Upload image if captured
-        if (capturedImage && data.item?.id) {
-          await uploadItemImage(data.item.id, capturedImage);
+        if (capturedImages && data.item?.id) {
+          await uploadItemImage(data.item.id, capturedImages);
         }
         
         // Reset form
         setName('');
-        setCapturedImage('');
+        setCapturedImages(null);
         setCreatedItemId(null);
         loadItems();
       } else {
@@ -205,8 +208,8 @@ export default function DemoItemsPage() {
         
         <div className="mt-6">
           <ItemImageUpload 
-            onImageCapture={(imageDataUrl) => setCapturedImage(imageDataUrl)}
-            currentImageUrl={capturedImage}
+            onImageCapture={(images) => setCapturedImages(images)}
+            currentImageUrl={capturedImages?.medium}
           />
         </div>
         
@@ -260,9 +263,9 @@ export default function DemoItemsPage() {
               {items.map((item) => (
                 <tr key={item.id} className="border-b">
                   <td className="py-2">
-                    {item.primary_image_url ? (
+                    {item.thumbnail_url || item.primary_image_url ? (
                       <img 
-                        src={item.primary_image_url} 
+                        src={item.thumbnail_url || item.primary_image_url} 
                         alt={item.name}
                         className="w-12 h-12 object-cover rounded"
                       />

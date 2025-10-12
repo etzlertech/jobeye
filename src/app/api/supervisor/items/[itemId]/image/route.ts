@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
+import { ItemImageProcessor } from '@/utils/image-processor';
 
 export async function POST(
   request: NextRequest,
@@ -8,51 +9,65 @@ export async function POST(
   try {
     const { itemId } = params;
     const body = await request.json();
-    const { imageDataUrl } = body;
+    const { images } = body;
 
-    if (!imageDataUrl) {
-      return NextResponse.json({ error: 'No image provided' }, { status: 400 });
+    if (!images || !images.thumbnail || !images.medium || !images.full) {
+      return NextResponse.json({ error: 'No images provided' }, { status: 400 });
     }
 
     const supabase = createServiceClient();
+    const timestamp = Date.now();
+    const imageUrls = {
+      thumbnail_url: '',
+      medium_url: '',
+      primary_image_url: ''
+    };
 
-    // Convert base64 to blob
-    const base64Data = imageDataUrl.split(',')[1];
-    const bytes = atob(base64Data);
-    const arrayBuffer = new ArrayBuffer(bytes.length);
-    const uintArray = new Uint8Array(arrayBuffer);
-    
-    for (let i = 0; i < bytes.length; i++) {
-      uintArray[i] = bytes.charCodeAt(i);
+    // Upload all three sizes
+    const sizes = [
+      { name: 'thumbnail', data: images.thumbnail, field: 'thumbnail_url' },
+      { name: 'medium', data: images.medium, field: 'medium_url' },
+      { name: 'full', data: images.full, field: 'primary_image_url' }
+    ];
+
+    for (const size of sizes) {
+      // Convert data URL to blob
+      const blob = ItemImageProcessor.dataUrlToBlob(size.data);
+      
+      // Upload to Supabase Storage
+      const fileName = `items/${itemId}/${timestamp}-${size.name}.jpg`;
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('equipment-images')
+        .upload(fileName, blob, {
+          contentType: 'image/jpeg',
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error(`Upload error for ${size.name}:`, uploadError);
+        return NextResponse.json({ 
+          error: `Failed to upload ${size.name} image` 
+        }, { status: 500 });
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('equipment-images')
+        .getPublicUrl(fileName);
+
+      imageUrls[size.field as keyof typeof imageUrls] = publicUrl;
     }
-    
-    const blob = new Blob([arrayBuffer], { type: 'image/jpeg' });
 
-    // Upload to Supabase Storage
-    const fileName = `items/${itemId}/${Date.now()}.jpg`;
-    const { data: uploadData, error: uploadError } = await supabase
-      .storage
-      .from('equipment-images')
-      .upload(fileName, blob, {
-        contentType: 'image/jpeg',
-        upsert: true
-      });
-
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
-      return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 });
-    }
-
-    // Get public URL
-    const { data: { publicUrl } } = supabase
-      .storage
-      .from('equipment-images')
-      .getPublicUrl(fileName);
-
-    // Update item with image URL
+    // Update item with all image URLs
     const { data: item, error: updateError } = await supabase
       .from('items')
-      .update({ primary_image_url: publicUrl })
+      .update({ 
+        primary_image_url: imageUrls.primary_image_url,
+        thumbnail_url: imageUrls.thumbnail_url,
+        medium_url: imageUrls.medium_url
+      })
       .eq('id', itemId)
       .select()
       .single();
@@ -63,8 +78,8 @@ export async function POST(
     }
 
     return NextResponse.json({
-      imageUrl: publicUrl,
-      message: 'Image uploaded successfully'
+      imageUrls,
+      message: 'Images uploaded successfully'
     });
 
   } catch (error) {
