@@ -189,13 +189,14 @@ export function JobForm({
             <select
               id="priority"
               value={draft.priority}
-              onChange={(e) => onDraftChange('priority', e.target.value as 'low' | 'medium' | 'high')}
+              onChange={(e) => onDraftChange('priority', e.target.value as 'low' | 'normal' | 'high' | 'urgent')}
               className="w-full rounded-md bg-gray-800 py-2 pl-10 pr-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={disabled}
             >
               <option value="low">Low</option>
-              <option value="medium">Medium</option>
+              <option value="normal">Normal</option>
               <option value="high">High</option>
+              <option value="urgent">Urgent</option>
             </select>
           </div>
         </div>

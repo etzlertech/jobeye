@@ -42,7 +42,7 @@ export function useJobDev({ tenantId, tenantHeaders, requireSignIn, setAlertMess
     description: '',
     scheduledDate: new Date().toISOString().split('T')[0],
     scheduledTime: '',
-    priority: 'medium',
+    priority: 'normal',
     notes: ''
   });
   const [editingId, setEditingId] = useState<string | null>(null);

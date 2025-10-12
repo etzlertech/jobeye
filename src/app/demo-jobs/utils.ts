@@ -20,7 +20,7 @@ export interface JobFormState {
   description: string;
   scheduledDate: string;
   scheduledTime: string;
-  priority: 'low' | 'medium' | 'high';
+  priority: 'low' | 'normal' | 'high' | 'urgent';
   notes: string;
 }
 
@@ -53,8 +53,9 @@ export function formatJobStatus(status: string): string {
 export function formatJobPriority(priority: string): string {
   const priorityMap: Record<string, string> = {
     low: 'Low',
-    medium: 'Medium',
-    high: 'High'
+    normal: 'Normal',
+    high: 'High',
+    urgent: 'Urgent'
   };
   return priorityMap[priority] || priority;
 }
@@ -95,8 +96,9 @@ export function getStatusColor(status: string): string {
 export function getPriorityColor(priority: string): string {
   const colorMap: Record<string, string> = {
     low: 'bg-gray-100 text-gray-700',
-    medium: 'bg-blue-100 text-blue-700',
-    high: 'bg-red-100 text-red-700'
+    normal: 'bg-blue-100 text-blue-700',
+    high: 'bg-orange-100 text-orange-700',
+    urgent: 'bg-red-100 text-red-700'
   };
   return colorMap[priority] || 'bg-gray-100 text-gray-700';
 }

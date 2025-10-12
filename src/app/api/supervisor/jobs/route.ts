@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
       ...body,
       tenant_id: tenantId,
       status: body.status || 'draft',
-      priority: body.priority || 'medium',
+      priority: body.priority || 'low',
       created_by: body.created_by || 'demo-user'
     };
 
