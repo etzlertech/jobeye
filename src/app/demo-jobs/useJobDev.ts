@@ -117,7 +117,7 @@ export function useJobDev({ tenantId, tenantHeaders, requireSignIn, setAlertMess
 
     setLoading(true);
     try {
-      const response = await fetch('/api/supervisor/jobs', {
+      const response = await fetch('/api/supervisor/jobs?simple=true', {
         headers: {
           Accept: 'application/json',
           ...tenantHeaders
