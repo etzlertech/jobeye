@@ -171,6 +171,8 @@ export async function POST(request: NextRequest) {
       supabase = await createServerClient();
     }
     const body = await request.json();
+    
+    console.log('Jobs API POST request body:', JSON.stringify(body, null, 2));
 
     // Get tenant ID from headers, use demo default if not provided
     // Using a proper UUID for demo tenant
@@ -218,6 +220,11 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Jobs API POST error:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error: error
+    });
     return handleApiError(error);
   }
 }
