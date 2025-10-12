@@ -103,6 +103,12 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
       return;
     }
 
+    // Check for HEIC/HEIF format
+    if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic')) {
+      alert('HEIC/HEIF format is not supported. Please convert to JPEG or PNG first. You can use online converters or export from Photos app as JPEG.');
+      return;
+    }
+
     setIsProcessing(true);
     try {
       console.log('Processing file:', file.name, file.type, file.size);
@@ -168,6 +174,10 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
                 Upload Image
               </button>
             </div>
+            
+            <p className="text-sm text-gray-500 text-center mt-2">
+              Supported formats: JPEG, PNG, GIF, WebP
+            </p>
           )}
         </div>
       )}
@@ -202,7 +212,7 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
         onChange={handleFileUpload}
         className="hidden"
       />
