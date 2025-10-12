@@ -78,6 +78,36 @@ export async function GET(request: NextRequest) {
       }
     }
     
+    // Simple mode without relations
+    if (searchParams.get('simple') === 'true') {
+      try {
+        const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
+        const isDemoRequest = !request.headers.get('authorization');
+        let supabase;
+        if (isDemoRequest) {
+          supabase = createServiceClient();
+        } else {
+          supabase = await createServerClient();
+        }
+        
+        const { data: jobs, error, count } = await supabase
+          .from('jobs')
+          .select('*', { count: 'exact' })
+          .eq('tenant_id', tenantId)
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+          
+        return NextResponse.json({
+          jobs: jobs || [],
+          total_count: count || 0
+        });
+      } catch (simpleError) {
+        console.error('Simple query error:', simpleError);
+        return handleApiError(simpleError);
+      }
+    }
+    
     // Get query parameters
     const customerId = searchParams.get('customer_id');
     const propertyId = searchParams.get('property_id');

@@ -79,13 +79,13 @@ export class JobsRepository {
       .from('jobs')
       .select(`
         *,
-        customer:customers(
+        customer:customers!left(
           id,
           name,
           email,
           phone
         ),
-        property:properties(
+        property:properties!left(
           id,
           name,
           address
@@ -153,13 +153,13 @@ export class JobsRepository {
       .from('jobs')
       .select(`
         *,
-        customer:customers(
+        customer:customers!left(
           id,
           name,
           email,
           phone
         ),
-        property:properties(
+        property:properties!left(
           id,
           name,
           address
@@ -192,13 +192,13 @@ export class JobsRepository {
       .from('jobs')
       .select(`
         *,
-        customer:customers(
+        customer:customers!left(
           id,
           name,
           email,
           phone
         ),
-        property:properties(
+        property:properties!left(
           id,
           name,
           address
