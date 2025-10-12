@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     });
     
     return NextResponse.json({
-      items: result.data,
+      data: result.data,  // Changed from 'items' to 'data' to match expected format
       count: result.count,
       page,
       limit,
@@ -122,7 +122,10 @@ export async function POST(request: NextRequest) {
       model: body.model || null,
       sku: body.sku || null,
       barcode: body.barcode || null,
-      status: body.status || 'active'
+      status: body.status || 'active',
+      primaryImageUrl: body.primary_image_url || null,  // camelCase
+      thumbnailUrl: body.thumbnail_url || null,  // camelCase
+      mediumUrl: body.medium_url || null  // camelCase
     };
     
     console.log('Creating item with data:', itemData);

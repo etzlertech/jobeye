@@ -480,6 +480,8 @@ export class ItemRepository extends BaseRepository<Item> {
       tags: data.tags || [],
       customFields: data.custom_fields || {},
       primaryImageUrl: data.primary_image_url || null,
+      thumbnailUrl: data.thumbnail_url || null,
+      mediumUrl: data.medium_url || null,
       imageUrls: data.image_urls || [],
       createdAt: data.created_at,
       createdBy: data.created_by || null,
@@ -527,6 +529,8 @@ export class ItemRepository extends BaseRepository<Item> {
     if (data.tags !== undefined) mapped.tags = data.tags;
     if (data.customFields !== undefined) mapped.custom_fields = data.customFields;
     if (data.primaryImageUrl !== undefined) mapped.primary_image_url = data.primaryImageUrl;
+    if (data.thumbnailUrl !== undefined) mapped.thumbnail_url = data.thumbnailUrl;
+    if (data.mediumUrl !== undefined) mapped.medium_url = data.mediumUrl;
     if (data.imageUrls !== undefined) mapped.image_urls = data.imageUrls;
     if (data.createdBy !== undefined) mapped.created_by = data.createdBy;
     if (data.updatedBy !== undefined) mapped.updated_by = data.updatedBy;

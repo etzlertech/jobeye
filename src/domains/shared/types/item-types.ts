@@ -80,6 +80,8 @@ export const ItemSchema = z.object({
   
   // Media
   primaryImageUrl: z.string().nullable().optional(),
+  thumbnailUrl: z.string().nullable().optional(),
+  mediumUrl: z.string().nullable().optional(),
   imageUrls: z.array(z.string()).nullable().default([]),
   
   // Audit

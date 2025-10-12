@@ -80,6 +80,14 @@ export async function POST(
     }
 
     // Update item with all image URLs
+    console.log('Updating database with:', {
+      primary_image_url: imageUrls.primary_image_url,
+      thumbnail_url: imageUrls.thumbnail_url,
+      medium_url: imageUrls.medium_url,
+      itemId,
+      tenantId
+    });
+    
     const { data: item, error: updateError } = await supabase
       .from('items')
       .update({ 
