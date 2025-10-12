@@ -28,6 +28,7 @@
     "scaffold:inject": "tsx scripts/dev/scaffold-aac.ts",
     "lint:directives": "tsx scripts/ci/lint-directives.ts",
     "validate:deps": "tsx scripts/dev/validate-dependencies.ts",
+    "scripts:backfill-metadata": "tsx scripts/backfill-metadata.ts",
     "generate:types": "supabase gen types typescript --local > src/types/supabase.ts",
     "generate:erd": "tsx scripts/dev/generate-erd.sh",
     "generate:erd-from-skeletons": "tsx scripts/dev/generate-erd-from-headers.ts",

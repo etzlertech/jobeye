@@ -100,3 +100,19 @@ const context = await getRequestContext(request);
 2. Transitioning to session-based (JWT app_metadata)
 3. Run backfill script before deploying changes
 4. Header fallback logs warnings - expected behavior
+
+### Metadata Backfill Process
+Run the backfill script to migrate existing users:
+```bash
+npm run scripts:backfill-metadata
+```
+
+What it does:
+- Creates default tenant "Demo Company" if not exists
+- Assigns all users without metadata to default tenant
+- First user or emails with 'admin' become tenant_admin
+- Others get member role
+- Updates JWT app_metadata with tenant_id and roles
+- Creates tenant_members records
+
+Note: Since current data is mock data, you can run this safely
