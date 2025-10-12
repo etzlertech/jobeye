@@ -21,20 +21,42 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
 
   // Start camera
   const startCamera = useCallback(async () => {
+    console.log('Starting camera...');
     try {
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Camera API is not supported in this browser.');
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' },
         audio: false 
       });
       
+      console.log('Got camera stream:', stream);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         setMode('camera');
+        console.log('Camera mode activated');
+      } else {
+        console.error('Video ref not available');
       }
     } catch (error) {
       console.error('Camera access error:', error);
-      alert('Unable to access camera. Please check permissions.');
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          alert('Camera access denied. Please allow camera permissions and try again.');
+        } else if (error.name === 'NotFoundError') {
+          alert('No camera found on this device.');
+        } else {
+          alert(`Camera error: ${error.message}`);
+        }
+      } else {
+        alert('Unable to access camera. Please check permissions.');
+      }
     }
   }, []);
 
@@ -158,7 +180,10 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
             <div className="flex gap-4 justify-center">
               <button
                 type="button"
-                onClick={startCamera}
+                onClick={() => {
+                  console.log('Take Photo button clicked');
+                  startCamera();
+                }}
                 className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
               >
                 <Camera className="w-5 h-5" />
