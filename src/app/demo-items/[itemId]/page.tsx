@@ -533,10 +533,10 @@ export default function ItemProfilePage() {
           {/* Main Image */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold mb-4">Item Image</h3>
-            {item.primary_image_url ? (
+            {item.primaryImageUrl ? (
               <div className="relative">
                 <img 
-                  src={item.primary_image_url} 
+                  src={item.primaryImageUrl} 
                   alt={item.name}
                   className="w-full rounded-lg"
                 />
@@ -564,7 +564,7 @@ export default function ItemProfilePage() {
               <div className="mt-4">
                 <ItemImageUpload
                   onImageCapture={handleImageUpload}
-                  currentImageUrl={item.primary_image_url}
+                  currentImageUrl={item.primaryImageUrl}
                 />
                 <button
                   onClick={() => setUploadingImage(false)}
