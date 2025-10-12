@@ -70,7 +70,7 @@ export default function JobItemsPage() {
       console.log('Loading available items...');
       const res = await fetch('/api/supervisor/items', {
         headers: {
-          'x-tenant-id': '00000000-0000-0000-0000-000000000000'  // Default tenant UUID
+          'x-tenant-id': '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'  // Demo tenant UUID
         }
       });
       
@@ -107,7 +107,7 @@ export default function JobItemsPage() {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-tenant-id': '00000000-0000-0000-0000-000000000000'
+          'x-tenant-id': '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e'
         },
         body: JSON.stringify({
           item_id: selectedItem.id,
