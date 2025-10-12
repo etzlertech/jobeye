@@ -59,7 +59,7 @@ export class TenantRepository {
       .from('tenants')
       .select(`
         *,
-        tenant_members!inner(count)
+        tenant_members(count)
       `, { count: 'exact' });
 
     if (options?.status) {

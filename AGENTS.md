@@ -3,6 +3,27 @@
 ## IMPORTANT: Main Branch Only Workflow
 **As a single developer, all work happens directly on the main branch. DO NOT create feature branches.**
 
+## 🏢 TENANT MANAGEMENT CONTEXT (NEW)
+
+### Context Resolution Pattern
+```typescript
+// In all API routes and server components:
+import { getRequestContext } from '@/lib/auth/context';
+
+// Always get tenant context first
+const context = await getRequestContext(request);
+// context = { tenantId, roles, source }
+
+// Header fallback will log warning - this is intentional during migration
+```
+
+### Important Tenant Notes
+- Currently transitioning from x-tenant-id header to session-based (JWT app_metadata)
+- The header fallback is temporary and logs warnings - this is expected behavior
+- Always use getRequestContext helper, never access headers directly for tenant info
+- Run metadata backfill script before deploying: `npm run scripts:backfill-metadata`
+- New code MUST use getRequestContext; legacy code may still use headers
+
 ## CRITICAL: Execution Order for All Tasks
 
 1. **ALWAYS START BY READING:**

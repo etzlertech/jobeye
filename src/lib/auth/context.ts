@@ -27,7 +27,7 @@ export interface RequestContext {
 export async function getRequestContext(request: Request): Promise<RequestContext> {
   try {
     // 1. Try session first (preferred method)
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
     
     if (user && !error) {

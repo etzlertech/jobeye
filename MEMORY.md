@@ -132,6 +132,16 @@ For any task with 3+ steps or complexity, use TodoWrite to:
 - Always confirm the header matches the tenant whose data you expect, or the UI will appear empty / return 404s.
 - When in doubt, echo tenant/user info on screen to validate context quickly.
 
+### 🏢 TENANT BADGE VERIFICATION
+- **NEW REQUIREMENT**: All UI pages must display tenant context badge
+- **VISUAL CONFIRMATION**: Look for "Tenant: Demo Company • Member" or similar
+- **MISSING BADGE = BUG**: If tenant badge isn't visible, context resolution failed
+- **TEST WORKFLOW**:
+  1. Navigate to any CRUD page
+  2. Verify tenant badge displays correct tenant name and user role
+  3. If missing, check getRequestContext implementation
+  4. Badge should update when switching tenants
+
 ## 🌐 BROWSER MCP CAPABILITIES
 
 ### Real-Time Browser Control
