@@ -967,7 +967,7 @@ export default function ItemProfilePage() {
                     {transaction.transactionType === 'check_out' ? 'Checked Out' : 'Checked In'}
                   </p>
                   <p className="text-sm text-gray-600">
-                    {transaction.job?.jobNumber && `Job #${transaction.job.jobNumber} - `}
+                    {transaction.job?.jobNumber ? `Job #${transaction.job.jobNumber} - ` : ''}
                     {transaction.notes || 'No notes'}
                   </p>
                 </div>
