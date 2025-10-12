@@ -187,7 +187,6 @@ export default function ItemProfilePage() {
   }
   
   async function handleImageUpload(images: ProcessedImages) {
-    setUploadingImage(true);
     try {
       const res = await fetch(`/api/supervisor/items/${itemId}/image`, {
         method: 'POST',
@@ -200,11 +199,14 @@ export default function ItemProfilePage() {
       
       if (res.ok) {
         await loadItemProfile(); // Reload to get new image URLs
+        setUploadingImage(false); // Close the upload interface
+      } else {
+        console.error('Failed to upload image:', await res.text());
+        alert('Failed to upload image. Please try again.');
       }
     } catch (error) {
       console.error('Error uploading image:', error);
-    } finally {
-      setUploadingImage(false);
+      alert('Error uploading image. Please try again.');
     }
   }
   
@@ -540,6 +542,12 @@ export default function ItemProfilePage() {
                   onImageCapture={handleImageUpload}
                   currentImageUrl={item.primary_image_url}
                 />
+                <button
+                  onClick={() => setUploadingImage(false)}
+                  className="mt-2 w-full px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
               </div>
             )}
           </div>

@@ -9,44 +9,34 @@ export async function GET(
     const { itemId } = params;
     const supabase = createServiceClient();
     
-    // First, check if this item is currently assigned to a job
-    const { data: item, error: itemError } = await supabase
+    // Get the item first to check if it's currently assigned to a job
+    const { data: item } = await supabase
       .from('items')
       .select('assigned_to_job_id')
       .eq('id', itemId)
       .single();
     
-    if (itemError) {
-      console.error('Error fetching item:', itemError);
-      return NextResponse.json({ error: 'Failed to fetch item' }, { status: 500 });
-    }
-    
-    // Also get all jobs this item was used in via transactions
-    const { data: transactions, error: transactionsError } = await supabase
+    // Also get all transactions for this item that have a job_id
+    const { data: transactions } = await supabase
       .from('item_transactions')
       .select('job_id')
       .eq('item_id', itemId)
       .not('job_id', 'is', null);
     
-    if (transactionsError) {
-      console.error('Error fetching item transactions:', transactionsError);
-      return NextResponse.json({ error: 'Failed to fetch item transactions' }, { status: 500 });
-    }
-    
     // Collect all unique job IDs
-    const jobIds = [];
+    const jobIds = new Set<string>();
+    
+    // Add currently assigned job if any
     if (item?.assigned_to_job_id) {
-      jobIds.push(item.assigned_to_job_id);
-    }
-    if (transactions && transactions.length > 0) {
-      const transactionJobIds = transactions.map(t => t.job_id);
-      jobIds.push(...transactionJobIds);
+      jobIds.add(item.assigned_to_job_id);
     }
     
-    // Get unique job IDs
-    const uniqueJobIds = [...new Set(jobIds)];
+    // Add jobs from transactions
+    transactions?.forEach(t => {
+      if (t.job_id) jobIds.add(t.job_id);
+    });
     
-    if (uniqueJobIds.length === 0) {
+    if (jobIds.size === 0) {
       return NextResponse.json({ jobs: [] });
     }
     
@@ -60,7 +50,7 @@ export async function GET(
         status,
         customer_name
       `)
-      .in('id', uniqueJobIds)
+      .in('id', Array.from(jobIds))
       .order('created_at', { ascending: false });
     
     if (jobsError) {
