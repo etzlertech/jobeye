@@ -63,8 +63,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      // Search in multiple address fields
-      query = query.or(`street.ilike.%${search}%,city.ilike.%${search}%,name.ilike.%${search}%`);
+      // Search in name and address JSONB fields
+      query = query.or(`name.ilike.%${search}%,address->>'street'.ilike.%${search}%,address->>'city'.ilike.%${search}%`);
     }
 
     // Order by creation date

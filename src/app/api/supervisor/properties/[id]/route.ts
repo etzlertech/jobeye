@@ -49,10 +49,10 @@ export async function GET(
       return validationError('Tenant ID required');
     }
 
-    // Get property with customer info
+    // Get property without join for now
     let query = supabase
       .from('properties')
-      .select('*, customer:customers(name)')
+      .select('*')
       .eq('id', propertyId);
 
     query = query.eq('tenant_id', tenantId);
@@ -108,7 +108,7 @@ export async function PUT(
       })
       .eq('id', propertyId)
       .eq('tenant_id', tenantId) // Ensure tenant isolation
-      .select('*, customer:customers(name)')
+      .select('*')
       .single();
 
     if (error) {
