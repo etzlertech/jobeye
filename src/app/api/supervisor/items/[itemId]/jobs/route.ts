@@ -41,14 +41,17 @@ export async function GET(
     }
     
     // Fetch job details
-    const { data: jobs, error: jobsError } = await supabase
+    const { data: jobsRaw, error: jobsError } = await supabase
       .from('jobs')
       .select(`
         id,
         job_number,
         title,
         status,
-        customer_name
+        created_at,
+        customers:customer_id (
+          name
+        )
       `)
       .in('id', Array.from(jobIds))
       .order('created_at', { ascending: false });
@@ -58,8 +61,17 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 });
     }
     
-    return NextResponse.json({ 
-      jobs: jobs || []
+    const jobs = (jobsRaw || []).map(job => ({
+      id: job.id,
+      job_number: job.job_number,
+      title: job.title,
+      status: job.status,
+      customerName: job.customers?.name ?? null,
+      created_at: job.created_at
+    }));
+    
+    return NextResponse.json({
+      jobs
     });
     
   } catch (error) {
