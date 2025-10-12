@@ -41,52 +41,52 @@ export const ItemSchema = z.object({
   
   // Basic Information
   name: z.string(),
-  description: z.string().optional(),
-  manufacturer: z.string().optional(),
-  model: z.string().optional(),
-  serialNumber: z.string().optional(),
-  sku: z.string().optional(),
-  barcode: z.string().optional(),
+  description: z.string().nullable().optional(),
+  manufacturer: z.string().nullable().optional(),
+  model: z.string().nullable().optional(),
+  serialNumber: z.string().nullable().optional(),
+  sku: z.string().nullable().optional(),
+  barcode: z.string().nullable().optional(),
   
   // Quantity Management
   currentQuantity: z.number().default(0),
   unitOfMeasure: z.string().default('each'),
-  minQuantity: z.number().optional(),
-  maxQuantity: z.number().optional(),
-  reorderPoint: z.number().optional(),
+  minQuantity: z.number().nullable().optional(),
+  maxQuantity: z.number().nullable().optional(),
+  reorderPoint: z.number().nullable().optional(),
   
   // Location & Assignment
-  currentLocationId: z.string().uuid().optional(),
-  homeLocationId: z.string().uuid().optional(),
-  assignedToUserId: z.string().uuid().optional(),
-  assignedToJobId: z.string().uuid().optional(),
+  currentLocationId: z.string().uuid().nullable().optional(),
+  homeLocationId: z.string().uuid().nullable().optional(),
+  assignedToUserId: z.string().uuid().nullable().optional(),
+  assignedToJobId: z.string().uuid().nullable().optional(),
   
   // Status & Condition
   status: ItemStatus.default('active'),
-  condition: ItemCondition.optional(),
-  lastMaintenanceDate: z.string().optional(),
-  nextMaintenanceDate: z.string().optional(),
+  condition: ItemCondition.nullable().optional(),
+  lastMaintenanceDate: z.string().nullable().optional(),
+  nextMaintenanceDate: z.string().nullable().optional(),
   
   // Financial
-  purchaseDate: z.string().optional(),
-  purchasePrice: z.number().optional(),
-  currentValue: z.number().optional(),
-  depreciationMethod: z.string().optional(),
+  purchaseDate: z.string().nullable().optional(),
+  purchasePrice: z.number().nullable().optional(),
+  currentValue: z.number().nullable().optional(),
+  depreciationMethod: z.string().nullable().optional(),
   
   // Metadata & Extensibility
-  attributes: z.record(z.any()).default({}),
-  tags: z.array(z.string()).default([]),
-  customFields: z.record(z.any()).default({}),
+  attributes: z.record(z.any()).nullable().default({}),
+  tags: z.array(z.string()).nullable().default([]),
+  customFields: z.record(z.any()).nullable().default({}),
   
   // Media
-  primaryImageUrl: z.string().optional(),
-  imageUrls: z.array(z.string()).default([]),
+  primaryImageUrl: z.string().nullable().optional(),
+  imageUrls: z.array(z.string()).nullable().default([]),
   
   // Audit
   createdAt: z.string(),
-  createdBy: z.string().uuid().optional(),
+  createdBy: z.string().uuid().nullable().optional(),
   updatedAt: z.string(),
-  updatedBy: z.string().uuid().optional(),
+  updatedBy: z.string().uuid().nullable().optional(),
 });
 
 export type Item = z.infer<typeof ItemSchema>;
