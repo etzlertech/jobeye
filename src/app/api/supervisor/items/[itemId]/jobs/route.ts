@@ -9,23 +9,46 @@ export async function GET(
     const { itemId } = params;
     const supabase = createServiceClient();
     
-    // First, get all job_items entries for this item
-    const { data: jobItems, error: jobItemsError } = await supabase
-      .from('job_items')
-      .select('job_id')
-      .eq('item_id', itemId);
+    // First, check if this item is currently assigned to a job
+    const { data: item, error: itemError } = await supabase
+      .from('items')
+      .select('assigned_to_job_id')
+      .eq('id', itemId)
+      .single();
     
-    if (jobItemsError) {
-      console.error('Error fetching job items:', jobItemsError);
-      return NextResponse.json({ error: 'Failed to fetch job items' }, { status: 500 });
+    if (itemError) {
+      console.error('Error fetching item:', itemError);
+      return NextResponse.json({ error: 'Failed to fetch item' }, { status: 500 });
     }
     
-    if (!jobItems || jobItems.length === 0) {
-      return NextResponse.json({ jobs: [] });
+    // Also get all jobs this item was used in via transactions
+    const { data: transactions, error: transactionsError } = await supabase
+      .from('item_transactions')
+      .select('job_id')
+      .eq('item_id', itemId)
+      .not('job_id', 'is', null);
+    
+    if (transactionsError) {
+      console.error('Error fetching item transactions:', transactionsError);
+      return NextResponse.json({ error: 'Failed to fetch item transactions' }, { status: 500 });
+    }
+    
+    // Collect all unique job IDs
+    const jobIds = [];
+    if (item?.assigned_to_job_id) {
+      jobIds.push(item.assigned_to_job_id);
+    }
+    if (transactions && transactions.length > 0) {
+      const transactionJobIds = transactions.map(t => t.job_id);
+      jobIds.push(...transactionJobIds);
     }
     
     // Get unique job IDs
-    const jobIds = [...new Set(jobItems.map(ji => ji.job_id))];
+    const uniqueJobIds = [...new Set(jobIds)];
+    
+    if (uniqueJobIds.length === 0) {
+      return NextResponse.json({ jobs: [] });
+    }
     
     // Fetch job details
     const { data: jobs, error: jobsError } = await supabase
@@ -37,7 +60,7 @@ export async function GET(
         status,
         customer_name
       `)
-      .in('id', jobIds)
+      .in('id', uniqueJobIds)
       .order('created_at', { ascending: false });
     
     if (jobsError) {
