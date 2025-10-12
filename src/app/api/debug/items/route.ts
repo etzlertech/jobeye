@@ -68,17 +68,20 @@ export async function POST(request: NextRequest) {
     console.log('🔍 Debug Items POST');
     console.log('Request body:', JSON.stringify(body, null, 2));
     
+    // Extract control flags before spreading
+    const { createTransaction, ...dbFields } = body;
+    
     // Add defaults
     const itemData = {
-      tenant_id: body.tenant_id || '00000000-0000-0000-0000-000000000000',
-      item_type: body.item_type || 'material',
-      category: body.category || 'general',
-      name: body.name || 'Test Item',
-      tracking_mode: body.tracking_mode || 'quantity',
-      current_quantity: body.current_quantity || 0,
-      unit_of_measure: body.unit_of_measure || 'each',
-      status: body.status || 'active',
-      ...body
+      tenant_id: dbFields.tenant_id || '00000000-0000-0000-0000-000000000000',
+      item_type: dbFields.item_type || 'material',
+      category: dbFields.category || 'general',
+      name: dbFields.name || 'Test Item',
+      tracking_mode: dbFields.tracking_mode || 'quantity',
+      current_quantity: dbFields.current_quantity || 0,
+      unit_of_measure: dbFields.unit_of_measure || 'each',
+      status: dbFields.status || 'active',
+      ...dbFields
     };
     
     console.log('Attempting insert with:', itemData);
@@ -103,7 +106,7 @@ export async function POST(request: NextRequest) {
     console.log('✅ Insert successful:', data);
     
     // Create a transaction
-    if (body.createTransaction) {
+    if (createTransaction) {
       const transaction = {
         tenant_id: data.tenant_id,
         item_id: data.id,
