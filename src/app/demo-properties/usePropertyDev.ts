@@ -104,7 +104,10 @@ export function usePropertyDev({ tenantId, tenantHeaders, requireSignIn, setAler
         setProperties(mapped);
         setAlertMessage(`Loaded ${mapped.length} properties`, 'success');
       } else {
-        const message = data?.error || data?.message || 'Failed to load properties';
+        // Handle nested error structure from API
+        const message = typeof data?.error === 'object' 
+          ? data.error.message || 'Failed to load properties'
+          : data?.error || data?.message || 'Failed to load properties';
         setAlertMessage(message, 'error');
       }
     } catch {
@@ -202,7 +205,9 @@ export function usePropertyDev({ tenantId, tenantHeaders, requireSignIn, setAler
           await loadProperties();
         } else {
           const data = await response.json();
-          const message = data?.error || 'Failed to update property';
+          const message = typeof data?.error === 'object' 
+            ? data.error.message || 'Failed to update property'
+            : data?.error || 'Failed to update property';
           setAlertMessage(message, 'error');
         }
       } catch {
@@ -237,7 +242,9 @@ export function usePropertyDev({ tenantId, tenantHeaders, requireSignIn, setAler
           await loadProperties();
         } else {
           const data = await response.json();
-          const message = data?.error || 'Failed to delete property';
+          const message = typeof data?.error === 'object' 
+            ? data.error.message || 'Failed to delete property'
+            : data?.error || 'Failed to delete property';
           setAlertMessage(message, 'error');
         }
       } catch {
