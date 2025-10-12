@@ -62,6 +62,7 @@ export const routeAccessConfig: RouteAccessMatrix = {
     '/demo-crud',
     '/demo-properties',
     '/demo-jobs',
+    '/demo-items',
     '/mobile',
     '/mobile/loading-complete',
     '/api/health',
