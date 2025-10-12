@@ -51,10 +51,17 @@ export async function GET(request: NextRequest) {
     // Log for debugging
     console.log('Properties API - TenantID:', tenantId, 'Headers:', Object.fromEntries(request.headers.entries()));
 
-    // Build query - simplified without join for now
+    // Build query with customer join
     let query = supabase
       .from('properties')
-      .select('*', { count: 'exact' });
+      .select(`
+        *,
+        customer:customers(
+          id,
+          name,
+          email
+        )
+      `, { count: 'exact' });
 
     // Add filters
     query = query.eq('tenant_id', tenantId);
