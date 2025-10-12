@@ -71,7 +71,9 @@ export const routeAccessConfig: RouteAccessMatrix = {
     '/api/demo-crud',
     '/api/supervisor/customers*',
     '/api/supervisor/properties*',
-    '/api/supervisor/jobs*'
+    '/api/supervisor/jobs*',
+    '/api/supervisor/items*',
+    '/api/debug/items*'
   ],
   protected: {
     admin: ['/admin*', '/control-tower*', '/vision/admin*'],
