@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { 
   ArrowLeft, 
   Edit2, 
@@ -153,7 +152,14 @@ export default function ItemProfilePage() {
       
       if (jobsRes.ok) {
         const jobsData = await jobsRes.json();
-        setAssociatedJobs(jobsData.jobs || []);
+        const normalizedJobs = (jobsData.jobs || []).map((job: any) => ({
+          id: job.id,
+          jobNumber: job.jobNumber ?? job.job_number ?? '—',
+          title: job.title ?? 'Untitled Job',
+          status: job.status ?? 'unknown',
+          customerName: job.customerName ?? job.customer_name ?? undefined
+        }));
+        setAssociatedJobs(normalizedJobs);
       }
       
       // Load additional files if any
@@ -682,10 +688,11 @@ export default function ItemProfilePage() {
             {associatedJobs.length > 0 ? (
               <div className="space-y-2">
                 {associatedJobs.map(job => (
-                  <Link
+                  <button
                     key={job.id}
-                    href={`/demo-jobs/${job.id}`}
-                    className="block p-3 border rounded hover:bg-gray-50"
+                    type="button"
+                    onClick={() => router.push(`/demo-jobs?focus=${job.id}`)}
+                    className="w-full text-left p-3 border rounded hover:bg-gray-50 transition"
                   >
                     <div className="flex justify-between items-center">
                       <div>
@@ -704,7 +711,7 @@ export default function ItemProfilePage() {
                         {job.status}
                       </span>
                     </div>
-                  </Link>
+                  </button>
                 ))}
               </div>
             ) : (

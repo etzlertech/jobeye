@@ -63,11 +63,11 @@ export async function GET(
     
     const jobs = (jobsRaw || []).map(job => ({
       id: job.id,
-      job_number: job.job_number,
+      jobNumber: job.job_number,
       title: job.title,
       status: job.status,
       customerName: job.customers?.name ?? null,
-      created_at: job.created_at
+      createdAt: job.created_at
     }));
     
     return NextResponse.json({
