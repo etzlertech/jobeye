@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
         const { data, error } = await supabase
           .from('jobs')
           .select('id, title')
-          .eq('tenant_id', 'demo-company')
+          .eq('tenant_id', '00000000-0000-0000-0000-000000000000')
           .limit(1);
           
         return NextResponse.json({ 
@@ -88,7 +88,8 @@ export async function GET(request: NextRequest) {
     const offset = searchParams.get('offset');
 
     // For demo pages, use a default tenant ID if not provided
-    const tenantId = request.headers.get('x-tenant-id') || 'demo-company';
+    // Using a proper UUID for demo tenant
+    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
     
     // Log for debugging
     console.log('Jobs API - TenantID:', tenantId);
@@ -142,7 +143,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Get tenant ID from headers, use demo default if not provided
-    const tenantId = request.headers.get('x-tenant-id') || 'demo-company';
+    // Using a proper UUID for demo tenant
+    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
     
     const jobsRepo = new JobsRepository(supabase);
 

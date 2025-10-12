@@ -42,7 +42,7 @@ export async function GET(
   { params }: { params: { jobId: string } }
 ) {
   try {
-    const tenantId = request.headers.get('x-tenant-id') || 'demo-company';
+    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
     
     // Get appropriate Supabase client
     const isDemoRequest = !request.headers.get('authorization');
@@ -72,7 +72,7 @@ export async function PUT(
   { params }: { params: { jobId: string } }
 ) {
   try {
-    const tenantId = request.headers.get('x-tenant-id') || 'demo-company';
+    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
     const body = await request.json();
     
     // Get appropriate Supabase client
@@ -124,7 +124,7 @@ export async function DELETE(
   { params }: { params: { jobId: string } }
 ) {
   try {
-    const tenantId = request.headers.get('x-tenant-id') || 'demo-company';
+    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
     
     // Get appropriate Supabase client
     const isDemoRequest = !request.headers.get('authorization');
