@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import TenantUserInfo from '@/components/demo/TenantUserInfo';
 
 interface Job {
   id: string;
@@ -184,6 +185,8 @@ export default function JobItemsPage() {
           </span>
         </div>
       </div>
+
+      <TenantUserInfo />
 
       {/* Add Item Form */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">

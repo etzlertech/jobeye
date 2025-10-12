@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import TenantUserInfo from '@/components/demo/TenantUserInfo';
 
 interface Item {
   id: string;
@@ -89,6 +90,8 @@ export default function DemoItemsPage() {
   return (
     <div className="container mx-auto p-4 max-w-6xl">
       <h1 className="text-3xl font-bold mb-6">Demo Items Management</h1>
+      
+      <TenantUserInfo />
       
       {/* Create Form */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">

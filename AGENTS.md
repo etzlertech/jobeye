@@ -37,6 +37,11 @@
    - Tests FIRST (TDD) - they must fail before implementation
    - Always push after commits
 
+### Demo & Tenant Testing Notes
+- Demo pages (e.g., `/demo-items`, `/demo-jobs/[jobId]/items`) call supervisor APIs directly.
+- Always send the correct `x-tenant-id` header when exercising those UIs; wrong tenants show empty lists or 404s.
+- Surface tenant/user info in debug output when possible to keep context obvious.
+
 ## Repository Guidelines
 
 ### Project Structure & Module Organization

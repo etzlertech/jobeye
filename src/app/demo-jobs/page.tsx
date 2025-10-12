@@ -28,6 +28,7 @@ import { useEffect } from 'react';
 import { Loader2, RefreshCcw } from 'lucide-react';
 import DevLayout from '@/components/demo/DevLayout';
 import { DevAlert } from '@/components/demo/DevAlert';
+import TenantUserInfo from '@/components/demo/TenantUserInfo';
 import { useDevAlert } from '@/hooks/useDevAlert';
 import { useDevTenant } from '@/hooks/useDevTenant';
 import { JobForm } from '@/app/demo-jobs/_components/JobForm';
@@ -114,6 +115,8 @@ export default function DemoJobsPage() {
       }
     >
       <DevAlert alert={alert} />
+
+      <TenantUserInfo />
 
       <JobForm
         draft={form}

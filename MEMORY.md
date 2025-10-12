@@ -127,6 +127,11 @@ For any task with 3+ steps or complexity, use TodoWrite to:
 - Maximum: 500 LoC per file
 - Break large features into smaller, focused files
 
+### Demo Tenant Testing Reminder
+- Demo UI screens hit supervisor APIs directly and depend on `x-tenant-id`.
+- Always confirm the header matches the tenant whose data you expect, or the UI will appear empty / return 404s.
+- When in doubt, echo tenant/user info on screen to validate context quickly.
+
 ## 🌐 BROWSER MCP CAPABILITIES
 
 ### Real-Time Browser Control
