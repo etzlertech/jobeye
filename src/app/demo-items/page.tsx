@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import TenantUserInfo from '@/components/demo/TenantUserInfo';
 import ItemImageUpload from '@/components/items/ItemImageUpload';
 import type { ProcessedImages } from '@/utils/image-processor';
@@ -275,7 +276,14 @@ export default function DemoItemsPage() {
                       </div>
                     )}
                   </td>
-                  <td className="py-2">{item.name}</td>
+                  <td className="py-2">
+                    <Link 
+                      href={`/demo-items/${item.id}`}
+                      className="text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      {item.name}
+                    </Link>
+                  </td>
                   <td className="py-2">{item.item_type}</td>
                   <td className="py-2">{item.category}</td>
                   <td className="py-2">{item.tracking_mode}</td>

@@ -91,6 +91,56 @@ export async function PUT(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { itemId: string } }
+) {
+  try {
+    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
+    const body = await request.json();
+    
+    // Get appropriate Supabase client
+    const isDemoRequest = !request.headers.get('authorization');
+    let supabase;
+    if (isDemoRequest) {
+      supabase = createServiceClient();
+    } else {
+      supabase = await createServerClient();
+    }
+    
+    const itemRepo = new ItemRepository(supabase);
+    
+    // Check if item exists
+    const existingItem = await itemRepo.findById(params.itemId, { tenant_id: tenantId });
+    if (!existingItem) {
+      return notFound('Item not found');
+    }
+    
+    // Update only the fields provided in the request body
+    const updatedItem = await itemRepo.update(
+      params.itemId,
+      {
+        ...body,
+        updated_at: new Date().toISOString()
+      },
+      { tenant_id: tenantId }
+    );
+    
+    if (!updatedItem) {
+      throw new Error('Failed to update item');
+    }
+    
+    return NextResponse.json({ 
+      item: updatedItem,
+      message: 'Item updated successfully'
+    });
+    
+  } catch (error) {
+    console.error('Items API PATCH error:', error);
+    return handleApiError(error);
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { itemId: string } }
