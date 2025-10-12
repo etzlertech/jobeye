@@ -54,15 +54,17 @@ export class ItemImageProcessor {
     return new Promise((resolve, reject) => {
       const img = new Image();
       
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error('Failed to load image'));
-
       if (typeof source === 'string') {
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Failed to load image'));
         img.src = source;
       } else {
         const reader = new FileReader();
         reader.onload = (e) => {
-          img.src = e.target?.result as string;
+          const dataUrl = e.target?.result as string;
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error('Failed to load image'));
+          img.src = dataUrl;
         };
         reader.onerror = () => reject(new Error('Failed to read file'));
         reader.readAsDataURL(source);
@@ -147,6 +149,11 @@ export class ItemImageProcessor {
     img: HTMLImageElement, 
     targetSize: number
   ): HTMLCanvasElement {
+    // Check if we're in a browser environment
+    if (typeof document === 'undefined') {
+      throw new Error('Canvas operations require browser environment');
+    }
+    
     const canvas = document.createElement('canvas');
     canvas.width = targetSize;
     canvas.height = targetSize;

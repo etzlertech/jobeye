@@ -76,6 +76,7 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
       );
 
       const imageDataUrl = canvas.toDataURL('image/jpeg', 1.0);
+      console.log('Captured image data URL length:', imageDataUrl.length);
       
       // Process to create all three sizes
       const processedImages = await imageProcessor.processImage(imageDataUrl);
@@ -85,7 +86,7 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
       onImageCapture(processedImages);
     } catch (error) {
       console.error('Error capturing photo:', error);
-      alert('Failed to process image. Please try again.');
+      alert(`Failed to process image: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsProcessing(false);
     }
@@ -96,8 +97,16 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
     setIsProcessing(true);
     try {
+      console.log('Processing file:', file.name, file.type, file.size);
+      
       // Process to create all three sizes
       const processedImages = await imageProcessor.processImage(file);
       
@@ -106,9 +115,13 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
       onImageCapture(processedImages);
     } catch (error) {
       console.error('Error processing image:', error);
-      alert('Failed to process image. Please try again.');
+      alert(`Failed to process image: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsProcessing(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   }, [onImageCapture]);
 
