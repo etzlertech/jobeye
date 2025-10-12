@@ -727,7 +727,7 @@ export default function ItemProfilePage() {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Item Image</h3>
-              {editMode && item.primaryImageUrl && (
+              {editMode && item?.primaryImageUrl && (
                 <button
                   onClick={() => setUploadingImage(!uploadingImage)}
                   className="text-sm text-blue-600 hover:text-blue-800"
@@ -736,7 +736,7 @@ export default function ItemProfilePage() {
                 </button>
               )}
             </div>
-            {item.primaryImageUrl && !uploadingImage ? (
+            {item?.primaryImageUrl && !uploadingImage ? (
               <div className="relative">
                 <img 
                   src={item.primaryImageUrl} 
@@ -769,7 +769,7 @@ export default function ItemProfilePage() {
               <div className="mt-4">
                 <ItemImageUpload
                   onImageCapture={handleImageUpload}
-                  currentImageUrl={item.primaryImageUrl}
+                  currentImageUrl={item?.primaryImageUrl}
                 />
                 <button
                   onClick={() => setUploadingImage(false)}
@@ -782,7 +782,7 @@ export default function ItemProfilePage() {
           </div>
           
           {/* Financial Info */}
-          {(item.purchasePrice || item.currentValue || editMode) && (
+          {(item?.purchasePrice || item?.currentValue || editMode) && (
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <DollarSign className="w-5 h-5 mr-2" />
@@ -825,19 +825,19 @@ export default function ItemProfilePage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {item.purchasePrice && (
+                  {item?.purchasePrice && (
                     <div>
                       <span className="text-sm text-gray-500">Purchase Price</span>
                       <p className="font-medium">${item.purchasePrice.toFixed(2)}</p>
                     </div>
                   )}
-                  {item.currentValue && (
+                  {item?.currentValue && (
                     <div>
                       <span className="text-sm text-gray-500">Current Value</span>
                       <p className="font-medium">${item.currentValue.toFixed(2)}</p>
                     </div>
                   )}
-                  {item.purchaseDate && (
+                  {item?.purchaseDate && (
                     <div>
                       <span className="text-sm text-gray-500">Purchase Date</span>
                       <p className="font-medium">
@@ -851,7 +851,7 @@ export default function ItemProfilePage() {
           )}
           
           {/* Maintenance */}
-          {(item.lastMaintenanceDate || item.nextMaintenanceDate || editMode) && (
+          {(item?.lastMaintenanceDate || item?.nextMaintenanceDate || editMode) && (
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <Tool className="w-5 h-5 mr-2" />
@@ -881,7 +881,7 @@ export default function ItemProfilePage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {item.lastMaintenanceDate && (
+                  {item?.lastMaintenanceDate && (
                     <div>
                       <span className="text-sm text-gray-500">Last Service</span>
                       <p className="font-medium">
@@ -889,7 +889,7 @@ export default function ItemProfilePage() {
                       </p>
                     </div>
                   )}
-                  {item.nextMaintenanceDate && (
+                  {item?.nextMaintenanceDate && (
                     <div>
                       <span className="text-sm text-gray-500">Next Service Due</span>
                       <p className="font-medium text-orange-600">
@@ -944,7 +944,7 @@ export default function ItemProfilePage() {
           </div>
           
           {/* Tags */}
-          {item.tags && item.tags.length > 0 && (
+          {item?.tags && item.tags.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <Tag className="w-5 h-5 mr-2" />
