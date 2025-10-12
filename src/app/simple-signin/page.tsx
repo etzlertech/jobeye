@@ -35,14 +35,14 @@ function SignInForm() {
 
         // Redirect based on role or provided redirect target
         const roleRoutes: Record<string, string> = {
-          admin: '/admin',
-          supervisor: '/supervisor',
-          crew: '/crew'
+          admin: '/demo-crud',
+          supervisor: '/demo-crud',
+          crew: '/demo-crud'
         };
 
         const redirectParam = searchParams?.get('redirectTo');
         const hasSafeRedirect = redirectParam?.startsWith('/');
-        const targetRoute = hasSafeRedirect ? redirectParam! : roleRoutes[role] || '/';
+        const targetRoute = hasSafeRedirect ? redirectParam! : roleRoutes[role] || '/demo-crud';
 
         router.push(targetRoute);
       }
