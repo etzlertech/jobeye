@@ -29,66 +29,66 @@ interface Item {
   id: string;
   name: string;
   description?: string;
-  item_type: string;
+  itemType: string;
   category: string;
-  tracking_mode: string;
+  trackingMode: string;
   manufacturer?: string;
   model?: string;
-  serial_number?: string;
+  serialNumber?: string;
   sku?: string;
   barcode?: string;
-  current_quantity: number;
-  unit_of_measure: string;
-  min_quantity?: number;
-  max_quantity?: number;
-  reorder_point?: number;
-  current_location_id?: string;
-  home_location_id?: string;
-  assigned_to_user_id?: string;
-  assigned_to_job_id?: string;
+  currentQuantity: number;
+  unitOfMeasure: string;
+  minQuantity?: number;
+  maxQuantity?: number;
+  reorderPoint?: number;
+  currentLocationId?: string;
+  homeLocationId?: string;
+  assignedToUserId?: string;
+  assignedToJobId?: string;
   status: string;
   condition?: string;
-  last_maintenance_date?: string;
-  next_maintenance_date?: string;
-  purchase_date?: string;
-  purchase_price?: number;
-  current_value?: number;
-  depreciation_method?: string;
+  lastMaintenanceDate?: string;
+  nextMaintenanceDate?: string;
+  purchaseDate?: string;
+  purchasePrice?: number;
+  currentValue?: number;
+  depreciationMethod?: string;
   attributes?: Record<string, any>;
   tags?: string[];
-  custom_fields?: Record<string, any>;
+  customFields?: Record<string, any>;
   primaryImageUrl?: string;
   imageUrls?: string[];
   thumbnailUrl?: string;
   mediumUrl?: string;
-  created_at: string;
-  created_by?: string;
-  updated_at: string;
-  updated_by?: string;
+  createdAt: string;
+  createdBy?: string;
+  updatedAt: string;
+  updatedBy?: string;
 }
 
 interface Transaction {
   id: string;
-  transaction_type: string;
+  transactionType: string;
   quantity: number;
-  from_user_id?: string;
-  to_user_id?: string;
-  job_id?: string;
+  fromUserId?: string;
+  toUserId?: string;
+  jobId?: string;
   notes?: string;
-  created_at: string;
+  createdAt: string;
   job?: {
     id: string;
-    job_number: string;
+    jobNumber: string;
     title: string;
   };
 }
 
 interface Job {
   id: string;
-  job_number: string;
+  jobNumber: string;
   title: string;
   status: string;
-  customer_name?: string;
+  customerName?: string;
 }
 
 export default function ItemProfilePage() {
@@ -157,11 +157,11 @@ export default function ItemProfilePage() {
       }
       
       // Load additional files if any
-      if (itemData.item.image_urls) {
-        setAdditionalFiles(itemData.item.image_urls.filter((url: string) => 
-          url !== itemData.item.primary_image_url &&
-          url !== itemData.item.thumbnail_url &&
-          url !== itemData.item.medium_url
+      if (itemData.item.imageUrls) {
+        setAdditionalFiles(itemData.item.imageUrls.filter((url: string) => 
+          url !== itemData.item.primaryImageUrl &&
+          url !== itemData.item.thumbnailUrl &&
+          url !== itemData.item.mediumUrl
         ));
       }
       
@@ -264,8 +264,8 @@ export default function ItemProfilePage() {
   }
   
   // Calculate last use from transactions
-  const lastTransaction = transactions.find(t => t.transaction_type === 'check_out');
-  const lastUseDate = lastTransaction ? new Date(lastTransaction.created_at) : null;
+  const lastTransaction = transactions.find(t => t.transactionType === 'check_out');
+  const lastUseDate = lastTransaction ? new Date(lastTransaction.createdAt) : null;
   
   return (
     <div className="container mx-auto p-4 max-w-6xl">
@@ -290,65 +290,145 @@ export default function ItemProfilePage() {
               <div>
                 <h1 className="text-3xl font-bold">{item.name}</h1>
                 <p className="text-gray-600 mt-1">
-                  {item.item_type} • {item.category}
+                  {item.itemType} • {item.category}
                 </p>
               </div>
-              <button
-                onClick={() => setEditMode(!editMode)}
-                className="p-2 text-gray-600 hover:text-gray-800"
-              >
-                <Edit2 className="w-5 h-5" />
-              </button>
-            </div>
-            
-            {editMode ? (
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  value={editData.name || ''}
-                  onChange={(e) => setEditData({...editData, name: e.target.value})}
-                  className="w-full border rounded px-3 py-2"
-                  placeholder="Item name"
-                />
-                <textarea
-                  value={editData.description || ''}
-                  onChange={(e) => setEditData({...editData, description: e.target.value})}
-                  className="w-full border rounded px-3 py-2"
-                  rows={3}
-                  placeholder="Description"
-                />
-                <div className="grid grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    value={editData.manufacturer || ''}
-                    onChange={(e) => setEditData({...editData, manufacturer: e.target.value})}
-                    className="border rounded px-3 py-2"
-                    placeholder="Manufacturer"
-                  />
-                  <input
-                    type="text"
-                    value={editData.model || ''}
-                    onChange={(e) => setEditData({...editData, model: e.target.value})}
-                    className="border rounded px-3 py-2"
-                    placeholder="Model"
-                  />
-                </div>
-                <div className="flex gap-4">
+              {editMode ? (
+                <div className="flex gap-2">
                   <button
                     onClick={updateItem}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
                   >
-                    Save Changes
+                    Save All Changes
                   </button>
                   <button
                     onClick={() => {
                       setEditMode(false);
                       setEditData(item);
                     }}
-                    className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm"
                   >
                     Cancel
                   </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setEditMode(true)}
+                  className="p-2 text-gray-600 hover:text-gray-800"
+                >
+                  <Edit2 className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+            
+            {editMode ? (
+              <div className="space-y-4">
+                {/* Basic Information */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={editData.name || ''}
+                    onChange={(e) => setEditData({...editData, name: e.target.value})}
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="Item name"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    value={editData.description || ''}
+                    onChange={(e) => setEditData({...editData, description: e.target.value})}
+                    className="w-full border rounded px-3 py-2"
+                    rows={3}
+                    placeholder="Description"
+                  />
+                </div>
+                
+                {/* Type and Category */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <select
+                      value={editData.itemType || ''}
+                      onChange={(e) => setEditData({...editData, itemType: e.target.value})}
+                      className="w-full border rounded px-3 py-2"
+                    >
+                      <option value="equipment">Equipment</option>
+                      <option value="material">Material</option>
+                      <option value="tool">Tool</option>
+                      <option value="consumable">Consumable</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <input
+                      type="text"
+                      value={editData.category || ''}
+                      onChange={(e) => setEditData({...editData, category: e.target.value})}
+                      className="w-full border rounded px-3 py-2"
+                      placeholder="Category"
+                    />
+                  </div>
+                </div>
+                
+                {/* Manufacturer and Model */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Manufacturer</label>
+                    <input
+                      type="text"
+                      value={editData.manufacturer || ''}
+                      onChange={(e) => setEditData({...editData, manufacturer: e.target.value})}
+                      className="w-full border rounded px-3 py-2"
+                      placeholder="Manufacturer"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
+                    <input
+                      type="text"
+                      value={editData.model || ''}
+                      onChange={(e) => setEditData({...editData, model: e.target.value})}
+                      className="w-full border rounded px-3 py-2"
+                      placeholder="Model"
+                    />
+                  </div>
+                </div>
+                
+                {/* Identifiers */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Serial Number</label>
+                    <input
+                      type="text"
+                      value={editData.serialNumber || ''}
+                      onChange={(e) => setEditData({...editData, serialNumber: e.target.value})}
+                      className="w-full border rounded px-3 py-2"
+                      placeholder="Serial #"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                    <input
+                      type="text"
+                      value={editData.sku || ''}
+                      onChange={(e) => setEditData({...editData, sku: e.target.value})}
+                      className="w-full border rounded px-3 py-2"
+                      placeholder="SKU"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Barcode</label>
+                    <input
+                      type="text"
+                      value={editData.barcode || ''}
+                      onChange={(e) => setEditData({...editData, barcode: e.target.value})}
+                      className="w-full border rounded px-3 py-2"
+                      placeholder="Barcode"
+                    />
+                  </div>
                 </div>
               </div>
             ) : (
@@ -370,10 +450,10 @@ export default function ItemProfilePage() {
                       <p className="font-medium">{item.model}</p>
                     </div>
                   )}
-                  {item.serial_number && (
+                  {item.serialNumber && (
                     <div>
                       <span className="text-sm text-gray-500">Serial Number</span>
-                      <p className="font-medium">{item.serial_number}</p>
+                      <p className="font-medium">{item.serialNumber}</p>
                     </div>
                   )}
                   {item.sku && (
@@ -394,64 +474,108 @@ export default function ItemProfilePage() {
               Status & Assignment
             </h2>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <span className="text-sm text-gray-500">Status</span>
-                <p className="font-medium">
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    item.status === 'active' ? 'bg-green-100 text-green-800' : 
-                    item.status === 'maintenance' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {item.status}
-                  </span>
-                </p>
-              </div>
-              
-              <div>
-                <span className="text-sm text-gray-500">Condition</span>
-                <p className="font-medium">{item.condition || 'Good'}</p>
-              </div>
-              
-              <div>
-                <span className="text-sm text-gray-500">Tracking</span>
-                <p className="font-medium">{item.tracking_mode}</p>
-              </div>
-              
-              {item.assigned_to_job_id && (
+            {editMode ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
-                  <span className="text-sm text-gray-500 flex items-center">
-                    <Briefcase className="w-4 h-4 mr-1" />
-                    Assigned to Job
-                  </span>
-                  <p className="font-medium text-blue-600">
-                    Job #{item.assigned_to_job_id}
-                  </p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    value={editData.status || 'active'}
+                    onChange={(e) => setEditData({...editData, status: e.target.value})}
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="active">Active</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="retired">Retired</option>
+                    <option value="lost">Lost</option>
+                  </select>
                 </div>
-              )}
-              
-              {item.current_location_id && (
                 <div>
-                  <span className="text-sm text-gray-500 flex items-center">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    Location
-                  </span>
-                  <p className="font-medium">Warehouse A</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Condition</label>
+                  <select
+                    value={editData.condition || 'good'}
+                    onChange={(e) => setEditData({...editData, condition: e.target.value})}
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="excellent">Excellent</option>
+                    <option value="good">Good</option>
+                    <option value="fair">Fair</option>
+                    <option value="poor">Poor</option>
+                    <option value="damaged">Damaged</option>
+                  </select>
                 </div>
-              )}
-              
-              {lastUseDate && (
                 <div>
-                  <span className="text-sm text-gray-500 flex items-center">
-                    <Clock className="w-4 h-4 mr-1" />
-                    Last Used
-                  </span>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tracking Mode</label>
+                  <select
+                    value={editData.trackingMode || 'quantity'}
+                    onChange={(e) => setEditData({...editData, trackingMode: e.target.value})}
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="individual">Individual</option>
+                    <option value="quantity">Quantity</option>
+                    <option value="batch">Batch</option>
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div>
+                  <span className="text-sm text-gray-500">Status</span>
                   <p className="font-medium">
-                    {lastUseDate.toLocaleDateString()}
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      item.status === 'active' ? 'bg-green-100 text-green-800' : 
+                      item.status === 'maintenance' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {item.status}
+                    </span>
                   </p>
                 </div>
-              )}
-            </div>
+              
+                <div>
+                  <span className="text-sm text-gray-500">Condition</span>
+                  <p className="font-medium">{item.condition || 'Good'}</p>
+                </div>
+                
+                <div>
+                  <span className="text-sm text-gray-500">Tracking</span>
+                  <p className="font-medium">{item.trackingMode}</p>
+                </div>
+                
+                {item.assignedToJobId && (
+                  <div>
+                    <span className="text-sm text-gray-500 flex items-center">
+                      <Briefcase className="w-4 h-4 mr-1" />
+                      Assigned to Job
+                    </span>
+                    <p className="font-medium text-blue-600">
+                      Job #{item.assignedToJobId}
+                    </p>
+                  </div>
+                )}
+                
+                {item.currentLocationId && (
+                  <div>
+                    <span className="text-sm text-gray-500 flex items-center">
+                      <MapPin className="w-4 h-4 mr-1" />
+                      Location
+                    </span>
+                    <p className="font-medium">Warehouse A</p>
+                  </div>
+                )}
+                
+                {lastUseDate && (
+                  <div>
+                    <span className="text-sm text-gray-500 flex items-center">
+                      <Clock className="w-4 h-4 mr-1" />
+                      Last Used
+                    </span>
+                    <p className="font-medium">
+                      {lastUseDate.toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           
           {/* Inventory */}
@@ -461,30 +585,88 @@ export default function ItemProfilePage() {
               Inventory
             </h2>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <span className="text-sm text-gray-500">Current Qty</span>
-                <p className="font-medium text-lg">{item.current_quantity} {item.unit_of_measure}</p>
+            {editMode ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Current Qty</label>
+                  <input
+                    type="number"
+                    value={editData.currentQuantity || 0}
+                    onChange={(e) => setEditData({...editData, currentQuantity: parseFloat(e.target.value) || 0})}
+                    className="w-full border rounded px-3 py-2"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                  <input
+                    type="text"
+                    value={editData.unitOfMeasure || 'each'}
+                    onChange={(e) => setEditData({...editData, unitOfMeasure: e.target.value})}
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="each, lbs, etc"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Min Qty</label>
+                  <input
+                    type="number"
+                    value={editData.minQuantity || ''}
+                    onChange={(e) => setEditData({...editData, minQuantity: e.target.value ? parseFloat(e.target.value) : null})}
+                    className="w-full border rounded px-3 py-2"
+                    step="0.01"
+                    placeholder="Optional"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Qty</label>
+                  <input
+                    type="number"
+                    value={editData.maxQuantity || ''}
+                    onChange={(e) => setEditData({...editData, maxQuantity: e.target.value ? parseFloat(e.target.value) : null})}
+                    className="w-full border rounded px-3 py-2"
+                    step="0.01"
+                    placeholder="Optional"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Reorder Point</label>
+                  <input
+                    type="number"
+                    value={editData.reorderPoint || ''}
+                    onChange={(e) => setEditData({...editData, reorderPoint: e.target.value ? parseFloat(e.target.value) : null})}
+                    className="w-full border rounded px-3 py-2"
+                    step="0.01"
+                    placeholder="Optional"
+                  />
+                </div>
               </div>
-              {item.min_quantity && (
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <span className="text-sm text-gray-500">Min Qty</span>
-                  <p className="font-medium">{item.min_quantity}</p>
+                  <span className="text-sm text-gray-500">Current Qty</span>
+                  <p className="font-medium text-lg">{item.currentQuantity} {item.unitOfMeasure}</p>
                 </div>
-              )}
-              {item.max_quantity && (
-                <div>
-                  <span className="text-sm text-gray-500">Max Qty</span>
-                  <p className="font-medium">{item.max_quantity}</p>
-                </div>
-              )}
-              {item.reorder_point && (
-                <div>
-                  <span className="text-sm text-gray-500">Reorder Point</span>
-                  <p className="font-medium">{item.reorder_point}</p>
-                </div>
-              )}
-            </div>
+                {item.minQuantity && (
+                  <div>
+                    <span className="text-sm text-gray-500">Min Qty</span>
+                    <p className="font-medium">{item.minQuantity}</p>
+                  </div>
+                )}
+                {item.maxQuantity && (
+                  <div>
+                    <span className="text-sm text-gray-500">Max Qty</span>
+                    <p className="font-medium">{item.maxQuantity}</p>
+                  </div>
+                )}
+                {item.reorderPoint && (
+                  <div>
+                    <span className="text-sm text-gray-500">Reorder Point</span>
+                    <p className="font-medium">{item.reorderPoint}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           
           {/* Associated Jobs */}
@@ -505,10 +687,10 @@ export default function ItemProfilePage() {
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="font-medium">
-                          Job #{job.job_number}: {job.title}
+                          Job #{job.jobNumber}: {job.title}
                         </p>
-                        {job.customer_name && (
-                          <p className="text-sm text-gray-600">{job.customer_name}</p>
+                        {job.customerName && (
+                          <p className="text-sm text-gray-600">{job.customerName}</p>
                         )}
                       </div>
                       <span className={`px-2 py-1 rounded text-xs ${
@@ -532,20 +714,32 @@ export default function ItemProfilePage() {
         <div className="space-y-6">
           {/* Main Image */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold mb-4">Item Image</h3>
-            {item.primaryImageUrl ? (
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Item Image</h3>
+              {editMode && item.primaryImageUrl && (
+                <button
+                  onClick={() => setUploadingImage(!uploadingImage)}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  Change Image
+                </button>
+              )}
+            </div>
+            {item.primaryImageUrl && !uploadingImage ? (
               <div className="relative">
                 <img 
                   src={item.primaryImageUrl} 
                   alt={item.name}
                   className="w-full rounded-lg"
                 />
-                <button
-                  onClick={() => setUploadingImage(true)}
-                  className="absolute top-2 right-2 p-2 bg-white rounded-full shadow hover:bg-gray-100"
-                >
-                  <Camera className="w-4 h-4" />
-                </button>
+                {editMode && (
+                  <button
+                    onClick={() => setUploadingImage(true)}
+                    className="absolute top-2 right-2 p-2 bg-white rounded-full shadow hover:bg-gray-100"
+                  >
+                    <Camera className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             ) : (
               <div className="text-center py-8 bg-gray-50 rounded-lg">
@@ -577,64 +771,123 @@ export default function ItemProfilePage() {
           </div>
           
           {/* Financial Info */}
-          {(item.purchase_price || item.current_value) && (
+          {(item.purchasePrice || item.currentValue || editMode) && (
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <DollarSign className="w-5 h-5 mr-2" />
                 Financial Info
               </h3>
               
-              <div className="space-y-3">
-                {item.purchase_price && (
+              {editMode ? (
+                <div className="space-y-3">
                   <div>
-                    <span className="text-sm text-gray-500">Purchase Price</span>
-                    <p className="font-medium">${item.purchase_price.toFixed(2)}</p>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price</label>
+                    <input
+                      type="number"
+                      value={editData.purchasePrice || ''}
+                      onChange={(e) => setEditData({...editData, purchasePrice: e.target.value ? parseFloat(e.target.value) : null})}
+                      className="w-full border rounded px-3 py-2"
+                      step="0.01"
+                      placeholder="0.00"
+                    />
                   </div>
-                )}
-                {item.current_value && (
                   <div>
-                    <span className="text-sm text-gray-500">Current Value</span>
-                    <p className="font-medium">${item.current_value.toFixed(2)}</p>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Current Value</label>
+                    <input
+                      type="number"
+                      value={editData.currentValue || ''}
+                      onChange={(e) => setEditData({...editData, currentValue: e.target.value ? parseFloat(e.target.value) : null})}
+                      className="w-full border rounded px-3 py-2"
+                      step="0.01"
+                      placeholder="0.00"
+                    />
                   </div>
-                )}
-                {item.purchase_date && (
                   <div>
-                    <span className="text-sm text-gray-500">Purchase Date</span>
-                    <p className="font-medium">
-                      {new Date(item.purchase_date).toLocaleDateString()}
-                    </p>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Date</label>
+                    <input
+                      type="date"
+                      value={editData.purchaseDate ? editData.purchaseDate.split('T')[0] : ''}
+                      onChange={(e) => setEditData({...editData, purchaseDate: e.target.value})}
+                      className="w-full border rounded px-3 py-2"
+                    />
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {item.purchasePrice && (
+                    <div>
+                      <span className="text-sm text-gray-500">Purchase Price</span>
+                      <p className="font-medium">${item.purchasePrice.toFixed(2)}</p>
+                    </div>
+                  )}
+                  {item.currentValue && (
+                    <div>
+                      <span className="text-sm text-gray-500">Current Value</span>
+                      <p className="font-medium">${item.currentValue.toFixed(2)}</p>
+                    </div>
+                  )}
+                  {item.purchaseDate && (
+                    <div>
+                      <span className="text-sm text-gray-500">Purchase Date</span>
+                      <p className="font-medium">
+                        {new Date(item.purchaseDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
           
           {/* Maintenance */}
-          {(item.last_maintenance_date || item.next_maintenance_date) && (
+          {(item.lastMaintenanceDate || item.nextMaintenanceDate || editMode) && (
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <Tool className="w-5 h-5 mr-2" />
                 Maintenance
               </h3>
               
-              <div className="space-y-3">
-                {item.last_maintenance_date && (
+              {editMode ? (
+                <div className="space-y-3">
                   <div>
-                    <span className="text-sm text-gray-500">Last Service</span>
-                    <p className="font-medium">
-                      {new Date(item.last_maintenance_date).toLocaleDateString()}
-                    </p>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Service</label>
+                    <input
+                      type="date"
+                      value={editData.lastMaintenanceDate ? editData.lastMaintenanceDate.split('T')[0] : ''}
+                      onChange={(e) => setEditData({...editData, lastMaintenanceDate: e.target.value})}
+                      className="w-full border rounded px-3 py-2"
+                    />
                   </div>
-                )}
-                {item.next_maintenance_date && (
                   <div>
-                    <span className="text-sm text-gray-500">Next Service Due</span>
-                    <p className="font-medium text-orange-600">
-                      {new Date(item.next_maintenance_date).toLocaleDateString()}
-                    </p>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Next Service Due</label>
+                    <input
+                      type="date"
+                      value={editData.nextMaintenanceDate ? editData.nextMaintenanceDate.split('T')[0] : ''}
+                      onChange={(e) => setEditData({...editData, nextMaintenanceDate: e.target.value})}
+                      className="w-full border rounded px-3 py-2"
+                    />
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {item.lastMaintenanceDate && (
+                    <div>
+                      <span className="text-sm text-gray-500">Last Service</span>
+                      <p className="font-medium">
+                        {new Date(item.lastMaintenanceDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+                  {item.nextMaintenanceDate && (
+                    <div>
+                      <span className="text-sm text-gray-500">Next Service Due</span>
+                      <p className="font-medium text-orange-600">
+                        {new Date(item.nextMaintenanceDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
           
@@ -711,19 +964,19 @@ export default function ItemProfilePage() {
               <div key={transaction.id} className="flex items-center justify-between p-3 border-b">
                 <div>
                   <p className="font-medium">
-                    {transaction.transaction_type === 'check_out' ? 'Checked Out' : 'Checked In'}
+                    {transaction.transactionType === 'check_out' ? 'Checked Out' : 'Checked In'}
                   </p>
                   <p className="text-sm text-gray-600">
-                    {transaction.job?.job_number && `Job #${transaction.job.job_number} - `}
+                    {transaction.job?.jobNumber && `Job #${transaction.job.jobNumber} - `}
                     {transaction.notes || 'No notes'}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-500">
-                    {new Date(transaction.created_at).toLocaleDateString()}
+                    {new Date(transaction.createdAt).toLocaleDateString()}
                   </p>
                   <p className="text-sm font-medium">
-                    {transaction.quantity} {item.unit_of_measure}
+                    {transaction.quantity} {item.unitOfMeasure}
                   </p>
                 </div>
               </div>
