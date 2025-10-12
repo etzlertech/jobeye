@@ -102,3 +102,15 @@ export interface SafetyVerificationDependencies {
   confidenceThreshold?: number;
   fallbackConfidenceThreshold?: number;
 }
+
+// Re-export all types explicitly
+export type {
+  SafetyChecklistItem,
+  SafetyDetection,
+  SafetyVerificationResult,
+  SafetyVerificationContext,
+  SafetyYoloClient,
+  SafetyVlmClient,
+  SafetyVlmClientResponse,
+  SafetyVerificationPersistencePayload
+};

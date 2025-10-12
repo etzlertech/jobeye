@@ -168,6 +168,7 @@ export class VoiceLogger extends Logger {
 
 const voiceLogger = new VoiceLogger();
 export { voiceLogger };
+export const logger = voiceLogger; // Add this export for backward compatibility
 export const logVoiceCommand = voiceLogger.logVoiceCommand.bind(voiceLogger);
 export const logSpeechRecognition = voiceLogger.logSpeechRecognition.bind(voiceLogger);
 export const logTextToSpeech = voiceLogger.logTextToSpeech.bind(voiceLogger);

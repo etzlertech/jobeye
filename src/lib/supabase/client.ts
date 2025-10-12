@@ -142,3 +142,6 @@ export async function getUser() {
     role: tenantAssignment?.role
   };
 }
+
+// Alias for legacy imports expecting createSupabaseClient name
+export const createSupabaseClient = () => supabase;

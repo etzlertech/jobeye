@@ -188,6 +188,36 @@ export class NetworkError extends AppError {
 }
 
 /**
+ * Not found error class
+ */
+export class NotFoundError extends AppError {
+  constructor(message: string) {
+    super(message, ErrorCode.NOT_FOUND, ErrorSeverity.LOW, 'Resource not found');
+  }
+}
+
+/**
+ * Conflict error class
+ */
+export class ConflictError extends AppError {
+  constructor(message: string) {
+    super(message, ErrorCode.UNKNOWN, ErrorSeverity.MEDIUM, 'Resource conflict detected');
+  }
+}
+
+/**
+ * External service error class
+ */
+export class ExternalServiceError extends AppError {
+  constructor(message: string, serviceName?: string) {
+    super(message, ErrorCode.NETWORK_ERROR, ErrorSeverity.HIGH, 'External service error');
+    if (serviceName) {
+      this.metadata = { serviceName };
+    }
+  }
+}
+
+/**
  * Error categories for classification
  */
 export enum ErrorCategory {

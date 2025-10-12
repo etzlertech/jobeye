@@ -99,3 +99,8 @@ export function createServiceClient() {
  * Alias retained for legacy imports expecting createServerClient name.
  */
 export const createServerClient = createClient;
+
+/**
+ * Alias for legacy imports expecting createServerSupabaseClient name.
+ */
+export const createServerSupabaseClient = createClient;
