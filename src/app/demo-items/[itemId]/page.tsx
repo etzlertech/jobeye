@@ -130,7 +130,7 @@ export default function ItemProfilePage() {
         thumbnail: itemData.item?.thumbnailUrl
       });
       setItem(itemData.item);
-      setEditData(itemData.item);
+      setEditData({...itemData.item});
       
       // Load transactions
       const transRes = await fetch(`/api/supervisor/items/${itemId}/transactions`, {
@@ -313,7 +313,10 @@ export default function ItemProfilePage() {
                 </div>
               ) : (
                 <button
-                  onClick={() => setEditMode(true)}
+                  onClick={() => {
+                    setEditData({...item});
+                    setEditMode(true);
+                  }}
                   className="p-2 text-gray-600 hover:text-gray-800"
                 >
                   <Edit2 className="w-5 h-5" />
@@ -591,7 +594,7 @@ export default function ItemProfilePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Current Qty</label>
                   <input
                     type="number"
-                    value={editData.currentQuantity || 0}
+                    value={editData.currentQuantity ?? 0}
                     onChange={(e) => setEditData({...editData, currentQuantity: parseFloat(e.target.value) || 0})}
                     className="w-full border rounded px-3 py-2"
                     step="0.01"
@@ -611,8 +614,8 @@ export default function ItemProfilePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Min Qty</label>
                   <input
                     type="number"
-                    value={editData.minQuantity || ''}
-                    onChange={(e) => setEditData({...editData, minQuantity: e.target.value ? parseFloat(e.target.value) : null})}
+                    value={editData.minQuantity ?? ''}
+                    onChange={(e) => setEditData({...editData, minQuantity: e.target.value ? parseFloat(e.target.value) : undefined})}
                     className="w-full border rounded px-3 py-2"
                     step="0.01"
                     placeholder="Optional"
@@ -622,8 +625,8 @@ export default function ItemProfilePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Max Qty</label>
                   <input
                     type="number"
-                    value={editData.maxQuantity || ''}
-                    onChange={(e) => setEditData({...editData, maxQuantity: e.target.value ? parseFloat(e.target.value) : null})}
+                    value={editData.maxQuantity ?? ''}
+                    onChange={(e) => setEditData({...editData, maxQuantity: e.target.value ? parseFloat(e.target.value) : undefined})}
                     className="w-full border rounded px-3 py-2"
                     step="0.01"
                     placeholder="Optional"
@@ -633,8 +636,8 @@ export default function ItemProfilePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Reorder Point</label>
                   <input
                     type="number"
-                    value={editData.reorderPoint || ''}
-                    onChange={(e) => setEditData({...editData, reorderPoint: e.target.value ? parseFloat(e.target.value) : null})}
+                    value={editData.reorderPoint ?? ''}
+                    onChange={(e) => setEditData({...editData, reorderPoint: e.target.value ? parseFloat(e.target.value) : undefined})}
                     className="w-full border rounded px-3 py-2"
                     step="0.01"
                     placeholder="Optional"
@@ -784,8 +787,8 @@ export default function ItemProfilePage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price</label>
                     <input
                       type="number"
-                      value={editData.purchasePrice || ''}
-                      onChange={(e) => setEditData({...editData, purchasePrice: e.target.value ? parseFloat(e.target.value) : null})}
+                      value={editData.purchasePrice ?? ''}
+                      onChange={(e) => setEditData({...editData, purchasePrice: e.target.value ? parseFloat(e.target.value) : undefined})}
                       className="w-full border rounded px-3 py-2"
                       step="0.01"
                       placeholder="0.00"
@@ -795,8 +798,8 @@ export default function ItemProfilePage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Current Value</label>
                     <input
                       type="number"
-                      value={editData.currentValue || ''}
-                      onChange={(e) => setEditData({...editData, currentValue: e.target.value ? parseFloat(e.target.value) : null})}
+                      value={editData.currentValue ?? ''}
+                      onChange={(e) => setEditData({...editData, currentValue: e.target.value ? parseFloat(e.target.value) : undefined})}
                       className="w-full border rounded px-3 py-2"
                       step="0.01"
                       placeholder="0.00"
