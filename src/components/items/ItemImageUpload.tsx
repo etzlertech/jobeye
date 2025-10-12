@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, Upload, X, Check, Loader2 } from 'lucide-react';
 import { imageProcessor, type ProcessedImages } from '@/utils/image-processor';
 
@@ -19,6 +19,14 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
   const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  // Attach stream to video element when camera mode is activated
+  useEffect(() => {
+    if (mode === 'camera' && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      console.log('Stream attached to video element');
+    }
+  }, [mode]);
+
   // Start camera
   const startCamera = useCallback(async () => {
     console.log('Starting camera...');
@@ -36,14 +44,9 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
       
       console.log('Got camera stream:', stream);
       
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        setMode('camera');
-        console.log('Camera mode activated');
-      } else {
-        console.error('Video ref not available');
-      }
+      streamRef.current = stream;
+      setMode('camera');
+      console.log('Camera mode set, waiting for video element...');
     } catch (error) {
       console.error('Camera access error:', error);
       if (error instanceof Error) {
