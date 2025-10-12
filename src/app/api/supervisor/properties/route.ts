@@ -50,10 +50,10 @@ export async function GET(request: NextRequest) {
       return validationError('Tenant ID required');
     }
 
-    // Build query
+    // Build query - simplified without join for now
     let query = supabase
       .from('properties')
-      .select('*, customer:customers(name)', { count: 'exact' });
+      .select('*', { count: 'exact' });
 
     // Add filters
     query = query.eq('tenant_id', tenantId);
@@ -63,7 +63,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      query = query.or(`address.ilike.%${search}%`);
+      // Search in multiple address fields
+      query = query.or(`street.ilike.%${search}%,city.ilike.%${search}%,name.ilike.%${search}%`);
     }
 
     // Order by creation date
