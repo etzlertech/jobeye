@@ -33,13 +33,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError, validationError } from '@/core/errors/error-handler';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
-    
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const customerId = searchParams.get('customer_id');
@@ -50,6 +48,10 @@ export async function GET(request: NextRequest) {
     
     // Log for debugging
     console.log('Properties API - TenantID:', tenantId, 'Headers:', Object.fromEntries(request.headers.entries()));
+    
+    // For demo pages without auth, use service client
+    const isDemoRequest = !request.headers.get('authorization');
+    const supabase = isDemoRequest ? createServiceClient() : await createServerClient();
 
     // Build query with customer join
     let query = supabase
@@ -95,7 +97,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    // For demo pages without auth, use service client
+    const isDemoRequest = !request.headers.get('authorization');
+    const supabase = isDemoRequest ? createServiceClient() : await createServerClient();
     const body = await request.json();
 
     // Validate required fields
