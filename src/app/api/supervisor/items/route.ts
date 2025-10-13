@@ -2,22 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { ItemRepository } from '@/domains/shared/repositories/item.repository';
 import { handleApiError, validationError } from '@/core/errors/error-handler';
+import { getRequestContext } from '@/lib/auth/context';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
     
-    console.log('Items API GET - TenantID:', tenantId);
+    // Get request context (handles both session and header-based auth)
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+    
+    console.log('Items API GET - TenantID:', tenantId, 'Source:', context.source);
     
     // Get appropriate Supabase client
-    const isDemoRequest = !request.headers.get('authorization');
-    console.log('Is demo request:', isDemoRequest);
-    
     let supabase;
     try {
-      if (isDemoRequest) {
-        console.log('Creating service client for demo request');
+      if (!user) {
+        console.log('Creating service client for unauthenticated request');
         supabase = createServiceClient();
       } else {
         console.log('Creating server client for authenticated request');
@@ -80,15 +81,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
+    
+    // Get request context (handles both session and header-based auth)
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
     
     console.log('Items API POST - Request:', JSON.stringify(body, null, 2));
-    console.log('TenantID:', tenantId);
+    console.log('TenantID:', tenantId, 'Source:', context.source);
     
     // Get appropriate Supabase client
-    const isDemoRequest = !request.headers.get('authorization');
     let supabase;
-    if (isDemoRequest) {
+    if (!user) {
       supabase = createServiceClient();
     } else {
       supabase = await createServerClient();
