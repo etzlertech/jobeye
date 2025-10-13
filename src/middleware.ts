@@ -88,7 +88,7 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
       }
-      const signInUrl = new URL('/sign-in', request.url);
+      const signInUrl = new URL('/', request.url);
       signInUrl.searchParams.set('redirectTo', pathname);
       return NextResponse.redirect(signInUrl);
     }
@@ -105,7 +105,7 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'no_role_assigned' }, { status: 403 });
       }
-      const signInUrl = new URL('/sign-in', request.url);
+      const signInUrl = new URL('/', request.url);
       signInUrl.searchParams.set('error', 'no_role_assigned');
       return NextResponse.redirect(signInUrl);
     }
@@ -129,7 +129,7 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'missing_tenant' }, { status: 403 });
       }
-      const signInUrl = new URL('/sign-in', request.url);
+      const signInUrl = new URL('/', request.url);
       signInUrl.searchParams.set('error', 'missing_tenant');
       return NextResponse.redirect(signInUrl);
     }
@@ -164,7 +164,7 @@ export async function middleware(request: NextRequest) {
   } catch (error) {
     console.error('Middleware error:', error);
     
-    // On error, redirect to sign-in
+    // On error, redirect to main page (simple-signin)
     const signInUrl = new URL('/sign-in', request.url);
     signInUrl.searchParams.set('error', 'middleware_error');
     return NextResponse.redirect(signInUrl);
