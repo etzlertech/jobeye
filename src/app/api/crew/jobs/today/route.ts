@@ -31,14 +31,18 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError } from '@/core/errors/error-handler';
+import { getRequestContext } from '@/lib/auth/context';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
-    const userId = request.headers.get('x-user-id');
-    const tenantId = request.headers.get('x-tenant-id');
+    const context = await getRequestContext(request);
+    const { tenantId, user, userId: sessionUserId } = context;
+    const userId = sessionUserId ?? request.headers.get('x-user-id');
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
     const today = new Date().toISOString().split('T')[0];
 
     if (!userId || !tenantId) {

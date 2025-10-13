@@ -35,28 +35,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError, validationError } from '@/core/errors/error-handler';
+import { getRequestContext } from '@/lib/auth/context';
 
 export async function GET(request: NextRequest) {
   try {
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const customerId = searchParams.get('customer_id');
     const search = searchParams.get('search');
 
-    // For demo pages, use a default tenant ID if not provided
-    const tenantId = request.headers.get('x-tenant-id') || 'demo-company';
-    
-    // Log for debugging
-    console.log('Properties API - TenantID:', tenantId, 'Headers:', Object.fromEntries(request.headers.entries()));
-    
-    // Get appropriate Supabase client
-    const isDemoRequest = !request.headers.get('authorization');
-    let supabase;
-    if (isDemoRequest) {
-      supabase = createServiceClient();
-    } else {
-      supabase = await createServerClient();
-    }
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
 
     // Build query with customer join
     let query = supabase
@@ -102,14 +95,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get appropriate Supabase client
-    const isDemoRequest = !request.headers.get('authorization');
-    let supabase;
-    if (isDemoRequest) {
-      supabase = createServiceClient();
-    } else {
-      supabase = await createServerClient();
-    }
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
+
     const body = await request.json();
 
     // Validate required fields
@@ -121,9 +113,6 @@ export async function POST(request: NextRequest) {
         missing_fields: missingFields 
       });
     }
-
-    // Get company ID from headers, use demo default if not provided
-    const tenantId = request.headers.get('x-tenant-id') || 'demo-company';
 
     // Create property
     const { data: property, error } = await supabase

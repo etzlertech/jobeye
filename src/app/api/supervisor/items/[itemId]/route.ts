@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { ItemRepository } from '@/domains/shared/repositories/item.repository';
 import { handleApiError, notFound, validationError } from '@/core/errors/error-handler';
+import { getRequestContext } from '@/lib/auth/context';
 
 export async function GET(
   request: NextRequest,
@@ -13,12 +14,9 @@ export async function GET(
     const { tenantId, user } = context;
     
     // Get appropriate Supabase client
-    let supabase;
-    if (!user) {
-      supabase = createServiceClient();
-    } else {
-      supabase = await createServerClient();
-    }
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
     
     const itemRepo = new ItemRepository(supabase);
     const item = await itemRepo.findById(params.itemId, { tenant_id: tenantId });
@@ -50,12 +48,9 @@ export async function PUT(
     console.log('TenantID:', tenantId, 'Source:', context.source);
     
     // Get appropriate Supabase client
-    let supabase;
-    if (!user) {
-      supabase = createServiceClient();
-    } else {
-      supabase = await createServerClient();
-    }
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
     
     const itemRepo = new ItemRepository(supabase);
     
@@ -109,12 +104,9 @@ export async function PATCH(
     console.log('Items API PATCH - ItemID:', params.itemId, 'TenantID:', tenantId, 'Source:', context.source);
     
     // Get appropriate Supabase client
-    let supabase;
-    if (!user) {
-      supabase = createServiceClient();
-    } else {
-      supabase = await createServerClient();
-    }
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
     
     const itemRepo = new ItemRepository(supabase);
     
@@ -154,16 +146,12 @@ export async function DELETE(
   { params }: { params: { itemId: string } }
 ) {
   try {
-    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
-    
-    // Get appropriate Supabase client
-    const isDemoRequest = !request.headers.get('authorization');
-    let supabase;
-    if (isDemoRequest) {
-      supabase = createServiceClient();
-    } else {
-      supabase = await createServerClient();
-    }
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
     
     const itemRepo = new ItemRepository(supabase);
     

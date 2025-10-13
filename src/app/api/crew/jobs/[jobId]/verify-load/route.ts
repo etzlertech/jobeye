@@ -31,15 +31,22 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError, validationError } from '@/core/errors/error-handler';
+import { getRequestContext } from '@/lib/auth/context';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createServerClient();
+    const context = await getRequestContext(request);
+    const { tenantId, user, userId: sessionUserId } = context;
+    const userId = sessionUserId ?? request.headers.get('x-user-id');
+
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
     const jobId = params.id;
     const body = await request.json();
 
@@ -49,9 +56,6 @@ export async function POST(
     if (!verified_items || !Array.isArray(verified_items)) {
       return validationError('Invalid verified_items');
     }
-
-    const userId = request.headers.get('x-user-id');
-    const tenantId = request.headers.get('x-tenant-id');
 
     if (!userId || !tenantId) {
       return validationError('Missing user context');

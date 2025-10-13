@@ -33,25 +33,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError, validationError } from '@/core/errors/error-handler';
+import { getRequestContext } from '@/lib/auth/context';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
-    
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
+
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const search = searchParams.get('search');
     const offset = (page - 1) * limit;
-
-    const tenantId = request.headers.get('x-tenant-id');
-
-    if (!tenantId) {
-      return validationError('Tenant ID required');
-    }
 
     // Build query - map billing_address to address for UI compatibility
     let query = supabase
@@ -107,7 +106,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
+
     const body = await request.json();
 
     // Validate required fields
@@ -118,12 +122,6 @@ export async function POST(request: NextRequest) {
       return validationError('Missing required fields', { 
         missing_fields: missingFields 
       });
-    }
-
-    const tenantId = request.headers.get('x-tenant-id');
-    
-    if (!tenantId) {
-      return validationError('Tenant ID required');
     }
 
     // All users (including demo users) now use live database

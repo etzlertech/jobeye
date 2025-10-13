@@ -36,22 +36,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError, notFound, validationError } from '@/core/errors/error-handler';
 import { JobsRepository } from '@/domains/jobs/repositories/jobs.repository';
+import { getRequestContext } from '@/lib/auth/context';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { jobId: string } }
 ) {
   try {
-    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
-    
-    // Get appropriate Supabase client
-    const isDemoRequest = !request.headers.get('authorization');
-    let supabase;
-    if (isDemoRequest) {
-      supabase = createServiceClient();
-    } else {
-      supabase = await createServerClient();
-    }
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
     
     const jobsRepo = new JobsRepository(supabase);
     // Use findById without relations for now
@@ -73,17 +70,13 @@ export async function PUT(
   { params }: { params: { jobId: string } }
 ) {
   try {
-    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
     const body = await request.json();
-    
-    // Get appropriate Supabase client
-    const isDemoRequest = !request.headers.get('authorization');
-    let supabase;
-    if (isDemoRequest) {
-      supabase = createServiceClient();
-    } else {
-      supabase = await createServerClient();
-    }
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
     
     const jobsRepo = new JobsRepository(supabase);
 
@@ -124,16 +117,12 @@ export async function DELETE(
   { params }: { params: { jobId: string } }
 ) {
   try {
-    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
-    
-    // Get appropriate Supabase client
-    const isDemoRequest = !request.headers.get('authorization');
-    let supabase;
-    if (isDemoRequest) {
-      supabase = createServiceClient();
-    } else {
-      supabase = await createServerClient();
-    }
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
     
     const jobsRepo = new JobsRepository(supabase);
 

@@ -12,25 +12,25 @@ Tracking the migration from `x-tenant-id` header to `getRequestContext` for prop
   - Frontend: `demo-items/[itemId]/page.tsx` - Still sends header ❌
 - [x] `/api/supervisor/items/[itemId]/image/route.ts` - POST
   - Frontend: `demo-items/page.tsx`, `demo-items/[itemId]/page.tsx` - Still sends header ❌
-- [ ] `/api/supervisor/jobs/route.ts` - GET, POST
+- [x] `/api/supervisor/jobs/route.ts` - GET, POST
   - Frontend: `demo-jobs/page.tsx` - Still sends header ❌
-- [ ] `/api/supervisor/jobs/[jobId]/route.ts` - GET, PATCH, DELETE
+- [x] `/api/supervisor/jobs/[jobId]/route.ts` - GET, PATCH, DELETE
   - Frontend: Multiple job-related pages
-- [ ] `/api/supervisor/properties/route.ts` - GET, POST
+- [x] `/api/supervisor/properties/route.ts` - GET, POST
   - Frontend: `demo-properties/page.tsx` - Still sends header ❌
-- [ ] `/api/supervisor/properties/[id]/route.ts` - GET, PATCH, DELETE
+- [x] `/api/supervisor/properties/[id]/route.ts` - GET, PATCH, DELETE
   - Frontend: Property management pages
-- [ ] `/api/supervisor/customers/route.ts` - GET, POST
+- [x] `/api/supervisor/customers/route.ts` - GET, POST
   - Frontend: Customer management pages
-- [ ] `/api/supervisor/customers/[id]/route.ts` - GET, PATCH, DELETE
+- [x] `/api/supervisor/customers/[id]/route.ts` - GET, PATCH, DELETE
   - Frontend: Customer detail pages
-- [ ] `/api/supervisor/inventory/route.ts` - GET, POST
+- [x] `/api/supervisor/inventory/route.ts` - GET, POST
   - Frontend: Inventory management pages
 
 ### Crew Routes
-- [ ] `/api/crew/jobs/today/route.ts` - GET
+- [x] `/api/crew/jobs/today/route.ts` - GET
   - Frontend: Crew dashboard pages
-- [ ] `/api/crew/jobs/[jobId]/verify-load/route.ts` - POST
+- [x] `/api/crew/jobs/[jobId]/verify-load/route.ts` - POST
   - Frontend: Load verification pages
 
 ### Shared Utilities
@@ -40,14 +40,14 @@ Tracking the migration from `x-tenant-id` header to `getRequestContext` for prop
 ## Frontend Files to Update
 
 ### Demo Pages (Currently send x-tenant-id)
-- [ ] `/app/demo-items/page.tsx` - Remove header from all fetches
-- [ ] `/app/demo-items/[itemId]/page.tsx` - Remove header from all fetches  
+- [x] `/app/demo-items/page.tsx` - Remove header from all fetches ✅
+- [x] `/app/demo-items/[itemId]/page.tsx` - Remove header from all fetches ✅
 - [ ] `/app/demo-jobs/page.tsx` - Remove header from all fetches
-- [ ] `/app/demo-jobs/[jobId]/items/page.tsx` - Remove header from all fetches
+- [x] `/app/demo-jobs/[jobId]/items/page.tsx` - Remove header from all fetches ✅
 - [ ] `/app/demo-properties/page.tsx` - Remove header from all fetches
 
 ### Hooks to Update
-- [ ] `/hooks/useDevTenant.ts` - Remove or deprecate tenantHeaders export
+- [x] `/hooks/useDevTenant.ts` - Remove or deprecate tenantHeaders export ✅ (Added deprecation warning)
 
 ## Migration Steps
 
@@ -77,6 +77,7 @@ Tracking the migration from `x-tenant-id` header to `getRequestContext` for prop
 - Some routes may need additional changes for role-based access control
 
 ## Progress Summary
-- **API Routes**: 5/14 completed (36%)
-- **Frontend Files**: 0/5 completed (0%)
+- **API Routes**: 12/14 completed (86%) - Supervisor & crew routes migrated
+- **Frontend Files**: 3/5 completed (60%) - Simple demo pages updated
+- **Complex Frontend**: 2 pages use hooks that need refactoring (demo-jobs, demo-properties)
 - **Header Fallback**: Still active (remove after validation)

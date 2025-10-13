@@ -33,23 +33,23 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError, validationError } from '@/core/errors/error-handler';
+import { getRequestContext } from '@/lib/auth/context';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
     
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const category = searchParams.get('category');
     const search = searchParams.get('search');
     const status = searchParams.get('status');
-
-    const tenantId = request.headers.get('x-tenant-id');
-    if (!tenantId) {
-      return validationError('Tenant ID required');
-    }
 
     // Build query for real database
     let query = supabase
@@ -126,7 +126,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
     const body = await request.json();
 
     // Validate required fields
@@ -140,11 +144,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Get company ID from headers
-    const tenantId = request.headers.get('x-tenant-id');
-    if (!tenantId) {
-      return validationError('Company ID required');
-    }
-
     // Determine item type and tracking mode
     const type = body.category === 'equipment' ? 'equipment' : 'material';
     const trackingMode = type === 'equipment' ? 'individual' : 'quantity';

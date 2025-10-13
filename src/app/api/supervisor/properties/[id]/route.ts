@@ -33,22 +33,22 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError, validationError } from '@/core/errors/error-handler';
+import { getRequestContext } from '@/lib/auth/context';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createServerClient();
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
+
     const propertyId = params.id;
-
-    const tenantId = request.headers.get('x-tenant-id');
-    if (!tenantId) {
-      return validationError('Tenant ID required');
-    }
-
     // Get property without join for now
     let query = supabase
       .from('properties')
@@ -81,15 +81,15 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createServerClient();
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
+
     const propertyId = params.id;
     const body = await request.json();
-
-    // Get company ID from headers
-    const tenantId = request.headers.get('x-tenant-id');
-    if (!tenantId) {
-      return validationError('Company ID required');
-    }
 
     // Validate required fields if provided
     if (body.customer_id !== undefined && !body.customer_id) {
@@ -136,14 +136,14 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createServerClient();
-    const propertyId = params.id;
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
 
-    // Get company ID from headers
-    const tenantId = request.headers.get('x-tenant-id');
-    if (!tenantId) {
-      return validationError('Company ID required');
-    }
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
+
+    const propertyId = params.id;
 
     // Delete property with company verification
     const { error } = await supabase

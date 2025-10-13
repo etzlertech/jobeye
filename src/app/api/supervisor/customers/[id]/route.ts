@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
-import { handleApiError, validationError } from '@/core/errors/error-handler';
+import { createServerClient, createServiceClient } from '@/lib/supabase/server';
+import { handleApiError } from '@/core/errors/error-handler';
+import { getRequestContext } from '@/lib/auth/context';
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createServerClient();
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
+
     const body = await request.json();
     const { id } = params;
-
-    const tenantId = request.headers.get('x-tenant-id');
-    
-    if (!tenantId) {
-      return validationError('Tenant ID required');
-    }
 
     // Handle customer_name field from UI (map to name in DB)
     const updateData: any = {};
@@ -57,14 +57,13 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createServerClient();
-    const { id } = params;
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
 
-    const tenantId = request.headers.get('x-tenant-id');
-    
-    if (!tenantId) {
-      return validationError('Tenant ID required');
-    }
+    const { id } = params;
 
     const { error } = await supabase
       .from('customers')
