@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     // Group by table
     const tableSchema: Record<string, any[]> = {};
-    actualTables.forEach(col => {
+    actualTables.forEach((col: any) => {
       if (!tableSchema[col.table_name]) {
         tableSchema[col.table_name] = [];
       }

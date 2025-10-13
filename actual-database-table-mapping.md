@@ -198,7 +198,7 @@ Total Tables Found: 105 tables in production database
 All existing repositories follow the pattern:
 ```typescript
 export class XxxRepository extends BaseRepository<Database['public']['Tables']['table_name']> {
-  constructor(supabase: SupabaseClient<Database>) {
+  constructor(supabase: SupabaseClient) {
     super(supabase, 'table_name');
   }
 }

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { ItemRepository } from '@/domains/shared/repositories/item.repository';
 import { handleApiError, validationError } from '@/core/errors/error-handler';
 import { getRequestContext } from '@/lib/auth/context';
+import type { Database } from '@/types/database';
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +17,7 @@ export async function GET(request: NextRequest) {
     console.log('Items API GET - TenantID:', tenantId, 'Source:', context.source);
     
     // Get appropriate Supabase client
-    let supabase;
+    let supabase: SupabaseClient;
     try {
       if (!user) {
         console.log('Creating service client for unauthenticated request');
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
     console.log('TenantID:', tenantId, 'Source:', context.source);
     
     // Get appropriate Supabase client
-    let supabase;
+    let supabase: SupabaseClient;
     if (!user) {
       supabase = createServiceClient();
     } else {
@@ -128,7 +130,11 @@ export async function POST(request: NextRequest) {
       status: body.status || 'active',
       primaryImageUrl: body.primary_image_url || null,  // camelCase
       thumbnailUrl: body.thumbnail_url || null,  // camelCase
-      mediumUrl: body.medium_url || null  // camelCase
+      mediumUrl: body.medium_url || null,  // camelCase
+      tags: Array.isArray(body.tags) ? body.tags : [],
+      attributes: body.attributes ?? {},
+      customFields: body.custom_fields ?? {},
+      imageUrls: Array.isArray(body.image_urls) ? body.image_urls : []
     };
     
     console.log('Creating item with data:', itemData);

@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const containerService = new ContainerService(supabase, logger);
+    const containerService = new ContainerService(supabase, undefined, logger);
     
     // Parse query parameters
     const url = new URL(request.url);
@@ -54,9 +54,17 @@ export async function GET(request: NextRequest) {
 
     // Handle voice query
     if (voiceQuery) {
-      const container = await containerService.findByVoiceQuery(voiceQuery);
+      // Get tenant ID from user metadata
+      const tenantId = user.app_metadata?.tenant_id || 'default';
       
-      if (!container) {
+      const voiceCommand = {
+        action: 'select' as const,
+        containerIdentifier: voiceQuery
+      };
+      
+      const result = await containerService.processVoiceCommand(voiceCommand, tenantId, user.id);
+      
+      if (!result) {
         return NextResponse.json({
           found: false,
           message: 'No matching container found',
@@ -64,6 +72,9 @@ export async function GET(request: NextRequest) {
         });
       }
 
+      // Handle single container result
+      const container = Array.isArray(result) ? result[0] : result;
+      
       return NextResponse.json({
         found: true,
         container,
@@ -73,7 +84,9 @@ export async function GET(request: NextRequest) {
 
     // Handle default container request
     if (isDefault === 'true') {
-      const defaultContainer = await containerService.getDefaultContainer();
+      // Get tenant ID from user metadata
+      const tenantId = user.app_metadata?.tenant_id || 'default';
+      const defaultContainer = await containerService.getDefaultContainer(tenantId);
       
       if (!defaultContainer) {
         return NextResponse.json({
@@ -90,10 +103,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all containers with filters
-    const containers = await containerService.findAll({
-      container_type: containerType as any,
-      is_active: isActive === 'true' ? true : isActive === 'false' ? false : undefined
-    });
+    // Get tenant ID from user metadata
+    const tenantId = user.app_metadata?.tenant_id || 'default';
+    const containers = await containerService.listActiveContainers(tenantId);
 
     return NextResponse.json({
       containers,
@@ -127,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const containerService = new ContainerService(supabase, logger);
+    const containerService = new ContainerService(supabase, undefined, logger);
 
     // Validate required fields
     const { container_type, identifier, name } = body;
@@ -143,17 +155,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Create container
-    const container = await containerService.create({
-      container_type,
+    // Get tenant ID from user metadata
+    const tenantId = user.app_metadata?.tenant_id || 'default';
+    
+    const container = await containerService.createContainer({
+      containerType: container_type,
       identifier,
       name,
       color: body.color,
-      capacity_info: body.capacity_info,
-      primary_image_url: body.primary_image_url,
-      additional_image_urls: body.additional_image_urls,
-      is_default: body.is_default,
+      capacityInfo: body.capacity_info,
+      primaryImageUrl: body.primary_image_url,
+      additionalImageUrls: body.additional_image_urls,
+      isDefault: body.is_default,
       metadata: body.metadata
-    });
+    }, tenantId, user.id);
 
     if (!container) {
       return NextResponse.json(
@@ -163,7 +178,7 @@ export async function POST(request: NextRequest) {
     }
 
     await logger.info('Container created', {
-      containerId: container.id,
+      containerId: (container as any).id,
       identifier: container.identifier,
       userId: user.id
     });

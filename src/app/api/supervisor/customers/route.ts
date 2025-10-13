@@ -33,15 +33,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError, validationError } from '@/core/errors/error-handler';
 import { getRequestContext } from '@/lib/auth/context';
+import type { Database } from '@/types/database';
 
 export async function GET(request: NextRequest) {
   try {
     const context = await getRequestContext(request);
     const { tenantId, user } = context;
-    const supabase = user
+    const supabase: SupabaseClient = user
       ? await createServerClient()
       : createServiceClient();
 
@@ -55,15 +57,7 @@ export async function GET(request: NextRequest) {
     // Build query - map billing_address to address for UI compatibility
     let query = supabase
       .from('customers')
-      .select(`
-        id,
-        name,
-        email,
-        phone,
-        billing_address,
-        notes,
-        created_at
-      `, { count: 'exact' });
+      .select('*', { count: 'exact' });
 
     query = query.eq('tenant_id', tenantId);
 
@@ -83,7 +77,7 @@ export async function GET(request: NextRequest) {
     if (error) throw error;
 
     // Transform customers for UI compatibility (map billing_address to address)
-    const transformedCustomers = (customers || []).map(customer => ({
+    const transformedCustomers = (customers || []).map((customer: Database['public']['Tables']['customers']['Row']) => ({
       ...customer,
       address: customer.billing_address 
         ? `${customer.billing_address.street}, ${customer.billing_address.city}, ${customer.billing_address.state} ${customer.billing_address.zip}`.replace(/N\/A,?\s*/g, '').replace(/,\s*$/, '')

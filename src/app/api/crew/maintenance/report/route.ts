@@ -72,6 +72,9 @@ const maintenanceReportResponseSchema = z.object({
 
 export async function POST(req: NextRequest) {
   return withAuth(req, async (user, tenantId) => {
+    // Parse request body early so it's available in error handling
+    const body = await req.json();
+    
     try {
       // Check role permission
       const userRole = user.app_metadata?.role;
@@ -82,8 +85,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Parse and validate request
-      const body = await req.json();
+      // Validate request
       const validatedData = maintenanceReportRequestSchema.parse(body);
 
       // Get crew ID from user metadata
@@ -148,8 +150,8 @@ export async function POST(req: NextRequest) {
             success: true,
             report: {
               id: `offline-${Date.now()}`,
-              equipmentId: body.equipmentId,
-              severity: body.severity,
+              equipmentId: body?.equipmentId || 'unknown',
+              severity: body?.severity || 'medium',
               status: 'queued',
               reportedAt: new Date().toISOString(),
               offline: true

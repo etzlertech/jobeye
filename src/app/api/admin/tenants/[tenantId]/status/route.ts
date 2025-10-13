@@ -1,0 +1,70 @@
+/**
+ * AGENT DIRECTIVE BLOCK
+ *
+ * file: /src/app/api/admin/tenants/[tenantId]/status/route.ts
+ * purpose: Tenant lifecycle mutation endpoint for system admins
+ * spec_ref: admin-ui-specs.md#tenant-management
+ * roles: ['system_admin']
+ * dependencies: {
+ *   internal: ['@/lib/auth/context', '@/lib/supabase/server', '@/domains/tenant/services/tenant.service'],
+ *   external: ['next/server']
+ * }
+ * audit_log: TODO(add audit event emission once audit service is active)
+ */
+
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getRequestContext, isSystemAdmin } from '@/lib/auth/context';
+import { createServiceClient } from '@/lib/supabase/server';
+import { TenantService } from '@/domains/tenant/services/tenant.service';
+import { TenantStatus } from '@/domains/tenant/types';
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { tenantId: string } }
+) {
+  try {
+    const context = await getRequestContext(request);
+
+    if (!isSystemAdmin(context)) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+
+    const tenantId = params.tenantId;
+    if (!tenantId) {
+      return NextResponse.json({ error: 'missing_tenant_id' }, { status: 400 });
+    }
+
+    const body = await request.json().catch(() => null);
+    const status = (body?.status as string | undefined)?.toLowerCase();
+
+    if (!status) {
+      return NextResponse.json({ error: 'status_required' }, { status: 400 });
+    }
+
+    if (!Object.values(TenantStatus).includes(status as TenantStatus)) {
+      return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
+    }
+
+    const adminClient = createServiceClient();
+    const tenantService = new TenantService(adminClient);
+    const updated = await tenantService.updateTenantStatus(tenantId, status as TenantStatus);
+
+    return NextResponse.json({
+      tenant: {
+        id: updated.id,
+        name: updated.name,
+        status: updated.status,
+        plan: updated.plan,
+        updatedAt: updated.updatedAt,
+      },
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('No tenant context')) {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    }
+
+    console.error('[admin/tenants/status] failed to update status', error);
+    return NextResponse.json({ error: 'internal_error' }, { status: 500 });
+  }
+}
