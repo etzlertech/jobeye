@@ -56,7 +56,7 @@ export interface DetectedItemFilter {
 }
 
 export class DetectedItemRepository extends BaseRepository<'vision_detected_items'> {
-  constructor(supabaseClient: SupabaseClient<Database>) {
+  constructor(supabaseClient: SupabaseClient) {
     super('vision_detected_items', supabaseClient);
   }
 

@@ -51,7 +51,7 @@ export interface DayPlanWithEvents extends DayPlan {
 }
 
 export class DayPlanRepository {
-  constructor(private supabase: SupabaseClient<Database>) {}
+  constructor(private supabase: SupabaseClient) {}
 
   async findById(id: string): Promise<DayPlan | null> {
     const { data, error } = await this.supabase

@@ -44,7 +44,7 @@
 
 import { VoiceLogger } from '@/core/logger/voice-logger';
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
-import { getEnvironmentConfig } from '@/core/config/environment';
+import { config } from '@/core/config/environment';
 
 // Speech synthesis result
 export interface SpeechResult {
@@ -93,7 +93,7 @@ export class TextToSpeechService {
 
   constructor(logger?: VoiceLogger) {
     this.logger = logger || new VoiceLogger();
-    this.openaiApiKey = getEnvironmentConfig().voice?.openaiApiKey;
+    this.openaiApiKey = config.voice.openai?.apiKey;
     this.currentProvider = this.determineProvider();
     this.audioCache = new Map();
     this.initializeBrowserAPI();
@@ -148,7 +148,7 @@ export class TextToSpeechService {
 
       // Cache the result
       if (options?.useCache !== false) {
-        this.cacheAudio(text, options || {}, result);
+        this.cacheAudio(text, options, result);
       }
 
       // Log synthesis
@@ -490,7 +490,7 @@ export class TextToSpeechService {
   /**
    * Get cached audio if available
    */
-  private getCachedAudio(text: string, options: VoiceConfig): SpeechResult | null {
+  private getCachedAudio(text: string, options?: VoiceConfig): SpeechResult | null {
     const cacheKey = this.generateCacheKey(text, options);
     const cached = this.audioCache.get(cacheKey);
     
@@ -504,11 +504,13 @@ export class TextToSpeechService {
   /**
    * Cache audio result
    */
-  private cacheAudio(text: string, options: VoiceConfig, result: SpeechResult): void {
+  private cacheAudio(text: string, options: VoiceConfig | undefined, result: SpeechResult): void {
     // Implement LRU cache
     if (this.audioCache.size >= this.cacheSize) {
       const firstKey = this.audioCache.keys().next().value;
-      this.audioCache.delete(firstKey);
+      if (typeof firstKey === 'string') {
+        this.audioCache.delete(firstKey);
+      }
     }
     
     const cacheKey = this.generateCacheKey(text, options);
@@ -518,8 +520,9 @@ export class TextToSpeechService {
   /**
    * Generate cache key from text and options
    */
-  private generateCacheKey(text: string, options: VoiceConfig): string {
-    return `${text}:${options.voice || 'default'}:${options.speed || 1}:${options.pitch || 1}`;
+  private generateCacheKey(text: string, options?: VoiceConfig): string {
+    const voiceOptions = options ?? {};
+    return `${text}:${voiceOptions.voice || 'default'}:${voiceOptions.speed || 1}:${voiceOptions.pitch || 1}`;
   }
 
   /**

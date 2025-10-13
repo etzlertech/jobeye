@@ -116,7 +116,7 @@ export class ContainerService {
   ): Promise<Container> {
     try {
       // Create container
-      const container = await this.repository.create(data, tenantId);
+      const container = await this.repository.createContainer(data);
 
       // Log creation
       await this.logger.info('Container created', {
@@ -128,21 +128,17 @@ export class ContainerService {
       });
 
       // Publish event
-      await this.eventBus.emit({
-        type: ContainerEventType.CONTAINER_CREATED,
-        payload: {
-          container,
-          createdBy: userId,
-        },
-        metadata: {
-          tenantId,
-          timestamp: new Date(),
-        },
+      this.eventBus.emit(ContainerEventType.CONTAINER_CREATED, {
+        container,
+        createdBy: userId,
+        tenantId,
+        timestamp: new Date(),
       });
 
       return container;
     } catch (error) {
-      await this.logger.error('Failed to create container', error as Error, {
+      await this.logger.error('Failed to create container', {
+        error: error as Error,
         data,
         tenantId,
         userId,
@@ -162,7 +158,7 @@ export class ContainerService {
   ): Promise<Container> {
     try {
       // Get current container
-      const current = await this.repository.findById(id, tenantId);
+      const current = await this.repository.findById(id);
       if (!current) {
         throw createAppError({
           code: 'CONTAINER_NOT_FOUND',
@@ -173,7 +169,7 @@ export class ContainerService {
       }
 
       // Update container
-      const updated = await this.repository.update(id, data, tenantId);
+      const updated = await this.repository.updateContainer(id, data);
       if (!updated) {
         throw new Error('Update failed');
       }
@@ -216,7 +212,8 @@ export class ContainerService {
 
       return updated;
     } catch (error) {
-      await this.logger.error('Failed to update container', error as Error, {
+      await this.logger.error('Failed to update container', {
+        error: error as Error,
         id,
         data,
         tenantId,
@@ -250,7 +247,8 @@ export class ContainerService {
 
       return defaultContainer;
     } catch (error) {
-      await this.logger.error('Failed to get default container', error as Error, {
+      await this.logger.error('Failed to get default container', {
+        error: error as Error,
         tenantId,
       });
       throw error;
@@ -327,7 +325,8 @@ export class ContainerService {
           throw new Error(`Unknown voice command action: ${command.action}`);
       }
     } catch (error) {
-      await this.logger.error('Failed to process voice command', error as Error, {
+      await this.logger.error('Failed to process voice command', {
+        error: error as Error,
         command,
         tenantId,
         userId,
@@ -380,7 +379,8 @@ export class ContainerService {
         },
       });
     } catch (error) {
-      await this.logger.error('Failed to assign item to container', error as Error, {
+      await this.logger.error('Failed to assign item to container', {
+        error: error as Error,
         assignment,
         tenantId,
       });
@@ -413,7 +413,8 @@ export class ContainerService {
       // Return display names
       return filtered.map(c => getContainerDisplayName(c));
     } catch (error) {
-      await this.logger.error('Failed to get container suggestions', error as Error, {
+      await this.logger.error('Failed to get container suggestions', {
+        error: error as Error,
         tenantId,
         itemType,
       });
@@ -472,7 +473,8 @@ export class ContainerService {
 
       return { isValid: true };
     } catch (error) {
-      await this.logger.error('Failed to validate container capacity', error as Error, {
+      await this.logger.error('Failed to validate container capacity', {
+        error: error as Error,
         containerId,
         expectedItemCount,
         tenantId,

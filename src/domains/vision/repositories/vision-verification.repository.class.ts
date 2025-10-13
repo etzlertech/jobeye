@@ -59,7 +59,7 @@ export interface VisionVerificationFilter {
 }
 
 export class VisionVerificationRepository extends BaseRepository<'vision_verifications'> {
-  constructor(supabaseClient: SupabaseClient<Database>) {
+  constructor(supabaseClient: SupabaseClient) {
     super('vision_verifications', supabaseClient);
   }
 

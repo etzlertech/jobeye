@@ -195,23 +195,23 @@ export async function calculateAccuracyMetrics(
     }
 
     const correctDetections = records.filter(
-      (r) => r.detected_label === r.corrected_label
+      (r: any) => r.detected_label === r.corrected_label
     ).length;
 
     const correctedDetections = totalDetections - correctDetections;
 
-    const yoloRecords = records.filter((r) => r.detection_method === 'yolo');
-    const vlmRecords = records.filter((r) => r.detection_method === 'vlm');
+    const yoloRecords = records.filter((r: any) => r.detection_method === 'yolo');
+    const vlmRecords = records.filter((r: any) => r.detection_method === 'vlm');
 
     const yoloCorrect = yoloRecords.filter(
-      (r) => r.detected_label === r.corrected_label
+      (r: any) => r.detected_label === r.corrected_label
     ).length;
     const vlmCorrect = vlmRecords.filter(
-      (r) => r.detected_label === r.corrected_label
+      (r: any) => r.detected_label === r.corrected_label
     ).length;
 
     const avgConfidence =
-      records.reduce((sum, r) => sum + r.detected_confidence, 0) / totalDetections;
+      records.reduce((sum: any, r: any) => sum + r.detected_confidence, 0) / totalDetections;
 
     return {
       data: {

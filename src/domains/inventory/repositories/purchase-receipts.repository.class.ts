@@ -60,7 +60,7 @@ export interface PurchaseReceiptFilter {
   offset?: number;
 }
 
-export class PurchaseReceiptRepository extends BaseRepository<PurchaseReceipt> {
+export class PurchaseReceiptRepository extends BaseRepository<'purchase_receipts'> {
   constructor(supabaseClient: SupabaseClient) {
     super('purchase_receipts', supabaseClient);
   }
@@ -70,7 +70,7 @@ export class PurchaseReceiptRepository extends BaseRepository<PurchaseReceipt> {
    */
   async findById(id: string): Promise<PurchaseReceipt | null> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('id', id)
@@ -98,7 +98,7 @@ export class PurchaseReceiptRepository extends BaseRepository<PurchaseReceipt> {
    */
   async findByCompany(tenantId: string, limit = 50): Promise<PurchaseReceipt[]> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('tenant_id', tenantId)
@@ -107,7 +107,7 @@ export class PurchaseReceiptRepository extends BaseRepository<PurchaseReceipt> {
 
       if (error) throw error;
 
-      return (data || []).map(item => this.mapFromDb(item));
+      return (data || []).map((item: any) => this.mapFromDb(item));
     } catch (error) {
       throw createAppError({
         code: 'RECEIPTS_BY_COMPANY_FAILED',
@@ -169,7 +169,7 @@ export class PurchaseReceiptRepository extends BaseRepository<PurchaseReceipt> {
       if (error) throw error;
 
       return {
-        data: (data || []).map(item => this.mapFromDb(item)),
+        data: (data || []).map((item: any) => this.mapFromDb(item)),
         count: count || 0,
       };
     } catch (error) {
@@ -278,7 +278,7 @@ export class PurchaseReceiptRepository extends BaseRepository<PurchaseReceipt> {
     byVendor: Array<{ vendor: string; amount: number; count: number }>;
   }> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('vendor_name, total_amount, tax_amount')
         .eq('tenant_id', tenantId)

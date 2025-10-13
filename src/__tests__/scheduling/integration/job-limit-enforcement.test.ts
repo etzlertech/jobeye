@@ -16,7 +16,7 @@ import { NotificationService } from '@/scheduling/services/notification.service'
 import type { Database } from '@/types/database';
 
 describe('Job Limit Enforcement', () => {
-  let supabase: SupabaseClient<Database>;
+  let supabase: SupabaseClient;
   let dayPlanService: DayPlanService;
   let schedulingService: SchedulingService;
   let validationService: DayPlanValidationService;

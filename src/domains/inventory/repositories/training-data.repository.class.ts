@@ -57,7 +57,7 @@ export interface TrainingDataFilter {
   offset?: number;
 }
 
-export class TrainingDataRepository extends BaseRepository<TrainingDataRecord> {
+export class TrainingDataRepository extends BaseRepository<'training_data_records'> {
   constructor(supabaseClient: SupabaseClient) {
     super('training_data_records', supabaseClient);
   }
@@ -67,7 +67,7 @@ export class TrainingDataRepository extends BaseRepository<TrainingDataRecord> {
    */
   async findById(id: string): Promise<TrainingDataRecord | null> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('id', id)
@@ -95,7 +95,7 @@ export class TrainingDataRepository extends BaseRepository<TrainingDataRecord> {
    */
   async findByCompany(tenantId: string, limit = 100): Promise<TrainingDataRecord[]> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('tenant_id', tenantId)
@@ -104,7 +104,7 @@ export class TrainingDataRepository extends BaseRepository<TrainingDataRecord> {
 
       if (error) throw error;
 
-      return (data || []).map(item => this.mapFromDb(item));
+      return (data || []).map((item: any) => this.mapFromDb(item));
     } catch (error) {
       throw createAppError({
         code: 'TRAINING_DATA_BY_COMPANY_FAILED',
@@ -169,7 +169,7 @@ export class TrainingDataRepository extends BaseRepository<TrainingDataRecord> {
       if (error) throw error;
 
       return {
-        data: (data || []).map(item => this.mapFromDb(item)),
+        data: (data || []).map((item: any) => this.mapFromDb(item)),
         count: count || 0,
       };
     } catch (error) {
@@ -292,7 +292,7 @@ export class TrainingDataRepository extends BaseRepository<TrainingDataRecord> {
     limit = 50
   ): Promise<TrainingDataRecord[]> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('tenant_id', tenantId)
@@ -302,7 +302,7 @@ export class TrainingDataRepository extends BaseRepository<TrainingDataRecord> {
 
       if (error) throw error;
 
-      return (data || []).map(item => this.mapFromDb(item));
+      return (data || []).map((item: any) => this.mapFromDb(item));
     } catch (error) {
       throw createAppError({
         code: 'UNVERIFIED_RECORDS_FAILED',
@@ -325,7 +325,7 @@ export class TrainingDataRepository extends BaseRepository<TrainingDataRecord> {
     byCategory: Record<string, number>;
   }> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('data_type, category, is_verified')
         .eq('tenant_id', tenantId);

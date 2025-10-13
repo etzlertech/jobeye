@@ -44,7 +44,7 @@ export class DayPlanValidationService {
   private dayPlanRepo: DayPlanRepository;
   private scheduleEventRepo: ScheduleEventRepository;
 
-  constructor(private supabase: SupabaseClient<Database>) {
+  constructor(private supabase: SupabaseClient) {
     this.dayPlanRepo = new DayPlanRepository(supabase);
     this.scheduleEventRepo = new ScheduleEventRepository(supabase);
   }

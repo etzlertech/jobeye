@@ -44,7 +44,7 @@
 
 import { VoiceLogger } from '@/core/logger/voice-logger';
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
-import { getEnvironmentConfig } from '@/core/config/environment';
+import { config } from '@/core/config/environment';
 
 // Transcription result
 export interface TranscriptionResult {
@@ -86,7 +86,7 @@ export class SpeechToTextService {
 
   constructor(logger?: VoiceLogger) {
     this.logger = logger || new VoiceLogger();
-    this.openaiApiKey = getEnvironmentConfig().voice?.openaiApiKey;
+    this.openaiApiKey = config.voice.openai?.apiKey;
     this.currentProvider = this.determineProvider();
     this.initializeBrowserAPI();
   }
@@ -130,9 +130,9 @@ export class SpeechToTextService {
         action: 'audio_transcribed',
         duration: Date.now() - startTime,
         provider: this.currentProvider,
-        confidence: result.confidence,
-        language: result.language,
         metadata: {
+          confidence: result.confidence,
+          language: result.language,
           sessionId: options?.sessionId,
           userId: options?.userId,
           textLength: result.text.length,
@@ -260,7 +260,8 @@ export class SpeechToTextService {
 
     try {
       // Create form data with audio file
-      const audioFile = new File([audioBuffer], 'audio.webm', { type: 'audio/webm' });
+      const audioArray = Uint8Array.from(audioBuffer);
+      const audioFile = new File([audioArray.buffer], 'audio.webm', { type: 'audio/webm' });
       
       const response = await openai.audio.transcriptions.create({
         model: 'whisper-1',
@@ -307,7 +308,8 @@ export class SpeechToTextService {
     }
 
     // Convert buffer to audio URL
-    const audioBlob = new Blob([audioBuffer], { type: 'audio/webm' });
+    const audioArray = Uint8Array.from(audioBuffer);
+    const audioBlob = new Blob([audioArray.buffer], { type: 'audio/webm' });
     const audioUrl = URL.createObjectURL(audioBlob);
     
     // Play audio through Web Audio API for recognition

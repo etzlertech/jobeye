@@ -51,7 +51,7 @@ export class SchedulingService {
   private dayPlanRepo: DayPlanRepository;
 
   constructor(
-    private supabase: SupabaseClient<Database>,
+    private supabase: SupabaseClient,
     private validationService: DayPlanValidationService,
     private notificationService: NotificationService
   ) {

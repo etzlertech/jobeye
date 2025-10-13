@@ -44,7 +44,7 @@
  */
 
 import { AIInteractionLogger } from './ai-interaction-logger.service';
-import { AppError } from '@/core/errors/error-types';
+import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
 
 export interface VoiceCommandResult {
   transcript: string;
@@ -143,9 +143,12 @@ export class VoiceCommandService {
         }
       };
     } catch (error) {
-      throw new AppError('Failed to process voice command', {
+      throw createAppError({
         code: 'VOICE_COMMAND_ERROR',
-        details: error
+        message: 'Failed to process voice command',
+        severity: ErrorSeverity.MEDIUM,
+        category: ErrorCategory.VOICE,
+        originalError: error as Error
       });
     }
   }
@@ -192,9 +195,12 @@ export class VoiceCommandService {
         return this.transcribeWithWebSpeech(audioBlob, settings);
       }
       
-      throw new AppError('Transcription failed', {
+      throw createAppError({
         code: 'STT_ERROR',
-        details: error
+        message: 'Transcription failed',
+        severity: ErrorSeverity.MEDIUM,
+        category: ErrorCategory.VOICE,
+        originalError: error as Error
       });
     }
   }
@@ -257,10 +263,12 @@ export class VoiceCommandService {
       admin: `You are helping an admin manage the system. They have full access to all features.`
     };
 
+    const roleKey = (context?.role ?? 'supervisor') as keyof typeof roleContext;
+
     return `You are a voice assistant for a field service management app.
 
-User Role: ${context.role}
-${roleContext[context.role]}
+User Role: ${roleKey}
+${roleContext[roleKey]}
 
 Current Page: ${context.currentPage || 'dashboard'}
 ${context.previousCommands ? `Recent Commands: ${context.previousCommands.join(', ')}` : ''}

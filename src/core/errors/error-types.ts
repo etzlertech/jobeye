@@ -228,6 +228,7 @@ export enum ErrorCategory {
   AUTHENTICATION = 'authentication',
   VOICE = 'voice',
   SYSTEM = 'system',
+  EXTERNAL_SERVICE = 'external_service',
 }
 
 /**

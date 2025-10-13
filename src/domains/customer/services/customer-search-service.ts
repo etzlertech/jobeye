@@ -66,7 +66,7 @@ export class CustomerSearchService {
   private offlineCache: Customer[] = [];
 
   constructor(private supabase: SupabaseClient) {
-    this.repository = new CustomerRepository(supabase);
+    this.repository = new CustomerRepository();
   }
 
   /**
@@ -126,9 +126,9 @@ export class CustomerSearchService {
 
       // Log voice search outcome
       if (results.length > 0) {
-        await voiceLogger.log(
+        await voiceLogger.info(
           `Found ${results.length} matches for "${query}"`,
-          { level: 'info', metadata: { topMatch: results[0].customer.name } }
+          { topMatch: results[0].customer.name }
         );
       }
 
@@ -242,7 +242,7 @@ export class CustomerSearchService {
     customerNumber: string,
     tenantId: string
   ): Promise<Customer | null> {
-    return this.repository.findByCustomerNumber(customerNumber, tenantId);
+    return this.repository.findByCustomerNumber(customerNumber);
   }
 
   /**

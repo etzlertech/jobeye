@@ -44,7 +44,7 @@ export interface KitVariantFilters {
 }
 
 export class KitVariantRepository {
-  constructor(private supabase: SupabaseClient<Database>) {}
+  constructor(private supabase: SupabaseClient) {}
 
   async findById(id: string): Promise<KitVariant | null> {
     const { data, error } = await this.supabase

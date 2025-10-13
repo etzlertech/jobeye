@@ -50,11 +50,11 @@ export class SafetyAnalyticsService {
     const completions = await this.completionRepo.findByDateRange(startDate, endDate);
 
     const total_completions = completions.length;
-    const completed = completions.filter((c) => c.status === 'completed').length;
-    const failed = completions.filter((c) => c.status === 'failed').length;
-    const in_progress = completions.filter((c) => c.status === 'in_progress').length;
+    const completed = completions.filter((c: any) => c.status === 'completed').length;
+    const failed = completions.filter((c: any) => c.status === 'failed').length;
+    const in_progress = completions.filter((c: any) => c.status === 'in_progress').length;
 
-    const finishedCompletions = completions.filter((c) => c.completed_at);
+    const finishedCompletions = completions.filter((c: any) => c.completed_at);
     const totalCompletionTime = finishedCompletions.reduce((sum, c) => {
       const start = new Date(c.created_at).getTime();
       const end = new Date(c.completed_at!).getTime();
@@ -228,12 +228,12 @@ export class SafetyAnalyticsService {
 
     const performance = await Promise.all(
       checklists.map(async (checklist) => {
-        const completions = allCompletions.filter((c) => c.checklist_id === checklist.id);
+        const completions = allCompletions.filter((c: any) => c.checklist_id === checklist.id);
         const total_uses = completions.length;
-        const passed = completions.filter((c) => c.status === 'completed').length;
+        const passed = completions.filter((c: any) => c.status === 'completed').length;
 
-        const finishedCompletions = completions.filter((c) => c.completed_at);
-        const totalTime = finishedCompletions.reduce((sum, c) => {
+        const finishedCompletions = completions.filter((c: any) => c.completed_at);
+        const totalTime = finishedCompletions.reduce((sum: any, c: any) => {
           const start = new Date(c.created_at).getTime();
           const end = new Date(c.completed_at!).getTime();
           return sum + (end - start) / (1000 * 60); // minutes
@@ -242,8 +242,8 @@ export class SafetyAnalyticsService {
         // Find most failed items
         const itemFailures = new Map<string, number>();
 
-        completions.forEach((completion) => {
-          completion.item_completions.forEach((ic) => {
+        completions.forEach((completion: any) => {
+          completion.item_completions.forEach((ic: any) => {
             if (!ic.completed) {
               itemFailures.set(ic.item_id, (itemFailures.get(ic.item_id) || 0) + 1);
             }

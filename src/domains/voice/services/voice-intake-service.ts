@@ -80,8 +80,8 @@ export class VoiceIntakeService {
   private logger: VoiceLogger;
 
   constructor(supabaseClient?: SupabaseClient) {
-    this.supabase = supabaseClient || supabase;
-    this.logger = new VoiceLogger('VoiceIntakeService');
+    this.supabase = supabaseClient ?? supabase();
+    this.logger = new VoiceLogger();
   }
 
   /**
@@ -183,7 +183,7 @@ export class VoiceIntakeService {
         .from('media_assets')
         .update({ 
           uploaded_at: new Date().toISOString(),
-          metadata: this.supabase.sql`metadata || '{"status": "uploaded"}'::jsonb`
+          metadata: { status: 'uploaded' }
         })
         .eq('id', mediaId);
 

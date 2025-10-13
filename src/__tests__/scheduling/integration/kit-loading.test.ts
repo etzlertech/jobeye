@@ -17,7 +17,7 @@ import { ContainerService } from '@/domains/inventory/services/container.service
 import type { Database } from '@/types/database';
 
 describe('Kit Loading and Verification Integration', () => {
-  let supabase: SupabaseClient<Database>;
+  let supabase: SupabaseClient;
   let kitRepo: KitRepository;
   let jobKitRepo: JobKitRepository;
   let kitService: KitService;

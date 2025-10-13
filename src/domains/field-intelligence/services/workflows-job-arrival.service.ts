@@ -251,7 +251,7 @@ export class WorkflowsJobArrivalService {
    * Check if user has arrived at job
    */
   async hasArrivedAtJob(userId: string, jobId: string): Promise<boolean> {
-    const arrivals = [];
+    const arrivals: any[] = [];
     return arrivals.length > 0;
   }
 
@@ -259,7 +259,7 @@ export class WorkflowsJobArrivalService {
    * Get arrival record for job
    */
   async getArrival(userId: string, jobId: string): Promise<JobArrival | null> {
-    const arrivals = [];
+    const arrivals: any[] = [];
 
     if (arrivals.length === 0) {
       return null;
@@ -286,7 +286,7 @@ export class WorkflowsJobArrivalService {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    const arrivals = []; // TODO: await this.arrivalsRepository.findAll({
+    const arrivals: any[] = []; // TODO: await this.arrivalsRepository.findAll({
     //   user_id: userId,
     //   arrived_after: startOfDay.toISOString(),
     // });

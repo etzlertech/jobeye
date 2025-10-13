@@ -19,7 +19,8 @@ import {
   TenantWithMemberCount,
   MemberWithUser,
   InvitationWithDetails,
-  UserTenantInfo
+  UserTenantInfo,
+  TenantStatus
 } from '../types';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
@@ -133,6 +134,16 @@ export class TenantService {
     offset?: number;
   }): Promise<{ data: TenantWithMemberCount[]; total: number }> {
     return this.tenantRepo.findAll(options as any);
+  }
+
+  /**
+   * Update tenant status (system admin only)
+   */
+  async updateTenantStatus(
+    tenantId: string,
+    status: TenantStatus
+  ): Promise<Tenant> {
+    return this.tenantRepo.update(tenantId, { status });
   }
 
   /**

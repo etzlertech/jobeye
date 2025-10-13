@@ -165,7 +165,7 @@ export async function updateLocation(
   id: string,
   locationId: string | null
 ): Promise<{ error: Error | null }> {
-  return update(id, { current_location_id: locationId });
+  return update(id, { current_location_id: locationId ?? undefined });
 }
 
 /**

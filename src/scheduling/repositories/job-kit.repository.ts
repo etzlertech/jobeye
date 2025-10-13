@@ -51,7 +51,7 @@ export interface JobKitWithDetails extends JobKit {
 }
 
 export class JobKitRepository {
-  constructor(private supabase: SupabaseClient<Database>) {}
+  constructor(private supabase: SupabaseClient) {}
 
   async findById(id: string): Promise<JobKit | null> {
     const { data, error } = await this.supabase

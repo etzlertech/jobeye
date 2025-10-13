@@ -44,7 +44,7 @@ export interface KitItemFilters {
 }
 
 export class KitItemRepository {
-  constructor(private supabase: SupabaseClient<Database>) {}
+  constructor(private supabase: SupabaseClient) {}
 
   async findById(id: string): Promise<KitItem | null> {
     const { data, error } = await this.supabase

@@ -55,14 +55,14 @@ export const mockSupabaseClient = {
   gte: jest.fn().mockReturnThis(),
   or: jest.fn().mockReturnThis(),
   rpc: jest.fn(),
-} as unknown as SupabaseClient<Database>;
+} as unknown as SupabaseClient;
 
 // Helper to create a mock Supabase client with custom responses
 export function createMockSupabaseClient(overrides?: Partial<typeof mockSupabaseClient>) {
   return {
     ...mockSupabaseClient,
     ...overrides,
-  } as unknown as SupabaseClient<Database>;
+  } as unknown as SupabaseClient;
 }
 
 // Mock data generators

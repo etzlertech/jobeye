@@ -43,7 +43,21 @@
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { isPublicRoute, checkRouteAccess, getDashboardUrl } from '@/lib/auth/route-access';
+import { isPublicRoute, checkRouteAccess, getDashboardUrl, type UserRole } from '@/lib/auth/route-access';
+import type { Database } from '@/lib/supabase/types';
+
+const normalizeUserRole = (role: unknown): UserRole | undefined => {
+  const candidate = Array.isArray(role) ? role[0] : role;
+  if (
+    candidate === 'admin' ||
+    candidate === 'supervisor' ||
+    candidate === 'crew' ||
+    candidate === 'tenant_admin'
+  ) {
+    return candidate;
+  }
+  return undefined;
+};
 
 
 export async function middleware(request: NextRequest) {
@@ -61,7 +75,7 @@ export async function middleware(request: NextRequest) {
 
     // Create Supabase client
     const res = NextResponse.next();
-    const supabase = createMiddlewareClient({ req: request, res });
+    const supabase = createMiddlewareClient<Database>({ req: request, res });
 
     // Check if route is public
     if (isPublicRoute(pathname)) {
@@ -79,7 +93,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(signInUrl);
     }
 
-    const userRole = (session.user.app_metadata?.role || session.user.user_metadata?.role) as string | undefined;
+    const roleSource =
+      session.user.app_metadata?.role ??
+      session.user.app_metadata?.roles ??
+      session.user.user_metadata?.role ??
+      session.user.user_metadata?.roles;
+    const userRole = normalizeUserRole(roleSource);
     const userId = session.user.id;
 
     if (!userRole) {
@@ -102,21 +121,37 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
 
+    const tenantId =
+      (session.user.app_metadata?.tenant_id as string | undefined) ??
+      (session.user.user_metadata?.tenant_id as string | undefined);
+
+    if (!tenantId) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'missing_tenant' }, { status: 403 });
+      }
+      const signInUrl = new URL('/sign-in', request.url);
+      signInUrl.searchParams.set('error', 'missing_tenant');
+      return NextResponse.redirect(signInUrl);
+    }
+
     // Add user context to headers for API routes
     if (pathname.startsWith('/api/')) {
       const requestHeaders = new Headers(request.headers);
       requestHeaders.set('x-user-id', userId);
       requestHeaders.set('x-user-role', userRole);
-      const tenantId = session?.user?.app_metadata?.tenant_id || session?.user?.user_metadata?.tenant_id || '00000000-0000-0000-0000-000000000000';
       requestHeaders.set('x-tenant-id', tenantId);
       if (session?.user?.user_metadata) {
         requestHeaders.set('x-user-metadata', JSON.stringify(session.user.user_metadata));
       }
-      return NextResponse.next({
+      const response = NextResponse.next({
         request: {
           headers: requestHeaders
         }
       });
+      res.cookies.getAll().forEach(cookie => {
+        response.cookies.set(cookie);
+      });
+      return response;
     }
 
     // Handle root redirect based on role

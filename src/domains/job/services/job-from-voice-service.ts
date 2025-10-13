@@ -103,12 +103,12 @@ interface OfflineJobCreation {
 }
 
 export class JobFromVoiceService {
-  private supabase: SupabaseClient<Database>;
+  private supabase: SupabaseClient;
   private logger: VoiceLogger;
   private offlineQueue: OfflineJobCreation[] = [];
 
   constructor(
-    supabase: SupabaseClient<Database>,
+    supabase: SupabaseClient,
     logger?: VoiceLogger
   ) {
     this.supabase = supabase;

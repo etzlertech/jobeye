@@ -181,7 +181,7 @@ export class WorkflowsTaskParsingService {
       };
     } catch (error) {
       logger.error('Task parsing failed', { jobId, error });
-      throw new ExternalServiceError('Task parsing failed', { cause: error });
+      throw new ExternalServiceError('Task parsing failed', 'task-parsing-service');
     }
   }
 
@@ -189,7 +189,7 @@ export class WorkflowsTaskParsingService {
    * Get parsed tasks for a job
    */
   async getParsedTasks(jobId: string): Promise<ParsedTask[]> {
-    const records = [];
+    const records: any[] = [];
 
     return records.map((r) => ({
       taskId: r.id,

@@ -37,7 +37,7 @@
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { OfflineDatabase } from '@/lib/offline/offline-db';
-import { AppError } from '@/core/errors/error-types';
+import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
 import { Database } from '@/types/database';
 
 // Types
@@ -86,7 +86,7 @@ export class AIInteractionLogRepository {
   private offlineDb: OfflineDatabase;
 
   constructor() {
-    this.offlineDb = new OfflineDatabase();
+    this.offlineDb = OfflineDatabase.getInstance();
   }
 
   /**
@@ -268,9 +268,12 @@ export class AIInteractionLogRepository {
 
       return summary;
     } catch (error) {
-      throw new AppError('Failed to calculate cost summary', {
+      throw createAppError({
         code: 'AI_COST_CALCULATION_ERROR',
-        details: error
+        message: 'Failed to calculate cost summary',
+        severity: ErrorSeverity.LOW,
+        category: ErrorCategory.BUSINESS_LOGIC,
+        originalError: error as Error
       });
     }
   }

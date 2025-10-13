@@ -253,7 +253,7 @@ export class WorkflowsCompletionVerificationService {
   async getCompletionVerification(
     jobId: string
   ): Promise<CompletionVerification | null> {
-    const completions = [];
+    const completions: any[] = [];
 
     if (completions.length === 0) {
       return null;
@@ -386,7 +386,7 @@ export class WorkflowsCompletionVerificationService {
    * Get pending approvals for supervisor
    */
   async getPendingApprovals(supervisorId: string): Promise<CompletionVerification[]> {
-    const completions = [];
+    const completions: any[] = [];
 
     return completions.map((c) => ({
       verificationId: c.id,

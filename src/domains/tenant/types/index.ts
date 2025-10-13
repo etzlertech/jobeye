@@ -17,14 +17,16 @@ export interface Tenant {
 export enum TenantStatus {
   ACTIVE = 'active',
   SUSPENDED = 'suspended',
-  CANCELLED = 'cancelled'
+  CANCELLED = 'cancelled',
+  PENDING = 'pending'
 }
 
 export enum TenantPlan {
   FREE = 'free',
   STARTER = 'starter',
   PRO = 'pro',
-  ENTERPRISE = 'enterprise'
+  ENTERPRISE = 'enterprise',
+  TRIAL = 'trial'
 }
 
 export interface TenantSettings {

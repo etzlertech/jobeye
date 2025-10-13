@@ -14,9 +14,9 @@ import { createTestUser, createTestCompany, cleanupTestData } from '@/test/utils
 import type { Database } from '@/types/database';
 
 describe('Multi-tenant RLS Isolation', () => {
-  let adminClient: SupabaseClient<Database>;
-  let companyAClient: SupabaseClient<Database>;
-  let companyBClient: SupabaseClient<Database>;
+  let adminClient: SupabaseClient;
+  let companyAClient: SupabaseClient;
+  let companyBClient: SupabaseClient;
   
   const companyAId = '00000000-0000-4000-a000-000000000001';
   const companyBId = '00000000-0000-4000-a000-000000000002';

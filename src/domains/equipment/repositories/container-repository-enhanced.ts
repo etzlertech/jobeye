@@ -66,7 +66,7 @@ export interface ContainerAssignmentCreate {
   tenant_id: string;
 }
 
-export class ContainerRepository extends BaseRepository<Container> {
+export class ContainerRepository extends BaseRepository<'containers'> {
   constructor(supabaseClient: SupabaseClient) {
     super('containers', supabaseClient);
   }
@@ -76,7 +76,7 @@ export class ContainerRepository extends BaseRepository<Container> {
    */
   async findByIdentifier(identifier: string, tenantId: string): Promise<Container | null> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('identifier', identifier)
@@ -105,7 +105,7 @@ export class ContainerRepository extends BaseRepository<Container> {
    */
   async getDefault(tenantId: string): Promise<Container | null> {
     try {
-      const { data, error} = await this.supabaseClient
+      const { data, error} = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('tenant_id', tenantId)
@@ -140,7 +140,7 @@ export class ContainerRepository extends BaseRepository<Container> {
     offset?: number;
   }): Promise<{ data: Container[]; count: number }> {
     try {
-      let query = this.supabaseClient
+      let query = this.supabase
         .from(this.tableName)
         .select('*', { count: 'exact' })
         .eq('tenant_id', options.tenantId);
@@ -180,7 +180,7 @@ export class ContainerRepository extends BaseRepository<Container> {
       if (error) throw error;
 
       return {
-        data: (data || []).map(item => this.mapFromDb(item)),
+        data: (data || []).map((item: any) => this.mapFromDb(item)),
         count: count || 0,
       };
     } catch (error) {
@@ -201,9 +201,12 @@ export class ContainerRepository extends BaseRepository<Container> {
     try {
       // Validate input
       const validated = ContainerCreateSchema.parse(data);
+      
+      // Get tenant ID from auth
+      const tenantId = await this.getTenantId();
 
       // Check for duplicate identifier
-      const existing = await this.findByIdentifier(validated.identifier, validated.tenantId);
+      const existing = await this.findByIdentifier(validated.identifier, tenantId);
       if (existing) {
         throw createAppError({
           code: 'CONTAINER_DUPLICATE',
@@ -215,12 +218,17 @@ export class ContainerRepository extends BaseRepository<Container> {
 
       // If marked as default, unset other defaults
       if (validated.isDefault) {
-        await this.unsetDefaults(validated.tenantId);
+        await this.unsetDefaults(tenantId);
       }
 
-      const { data: created, error } = await this.supabaseClient
-        .from(this.tableName)
-        .insert(this.mapToDb(validated))
+      const dbData = {
+        ...this.mapToDb(validated),
+        tenant_id: tenantId
+      };
+      
+      const { data: created, error } = await this.supabase
+        .from(this.tableName as any)
+        .insert(dbData as any)
         .select()
         .single();
 
@@ -241,19 +249,22 @@ export class ContainerRepository extends BaseRepository<Container> {
   /**
    * Update container with validation
    */
-  async update(id: string, data: ContainerUpdate, tenantId: string): Promise<Container> {
+  async update(id: string, data: Record<string, any>): Promise<Record<string, any>> {
     try {
       // Validate input
       const validated = ContainerUpdateSchema.parse(data);
+      
+      // Get tenant ID from auth
+      const tenantId = await this.getTenantId();
 
       // If setting as default, unset others
       if (validated.isDefault) {
         await this.unsetDefaults(tenantId);
       }
 
-      const { data: updated, error } = await this.supabaseClient
-        .from(this.tableName)
-        .update(this.mapToDb(validated))
+      const { data: updated, error } = await this.supabase
+        .from(this.tableName as any)
+        .update(this.mapToDb(validated) as any)
         .eq('id', id)
         .eq('tenant_id', tenantId)
         .select()
@@ -276,11 +287,13 @@ export class ContainerRepository extends BaseRepository<Container> {
   /**
    * Soft delete container
    */
-  async delete(id: string, tenantId: string): Promise<void> {
+  async delete(id: string): Promise<void> {
     try {
-      const { error } = await this.supabaseClient
-        .from(this.tableName)
-        .update({ is_active: false })
+      const tenantId = await this.getTenantId();
+      
+      const { error } = await this.supabase
+        .from(this.tableName as any)
+        .update({ is_active: false } as any)
         .eq('id', id)
         .eq('tenant_id', tenantId);
 
@@ -303,13 +316,13 @@ export class ContainerRepository extends BaseRepository<Container> {
    */
   async createAssignment(assignment: ContainerAssignmentCreate): Promise<ContainerAssignment> {
     try {
-      const { data, error } = await this.supabaseClient
-        .from('container_assignments')
+      const { data, error } = await this.supabase
+        .from('container_assignments' as any)
         .insert({
           ...assignment,
           status: 'active',
           assigned_at: new Date().toISOString(),
-        })
+        } as any)
         .select()
         .single();
 
@@ -332,7 +345,7 @@ export class ContainerRepository extends BaseRepository<Container> {
    */
   async findActiveAssignment(itemId: string, tenantId: string): Promise<ContainerAssignment | null> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from('container_assignments')
         .select('*')
         .eq('item_id', itemId)
@@ -367,7 +380,7 @@ export class ContainerRepository extends BaseRepository<Container> {
     activeOnly = true
   ): Promise<ContainerAssignment[]> {
     try {
-      let query = this.supabaseClient
+      let query = this.supabase
         .from('container_assignments')
         .select('*')
         .eq('container_id', containerId)
@@ -402,13 +415,13 @@ export class ContainerRepository extends BaseRepository<Container> {
     tenantId: string
   ): Promise<void> {
     try {
-      const { error } = await this.supabaseClient
-        .from('container_assignments')
+      const { error } = await this.supabase
+        .from('container_assignments' as any)
         .update({ 
           checked_out_at: new Date().toISOString(),
           checked_out_by: checkedOutBy,
           status: 'completed'
-        })
+        } as any)
         .eq('id', assignmentId)
         .eq('tenant_id', tenantId);
 
@@ -438,13 +451,13 @@ export class ContainerRepository extends BaseRepository<Container> {
           code: 'CONTAINER_NOT_FOUND',
           message: 'Container not found',
           severity: ErrorSeverity.LOW,
-          category: ErrorCategory.NOT_FOUND,
+          category: ErrorCategory.DATABASE,
         });
       }
 
       const assignments = await this.findAssignmentsByContainer(containerId, tenantId);
 
-      return { ...container, assignments };
+      return { ...container, assignments } as Container & { assignments: ContainerAssignment[] };
     } catch (error) {
       throw createAppError({
         code: 'CONTAINER_WITH_ASSIGNMENTS_FAILED',
@@ -462,9 +475,9 @@ export class ContainerRepository extends BaseRepository<Container> {
    * Unset all default containers for a tenant
    */
   private async unsetDefaults(tenantId: string): Promise<void> {
-    await this.supabaseClient
-      .from(this.tableName)
-      .update({ is_default: false })
+    await this.supabase
+      .from(this.tableName as any)
+      .update({ is_default: false } as any)
       .eq('tenant_id', tenantId)
       .eq('is_default', true);
   }
@@ -495,21 +508,19 @@ export class ContainerRepository extends BaseRepository<Container> {
   /**
    * Map from domain model to database format
    */
-  private mapToDb(data: Partial<Container>): any {
+  private mapToDb(data: any): any {
     const mapped: any = {};
     
-    if (data.id !== undefined) mapped.id = data.id;
-    if (data.tenantId !== undefined) mapped.tenant_id = data.tenantId;
+    // Map known Container properties
     if (data.name !== undefined) mapped.name = data.name;
     if (data.identifier !== undefined) mapped.identifier = data.identifier;
-    if (data.description !== undefined) mapped.description = data.description;
     if (data.containerType !== undefined) mapped.container_type = data.containerType;
     if (data.color !== undefined) mapped.color = data.color;
-    if (data.defaultItems !== undefined) mapped.default_items = data.defaultItems;
+    if (data.capacityInfo !== undefined) mapped.capacity_info = data.capacityInfo;
+    if (data.primaryImageUrl !== undefined) mapped.primary_image_url = data.primaryImageUrl;
+    if (data.additionalImageUrls !== undefined) mapped.additional_image_urls = data.additionalImageUrls;
     if (data.isDefault !== undefined) mapped.is_default = data.isDefault;
     if (data.isActive !== undefined) mapped.is_active = data.isActive;
-    if (data.parentContainerId !== undefined) mapped.parent_container_id = data.parentContainerId;
-    if (data.gpsLocation !== undefined) mapped.gps_location = data.gpsLocation;
     if (data.metadata !== undefined) mapped.metadata = data.metadata;
 
     return mapped;
@@ -517,4 +528,4 @@ export class ContainerRepository extends BaseRepository<Container> {
 }
 
 // Export for backward compatibility
-export { Container, ContainerCreate, ContainerUpdate, ContainerFilters } from '../types/container-types';
+export type { Container, ContainerCreate, ContainerUpdate, ContainerFilters } from '../types/container-types';

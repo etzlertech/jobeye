@@ -140,6 +140,7 @@ export interface ContainerFilters {
   isActive?: boolean;
   isDefault?: boolean;
   hasCapacity?: boolean;
+  searchTerm?: string;
 }
 
 // Validation schemas

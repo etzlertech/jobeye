@@ -49,6 +49,7 @@ import {
   Customer,
   CustomerCreate,
   CustomerUpdate,
+  CustomerStatus,
   OfflineOperation,
   OfflineOperationType,
   SyncConflict,
@@ -189,7 +190,7 @@ export class CustomerOfflineSync {
       // Voice announcement of results
       if (result.successful > 0 || result.failed > 0) {
         const message = this.buildSyncResultMessage(result);
-        await voiceLogger.speak(message);
+        await voiceLogger.speak(message, {});
       }
 
       return result;
@@ -293,8 +294,7 @@ export class CustomerOfflineSync {
     
     // Check if already exists (created by another device)
     const existing = await this.customerService.findById(
-      operation.entityId!,
-      tenantId
+      operation.entityId!
     );
 
     if (existing) {
@@ -319,7 +319,7 @@ export class CustomerOfflineSync {
   ): Promise<SyncConflict | null> {
     const { entityId, data, tenantId, version } = operation;
     
-    const current = await this.customerService.findById(entityId!, tenantId);
+    const current = await this.customerService.findById(entityId!);
     
     if (!current) {
       return {
@@ -353,14 +353,15 @@ export class CustomerOfflineSync {
   ): Promise<SyncConflict | null> {
     const { entityId, tenantId } = operation;
     
-    const exists = await this.customerService.findById(entityId!, tenantId);
+    const exists = await this.customerService.findById(entityId!);
     
     if (!exists) {
       // Already deleted, consider it successful
       return null;
     }
 
-    await this.customerService.deleteCustomer(entityId!, tenantId);
+    // CustomerService doesn't have deleteCustomer, update status instead
+    await this.customerService.changeCustomerStatus(entityId!, CustomerStatus.ARCHIVED);
     return null;
   }
 
@@ -368,12 +369,22 @@ export class CustomerOfflineSync {
    * Apply local version in conflict resolution
    */
   private async applyLocalVersion(conflict: SyncConflict): Promise<void> {
+    const remoteData = conflict.remoteData as Customer | undefined;
+    if (!remoteData?.id || !remoteData?.tenant_id) {
+      throw createAppError({
+        code: 'INVALID_CONFLICT_DATA',
+        message: 'Cannot apply local version - missing remote data',
+        severity: ErrorSeverity.HIGH,
+        category: ErrorCategory.BUSINESS_LOGIC,
+      });
+    }
+
     const operation: OfflineOperation = {
       id: conflict.operationId,
       type: OfflineOperationType.UPDATE,
-      entityId: conflict.remoteData?.id,
-      data: conflict.localData,
-      tenantId: conflict.remoteData?.tenant_id,
+      entityId: remoteData.id,
+      data: conflict.localData || {},
+      tenantId: remoteData.tenant_id,
       timestamp: new Date(),
     };
 
@@ -405,8 +416,18 @@ export class CustomerOfflineSync {
       updatedAt: new Date(),
     };
 
+    const remoteData = conflict.remoteData as Customer | undefined;
+    if (!remoteData?.id) {
+      throw createAppError({
+        code: 'INVALID_CONFLICT_DATA',
+        message: 'Cannot merge - missing remote data',
+        severity: ErrorSeverity.HIGH,
+        category: ErrorCategory.BUSINESS_LOGIC,
+      });
+    }
+
     await this.customerService.updateCustomer(
-      conflict.remoteData.id,
+      remoteData.id,
       merged
     );
   }
@@ -418,10 +439,11 @@ export class CustomerOfflineSync {
     this.isOnline = true;
     
     await voiceLogger.speak(
-      'Connection restored. Syncing offline changes...'
+      'Connection restored. Syncing offline changes...',
+      {}
     );
 
-    this.eventBus.emit('customer:sync:online');
+    this.eventBus.emit('customer:sync:online', { status: 'online' });
     
     // Auto-sync with delay
     setTimeout(async () => {
@@ -441,10 +463,11 @@ export class CustomerOfflineSync {
     this.isOnline = false;
     
     voiceLogger.speak(
-      'Connection lost. Your changes will be saved offline.'
+      'Connection lost. Your changes will be saved offline.',
+      {}
     );
 
-    this.eventBus.emit('customer:sync:offline');
+    this.eventBus.emit('customer:sync:offline', { status: 'offline' });
   }
 
   /**
@@ -454,8 +477,8 @@ export class CustomerOfflineSync {
     if (typeof window === 'undefined') return;
 
     const data = Array.from(this.queue.entries()).map(([id, entry]) => ({
-      id,
       ...entry,
+      id, // Override the id from entry if it exists
       timestamp: entry.timestamp.toISOString(),
     }));
 

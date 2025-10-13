@@ -298,6 +298,11 @@ export const equipmentCreateSchema = z.object({
   notes: z.string().optional(),
   tags: z.array(z.string()).default([]),
   customFields: z.record(z.any()).optional(),
+  voiceMetadata: z.object({
+    sessionId: z.string().optional(),
+    confidence: z.number().optional(),
+    recognizedText: z.string().optional(),
+  }).optional(),
 });
 
 export const equipmentUpdateSchema = z.object({

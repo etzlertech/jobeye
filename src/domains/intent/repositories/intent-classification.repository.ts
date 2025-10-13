@@ -37,7 +37,7 @@
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { OfflineDatabase } from '@/lib/offline/offline-db';
-import { AppError } from '@/core/errors/error-types';
+import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
 
 // Intent types based on user actions
 export type IntentType = 
@@ -100,7 +100,7 @@ export class IntentClassificationRepository {
   private offlineDb: OfflineDatabase;
 
   constructor() {
-    this.offlineDb = new OfflineDatabase();
+    this.offlineDb = OfflineDatabase.getInstance();
   }
 
   /**
@@ -208,9 +208,8 @@ export class IntentClassificationRepository {
             priority: 'low'
           });
           
-          throw new AppError('Feedback queued for sync', {
-            code: 'OFFLINE_FEEDBACK_QUEUED'
-          });
+          // Feedback queued for sync - not really an error
+          return;
         }
         
         throw new AppError('Failed to update feedback', {
@@ -223,9 +222,12 @@ export class IntentClassificationRepository {
     } catch (error) {
       if (error instanceof AppError) throw error;
       
-      throw new AppError('Failed to update feedback', {
+      throw createAppError({
         code: 'INTENT_FEEDBACK_ERROR',
-        details: error
+        message: 'Failed to update feedback',
+        severity: ErrorSeverity.LOW,
+        category: ErrorCategory.DATABASE,
+        originalError: error as Error
       });
     }
   }
@@ -278,17 +280,23 @@ export class IntentClassificationRepository {
       const { data: classifications, error } = await query;
 
       if (error) {
-        throw new AppError('Failed to fetch classifications', {
+        throw createAppError({
           code: 'INTENT_FETCH_ERROR',
-          details: error
+          message: 'Failed to fetch classifications',
+          severity: ErrorSeverity.MEDIUM,
+          category: ErrorCategory.DATABASE,
+          originalError: error as Error
         });
       }
 
       return classifications.map(this.mapToModel);
     } catch (error) {
-      throw new AppError('Failed to fetch classifications', {
+      throw createAppError({
         code: 'INTENT_FETCH_ERROR',
-        details: error
+        message: 'Failed to fetch classifications',
+        severity: ErrorSeverity.MEDIUM,
+        category: ErrorCategory.DATABASE,
+        originalError: error as Error
       });
     }
   }
@@ -313,17 +321,23 @@ export class IntentClassificationRepository {
         .limit(limit);
 
       if (error) {
-        throw new AppError('Failed to fetch recent intents', {
+        throw createAppError({
           code: 'INTENT_FETCH_ERROR',
-          details: error
+          message: 'Failed to fetch recent intents',
+          severity: ErrorSeverity.LOW,
+          category: ErrorCategory.DATABASE,
+          originalError: error as Error
         });
       }
 
       return classifications.map(this.mapToModel);
     } catch (error) {
-      throw new AppError('Failed to fetch recent intents', {
+      throw createAppError({
         code: 'INTENT_FETCH_ERROR',
-        details: error
+        message: 'Failed to fetch recent intents',
+        severity: ErrorSeverity.LOW,
+        category: ErrorCategory.DATABASE,
+        originalError: error as Error
       });
     }
   }
@@ -359,9 +373,12 @@ export class IntentClassificationRepository {
         .lte('created_at', endDate.toISOString());
 
       if (error) {
-        throw new AppError('Failed to fetch accuracy metrics', {
+        throw createAppError({
           code: 'INTENT_METRICS_ERROR',
-          details: error
+          message: 'Failed to fetch accuracy metrics',
+          severity: ErrorSeverity.LOW,
+          category: ErrorCategory.BUSINESS_LOGIC,
+          originalError: error as Error
         });
       }
 
@@ -416,9 +433,12 @@ export class IntentClassificationRepository {
 
       return metrics;
     } catch (error) {
-      throw new AppError('Failed to calculate accuracy metrics', {
+      throw createAppError({
         code: 'INTENT_METRICS_ERROR',
-        details: error
+        message: 'Failed to calculate accuracy metrics',
+        severity: ErrorSeverity.LOW,
+        category: ErrorCategory.BUSINESS_LOGIC,
+        originalError: error as Error
       });
     }
   }
@@ -444,17 +464,23 @@ export class IntentClassificationRepository {
         .single();
 
       if (error) {
-        throw new AppError('Failed to mark as processed', {
+        throw createAppError({
           code: 'INTENT_UPDATE_ERROR',
-          details: error
+          message: 'Failed to mark as processed',
+          severity: ErrorSeverity.MEDIUM,
+          category: ErrorCategory.DATABASE,
+          originalError: error as Error
         });
       }
 
       return this.mapToModel(classification);
     } catch (error) {
-      throw new AppError('Failed to mark as processed', {
+      throw createAppError({
         code: 'INTENT_UPDATE_ERROR',
-        details: error
+        message: 'Failed to mark as processed',
+        severity: ErrorSeverity.MEDIUM,
+        category: ErrorCategory.DATABASE,
+        originalError: error as Error
       });
     }
   }

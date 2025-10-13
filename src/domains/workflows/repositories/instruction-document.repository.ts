@@ -199,7 +199,7 @@ export class InstructionDocumentRepository {
         doc.title?.toLowerCase().includes(searchLower) ||
         doc.description?.toLowerCase().includes(searchLower) ||
         doc.content?.toLowerCase().includes(searchLower) ||
-        doc.tags?.some((tag) => tag.toLowerCase().includes(searchLower))
+        doc.tags?.some((tag: any) => tag.toLowerCase().includes(searchLower))
       );
     });
   }
@@ -333,7 +333,7 @@ export class InstructionDocumentRepository {
     // Flatten and deduplicate
     const allTags = new Set<string>();
     (data || []).forEach((doc) => {
-      (doc.tags || []).forEach((tag) => allTags.add(tag));
+      (doc.tags || []).forEach((tag: any) => allTags.add(tag));
     });
 
     return Array.from(allTags).sort();

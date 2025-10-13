@@ -61,7 +61,7 @@ export function setupVisionServiceMock() {
         modelVersion: 'mock-v1',
       }));
 
-      const detectedItems = detections.map((detection) => ({
+      const detectedItems = detections.map((detection: any) => ({
         itemType: detection.itemType,
         confidence: detection.confidence,
         matchStatus: 'matched' as const,
@@ -72,7 +72,7 @@ export function setupVisionServiceMock() {
       }));
 
       const confidenceScore = detections.length
-        ? detections.reduce((sum: number, d) => sum + d.confidence, 0) / detections.length
+        ? detections.reduce((sum: number, d: any) => sum + d.confidence, 0) / detections.length
         : 0;
 
       return {

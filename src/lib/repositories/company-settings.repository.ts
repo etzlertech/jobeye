@@ -24,7 +24,7 @@ import {
 const TABLE_NAME = 'company_settings';
 
 export class CompanySettingsRepository {
-  constructor(private readonly client: SupabaseClient<Database> = supabase) {}
+  constructor(private readonly client: SupabaseClient = supabase) {}
 
   async getForCompany(tenantId: string): Promise<CompanySettings | null> {
     try {

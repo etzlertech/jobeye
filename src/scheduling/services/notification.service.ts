@@ -41,7 +41,7 @@ interface NotificationPayload {
 export class NotificationService {
   private offlineQueue: NotificationPayload[] = [];
 
-  constructor(private supabase: SupabaseClient<Database>) {}
+  constructor(private supabase: SupabaseClient) {}
 
   async sendNotification(payload: NotificationPayload): Promise<void> {
     // Check if online

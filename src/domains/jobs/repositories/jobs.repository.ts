@@ -66,7 +66,7 @@ export interface JobFilters {
 }
 
 export class JobsRepository {
-  constructor(private client: SupabaseClient<Database>) {}
+  constructor(private client: SupabaseClient) {}
 
   /**
    * Find jobs with related customer and property data

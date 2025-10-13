@@ -74,6 +74,15 @@ export interface TTSOptions {
   pitch?: number;
 }
 
+export interface VoiceInteractionLog {
+  action: string;
+  duration?: number;
+  provider?: string;
+  voice?: string;
+  metadata?: Record<string, any>;
+  [key: string]: unknown;
+}
+
 export class VoiceLogger extends Logger {
   constructor() {
     super('voice-logger');
@@ -101,6 +110,10 @@ export class VoiceLogger extends Logger {
       voice: options.voice,
       rate: options.rate
     });
+  }
+
+  async logVoiceInteraction(entry: VoiceInteractionLog): Promise<void> {
+    this.info('Voice interaction event', entry);
   }
 
   /**

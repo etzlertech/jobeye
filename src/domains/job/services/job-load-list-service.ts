@@ -89,14 +89,14 @@ interface OfflineOperation {
 }
 
 export class JobLoadListService {
-  private supabase: SupabaseClient<Database>;
+  private supabase: SupabaseClient;
   private containerService: ContainerService;
   private loadVerificationRepo: LoadVerificationRepository;
   private logger: VoiceLogger;
   private offlineQueue: OfflineOperation[] = [];
 
   constructor(
-    supabase: SupabaseClient<Database>,
+    supabase: SupabaseClient,
     containerService?: ContainerService,
     loadVerificationRepo?: LoadVerificationRepository,
     logger?: VoiceLogger

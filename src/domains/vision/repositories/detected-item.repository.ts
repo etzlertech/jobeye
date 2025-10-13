@@ -246,7 +246,7 @@ export async function getItemStatsForVerification(
 
   // Calculate item type counts
   const itemTypeCounts = data.reduce((acc, item) => {
-    const existing = acc.find(i => i.itemType === item.item_type);
+    const existing = acc.find((i: any) => i.itemType === item.item_type);
     if (existing) {
       existing.count++;
     } else {
@@ -261,7 +261,7 @@ export async function getItemStatsForVerification(
     unmatched: data.filter(i => i.match_status === 'unmatched').length,
     uncertain: data.filter(i => i.match_status === 'uncertain').length,
     avgConfidence: data.reduce((sum, i) => sum + Number(i.confidence_score), 0) / data.length,
-    itemTypes: itemTypeCounts.sort((a, b) => b.count - a.count)
+    itemTypes: itemTypeCounts.sort((a: any, b: any) => b.count - a.count)
   };
 
   return { data: stats, error: null };

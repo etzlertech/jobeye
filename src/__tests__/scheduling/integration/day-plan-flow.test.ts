@@ -16,7 +16,7 @@ import { RouteOptimizationService } from '@/scheduling/services/route-optimizati
 import type { Database } from '@/types/database';
 
 describe('Day Plan Flow Integration', () => {
-  let supabase: SupabaseClient<Database>;
+  let supabase: SupabaseClient;
   let dayPlanRepo: DayPlanRepository;
   let scheduleEventRepo: ScheduleEventRepository;
   let dayPlanService: DayPlanService;

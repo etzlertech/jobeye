@@ -7,7 +7,7 @@
  * spec_ref: v4-vision-blueprint-extended.md
  * complexity_budget: 250
  * dependencies:
- *   - internal: JobLoadListService, LoadVerificationRepository, MultiObjectVisionService
+ *   - internal: JobLoadListService, LoadVerificationRecordRepository, MultiObjectVisionService
  *   - external: uuid
  * exports: ChecklistVerificationService
  * voice_considerations:
@@ -35,7 +35,8 @@ import { VoiceLogger } from '@/core/logger/voice-logger';
 import type { 
   DetectedContainer, 
   DetectedItem,
-  LoadVerification 
+  LoadVerificationRecord,
+  LoadVerificationPersistencePayload
 } from '@/domains/vision/types/load-verification-types';
 
 export interface VerificationRequest {
@@ -97,9 +98,9 @@ interface OfflineVerification {
 }
 
 export class ChecklistVerificationService {
-  private supabase: SupabaseClient<Database>;
+  private supabase: SupabaseClient;
   private loadListService: JobLoadListService;
-  private loadVerificationRepo: LoadVerificationRepository;
+  private loadVerificationRepo: LoadVerificationRecordRepository;
   private visionService: MultiObjectVisionService;
   private logger: VoiceLogger;
   private offlineQueue: OfflineVerification[] = [];
@@ -108,7 +109,7 @@ export class ChecklistVerificationService {
   private readonly CONTAINER_MATCH_THRESHOLD = 0.8;
 
   constructor(
-    supabase: SupabaseClient<Database>,
+    supabase: SupabaseClient,
     loadListService?: JobLoadListService,
     loadVerificationRepo?: LoadVerificationRepository,
     visionService?: MultiObjectVisionService,
@@ -116,7 +117,7 @@ export class ChecklistVerificationService {
   ) {
     this.supabase = supabase;
     this.loadListService = loadListService || new JobLoadListService(supabase);
-    this.loadVerificationRepo = loadVerificationRepo || new LoadVerificationRepository(supabase);
+    this.loadVerificationRepo = loadVerificationRepo || new LoadVerificationRecordRepository(supabase);
     this.visionService = visionService || new MultiObjectVisionService(supabase);
     this.logger = logger || new VoiceLogger();
     this.loadOfflineQueue();
@@ -134,7 +135,7 @@ export class ChecklistVerificationService {
         return this.createEmptyResult(request.job_id, 'No checklist items found');
       }
 
-      let verification: LoadVerification;
+      let verification: LoadVerificationRecord;
 
       if (request.verification_mode === 'auto' && (request.media_id || request.frame_data)) {
         // Run vision analysis
@@ -142,7 +143,7 @@ export class ChecklistVerificationService {
         verification = visionResult;
       } else {
         // Manual or hybrid mode - use existing verification data
-        const latest = await this.loadVerificationRepo.getLatestForJob(request.job_id);
+        const latest = await this.loadVerificationRepo.findLatestByJob(request.job_id);
         if (!latest) {
           return this.createEmptyResult(request.job_id, 'No verification data available');
         }
@@ -208,7 +209,7 @@ export class ChecklistVerificationService {
   private async runVisionAnalysis(
     request: VerificationRequest,
     checklist: LoadListItem[]
-  ): Promise<LoadVerification> {
+  ): Promise<LoadVerificationRecord> {
     // Prepare media for vision service
     let mediaId = request.media_id;
     
@@ -260,7 +261,7 @@ export class ChecklistVerificationService {
 
     // Create verification record
     const verification = await this.loadVerificationRepo.create({
-      job_id: request.job_id,
+      jobId: request.job_id,
       media_id: mediaId!,
       detected_containers: analysisResult.containers,
       detected_items: analysisResult.items,
@@ -278,7 +279,7 @@ export class ChecklistVerificationService {
 
   private async matchChecklistWithDetections(
     checklist: LoadListItem[],
-    verification: LoadVerification,
+    verification: LoadVerificationRecord,
     confidenceThreshold: number
   ): Promise<VerificationResult> {
     const result: VerificationResult = {

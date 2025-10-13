@@ -35,24 +35,32 @@
 
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
-import type { Database } from '@/types/database';
+import type { Database } from '@/lib/supabase/types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+if (!supabaseUrl) {
+  throw new Error('Missing Supabase environment variable NEXT_PUBLIC_SUPABASE_URL');
 }
+
+if (!supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variable NEXT_PUBLIC_SUPABASE_ANON_KEY');
+}
+
+const resolvedSupabaseUrl = supabaseUrl as string;
+const resolvedSupabaseAnonKey = supabaseAnonKey as string;
 
 /**
  * Create a Supabase client for server-side use with cookie support.
  */
-export async function createClient() {
+export async function createClient(): Promise<SupabaseClient<Database>> {
   try {
     const cookieStore = await cookies();
 
-    return createSupabaseServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+    return createSupabaseServerClient<Database>(resolvedSupabaseUrl, resolvedSupabaseAnonKey, {
       cookies: {
         getAll: () => cookieStore.getAll().map(({ name, value }) => ({ name, value })),
         setAll: (cookieList) => {
@@ -68,7 +76,7 @@ export async function createClient() {
     });
   } catch (error) {
     // Fallback for tests or environments without Next.js cookies helper
-    return createSupabaseServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+    return createSupabaseServerClient<Database>(resolvedSupabaseUrl, resolvedSupabaseAnonKey, {
       cookies: {
         getAll: () => [],
         setAll: () => undefined
@@ -80,14 +88,14 @@ export async function createClient() {
 /**
  * Create a Supabase client with service role key for admin operations.
  */
-export function createServiceClient() {
+export function createServiceClient(): SupabaseClient<Database> {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!serviceKey) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set');
   }
 
-  return createSupabaseClient<Database>(supabaseUrl, serviceKey, {
+  return createSupabaseClient<Database>(resolvedSupabaseUrl, serviceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false

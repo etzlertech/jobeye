@@ -48,7 +48,7 @@ export interface ScheduleEventFilters {
 }
 
 export class ScheduleEventRepository {
-  constructor(private supabase: SupabaseClient<Database>) {}
+  constructor(private supabase: SupabaseClient) {}
 
   async findById(id: string): Promise<ScheduleEvent | null> {
     const { data, error } = await this.supabase

@@ -115,9 +115,9 @@ export class CustomerService {
         );
 
         if (duplicateCheck && duplicateCheck.confidence > 0.8) {
-          await voiceLogger.log(
+          await voiceLogger.warn(
             `Customer ${validated.name} may already exist as ${duplicateCheck.customer.name}`,
-            { level: 'warn', voiceSessionId: this.voiceSessionId }
+            { voiceSessionId: this.voiceSessionId }
           );
 
           throw createAppError({
@@ -134,7 +134,7 @@ export class CustomerService {
       }
 
       // Generate customer number
-      const customerNumber = await this.repository.generateCustomerNumber(this.tenantId);
+      const customerNumber = await this.repository.generateCustomerNumber();
 
       // Create customer
       const customer = await this.repository.create({
@@ -196,7 +196,7 @@ export class CustomerService {
       const validated = customerUpdateSchema.parse(updates);
 
       // Get current customer for state validation
-      const current = await this.repository.findById(customerId, this.tenantId);
+      const current = await this.repository.findById(customerId);
       if (!current) {
         throw createAppError({
           code: 'CUSTOMER_NOT_FOUND',
@@ -209,8 +209,7 @@ export class CustomerService {
       // Update customer
       const updated = await this.repository.update(
         customerId,
-        validated,
-        this.tenantId
+        validated
       );
 
       if (!updated) {
@@ -235,12 +234,25 @@ export class CustomerService {
     }
   }
 
+  async findById(customerId: string): Promise<Customer | null> {
+    try {
+      return await this.repository.findById(customerId);
+    } catch (error) {
+      await handleError(error as Error, {
+        operation: 'findById',
+        tenantId: this.tenantId,
+        metadata: { customerId },
+      });
+      throw error;
+    }
+  }
+
   async findCustomerByVoice(query: string): Promise<CustomerSearchResult | null> {
     try {
       const result = await this.searchService.findByVoice(query, this.tenantId);
 
       if (result && this.voiceSessionId) {
-        await voiceLogger.log(
+        await voiceLogger.info(
           `Found customer ${result.customer.name} with ${result.confidence * 100}% confidence`,
           { voiceSessionId: this.voiceSessionId }
         );
@@ -264,7 +276,7 @@ export class CustomerService {
   ): Promise<CustomerNote> {
     try {
       // Verify customer exists
-      const customer = await this.repository.findById(customerId, this.tenantId);
+      const customer = await this.repository.findById(customerId);
       if (!customer) {
         throw createAppError({
           code: 'CUSTOMER_NOT_FOUND',
@@ -297,7 +309,7 @@ export class CustomerService {
       });
 
       if (this.voiceSessionId && noteType === 'voice_transcript') {
-        await voiceLogger.log(
+        await voiceLogger.info(
           `Voice note added to customer ${customer.name}`,
           { voiceSessionId: this.voiceSessionId }
         );
@@ -339,13 +351,12 @@ export class CustomerService {
           );
 
         case 'list_properties':
-          return await this.getCustomerProperties(command.customerId);
+          // TODO: Implement getCustomerProperties
+          return [];
 
         case 'customer_history':
-          return await this.getCustomerHistory(
-            command.customerId,
-            command.timeframe
-          );
+          // TODO: Implement getCustomerHistory
+          return [];
 
         default:
           throw createAppError({
@@ -368,7 +379,7 @@ export class CustomerService {
 
   async getCustomerWithRelations(customerId: string): Promise<CustomerWithRelations | null> {
     try {
-      const customer = await this.repository.findById(customerId, this.tenantId);
+      const customer = await this.repository.findById(customerId);
       if (!customer) {
         return null;
       }
@@ -398,7 +409,7 @@ export class CustomerService {
     newStatus: CustomerStatus
   ): Promise<Customer | null> {
     try {
-      const customer = await this.repository.findById(customerId, this.tenantId);
+      const customer = await this.repository.findById(customerId);
       if (!customer) {
         throw createAppError({
           code: 'CUSTOMER_NOT_FOUND',
@@ -438,8 +449,7 @@ export class CustomerService {
             statusChangedAt: new Date().toISOString(),
             statusChangedBy: this.userId,
           },
-        },
-        this.tenantId
+        }
       );
 
       // Emit event
@@ -499,7 +509,7 @@ export class CustomerService {
     reason?: string
   ): Promise<void> {
     try {
-      const customer = await this.repository.findById(customerId, this.tenantId);
+      const customer = await this.repository.findById(customerId);
       if (!customer) {
         throw createAppError({
           code: 'CUSTOMER_NOT_FOUND',

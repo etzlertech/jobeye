@@ -71,7 +71,7 @@ export interface BudgetStatus {
 }
 
 export class CostRecordRepository extends BaseRepository<'vision_cost_records'> {
-  constructor(supabaseClient: SupabaseClient<Database>) {
+  constructor(supabaseClient: SupabaseClient) {
     super('vision_cost_records', supabaseClient);
   }
 

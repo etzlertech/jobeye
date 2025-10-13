@@ -203,7 +203,7 @@ export class WorkflowsInstructionSearchService {
    */
   async getTrendingInstructions(limit: number = 10): Promise<InstructionSearchResult[]> {
     // Simplified - would track search analytics and return most popular
-    const allInstructions = [];
+    const allInstructions: any[] = [];
 
     // Mock trending by returning first N
     return allInstructions.slice(0, limit).map((inst) => ({
@@ -234,7 +234,7 @@ export class WorkflowsInstructionSearchService {
       filters.category = query.category;
     }
 
-    const allInstructions = [];
+    const allInstructions: any[] = [];
 
     // Calculate similarity scores
     const results: InstructionSearchResult[] = [];
@@ -279,7 +279,7 @@ export class WorkflowsInstructionSearchService {
       filters.category = query.category;
     }
 
-    const allInstructions = [];
+    const allInstructions: any[] = [];
 
     // Extract keywords from query
     const keywords = query.query

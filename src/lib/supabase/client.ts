@@ -35,7 +35,8 @@
 // --- END DIRECTIVE BLOCK ---
 
 import { createBrowserClient, createServerClient as createSupabaseServerClient } from '@supabase/ssr';
-import type { Database } from '@/types/database';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/lib/supabase/types';
 
 // Environment validation
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -74,7 +75,7 @@ export const supabase = createBrowserClient<Database>(
 );
 
 // Server client factory for Next.js App Router
-export async function createServerClient() {
+export async function createServerClient(): Promise<SupabaseClient<Database>> {
   const { cookies } = await import('next/headers');
 
   try {
@@ -143,5 +144,6 @@ export async function getUser() {
   };
 }
 
-// Alias for legacy imports expecting createSupabaseClient name
+// Aliases for legacy imports
+export const createClient = () => supabase;
 export const createSupabaseClient = () => supabase;

@@ -2,7 +2,7 @@
  * Unified item repository for all trackable items
  * Consolidates equipment, materials, tools, and consumables
  */
-import { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { BaseRepository } from '@/lib/repositories/base.repository';
 import {
   Item,
@@ -16,8 +16,9 @@ import {
   TrackingMode,
 } from '@/domains/shared/types/item-types';
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
+import type { Database } from '@/types/database';
 
-export class ItemRepository extends BaseRepository<Item> {
+export class ItemRepository extends BaseRepository<'items'> {
   constructor(supabaseClient: SupabaseClient) {
     super('items', supabaseClient);
   }

@@ -49,7 +49,7 @@ export interface KitWithItems extends Kit {
 }
 
 export class KitRepository {
-  constructor(private supabase: SupabaseClient<Database>) {}
+  constructor(private supabase: SupabaseClient) {}
 
   async findById(id: string): Promise<Kit | null> {
     const { data, error } = await this.supabase

@@ -176,8 +176,8 @@ export class WorkflowsAnalyticsService {
     endDate?: Date
   ): Promise<WorkflowBottleneck[]> {
     // Get all arrivals and completions in date range
-    const arrivals = [];
-    const completions = [];
+    const arrivals: any[] = [];
+    const completions: any[] = [];
 
     const bottlenecks: WorkflowBottleneck[] = [];
 
@@ -281,8 +281,8 @@ export class WorkflowsAnalyticsService {
     endDate?: Date
   ): Promise<CrewProductivitySummary[]> {
     // Get arrivals and completions
-    const arrivals = [];
-    const completions = [];
+    const arrivals: any[] = [];
+    const completions: any[] = [];
 
     // Group by user
     const userMap = new Map<
@@ -357,8 +357,8 @@ export class WorkflowsAnalyticsService {
     endDate?: Date
   ): Promise<Record<string, number>> {
     // Get arrivals and completions
-    const arrivals = [];
-    const completions = [];
+    const arrivals: any[] = [];
+    const completions: any[] = [];
 
     // Calculate completion times
     const durations: number[] = [];
@@ -404,7 +404,7 @@ export class WorkflowsAnalyticsService {
     endDate?: Date
   ): Promise<Array<{ date: Date; averageScore: number; count: number }>> {
     // Get completions in date range
-    const completions = [];
+    const completions: any[] = [];
 
     // Group by date
     const dateMap = new Map<string, { totalScore: number; count: number }>();

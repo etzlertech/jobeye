@@ -49,7 +49,7 @@ import { Database } from '@/types/database';
 // Base database types
 export type CustomerRow = Database['public']['Tables']['customers']['Row'];
 export type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
-export type CustomerUpdate = Database['public']['Tables']['customers']['Update'];
+// CustomerUpdate is defined later from the zod schema
 
 // Customer lifecycle states
 export enum CustomerStatus {

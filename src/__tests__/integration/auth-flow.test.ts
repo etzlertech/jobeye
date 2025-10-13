@@ -7,7 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
 
 describe('Authentication Flow Integration', () => {
-  let mockSupabase: SupabaseClient<Database>;
+  let mockSupabase: SupabaseClient;
 
   beforeEach(() => {
     mockSupabase = createMockSupabaseClient();

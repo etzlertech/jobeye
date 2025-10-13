@@ -18,7 +18,7 @@ import { SchedulingService } from '@/scheduling/services/scheduling.service';
 import type { Database } from '@/types/database';
 
 describe('Offline Sync Integration', () => {
-  let supabase: SupabaseClient<Database>;
+  let supabase: SupabaseClient;
   let offlineCache: OfflineCache;
   let syncQueue: SyncQueue;
   let conflictResolver: ConflictResolver;

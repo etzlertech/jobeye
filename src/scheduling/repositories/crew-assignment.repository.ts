@@ -47,7 +47,7 @@ export interface CrewAssignmentFilters {
 }
 
 export class CrewAssignmentRepository {
-  constructor(private supabase: SupabaseClient<Database>) {}
+  constructor(private supabase: SupabaseClient) {}
 
   async findById(id: string): Promise<CrewAssignment | null> {
     const { data, error } = await this.supabase

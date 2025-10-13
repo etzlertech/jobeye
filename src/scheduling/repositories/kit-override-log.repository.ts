@@ -61,7 +61,7 @@ export interface OverrideAnalytics {
 }
 
 export class KitOverrideLogRepository {
-  constructor(private supabase: SupabaseClient<Database>) {}
+  constructor(private supabase: SupabaseClient) {}
 
   async findById(id: string): Promise<KitOverrideLog | null> {
     const { data, error } = await this.supabase

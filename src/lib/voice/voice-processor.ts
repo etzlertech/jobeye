@@ -51,7 +51,7 @@
 
 import { offlineDB, VoiceRecording } from '@/lib/offline/offline-db';
 import { syncManager } from '@/lib/offline/sync-manager';
-import { AppError } from '@/core/errors/error-types';
+import { VoiceError, ErrorCode } from '@/core/errors/error-types';
 import { voiceLogger } from '@/core/logger/voice-logger';
 
 export interface VoiceCommand {
@@ -150,34 +150,41 @@ export class VoiceProcessor {
       return;
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    this.recognition = new SpeechRecognition();
+    const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) {
+      voiceLogger.warn('Speech recognition constructor unavailable despite browser support check');
+      return;
+    }
 
-    this.recognition.continuous = this.options.continuous || false;
-    this.recognition.interimResults = this.options.interimResults || true;
-    this.recognition.lang = this.options.language || 'en-US';
-    this.recognition.maxAlternatives = this.options.maxAlternatives || 1;
+    const recognition = new SpeechRecognitionCtor();
 
-    this.recognition.onstart = () => {
+    recognition.continuous = this.options.continuous || false;
+    recognition.interimResults = this.options.interimResults || true;
+    recognition.lang = this.options.language || 'en-US';
+    recognition.maxAlternatives = this.options.maxAlternatives || 1;
+
+    recognition.onstart = () => {
       this.isListening = true;
       voiceLogger.info('Voice recognition started');
       this.dispatchEvent('voicestart');
     };
 
-    this.recognition.onend = () => {
+    recognition.onend = () => {
       this.isListening = false;
       voiceLogger.info('Voice recognition ended');
       this.dispatchEvent('voiceend');
     };
 
-    this.recognition.onerror = (event) => {
-      voiceLogger.error('Voice recognition error', event.error);
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      voiceLogger.error('Voice recognition error', { error: event.error });
       this.dispatchEvent('voiceerror', { error: event.error });
     };
 
-    this.recognition.onresult = (event) => {
-      this.handleSpeechResult(event);
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      void this.handleSpeechResult(event);
     };
+
+    this.recognition = recognition;
   }
 
   private initializeSpeechSynthesis(): void {
@@ -211,7 +218,7 @@ export class VoiceProcessor {
 
       this.dispatchEvent('voiceresult', { transcript, confidence, isFinal });
     } catch (error) {
-      voiceLogger.error('Error handling speech result', error);
+      voiceLogger.error('Error handling speech result', { error });
     }
   }
 
@@ -220,7 +227,7 @@ export class VoiceProcessor {
     context?: VoiceCommand['context'];
   }): Promise<void> {
     if (!this.recognition) {
-      throw new AppError('Speech recognition not available', 'VOICE_NOT_SUPPORTED');
+      throw new VoiceError('Speech recognition not available', ErrorCode.VOICE_DEVICE);
     }
 
     if (this.isListening) {
@@ -241,8 +248,8 @@ export class VoiceProcessor {
       }
 
     } catch (error) {
-      voiceLogger.error('Failed to start listening', error);
-      throw new AppError('Failed to start voice recognition', 'VOICE_START_ERROR', { error });
+      voiceLogger.error('Failed to start listening', { error });
+      throw new VoiceError('Failed to start voice recognition', ErrorCode.VOICE_RECOGNITION);
     }
   }
 
@@ -270,7 +277,7 @@ export class VoiceProcessor {
 
       this.currentMediaRecorder.start(100); // Collect data every 100ms
     } catch (error) {
-      voiceLogger.error('Failed to start audio recording', error);
+      voiceLogger.error('Failed to start audio recording', { error });
     }
   }
 
@@ -322,7 +329,7 @@ export class VoiceProcessor {
       // Log the interaction
       voiceLogger.info('Voice command processed', {
         command: command.transcript,
-        intent: intent.action,
+        intent: intent?.action,
         response: response.text
       });
 
@@ -331,7 +338,7 @@ export class VoiceProcessor {
       return response;
 
     } catch (error) {
-      voiceLogger.error('Failed to process voice command', error);
+      voiceLogger.error('Failed to process voice command', { error, commandId: command.id });
       
       const errorResponse: VoiceResponse = {
         text: 'Sorry, I had trouble processing your command. Please try again.',
@@ -511,14 +518,15 @@ export class VoiceProcessor {
     pitch?: number;
     volume?: number;
   }): Promise<void> {
-    if (!this.synthesis) {
+    const synthesis = this.synthesis;
+    if (!synthesis) {
       voiceLogger.warn('Speech synthesis not available');
       return;
     }
 
     return new Promise((resolve, reject) => {
       if (this.isSpeaking) {
-        this.synthesis!.cancel();
+        synthesis.cancel();
       }
 
       const utterance = new SpeechSynthesisUtterance(text);
@@ -541,14 +549,14 @@ export class VoiceProcessor {
         resolve();
       };
 
-      utterance.onerror = (event) => {
+      utterance.onerror = (event: SpeechSynthesisErrorEvent) => {
         this.isSpeaking = false;
-        voiceLogger.error('Speech synthesis error', event.error);
+        voiceLogger.error('Speech synthesis error', { error: event.error });
         this.dispatchEvent('speecherror', { error: event.error });
-        reject(new AppError('Speech synthesis failed', 'SPEECH_ERROR', { error: event.error }));
+        reject(new VoiceError('Speech synthesis failed', ErrorCode.VOICE_SYNTHESIS));
       };
 
-      this.synthesis.speak(utterance);
+      synthesis.speak(utterance);
     });
   }
 
@@ -669,11 +677,3 @@ export class VoiceProcessor {
 
 // Export singleton instance
 export const voiceProcessor = VoiceProcessor.getInstance();
-
-// Types for global declarations
-declare global {
-  interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
-  }
-}

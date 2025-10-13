@@ -20,7 +20,7 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
   throw new Error('Contract test requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to be set');
 }
 
-const serviceClient = createSupabaseClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
+const serviceClient = createSupabaseClient(supabaseUrl, supabaseServiceRoleKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false

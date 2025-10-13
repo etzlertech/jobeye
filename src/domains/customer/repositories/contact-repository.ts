@@ -69,7 +69,7 @@ interface ContactSearchFilters {
 }
 
 export class ContactRepository extends BaseRepository<'contacts'> {
-  constructor(supabaseClient: SupabaseClient<Database>) {
+  constructor(supabaseClient: SupabaseClient) {
     super('contacts', supabaseClient);
   }
 
@@ -541,7 +541,7 @@ export class ContactRepository extends BaseRepository<'contacts'> {
 
 // Convenience exports
 export const createContactRepository = (
-  supabase: SupabaseClient<Database>
+  supabase: SupabaseClient
 ): ContactRepository => {
   return new ContactRepository(supabase);
 };

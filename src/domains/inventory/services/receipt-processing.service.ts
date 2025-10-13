@@ -241,7 +241,7 @@ async function matchLineItemsToInventory(
       );
       
       // Simple text match - in production would use better search
-      const matchedItem = items.find(item => 
+      const matchedItem = items.find((item: any) => 
         item.name.toLowerCase().includes(lineItem.description.toLowerCase())
       );
 

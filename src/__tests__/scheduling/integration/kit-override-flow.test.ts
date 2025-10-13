@@ -19,7 +19,7 @@ import type { Database } from '@/types/database';
 jest.mock('twilio');
 
 describe('Kit Override Flow Integration', () => {
-  let supabase: SupabaseClient<Database>;
+  let supabase: SupabaseClient;
   let kitService: KitService;
   let overrideService: KitOverrideService;
   let notificationService: NotificationService;

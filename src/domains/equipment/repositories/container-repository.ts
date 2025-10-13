@@ -55,7 +55,7 @@ import {
 } from '../types/container-types';
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
 
-export class ContainerRepository extends BaseRepository<Container> {
+export class ContainerRepository extends BaseRepository<'containers'> {
   constructor(supabaseClient: SupabaseClient) {
     super('containers', supabaseClient);
   }
@@ -65,7 +65,7 @@ export class ContainerRepository extends BaseRepository<Container> {
    */
   async findByIdentifier(identifier: string, tenantId: string): Promise<Container | null> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('identifier', identifier)
@@ -94,7 +94,7 @@ export class ContainerRepository extends BaseRepository<Container> {
    */
   async getDefault(tenantId: string): Promise<Container | null> {
     try {
-      const { data, error} = await this.supabaseClient
+      const { data, error} = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('tenant_id', tenantId)
@@ -129,7 +129,7 @@ export class ContainerRepository extends BaseRepository<Container> {
     offset?: number;
   }): Promise<{ data: Container[]; count: number }> {
     try {
-      let query = this.supabaseClient
+      let query = this.supabase
         .from(this.tableName)
         .select('*', { count: 'exact' })
         .eq('tenant_id', options.tenantId);
@@ -166,7 +166,7 @@ export class ContainerRepository extends BaseRepository<Container> {
       if (error) throw error;
 
       return {
-        data: (data || []).map(d => this.mapFromDb(d)),
+        data: (data || []).map((d: any) => this.mapFromDb(d)),
         count: count || 0,
       };
     } catch (error) {
@@ -183,12 +183,13 @@ export class ContainerRepository extends BaseRepository<Container> {
   /**
    * Create new container
    */
-  async create(data: ContainerCreate, tenantId: string): Promise<Container> {
+  async createContainer(data: ContainerCreate): Promise<Container> {
     try {
       // Validate input
       const validated = ContainerCreateSchema.parse(data);
 
       // Check for duplicate identifier
+      const tenantId = await this.getTenantId();
       const existing = await this.findByIdentifier(validated.identifier, tenantId);
       if (existing) {
         throw createAppError({
@@ -209,7 +210,7 @@ export class ContainerRepository extends BaseRepository<Container> {
         tenant_id: tenantId,
       });
 
-      const { data: created, error } = await this.supabaseClient
+      const { data: created, error } = await this.supabase
         .from(this.tableName)
         .insert(dbData)
         .select('*')
@@ -234,21 +235,22 @@ export class ContainerRepository extends BaseRepository<Container> {
   /**
    * Update container
    */
-  async update(id: string, data: ContainerUpdate, tenantId: string): Promise<Container | null> {
+  async updateContainer(id: string, data: ContainerUpdate): Promise<Container | null> {
     try {
       // Validate input
       const validated = ContainerUpdateSchema.parse(data);
 
       // If setting as default, unset other defaults
+      const tenantId = await this.getTenantId();
       if (validated.isDefault === true) {
         await this.unsetDefaults(tenantId, id);
       }
 
       const dbData = this.mapToDb(validated);
 
-      const { data: updated, error } = await this.supabaseClient
-        .from(this.tableName)
-        .update(dbData)
+      const { data: updated, error } = await this.supabase
+        .from(this.tableName as any)
+        .update(dbData as any)
         .eq('id', id)
         .eq('tenant_id', tenantId)
         .select('*')
@@ -274,12 +276,8 @@ export class ContainerRepository extends BaseRepository<Container> {
   /**
    * Get active containers for voice selection
    */
-  async getActiveContainers(tenantId: string): Promise<Container[]> {
-    const result = await this.findAll({
-      tenantId,
-      filters: { isActive: true },
-      limit: 100,
-    });
+  async getActiveContainers(): Promise<Container[]> {
+    const result = await this.findAll({ isActive: true }, { limit: 100 });
     return result.data;
   }
 
@@ -291,7 +289,7 @@ export class ContainerRepository extends BaseRepository<Container> {
     tenantId: string
   ): Promise<Container[]> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.supabase
         .from(this.tableName)
         .select('*')
         .eq('tenant_id', tenantId)
@@ -301,7 +299,7 @@ export class ContainerRepository extends BaseRepository<Container> {
 
       if (error) throw error;
 
-      return (data || []).map(d => this.mapFromDb(d));
+      return (data || []).map((d: any) => this.mapFromDb(d));
     } catch (error) {
       throw createAppError({
         code: 'CONTAINER_SEARCH_FAILED',
@@ -317,9 +315,9 @@ export class ContainerRepository extends BaseRepository<Container> {
    * Unset default flag on all containers except the specified one
    */
   private async unsetDefaults(tenantId: string, exceptId?: string): Promise<void> {
-    let query = this.supabaseClient
-      .from(this.tableName)
-      .update({ is_default: false })
+    let query = this.supabase
+      .from(this.tableName as any)
+      .update({ is_default: false } as any)
       .eq('tenant_id', tenantId)
       .eq('is_default', true);
 
