@@ -36,6 +36,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError, validationError } from '@/core/errors/error-handler';
 import { JobsRepository } from '@/domains/jobs/repositories/jobs.repository';
+import { getRequestContext } from '@/lib/auth/context';
 
 export async function GET(request: NextRequest) {
   try {
@@ -48,9 +49,8 @@ export async function GET(request: NextRequest) {
     // Debug test
     if (searchParams.get('debug') === 'true') {
       try {
-        const isDemoRequest = !request.headers.get('authorization');
         let supabase;
-        if (isDemoRequest) {
+        if (!user) {
           supabase = createServiceClient();
         } else {
           supabase = await createServerClient();
@@ -81,8 +81,9 @@ export async function GET(request: NextRequest) {
     // Simple mode without relations
     if (searchParams.get('simple') === 'true') {
       try {
-        const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
-        const isDemoRequest = !request.headers.get('authorization');
+        // Get request context
+        const context = await getRequestContext(request);
+        const { tenantId, user } = context;
         let supabase;
         if (isDemoRequest) {
           supabase = createServiceClient();
@@ -119,15 +120,16 @@ export async function GET(request: NextRequest) {
 
     // For demo pages, use a default tenant ID if not provided
     // Using a proper UUID for demo tenant
-    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
+    // Get request context
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
     
     // Log for debugging
     console.log('Jobs API - TenantID:', tenantId);
     
     // Get appropriate Supabase client
-    const isDemoRequest = !request.headers.get('authorization');
     let supabase;
-    if (isDemoRequest) {
+    if (!user) {
       supabase = createServiceClient();
     } else {
       supabase = await createServerClient();
@@ -163,9 +165,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Get appropriate Supabase client
-    const isDemoRequest = !request.headers.get('authorization');
     let supabase;
-    if (isDemoRequest) {
+    if (!user) {
       supabase = createServiceClient();
     } else {
       supabase = await createServerClient();
@@ -179,7 +180,9 @@ export async function POST(request: NextRequest) {
 
     // Get tenant ID from headers, use demo default if not provided
     // Using a proper UUID for demo tenant
-    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
+    // Get request context
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
     
     const jobsRepo = new JobsRepository(supabase);
 
