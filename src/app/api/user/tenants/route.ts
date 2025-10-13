@@ -11,6 +11,30 @@ export async function GET(request: NextRequest) {
     // Get and validate context
     const context = await getRequestContext(request);
     
+    // Handle header fallback for dev mode
+    if (context.source === 'header' && context.tenantId) {
+      // In header mode, return synthetic tenant info
+      const supabase = await createClient();
+      const tenantService = new TenantService(supabase);
+      
+      // Get the tenant info
+      const tenant = await tenantService.getTenant(context.tenantId);
+      
+      if (tenant) {
+        return NextResponse.json({
+          tenants: [{
+            id: tenant.id,
+            name: tenant.name,
+            slug: tenant.slug,
+            role: 'member', // Conservative default for header mode
+            status: 'active'
+          }],
+          currentTenantId: tenant.id
+        });
+      }
+    }
+    
+    // Normal session-based flow
     if (!context.userId) {
       return NextResponse.json(
         { error: 'Authentication required' },

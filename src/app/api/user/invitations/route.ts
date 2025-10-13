@@ -11,6 +11,11 @@ export async function GET(request: NextRequest) {
     // Get and validate context
     const context = await getRequestContext(request);
     
+    // Handle header fallback - no invitations in header mode
+    if (context.source === 'header') {
+      return NextResponse.json({ invitations: [] });
+    }
+    
     if (!context.user?.email) {
       return NextResponse.json(
         { error: 'Authentication required' },

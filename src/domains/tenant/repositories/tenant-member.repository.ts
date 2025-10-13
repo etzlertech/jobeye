@@ -60,16 +60,10 @@ export class TenantMemberRepository {
       offset?: number;
     }
   ): Promise<{ data: MemberWithUser[]; total: number }> {
+    // First get the members without user data
     let query = this.supabase
       .from('tenant_members')
-      .select(`
-        *,
-        user:auth.users!tenant_members_user_id_fkey (
-          id,
-          email,
-          raw_user_meta_data
-        )
-      `, { count: 'exact' })
+      .select('*', { count: 'exact' })
       .eq('tenant_id', tenantId);
 
     if (options?.status) {
@@ -92,14 +86,10 @@ export class TenantMemberRepository {
 
     if (error) throw error;
 
+    // Map without user data for now - service layer will enrich
     const members = (data || []).map(row => ({
       ...this.mapFromDb(row),
-      user: row.user ? {
-        id: row.user.id,
-        email: row.user.email,
-        name: row.user.raw_user_meta_data?.name,
-        avatarUrl: row.user.raw_user_meta_data?.avatar_url
-      } : undefined
+      user: undefined // Will be populated by service layer
     }));
 
     return {

@@ -71,26 +71,36 @@ export class TenantService {
     // If admin email provided, create initial admin member
     let member: TenantMember | undefined;
     if (dto.adminEmail) {
-      // Find user by email
-      const { data: users, error } = await this.supabase
-        .from('auth.users')
-        .select('id')
-        .eq('email', dto.adminEmail)
-        .limit(1);
+      try {
+        // Find user by email using admin client
+        const adminClient = this.getAdminClient();
+        // TODO: Replace with getUserByEmail when available in SDK
+        const { data: { users }, error } = await adminClient.auth.admin.listUsers({
+          page: 1,
+          perPage: 1000
+        });
+        
+        if (!error && users) {
+          const user = users.find(u => u.email === dto.adminEmail);
+          
+          if (user) {
+            member = await this.memberRepo.create(
+              tenant.id,
+              {
+                userId: user.id,
+                role: MemberRole.TENANT_ADMIN,
+                status: MemberStatus.ACTIVE
+              },
+              createdBy
+            );
 
-      if (!error && users && users.length > 0) {
-        member = await this.memberRepo.create(
-          tenant.id,
-          {
-            userId: users[0].id,
-            role: MemberRole.TENANT_ADMIN,
-            status: MemberStatus.ACTIVE
-          },
-          createdBy
-        );
-
-        // Update user's app_metadata
-        await this.updateUserMetadata(users[0].id, tenant.id, [MemberRole.TENANT_ADMIN]);
+            // Update user's app_metadata
+            await this.updateUserMetadata(user.id, tenant.id, [MemberRole.TENANT_ADMIN]);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to find user by email:', error);
+        // Continue without creating member - tenant can add admin later
       }
     }
 
@@ -173,7 +183,52 @@ export class TenantService {
       offset?: number;
     }
   ): Promise<{ data: MemberWithUser[]; total: number }> {
-    return this.memberRepo.findByTenant(tenantId, options);
+    const result = await this.memberRepo.findByTenant(tenantId, options);
+    
+    // Enrich with user data using admin client
+    if (result.data.length > 0) {
+      try {
+        const adminClient = this.getAdminClient();
+        const userIds = result.data.map(m => m.userId);
+        
+        // TODO: Improve performance - replace listUsers with getUserById batch calls
+        // Current implementation fetches all users and filters locally, which won't scale
+        // Consider: 1) Batch getUserById calls, 2) Add pagination, 3) Cache user lookups
+        const { data: { users }, error } = await adminClient.auth.admin.listUsers({
+          page: 1,
+          perPage: 1000 // WARNING: This will break at scale
+        });
+        
+        if (!error && users) {
+          // Create a map of user data
+          const userMap = new Map(
+            users
+              .filter(u => userIds.includes(u.id))
+              .map(u => [u.id, {
+                id: u.id,
+                email: u.email || '',
+                name: u.user_metadata?.name || u.email?.split('@')[0] || '',
+                avatarUrl: u.user_metadata?.avatar_url
+              }])
+          );
+          
+          // Enrich members with user data
+          result.data = result.data.map(member => ({
+            ...member,
+            user: userMap.get(member.userId) || {
+              id: member.userId,
+              email: 'Unknown',
+              name: 'Unknown'
+            }
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to enrich user data:', error);
+        // Return members without user data rather than failing
+      }
+    }
+    
+    return result;
   }
 
   /**
@@ -248,20 +303,30 @@ export class TenantService {
     createdBy: string
   ): Promise<TenantInvitation> {
     // Check if user is already a member
-    const { data: users } = await this.supabase
-      .from('auth.users')
-      .select('id')
-      .eq('email', dto.email)
-      .limit(1);
-
-    if (users && users.length > 0) {
-      const existingMember = await this.memberRepo.findByTenantAndUser(
-        tenantId,
-        users[0].id
-      );
-      if (existingMember) {
-        throw new Error('User is already a member of this tenant');
+    try {
+      const adminClient = this.getAdminClient();
+      // TODO: Replace with getUserByEmail when available in SDK
+      const { data: { users }, error } = await adminClient.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000
+      });
+      
+      if (!error && users) {
+        const user = users.find(u => u.email === dto.email);
+        
+        if (user) {
+          const existingMember = await this.memberRepo.findByTenantAndUser(
+            tenantId,
+            user.id
+          );
+          if (existingMember) {
+            throw new Error('User is already a member of this tenant');
+          }
+        }
       }
+    } catch (error) {
+      console.error('Failed to check existing membership:', error);
+      // Continue - worst case they get an error when accepting invitation
     }
 
     return this.invitationRepo.create(tenantId, dto, createdBy);
@@ -327,8 +392,56 @@ export class TenantService {
       limit?: number;
       offset?: number;
     }
-  ): Promise<{ data: TenantInvitation[]; total: number }> {
-    return this.invitationRepo.findByTenant(tenantId, options);
+  ): Promise<{ data: InvitationWithDetails[]; total: number }> {
+    const result = await this.invitationRepo.findByTenant(tenantId, options);
+    
+    // Enrich with inviter data if we have invitations
+    if (result.data.length > 0) {
+      try {
+        const adminClient = this.getAdminClient();
+        const userIds = [...new Set(result.data.map(inv => inv.createdBy))].filter(Boolean);
+        
+        // Fetch users
+        // TODO: Replace with batch getUserById calls for better performance
+        const { data: { users }, error } = await adminClient.auth.admin.listUsers({
+          page: 1,
+          perPage: 1000
+        });
+        
+        if (!error && users) {
+          // Create user map
+          const userMap = new Map(
+            users
+              .filter(u => userIds.includes(u.id))
+              .map(u => [u.id, {
+                id: u.id,
+                email: u.email || '',
+                name: u.user_metadata?.name || u.email?.split('@')[0] || ''
+              }])
+          );
+          
+          // Enrich invitations
+          const enrichedData = result.data.map(invitation => ({
+            ...invitation,
+            tenant: undefined, // Will need to fetch separately if needed
+            inviter: invitation.createdBy ? userMap.get(invitation.createdBy) : undefined
+          }));
+          
+          return {
+            data: enrichedData,
+            total: result.total
+          };
+        }
+      } catch (error) {
+        console.error('Failed to enrich inviter data:', error);
+      }
+    }
+    
+    // Return without enrichment
+    return {
+      data: result.data.map(inv => ({ ...inv, inviter: undefined, tenant: undefined })),
+      total: result.total
+    };
   }
 
   /**

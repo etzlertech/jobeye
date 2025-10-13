@@ -1,46 +1,46 @@
 'use client';
 
+import { TenantBadge } from '@/components/tenant';
 import { useState, useEffect } from 'react';
-
-interface TenantUserInfo {
-  tenantId: string;
-  tenantName?: string;
-  userId?: string;
-  userName?: string;
-}
+import { supabase } from '@/lib/supabase/client';
 
 export default function TenantUserInfo() {
-  const [info, setInfo] = useState<TenantUserInfo | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
 
   useEffect(() => {
-    // For demo purposes, we'll use the hardcoded values
-    // In a real app, this would come from auth context or API
-    setInfo({
-      tenantId: '86a0f1f5-30cd-4891-a7d9-bfc85d8b259e',
-      tenantName: 'Demo Company',
-      userId: 'demo-user',
-      userName: 'Demo User'
-    });
+    async function getUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const name = user.user_metadata?.name || user.email?.split('@')[0] || 'User';
+        setUserName(name);
+      }
+    }
+    
+    getUser();
   }, []);
-
-  if (!info) return null;
 
   return (
     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <span className="text-blue-600 font-semibold">X-Tenant-ID:</span>
-          <div className="text-gray-800 font-mono text-xs mt-1">
-            {info.tenantName}
-            <br />
-            <span className="text-gray-600">{info.tenantId}</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div>
+            <span className="text-blue-600 font-semibold text-sm">Current Tenant:</span>
+            <div className="mt-1">
+              <TenantBadge />
+            </div>
           </div>
+          {userName && (
+            <div className="ml-8">
+              <span className="text-blue-600 font-semibold text-sm">User:</span>
+              <div className="text-gray-800 text-sm mt-1">
+                {userName}
+              </div>
+            </div>
+          )}
         </div>
-        <div>
-          <span className="text-blue-600 font-semibold">User:</span>
-          <div className="text-gray-800 mt-1">
-            {info.userName} <span className="text-gray-600">({info.userId})</span>
-          </div>
+        <div className="text-xs text-gray-600">
+          Session-based authentication active
         </div>
       </div>
     </div>

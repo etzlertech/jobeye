@@ -58,11 +58,6 @@ export class TenantInvitationRepository {
           id,
           name,
           slug
-        ),
-        inviter:auth.users!tenant_invitations_created_by_fkey (
-          id,
-          email,
-          raw_user_meta_data
         )
       `)
       .eq('token', token)
@@ -76,11 +71,7 @@ export class TenantInvitationRepository {
     return {
       ...this.mapFromDb(data),
       tenant: data.tenant,
-      inviter: data.inviter ? {
-        id: data.inviter.id,
-        email: data.inviter.email,
-        name: data.inviter.raw_user_meta_data?.name
-      } : undefined
+      inviter: undefined // Will be populated by service layer if needed
     };
   }
 

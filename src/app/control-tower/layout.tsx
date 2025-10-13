@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { featureFlags } from '@/core/config/feature-flags';
+import { TenantBadge } from '@/components/tenant';
 
 const baseNavigation = [
   { 
@@ -81,6 +82,7 @@ export default function ControlTowerLayout({
             </div>
           </div>
           <div className="flex items-center space-x-4">
+            <TenantBadge />
             <div className="text-sm text-gray-400">
               JobEye v3.2.1
             </div>

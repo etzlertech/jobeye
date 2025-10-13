@@ -29,6 +29,7 @@ import { MobileContainer, MobileHeader, MobileCard } from '@/components/mobile';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { TenantBadge } from '@/components/tenant';
 import { supabase } from '@/lib/supabase/client';
 
 interface DashboardData {
@@ -185,8 +186,9 @@ export default function SupervisorDashboard() {
         isOffline={isOffline}
         rightContent={
           <>
+            <TenantBadge />
             {currentUser?.email && (
-              <Badge variant="outline" className="mr-2">
+              <Badge variant="outline" className="ml-2 mr-2">
                 <Users className="w-3 h-3 mr-1" />
                 {currentUser.name || currentUser.email.split('@')[0]}
               </Badge>
