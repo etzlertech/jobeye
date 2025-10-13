@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import TenantBadge from '@/components/tenant/TenantBadge';
 
 export default function MobileHomePage() {
   return (
@@ -207,6 +208,9 @@ export default function MobileHomePage() {
       <body>
         <div className="screen">
         <div className="container-1">
+          <div style={{ position: 'absolute', top: '5px', right: '10px', zIndex: 1 }}>
+            <TenantBadge />
+          </div>
           <div className="company-name">JobEye Mobile</div>
           <div className="header-info">
             Testing Interface<br />

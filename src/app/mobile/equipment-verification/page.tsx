@@ -19,6 +19,7 @@ import { EquipmentChecklist } from './components/EquipmentChecklist';
 import { ManualChecklistFallback } from './components/ManualChecklistFallback';
 import { OfflineQueueStatus } from './components/OfflineQueueStatus';
 import { getOfflineQueue } from '@/domains/vision/lib/offline-queue';
+import TenantBadge from '@/components/tenant/TenantBadge';
 
 /**
  * Equipment Verification Page Content
@@ -210,7 +211,10 @@ function EquipmentVerificationContent() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       {/* Header */}
-      <div className="mb-4">
+      <div className="mb-4 relative">
+        <div className="absolute top-0 right-0">
+          <TenantBadge />
+        </div>
         <h1 className="text-2xl font-bold text-gray-900">Equipment Verification</h1>
         <p className="text-sm text-gray-600">Job ID: {jobId}</p>
       </div>

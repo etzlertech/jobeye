@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import TenantBadge from '@/components/tenant/TenantBadge';
 
 export default function LoadingCompletePage() {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -319,6 +320,9 @@ export default function LoadingCompletePage() {
       <body>
         <div className="screen">
           <div className="container-1">
+            <div style={{ position: 'absolute', top: '5px', right: '10px', zIndex: 1 }}>
+              <TenantBadge />
+            </div>
             <div className="company-name">Miller's Landscaping</div>
             <div className="header-info">
               Joe Miller • Monday 9/15<br />

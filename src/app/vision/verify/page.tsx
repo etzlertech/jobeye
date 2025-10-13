@@ -10,6 +10,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import TenantBadge from '@/components/tenant/TenantBadge';
 import CameraCapture from '@/domains/vision/components/CameraCapture';
 import VerificationDisplay from '@/domains/vision/components/VerificationDisplay';
 import CostDashboard from '@/domains/vision/components/CostDashboard';
@@ -147,12 +148,15 @@ export default function VerifyKitPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Kit Verification</h1>
-            {!isOnline && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-yellow-100 border border-yellow-300 rounded-full">
-                <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-                <span className="text-sm font-medium text-yellow-800">Offline Mode</span>
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              <TenantBadge />
+              {!isOnline && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-yellow-100 border border-yellow-300 rounded-full">
+                  <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+                  <span className="text-sm font-medium text-yellow-800">Offline Mode</span>
+                </div>
+              )}
+            </div>
           </div>
           <p className="text-gray-600">
             Use your camera to verify kit contents with AI-powered detection

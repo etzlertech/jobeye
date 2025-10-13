@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import TenantBadge from '@/components/tenant/TenantBadge';
 
 interface ChecklistItem {
   id: string;
@@ -1100,6 +1101,9 @@ export default function JobLoadChecklistStartPage() {
       `}</style>
       <div className="mobile-screen">
         <div className="container-1">
+          <div style={{ position: 'absolute', top: '5px', right: '60px', zIndex: 1000 }}>
+            <TenantBadge />
+          </div>
           <div className="company-name">Evergold Landscaping</div>
           <div className="settings-button" onClick={openSettings}>
             <div className="settings-icon">⚙️</div>
