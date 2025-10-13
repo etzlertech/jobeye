@@ -193,7 +193,7 @@ export class SyncManager {
    * Process a single sync item
    */
   private async processSyncItem(item: OfflineQueueItem): Promise<void> {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Update status to syncing
     await offlineDB.updateOperationStatus(item.id!, 'syncing');
