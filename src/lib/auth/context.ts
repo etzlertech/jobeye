@@ -51,29 +51,10 @@ export async function getRequestContext(request: Request): Promise<RequestContex
       );
     }
     
-    // 2. Fallback to header (with warning)
-    const headerTenantId = request.headers.get('x-tenant-id');
-    
-    if (headerTenantId) {
-      console.warn(
-        `Using header fallback for tenant: ${headerTenantId}. ` +
-        'This should only be used during migration. ' +
-        `User: ${user?.email || 'anonymous'}`
-      );
-      
-      return {
-        tenantId: headerTenantId,
-        roles: ['member'], // Conservative default for header-based access
-        source: 'header',
-        userId: user?.id,
-        user
-      };
-    }
-    
-    // 3. No context available
+    // 2. No tenant context available
     throw new Error(
       'No tenant context available. ' +
-      'User must have tenant_id in JWT metadata or provide x-tenant-id header.'
+      'User must have tenant_id in JWT metadata.'
     );
     
   } catch (error) {

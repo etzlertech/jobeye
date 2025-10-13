@@ -34,7 +34,7 @@ Tracking the migration from `x-tenant-id` header to `getRequestContext` for prop
   - Frontend: Load verification pages
 
 ### Shared Utilities
-- [ ] `/api/scheduling-kits/_shared.ts` - Utility functions
+- [x] `/api/scheduling-kits/_shared.ts` - Utility functions ✅ (Updated extractCompanyId to use getRequestContext)
   - Used by: Multiple scheduling endpoints
 
 ## Frontend Files to Update
@@ -42,9 +42,9 @@ Tracking the migration from `x-tenant-id` header to `getRequestContext` for prop
 ### Demo Pages (Currently send x-tenant-id)
 - [x] `/app/demo-items/page.tsx` - Remove header from all fetches ✅
 - [x] `/app/demo-items/[itemId]/page.tsx` - Remove header from all fetches ✅
-- [ ] `/app/demo-jobs/page.tsx` - Remove header from all fetches
+- [x] `/app/demo-jobs/page.tsx` - Remove header from all fetches ✅ (via useJobDev refactor)
 - [x] `/app/demo-jobs/[jobId]/items/page.tsx` - Remove header from all fetches ✅
-- [ ] `/app/demo-properties/page.tsx` - Remove header from all fetches
+- [x] `/app/demo-properties/page.tsx` - Remove header from all fetches ✅ (via usePropertyDev refactor)
 
 ### Hooks to Update
 - [x] `/hooks/useDevTenant.ts` - Remove or deprecate tenantHeaders export ✅ (Added deprecation warning)
@@ -77,7 +77,7 @@ Tracking the migration from `x-tenant-id` header to `getRequestContext` for prop
 - Some routes may need additional changes for role-based access control
 
 ## Progress Summary
-- **API Routes**: 12/14 completed (86%) - Supervisor & crew routes migrated
-- **Frontend Files**: 3/5 completed (60%) - Simple demo pages updated
-- **Complex Frontend**: 2 pages use hooks that need refactoring (demo-jobs, demo-properties)
-- **Header Fallback**: Still active (remove after validation)
+- **API Routes**: 13/14 completed (93%) - All routes migrated except scheduling endpoints
+- **Frontend Files**: 5/5 completed (100%) - All demo pages updated ✅
+- **Hooks Refactored**: useJobDev and usePropertyDev no longer use headers ✅
+  - **Header Fallback**: Removed – getRequestContext now requires tenant metadata
