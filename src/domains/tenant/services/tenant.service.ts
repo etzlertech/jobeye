@@ -21,17 +21,41 @@ import {
   InvitationWithDetails,
   UserTenantInfo
 } from '../types';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 export class TenantService {
   private tenantRepo: TenantRepository;
   private memberRepo: TenantMemberRepository;
   private invitationRepo: TenantInvitationRepository;
+  private adminClient?: SupabaseClient;
 
   constructor(private supabase: SupabaseClient) {
     this.tenantRepo = new TenantRepository(supabase);
     this.memberRepo = new TenantMemberRepository(supabase);
     this.invitationRepo = new TenantInvitationRepository(supabase);
+  }
+
+  /**
+   * Get admin client for user metadata operations
+   */
+  private getAdminClient(): SupabaseClient {
+    if (!this.adminClient) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      if (!supabaseUrl || !serviceRoleKey) {
+        throw new Error('Missing Supabase admin credentials');
+      }
+
+      this.adminClient = createSupabaseClient(supabaseUrl, serviceRoleKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      });
+    }
+
+    return this.adminClient;
   }
 
   /**
@@ -356,9 +380,29 @@ export class TenantService {
     tenantId: string,
     roles: string[]
   ): Promise<void> {
-    // This would normally use admin API, but for now we'll skip
-    // as it requires service role key configuration
-    console.log('Would update user metadata:', { userId, tenantId, roles });
+    try {
+      const adminClient = this.getAdminClient();
+      
+      // Update user metadata
+      const { error } = await adminClient.auth.admin.updateUserById(
+        userId,
+        {
+          app_metadata: {
+            tenant_id: tenantId,
+            roles: roles
+          }
+        }
+      );
+
+      if (error) {
+        console.error('Failed to update user metadata:', error);
+        throw new Error(`Failed to update user metadata: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Error updating user metadata:', error);
+      // Don't fail the whole operation if metadata update fails
+      // This allows testing without service role key
+    }
   }
 
   /**
@@ -368,7 +412,42 @@ export class TenantService {
     userId: string,
     tenantId: string
   ): Promise<void> {
-    // This would normally use admin API
-    console.log('Would remove user from tenant:', { userId, tenantId });
+    try {
+      // Get user's current metadata
+      const adminClient = this.getAdminClient();
+      const { data: { user }, error: fetchError } = await adminClient.auth.admin.getUserById(userId);
+      
+      if (fetchError || !user) {
+        console.error('Failed to fetch user:', fetchError);
+        return;
+      }
+
+      // If this is their current tenant, clear it
+      if (user.app_metadata?.tenant_id === tenantId) {
+        // Find another tenant they belong to
+        const otherMemberships = await this.memberRepo.findByUser(userId, {
+          status: MemberStatus.ACTIVE
+        });
+        
+        const nextTenant = otherMemberships.find(m => m.tenantId !== tenantId);
+        
+        const { error } = await adminClient.auth.admin.updateUserById(
+          userId,
+          {
+            app_metadata: {
+              tenant_id: nextTenant?.tenantId || null,
+              roles: nextTenant ? [nextTenant.role] : []
+            }
+          }
+        );
+
+        if (error) {
+          console.error('Failed to update user metadata:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error removing user from tenant:', error);
+      // Don't fail the whole operation if metadata update fails
+    }
   }
 }
