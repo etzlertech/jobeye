@@ -23,11 +23,22 @@
 //   coverage: N/A - types only
 // --- END DIRECTIVE BLOCK ---
 
-export type { 
-  Database,
+import type {
+  Database as SupabaseDatabase,
   ContactRoleDb,
   ContactPreferredMethod,
   MediaType,
   UserRole,
-  Tables
+  DeviceType,
+  SessionStatus,
+  AuthEventType,
+  TableRow
 } from '@/lib/supabase/types';
+
+export type Database = SupabaseDatabase;
+export type { ContactRoleDb, ContactPreferredMethod, MediaType, UserRole, DeviceType, SessionStatus, AuthEventType } from '@/lib/supabase/types';
+
+export type Tables<T extends keyof Database['public']['Tables']> = TableRow<T>;
+
+export type Job = Record<string, any>;
+export type EquipmentItem = Record<string, any>;

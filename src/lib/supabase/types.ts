@@ -1,440 +1,199 @@
-﻿/*
+/*
 AGENT DIRECTIVE BLOCK
 file: /src/lib/supabase/types.ts
 phase: 1
 domain: core-infrastructure
-purpose: TypeScript types for Supabase database schema
-spec_ref: v4-blueprint
-complexity_budget: 200
+purpose: Supabase schema typings based on live database analysis (stubs until regeneration)
+spec_ref: docs/database-schema-analysis-2025-10-12-2051.md
+complexity_budget: 120
 offline_capability: N/A
-dependencies:
-  external: []
-  internal: []
+dependencies: []
 exports:
-  - Database type
-  - Table types
-  - Enum types
-voice_considerations: N/A - Type definitions
-test_requirements:
-  coverage: N/A - Type definitions only
+  - Database
+  - Json helper
+  - Table access helpers (Tables/Inserts/Updates/Enums)
+  - Lightweight enum aliases used across the app
+voice_considerations: N/A
+test_requirements: N/A (types only)
 tasks:
-  - Define database schema types
-  - Export enums
-  - Create helper types
+  - Provide concrete typings for frequently accessed tables (customers, contacts, company_settings)
+  - Supply generic fallbacks so other tables remain accessible
+  - Clearly mark that real types should be regenerated via `supabase gen types` when CLI access is available
 */
+
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
+type GenericTable = {
+  Row: Record<string, any>;
+  Insert: Record<string, any>;
+  Update: Record<string, any>;
+  Relationships: never[];
+};
+
+type AddressJson = {
+  street?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  [key: string]: Json | undefined;
+};
+
+type CustomersTable = {
+  Row: {
+    id: string;
+    tenant_id: string;
+    customer_number: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    mobile_phone: string | null;
+    billing_address: AddressJson | null;
+    service_address: AddressJson | null;
+    notes: string | null;
+    tags: Json | null;
+    voice_notes: string | null;
+    is_active: boolean | null;
+    metadata: Json | null;
+    created_at: string;
+    updated_at: string;
+    created_by: string | null;
+    version: number | null;
+    intake_session_id: string | null;
+  };
+  Insert: Partial<CustomersTable['Row']> & { tenant_id: string; name: string };
+  Update: Partial<CustomersTable['Row']>;
+  Relationships: never[];
+};
+
+type ContactsTable = {
+  Row: {
+    id: string;
+    tenant_id: string;
+    customer_id: string;
+    role: string | null;
+    first_name: string;
+    last_name: string;
+    email: string | null;
+    phone: string | null;
+    mobile_phone: string | null;
+    is_primary: boolean | null;
+    can_receive_sms: boolean | null;
+    can_receive_email: boolean | null;
+    preferred_contact_method: string | null;
+    voice_recognition_id: string | null;
+    notes: string | null;
+    metadata: Json | null;
+    created_at: string;
+    updated_at: string;
+  };
+  Insert: Partial<ContactsTable['Row']> & {
+    tenant_id: string;
+    customer_id: string;
+    first_name: string;
+    last_name: string;
+  };
+  Update: Partial<ContactsTable['Row']>;
+  Relationships: never[];
+};
+
+type CompanySettingsTable = {
+  Row: {
+    id: string;
+    tenant_id: string;
+    vision_thresholds: Json | null;
+    voice_preferences: Json | null;
+    budget_limits: Json | null;
+    features: Json | null;
+    created_at: string;
+    updated_at: string;
+  };
+  Insert: Partial<CompanySettingsTable['Row']> & { tenant_id: string };
+  Update: Partial<CompanySettingsTable['Row']>;
+  Relationships: never[];
+};
+
+type OtherTables = {
+  tenants: GenericTable;
+  tenant_members: GenericTable;
+  tenant_invitations: GenericTable;
+  users_extended: GenericTable;
+  user_sessions: GenericTable;
+  auth_audit_log: GenericTable;
+  properties: GenericTable;
+  jobs: GenericTable;
+  items: GenericTable;
+  item_transactions: GenericTable;
+  voice_profiles: GenericTable;
+  container_assignments: GenericTable;
+  containers: GenericTable;
+  equipment: GenericTable;
+  training_data: GenericTable;
+  media_assets: GenericTable;
+  conversation_sessions: GenericTable;
+  intent_logs: GenericTable;
+  voice_intent_sessions: GenericTable;
+  safety_checklists: GenericTable;
+  safety_checklist_completions: GenericTable;
+  workflow_tasks: GenericTable;
+  workflow_task_events: GenericTable;
+  tenant_assignments: GenericTable;
+};
+
+type SpecificTables = {
+  customers: CustomersTable;
+  contacts: ContactsTable;
+  company_settings: CompanySettingsTable;
+};
+
+type TablesSchema = SpecificTables & OtherTables;
+
+type Views = Record<string, GenericTable>;
+type Functions = Record<string, (...args: any[]) => any>;
+type Enums = Record<string, string | number>;
+type CompositeTypes = Record<string, Record<string, any>>;
 
 export type Database = {
   public: {
-    Tables: {
-      customers: {
-        Row: {
-          id: string;
-          tenant_id: string;
-          customer_number: string;
-          name: string;
-          email: string | null;
-          phone: string | null;
-          mobile_phone: string | null;
-          billing_address: Record<string, any> | null;
-          service_address: Record<string, any> | null;
-          notes: string | null;
-          tags: string[] | null;
-          voice_notes: string | null;
-          is_active: boolean;
-          metadata: Record<string, any>;
-          created_at: string;
-          updated_at: string;
-          created_by: string | null;
-        };
-        Insert: Omit<Database['public']['Tables']['customers']['Row'], 'id' | 'created_at' | 'updated_at'> & {
-          id?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: Partial<Database['public']['Tables']['customers']['Insert']>;
-      };
-      
-      contacts: {
-        Row: {
-          id: string;
-          tenant_id: string;
-          customer_id: string;
-          role: ContactRoleDb;
-          first_name: string;
-          last_name: string;
-          email: string | null;
-          phone: string | null;
-          mobile_phone: string | null;
-          is_primary: boolean;
-          can_receive_sms: boolean;
-          can_receive_email: boolean;
-          preferred_contact_method: ContactPreferredMethod;
-          voice_recognition_id: string | null;
-          notes: string | null;
-          metadata: Record<string, any> | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['contacts']['Row'], 'id' | 'created_at' | 'updated_at'> & {
-          id?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: Partial<Database['public']['Tables']['contacts']['Insert']>;
-      };
-
-      properties: {
-        Row: {
-          id: string;
-          tenant_id: string;
-          customer_id: string;
-          property_number: string;
-          name: string;
-          address: Record<string, any>;
-          location: unknown | null; // PostGIS geography
-          property_type: string | null;
-          size_sqft: number | null;
-          lot_size_acres: number | null;
-          zones: Record<string, any> | null;
-          access_notes: string | null;
-          gate_code: string | null;
-          special_instructions: string | null;
-          voice_navigation_notes: string | null;
-          photos: Record<string, any>[];
-          is_active: boolean;
-          metadata: Record<string, any>;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['properties']['Row'], 'id' | 'created_at' | 'updated_at'> & {
-          id?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: Partial<Database['public']['Tables']['properties']['Insert']>;
-      };
-      
-      jobs: {
-        Row: {
-          id: string;
-          tenant_id: string;
-          job_number: string;
-          template_id: string | null;
-          customer_id: string;
-          property_id: string | null;
-          title: string;
-          description: string | null;
-          status: JobStatus;
-          priority: JobPriority;
-          scheduled_start: string | null;
-          scheduled_end: string | null;
-          actual_start: string | null;
-          actual_end: string | null;
-          assigned_to: string | null;
-          assigned_team: string[] | null;
-          estimated_duration: number | null;
-          actual_duration: number | null;
-          completion_notes: string | null;
-          voice_notes: string | null;
-          voice_created: boolean;
-          voice_session_id: string | null;
-          checklist_items: Record<string, any>[];
-          materials_used: Record<string, any>[];
-          equipment_used: string[] | null;
-          photos_before: Record<string, any>[];
-          photos_after: Record<string, any>[];
-          signature_required: boolean;
-          signature_data: Record<string, any> | null;
-          billing_info: Record<string, any> | null;
-          metadata: Record<string, any>;
-          created_at: string;
-          updated_at: string;
-          created_by: string | null;
-        };
-        Insert: Omit<Database['public']['Tables']['jobs']['Row'], 'id' | 'created_at' | 'updated_at'> & {
-          id?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: Partial<Database['public']['Tables']['jobs']['Insert']>;
-      };
-      
-      company_settings: {
-        Row: {
-          id: string;
-          tenant_id: string;
-          vision_thresholds: Record<string, any>;
-          voice_preferences: Record<string, any>;
-          budget_limits: Record<string, any>;
-          features: Record<string, any>;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          tenant_id: string;
-          vision_thresholds?: Record<string, any>;
-          voice_preferences?: Record<string, any>;
-          budget_limits?: Record<string, any>;
-          features?: Record<string, any>;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          tenant_id?: string;
-          vision_thresholds?: Record<string, any>;
-          voice_preferences?: Record<string, any>;
-          budget_limits?: Record<string, any>;
-          features?: Record<string, any>;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-
-      auth_audit_log: {
-        Row: {
-          id: string;
-          event_type: string;
-          tenant_id: string | null;
-          user_id: string | null;
-          user_email: string | null;
-          success: boolean | null;
-          reason: string | null;
-          details: Record<string, any> | null;
-          ip_address: string | null;
-          user_agent: string | null;
-          device_type: string | null;
-          created_at: string;
-          metadata: Record<string, any> | null;
-        };
-        Insert: {
-          id?: string;
-          event_type: string;
-          tenant_id?: string | null;
-          user_id?: string | null;
-          user_email?: string | null;
-          success?: boolean | null;
-          reason?: string | null;
-          details?: Record<string, any> | null;
-          ip_address?: string | null;
-          user_agent?: string | null;
-          device_type?: string | null;
-          created_at?: string;
-          metadata?: Record<string, any> | null;
-        };
-        Update: Partial<Database['public']['Tables']['auth_audit_log']['Insert']>;
-      };
-
-      voice_profiles: {
-        Row: {
-          id: string;
-          user_id: string;
-          tenant_id: string | null;
-          wake_word: string | null;
-          speech_rate: number | null;
-          voice_pitch: number | null;
-          preferred_voice: string | null;
-          language_code: string | null;
-          voice_feedback_enabled: boolean | null;
-          voice_feedback_level: string | null;
-          preferred_tts_provider: string | null;
-          confidence_threshold: number | null;
-          noise_cancellation_enabled: boolean | null;
-          voice_commands_enabled: boolean | null;
-          accessibility_voice_navigation: boolean | null;
-          onboarding_completed: boolean | null;
-          voice_samples_collected: number | null;
-          last_voice_training_at: string | null;
-          created_at: string;
-          updated_at: string;
-          metadata: Record<string, any> | null;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          tenant_id?: string | null;
-          wake_word?: string | null;
-          speech_rate?: number | null;
-          voice_pitch?: number | null;
-          preferred_voice?: string | null;
-          language_code?: string | null;
-          voice_feedback_enabled?: boolean | null;
-          voice_feedback_level?: string | null;
-          preferred_tts_provider?: string | null;
-          confidence_threshold?: number | null;
-          noise_cancellation_enabled?: boolean | null;
-          voice_commands_enabled?: boolean | null;
-          accessibility_voice_navigation?: boolean | null;
-          onboarding_completed?: boolean | null;
-          voice_samples_collected?: number | null;
-          last_voice_training_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-          metadata?: Record<string, any> | null;
-        };
-        Update: Partial<Database['public']['Tables']['voice_profiles']['Insert']>;
-      };
-
-      voice_transcripts: {
-        Row: {
-          id: string;
-          tenant_id: string;
-          user_id: string;
-          session_id: string | null;
-          job_id: string | null;
-          audio_url: string | null;
-          audio_duration: number | null;
-          transcript: string | null;
-          confidence_score: number | null;
-          status: TranscriptionStatus;
-          language_code: string;
-          provider: string | null;
-          provider_transcript_id: string | null;
-          cost: number | null;
-          metadata: Record<string, any>;
-          created_at: string;
-          processed_at: string | null;
-        };
-        Insert: Omit<Database['public']['Tables']['voice_transcripts']['Row'], 'id' | 'created_at'> & {
-          id?: string;
-          created_at?: string;
-        };
-        Update: Partial<Database['public']['Tables']['voice_transcripts']['Insert']>;
-      };
-      
-      intent_recognitions: {
-        Row: {
-          id: string;
-          tenant_id: string;
-          transcript_id: string;
-          user_id: string;
-          intent_type: IntentType | null;
-          confidence_score: number | null;
-          entities: Record<string, any> | null;
-          context: Record<string, any> | null;
-          action_taken: Record<string, any> | null;
-          success: boolean | null;
-          error_message: string | null;
-          feedback_given: boolean;
-          feedback_score: number | null;
-          provider: string | null;
-          cost: number | null;
-          created_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['intent_recognitions']['Row'], 'id' | 'created_at'> & {
-          id?: string;
-          created_at?: string;
-        };
-        Update: Partial<Database['public']['Tables']['intent_recognitions']['Insert']>;
-      };
-    };
-    
-    Views: {
-      active_jobs_view: {
-        Row: Database['public']['Tables']['jobs']['Row'] & {
-          customer_name: string | null;
-          customer_phone: string | null;
-          property_name: string | null;
-          property_address: Record<string, any> | null;
-          assigned_to_name: string | null;
-        };
-      };
-    };
-    
-    Functions: {
-      get_user_tenant_id: {
-        Args: { user_id: string };
-        Returns: string | null;
-      };
-      user_has_permission: {
-        Args: { user_id: string; permission_name: string };
-        Returns: boolean;
-      };
-      process_voice_command: {
-        Args: {
-          p_transcript_id: string;
-          p_intent_type: IntentType;
-          p_entities: Record<string, any>;
-          p_confidence: number;
-        };
-        Returns: Record<string, any>;
-      };
-      get_job_voice_summary: {
-        Args: { p_job_id: string };
-        Returns: string;
-      };
-    };
-
-    Enums: {
-      job_status: JobStatus;
-      job_priority: JobPriority;
-      equipment_status: EquipmentStatus;
-      material_unit: MaterialUnit;
-      transcription_status: TranscriptionStatus;
-      intent_type: IntentType;
-      media_type: MediaType;
-      user_role: UserRole;
-      contact_role: ContactRoleDb;
-      contact_preferred_method: ContactPreferredMethod;
-    };
+    Tables: TablesSchema;
+    Views: Views;
+    Functions: Functions;
+    Enums: Enums;
+    CompositeTypes: CompositeTypes;
   };
 };
 
-// Enum types
-export type JobStatus = 
-  | 'draft'
-  | 'scheduled'
-  | 'dispatched'
-  | 'in_progress'
-  | 'paused'
-  | 'completed'
-  | 'cancelled'
-  | 'failed'
-  | 'voice_created';
+export type TablesType<T extends keyof Database['public']['Tables']> =
+  Database['public']['Tables'][T]['Row'];
+export type Inserts<T extends keyof Database['public']['Tables']> =
+  Database['public']['Tables'][T]['Insert'];
+export type Updates<T extends keyof Database['public']['Tables']> =
+  Database['public']['Tables'][T]['Update'];
+export type EnumsType<T extends keyof Database['public']['Enums']> =
+  Database['public']['Enums'][T];
 
-export type JobPriority = 'low' | 'normal' | 'high' | 'urgent' | 'emergency';
+// Backwards compatibility helper
+export type TableRow<T extends keyof Database['public']['Tables']> = TablesType<T>;
 
-export type EquipmentStatus = 'active' | 'maintenance' | 'broken' | 'retired' | 'reserved';
+// Lightweight enum aliases used throughout the app
+export type ContactRoleDb = 'primary' | 'billing' | 'service' | 'emergency' | string;
+export type ContactPreferredMethod = 'phone' | 'email' | 'sms' | string;
+export type MediaType = 'image' | 'video' | 'audio' | 'document' | string;
+export type UserRole =
+  | 'system_admin'
+  | 'tenant_admin'
+  | 'admin'
+  | 'supervisor'
+  | 'crew'
+  | string;
+export type DeviceType = 'mobile' | 'desktop' | 'tablet' | 'voice_assistant' | string;
+export type SessionStatus = 'active' | 'expired' | 'terminated' | 'suspended' | string;
+export type AuthEventType = string;
 
-export type MaterialUnit = 
-  | 'each'
-  | 'box'
-  | 'case'
-  | 'pound'
-  | 'ounce'
-  | 'gallon'
-  | 'liter'
-  | 'foot'
-  | 'meter'
-  | 'hour'
-  | 'minute';
-
-export type TranscriptionStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'partial';
-
-export type IntentType = 
-  | 'create_job'
-  | 'update_job'
-  | 'job_query'
-  | 'navigation'
-  | 'equipment_check'
-  | 'material_request'
-  | 'time_entry'
-  | 'photo_capture'
-  | 'note_taking'
-  | 'help_request'
-  | 'confirmation'
-  | 'cancellation'
-  | 'unknown';
-
-export type MediaType = 'image' | 'video' | 'audio' | 'document' | 'signature';
-
-export type UserRole = 'admin' | 'manager' | 'technician' | 'viewer';
-
-export type ContactRoleDb = 'primary' | 'billing' | 'service' | 'emergency' | 'other';
-
-export type ContactPreferredMethod = 'phone' | 'email' | 'sms';
-
-// Helper types
-export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
-export type Enums<T extends keyof Database['public']['Enums']> = Database['public']['Enums'][T];
+// TODO: Regenerate this file with `supabase gen types typescript` when CLI access is available.
+// The stubs above reflect the live schema as of docs/database-schema-analysis-2025-10-12-2051.md.
