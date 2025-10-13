@@ -34,6 +34,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
+import { TenantBadge } from '@/components/tenant';
 
 interface Job {
   id: string;
@@ -294,13 +295,17 @@ export default function CrewDashboardPage() {
         subtitle={`${formatTime(currentTime)} • ${todayJobs.length} jobs today`}
         isOffline={isOffline}
         rightContent={
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={loadDashboardData}
-          >
-            <RefreshCw className="w-5 h-5" />
-          </Button>
+          <>
+            <TenantBadge />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={loadDashboardData}
+              className="ml-2"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </Button>
+          </>
         }
       />
 

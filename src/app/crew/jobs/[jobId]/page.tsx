@@ -76,6 +76,7 @@ import {
 import { ButtonLimiter, useButtonActions } from '@/components/ui/ButtonLimiter';
 import { CameraCapture } from '@/components/camera/CameraCapture';
 import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
+import { TenantBadge } from '@/components/tenant';
 
 interface JobDetail {
   id: string;
@@ -508,13 +509,16 @@ export default function CrewJobDetailPage() {
               <h1 className="text-xl font-bold text-gray-900">{job.customerName}</h1>
               <p className="text-sm text-gray-600">{job.propertyAddress}</p>
             </div>
-            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-              job.status === 'assigned' ? 'bg-yellow-100 text-yellow-800' :
-              job.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-              job.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
-              {job.status.replace('_', ' ')}
+            <div className="flex items-center gap-3">
+              <TenantBadge />
+              <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                job.status === 'assigned' ? 'bg-yellow-100 text-yellow-800' :
+                job.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                job.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {job.status.replace('_', ' ')}
+              </div>
             </div>
           </div>
         </div>
