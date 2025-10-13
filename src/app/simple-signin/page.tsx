@@ -11,6 +11,11 @@ function SignInForm() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Check for configuration issues in production
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const isProduction = process.env.NODE_ENV === 'production';
+  const needsConfig = isProduction && !siteUrl;
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,6 +149,12 @@ function SignInForm() {
               Inventory
             </a>
           </div>
+        </div>
+        
+        {/* Version indicator for deployment */}
+        <div className="mt-4 text-center text-xs text-gray-500">
+          v3.2.1 - {new Date().toLocaleDateString()}
+          {needsConfig && ' - Config Required'}
         </div>
       </div>
     </div>
