@@ -1,16 +1,19 @@
 # OCR Migration Preflight Report
 
-Timestamp: 2025-10-09T13:03:59.371Z
+Timestamp: 2025-10-13T12:17:58.849Z
 Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
 
 ## Status
-✅ **PASSED** – All OCR dependency tables expose `tenant_id` as required. No missing columns detected.
+❌ **FAILED** – Issues detected (see below).
+
+### Issues
+- **inventory_images**: Missing required columns: file_path
 
 ## Table Snapshot
 | Table | Row count | Tenant column | Notes |
 |-------|-----------|---------------|-------|
 | `vendors` | 1 | Present | OK |
-| `inventory_images` | 1 | Present | OK |
+| `inventory_images` | 2 | Present | Missing: file_path |
 | `ocr_jobs` | 1 | Present | OK |
 | `ocr_documents` | 1 | Present | OK |
 | `ocr_line_items` | 1 | Present | OK |
@@ -38,17 +41,30 @@ Supabase URL: https://rtwigjwqufozqfwozpvo.supabase.co
 ### inventory_images
 - Category: dependency
 - Exists: Yes
-- Row count: 1
-- Missing columns: None
+- Row count: 2
+- Missing columns:
+  - file_path (Image location)
 - Columns:
   - id: uuid, nullable=NO (default: gen_random_uuid())
-  - tenant_id: text, nullable=NO
-  - media_id: uuid, nullable=YES
-  - file_path: text, nullable=NO
-  - mime_type: text, nullable=YES
-  - size_bytes: integer, nullable=YES
+  - tenant_id: uuid, nullable=NO
+  - item_type: text, nullable=NO
+  - item_id: uuid, nullable=NO
+  - image_url: text, nullable=NO
+  - thumbnail_url: text, nullable=YES
+  - is_primary: boolean, nullable=YES (default: false)
+  - angle: text, nullable=YES
+  - aspect_ratio: numeric, nullable=YES (default: 1.0)
+  - original_width: integer, nullable=YES
+  - original_height: integer, nullable=YES
+  - crop_box: jsonb, nullable=YES
+  - metadata: jsonb, nullable=YES (default: '{}'::jsonb)
+  - captured_by: uuid, nullable=YES
+  - captured_at: timestamp with time zone, nullable=YES (default: now())
   - created_at: timestamp with time zone, nullable=YES (default: now())
 - Indexes:
+  - idx_inventory_images_item: CREATE INDEX idx_inventory_images_item ON public.inventory_images USING btree (item_type, item_id)
+  - idx_inventory_images_item_lookup: CREATE INDEX idx_inventory_images_item_lookup ON public.inventory_images USING btree (item_type, item_id, is_primary DESC, created_at DESC)
+  - idx_inventory_images_tenant: CREATE INDEX idx_inventory_images_tenant ON public.inventory_images USING btree (tenant_id)
   - inventory_images_pkey: CREATE UNIQUE INDEX inventory_images_pkey ON public.inventory_images USING btree (id)
 
 ### ocr_jobs

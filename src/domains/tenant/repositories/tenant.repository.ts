@@ -52,6 +52,7 @@ export class TenantRepository {
    */
   async findAll(options?: {
     status?: TenantStatus;
+    search?: string;
     limit?: number;
     offset?: number;
   }): Promise<{ data: TenantWithMemberCount[]; total: number }> {
@@ -64,6 +65,14 @@ export class TenantRepository {
 
     if (options?.status) {
       query = query.eq('status', options.status);
+    }
+
+    if (options?.search) {
+      const term = options.search.trim();
+      if (term.length > 0) {
+        const like = `%${term}%`;
+        query = query.or(`name.ilike.${like},slug.ilike.${like}`);
+      }
     }
 
     if (options?.offset !== undefined && options?.limit) {

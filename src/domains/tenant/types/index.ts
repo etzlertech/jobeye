@@ -151,6 +151,8 @@ export interface JoinRequestDTO {
 // API Response types
 export interface TenantWithMemberCount extends Tenant {
   memberCount: number;
+  activeMemberCount?: number;
+  jobsLast30d?: number;
 }
 
 export interface MemberWithUser extends TenantMember {

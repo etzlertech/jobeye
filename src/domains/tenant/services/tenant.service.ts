@@ -129,11 +129,30 @@ export class TenantService {
    * List all tenants (system admin only)
    */
   async listTenants(options?: {
-    status?: string;
+    status?: TenantStatus;
+    search?: string;
     limit?: number;
     offset?: number;
   }): Promise<{ data: TenantWithMemberCount[]; total: number }> {
-    return this.tenantRepo.findAll(options as any);
+    const result = await this.tenantRepo.findAll(options);
+    const tenantIds = result.data.map((tenant) => tenant.id);
+
+    if (tenantIds.length === 0) {
+      return result;
+    }
+
+    const [activeMemberCounts, jobsLast30d] = await Promise.all([
+      this.fetchActiveMemberCounts(tenantIds),
+      this.fetchJobsCreatedLast30Days(tenantIds)
+    ]);
+
+    const enriched = result.data.map((tenant) => ({
+      ...tenant,
+      activeMemberCount: activeMemberCounts.get(tenant.id) ?? tenant.memberCount,
+      jobsLast30d: jobsLast30d.get(tenant.id) ?? 0
+    }));
+
+    return { data: enriched, total: result.total };
   }
 
   /**
@@ -144,6 +163,51 @@ export class TenantService {
     status: TenantStatus
   ): Promise<Tenant> {
     return this.tenantRepo.update(tenantId, { status });
+  }
+
+  private async fetchActiveMemberCounts(tenantIds: string[]): Promise<Map<string, number>> {
+    const counts = new Map<string, number>();
+
+    const { data, error } = await this.supabase
+      .from('tenant_members')
+      .select('tenant_id, count:id', { head: false })
+      .eq('status', MemberStatus.ACTIVE)
+      .in('tenant_id', tenantIds)
+      .group('tenant_id');
+
+    if (error) {
+      console.error('[TenantService] Failed to fetch active member counts', error);
+      return counts;
+    }
+
+    (data || []).forEach((row: any) => {
+      counts.set(row.tenant_id, Number(row.count) || 0);
+    });
+
+    return counts;
+  }
+
+  private async fetchJobsCreatedLast30Days(tenantIds: string[]): Promise<Map<string, number>> {
+    const counts = new Map<string, number>();
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data, error } = await this.supabase
+      .from('jobs')
+      .select('tenant_id, count:id', { head: false })
+      .gte('created_at', since)
+      .in('tenant_id', tenantIds)
+      .group('tenant_id');
+
+    if (error) {
+      console.error('[TenantService] Failed to fetch jobs count (30d)', error);
+      return counts;
+    }
+
+    (data || []).forEach((row: any) => {
+      counts.set(row.tenant_id, Number(row.count) || 0);
+    });
+
+    return counts;
   }
 
   /**

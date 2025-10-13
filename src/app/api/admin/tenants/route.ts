@@ -35,11 +35,12 @@ export async function GET(request: NextRequest) {
     const pageSize = Number.parseInt(searchParams.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10);
     const limit = Number.isFinite(pageSize) && pageSize > 0 ? pageSize : DEFAULT_PAGE_SIZE;
     const offset = (Math.max(page, 1) - 1) * limit;
+    const search = searchParams.get('search')?.trim();
 
     const adminClient = createServiceClient();
     const tenantService = new TenantService(adminClient);
 
-    const options: { status?: TenantStatus; limit: number; offset: number } = {
+    const options: { status?: TenantStatus; search?: string; limit: number; offset: number } = {
       limit,
       offset,
     };
@@ -51,22 +52,33 @@ export async function GET(request: NextRequest) {
       options.status = statusParam as TenantStatus;
     }
 
+    if (search) {
+      options.search = search;
+    }
+
     const result = await tenantService.listTenants(options);
 
-    const tenants = result.data.map((tenant) => ({
-      id: tenant.id,
-      name: tenant.name,
-      slug: tenant.slug,
-      status: tenant.status,
-      plan: tenant.plan,
-      createdAt: tenant.createdAt,
-      updatedAt: tenant.updatedAt,
-      memberCount: tenant.memberCount,
-      usage: {
-        activeUsers: tenant.memberCount,
-        jobsLast30d: 0, // TODO: integrate job usage metrics
-      },
-    }));
+    const tenants = result.data.map((tenant) => {
+      const activeUsers = tenant.activeMemberCount ?? tenant.memberCount;
+      const jobsLast30d = tenant.jobsLast30d ?? 0;
+
+      return {
+        id: tenant.id,
+        name: tenant.name,
+        slug: tenant.slug,
+        domain: null,
+        status: tenant.status,
+        plan: tenant.plan,
+        createdAt: tenant.createdAt,
+        updatedAt: tenant.updatedAt,
+        lastActiveAt: tenant.updatedAt,
+        memberCount: tenant.memberCount,
+        usage: {
+          activeUsers,
+          jobsLast30d,
+        },
+      };
+    });
 
     return NextResponse.json({
       data: tenants,

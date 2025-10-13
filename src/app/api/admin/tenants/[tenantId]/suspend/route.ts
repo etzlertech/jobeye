@@ -1,9 +1,9 @@
 /**
  * AGENT DIRECTIVE BLOCK
  *
- * file: /src/app/api/admin/tenants/[tenantId]/status/route.ts
- * purpose: Tenant lifecycle mutation endpoint for system admins
- * spec_ref: admin-ui-specs.md#tenant-management
+ * file: /src/app/api/admin/tenants/[tenantId]/suspend/route.ts
+ * purpose: Suspend tenant accounts with reason capture (system admin workflow)
+ * spec_ref: docs/admin-ui-data-contracts.md#phase-33-tenant-management
  * roles: ['system_admin']
  * dependencies: {
  *   internal: [
@@ -14,7 +14,7 @@
  *   ],
  *   external: ['next/server']
  * }
- * audit_log: Emits admin_audit_log entries for tenant lifecycle changes
+ * audit_log: Persists admin_audit_log records for tenant suspensions
  */
 
 import { NextResponse } from 'next/server';
@@ -25,7 +25,7 @@ import { TenantService } from '@/domains/tenant/services/tenant.service';
 import { TenantStatus } from '@/domains/tenant/types';
 import { AdminAuditLogService } from '@/domains/admin/audit/admin-audit-log.service';
 
-export async function PATCH(
+export async function POST(
   request: NextRequest,
   { params }: { params: { tenantId: string } }
 ) {
@@ -41,29 +41,28 @@ export async function PATCH(
       return NextResponse.json({ error: 'missing_tenant_id' }, { status: 400 });
     }
 
-    const body = await request.json().catch(() => null);
-    const status = (body?.status as string | undefined)?.toLowerCase();
+    const body = await request.json().catch(() => ({}));
+    const reason = typeof body?.reason === 'string' ? body.reason.trim() : '';
 
-    if (!status) {
-      return NextResponse.json({ error: 'status_required' }, { status: 400 });
-    }
-
-    if (!Object.values(TenantStatus).includes(status as TenantStatus)) {
-      return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
+    if (!reason) {
+      return NextResponse.json({ error: 'reason_required' }, { status: 400 });
     }
 
     const adminClient = createServiceClient();
     const tenantService = new TenantService(adminClient);
     const auditLog = new AdminAuditLogService(adminClient);
     const previous = await tenantService.getTenant(tenantId);
-    const updated = await tenantService.updateTenantStatus(tenantId, status as TenantStatus);
+    const updated = await tenantService.updateTenantStatus(tenantId, TenantStatus.SUSPENDED);
+
+    console.info(`[admin/tenants/${tenantId}] suspended: ${reason}`);
 
     await auditLog.logTenantLifecycleChange({
       tenantId: updated.id,
       tenantName: updated.name,
       previousStatus: previous?.status,
       newStatus: updated.status,
-      action: 'tenant.status.change',
+      action: 'tenant.suspended',
+      reason,
       actor: {
         id: context.userId,
         email: context.user?.email ?? undefined,
@@ -72,6 +71,7 @@ export async function PATCH(
     });
 
     return NextResponse.json({
+      status: 'success',
       tenant: {
         id: updated.id,
         name: updated.name,
@@ -85,7 +85,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
 
-    console.error('[admin/tenants/status] failed to update status', error);
+    console.error('[admin/tenants/suspend] failed to suspend tenant', error);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 }

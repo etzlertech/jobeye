@@ -125,6 +125,7 @@ type OtherTables = {
   users_extended: GenericTable;
   user_sessions: GenericTable;
   auth_audit_log: GenericTable;
+  admin_audit_log: GenericTable;
   properties: GenericTable;
   jobs: GenericTable;
   items: GenericTable;
