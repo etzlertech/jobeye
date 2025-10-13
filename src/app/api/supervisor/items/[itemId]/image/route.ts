@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { ItemImageProcessor } from '@/utils/image-processor';
+import { getRequestContext } from '@/lib/auth/context';
 
 export async function POST(
   request: NextRequest,
@@ -8,8 +9,12 @@ export async function POST(
 ) {
   try {
     const { itemId } = params;
-    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
-    console.log('Image upload API called for item:', itemId, 'tenant:', tenantId);
+    
+    // Get request context (handles both session and header-based auth)
+    const context = await getRequestContext(request);
+    const { tenantId } = context;
+    
+    console.log('Image upload API called for item:', itemId, 'tenant:', tenantId, 'Source:', context.source);
     
     const body = await request.json();
     const { images } = body;

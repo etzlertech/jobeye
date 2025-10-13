@@ -8,12 +8,13 @@ export async function GET(
   { params }: { params: { itemId: string } }
 ) {
   try {
-    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
+    // Get request context (handles both session and header-based auth)
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
     
     // Get appropriate Supabase client
-    const isDemoRequest = !request.headers.get('authorization');
     let supabase;
-    if (isDemoRequest) {
+    if (!user) {
       supabase = createServiceClient();
     } else {
       supabase = await createServerClient();
@@ -38,16 +39,19 @@ export async function PUT(
   { params }: { params: { itemId: string } }
 ) {
   try {
-    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
     const body = await request.json();
+    
+    // Get request context (handles both session and header-based auth)
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
     
     console.log('Items API PUT - ItemID:', params.itemId);
     console.log('Update data:', JSON.stringify(body, null, 2));
+    console.log('TenantID:', tenantId, 'Source:', context.source);
     
     // Get appropriate Supabase client
-    const isDemoRequest = !request.headers.get('authorization');
     let supabase;
-    if (isDemoRequest) {
+    if (!user) {
       supabase = createServiceClient();
     } else {
       supabase = await createServerClient();
@@ -96,13 +100,17 @@ export async function PATCH(
   { params }: { params: { itemId: string } }
 ) {
   try {
-    const tenantId = request.headers.get('x-tenant-id') || '00000000-0000-0000-0000-000000000000';
     const body = await request.json();
     
+    // Get request context (handles both session and header-based auth)
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+    
+    console.log('Items API PATCH - ItemID:', params.itemId, 'TenantID:', tenantId, 'Source:', context.source);
+    
     // Get appropriate Supabase client
-    const isDemoRequest = !request.headers.get('authorization');
     let supabase;
-    if (isDemoRequest) {
+    if (!user) {
       supabase = createServiceClient();
     } else {
       supabase = await createServerClient();
