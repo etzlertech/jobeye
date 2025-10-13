@@ -29,7 +29,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database';
 
 type KitOverrideLog = Database['public']['Tables']['kit_override_logs']['Row'];
 type KitOverrideLogInsert = Database['public']['Tables']['kit_override_logs']['Insert'];

@@ -13,7 +13,7 @@ import { KitService } from '@/scheduling/services/kit.service';
 import { KitOverrideService } from '@/scheduling/services/kit-override.service';
 import { NotificationService } from '@/scheduling/services/notification.service';
 import { AuditService } from '@/core/services/audit.service';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database';
 
 // Mock Twilio for testing
 jest.mock('twilio');

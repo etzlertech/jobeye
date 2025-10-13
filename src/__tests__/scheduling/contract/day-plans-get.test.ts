@@ -8,7 +8,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from
 import { createMocks } from 'node-mocks-http';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { NextRequest } from 'next/server';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database';
 import { setupTestDatabase, cleanupTestDatabase, TEST_IDS, createTestDayPlan } from '@/__tests__/helpers/test-db-setup';
 
 import handler from '@/app/api/scheduling/day-plans/route';

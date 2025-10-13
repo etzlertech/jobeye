@@ -13,7 +13,7 @@ import { DayPlanRepository } from '@/scheduling/repositories/day-plan.repository
 import { ScheduleEventRepository } from '@/scheduling/repositories/schedule-event.repository';
 import { DayPlanService } from '@/scheduling/services/day-plan.service';
 import { RouteOptimizationService } from '@/scheduling/services/route-optimization.service';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database';
 
 describe('Day Plan Flow Integration', () => {
   let supabase: SupabaseClient<Database>;

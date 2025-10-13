@@ -30,7 +30,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database';
 
 type DayPlan = Database['public']['Tables']['day_plans']['Row'];
 type DayPlanInsert = Database['public']['Tables']['day_plans']['Insert'];

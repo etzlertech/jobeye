@@ -32,7 +32,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database';
 import { DayPlanRepository } from '../repositories/day-plan.repository';
 import { ScheduleEventRepository } from '../repositories/schedule-event.repository';
 import type { SchedulingService } from './scheduling.service';

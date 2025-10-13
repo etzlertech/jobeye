@@ -29,7 +29,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database';
 
 type KitItem = Database['public']['Tables']['kit_items']['Row'];
 type KitItemInsert = Database['public']['Tables']['kit_items']['Insert'];

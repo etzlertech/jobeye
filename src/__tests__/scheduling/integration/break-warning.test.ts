@@ -15,7 +15,7 @@ import { SchedulingService } from '@/scheduling/services/scheduling.service';
 import { BreakSchedulerService } from '@/scheduling/services/break-scheduler.service';
 import { NotificationService } from '@/scheduling/services/notification.service';
 import { LaborRuleService } from '@/scheduling/services/labor-rule.service';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database';
 
 describe('Break Warning System', () => {
   let supabase: SupabaseClient<Database>;

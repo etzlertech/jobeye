@@ -14,7 +14,7 @@ import { JobKitRepository } from '@/scheduling/repositories/job-kit.repository';
 import { KitService } from '@/scheduling/services/kit.service';
 import { JobService } from '@/domains/job/services/job.service';
 import { ContainerService } from '@/domains/inventory/services/container.service';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database';
 
 describe('Kit Loading and Verification Integration', () => {
   let supabase: SupabaseClient<Database>;

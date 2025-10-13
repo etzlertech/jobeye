@@ -13,7 +13,7 @@ import { DayPlanService } from '@/scheduling/services/day-plan.service';
 import { SchedulingService } from '@/scheduling/services/scheduling.service';
 import { DayPlanValidationService } from '@/scheduling/services/day-plan-validation.service';
 import { NotificationService } from '@/scheduling/services/notification.service';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database';
 
 describe('Job Limit Enforcement', () => {
   let supabase: SupabaseClient<Database>;

@@ -13,7 +13,7 @@ import { VoiceCommandService } from '@/scheduling/voice/voice-command.service';
 import { SchedulingIntentProcessor } from '@/scheduling/voice/scheduling-intent-processor';
 import { DayPlanService } from '@/scheduling/services/day-plan.service';
 import { SchedulingService } from '@/scheduling/services/scheduling.service';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database';
 
 describe('Voice-Driven Scheduling Integration', () => {
   let supabase: SupabaseClient<Database>;

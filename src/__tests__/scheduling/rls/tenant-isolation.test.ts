@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 // These will fail with "Cannot find module" - as expected for TDD
 import { createTestUser, createTestCompany, cleanupTestData } from '@/test/utils/test-helpers';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database';
 
 describe('Multi-tenant RLS Isolation', () => {
   let adminClient: SupabaseClient<Database>;

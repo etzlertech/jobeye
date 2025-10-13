@@ -23,4 +23,11 @@
 //   coverage: N/A - types only
 // --- END DIRECTIVE BLOCK ---
 
-export type { Database } from '@/lib/supabase/types';
+export type { 
+  Database,
+  ContactRoleDb,
+  ContactPreferredMethod,
+  MediaType,
+  UserRole,
+  Tables
+} from '@/lib/supabase/types';

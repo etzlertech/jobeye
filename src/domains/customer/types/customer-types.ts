@@ -44,7 +44,7 @@
 // --- END DIRECTIVE BLOCK ---
 
 import { z } from 'zod';
-import { Database } from '@/types/supabase';
+import { Database } from '@/types/database';
 
 // Base database types
 export type CustomerRow = Database['public']['Tables']['customers']['Row'];

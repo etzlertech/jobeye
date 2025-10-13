@@ -15,7 +15,7 @@ import { SyncQueue } from '@/scheduling/offline/sync-queue';
 import { ConflictResolver } from '@/scheduling/offline/conflict-resolver';
 import { DayPlanService } from '@/scheduling/services/day-plan.service';
 import { SchedulingService } from '@/scheduling/services/scheduling.service';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database';
 
 describe('Offline Sync Integration', () => {
   let supabase: SupabaseClient<Database>;
