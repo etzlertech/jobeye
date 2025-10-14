@@ -54,9 +54,21 @@ function SignInForm() {
           console.error('Failed to sync Supabase session cookie:', callbackError);
         }
 
-        // Clear any lingering demo cookies
+        // Clear any lingering demo cookies and old auth cookies
         document.cookie = 'isDemo=; Max-Age=0; path=/';
         document.cookie = 'demoRole=; Max-Age=0; path=/';
+
+        // Clear old custom auth cookies (jobeye-auth-token) to force new Supabase default cookies
+        document.cookie = 'jobeye-auth-token=; Max-Age=0; path=/';
+        document.cookie = 'jobeye-auth-token.0=; Max-Age=0; path=/';
+        document.cookie = 'jobeye-auth-token.1=; Max-Age=0; path=/';
+
+        // Clear localStorage to remove any cached auth data
+        try {
+          localStorage.removeItem('jobeye-auth-token');
+        } catch (e) {
+          console.warn('Could not clear localStorage:', e);
+        }
 
         // Get role from app_metadata or user_metadata
         // Check both 'role' (singular) and 'roles' (array) fields
