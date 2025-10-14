@@ -22,6 +22,21 @@ function SignInForm() {
     setIsLoading(true);
     setError(null);
 
+    // Clear old auth cookies BEFORE signing in to prevent conflicts
+    // Old custom cookies (jobeye-auth-token) must be cleared so new Supabase default cookies can be set
+    document.cookie = 'jobeye-auth-token=; Max-Age=0; path=/';
+    document.cookie = 'jobeye-auth-token.0=; Max-Age=0; path=/';
+    document.cookie = 'jobeye-auth-token.1=; Max-Age=0; path=/';
+    document.cookie = 'isDemo=; Max-Age=0; path=/';
+    document.cookie = 'demoRole=; Max-Age=0; path=/';
+
+    // Clear localStorage
+    try {
+      localStorage.removeItem('jobeye-auth-token');
+    } catch (e) {
+      console.warn('Could not clear localStorage:', e);
+    }
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -52,22 +67,6 @@ function SignInForm() {
           await supabase.auth.refreshSession();
         } catch (callbackError) {
           console.error('Failed to sync Supabase session cookie:', callbackError);
-        }
-
-        // Clear any lingering demo cookies and old auth cookies
-        document.cookie = 'isDemo=; Max-Age=0; path=/';
-        document.cookie = 'demoRole=; Max-Age=0; path=/';
-
-        // Clear old custom auth cookies (jobeye-auth-token) to force new Supabase default cookies
-        document.cookie = 'jobeye-auth-token=; Max-Age=0; path=/';
-        document.cookie = 'jobeye-auth-token.0=; Max-Age=0; path=/';
-        document.cookie = 'jobeye-auth-token.1=; Max-Age=0; path=/';
-
-        // Clear localStorage to remove any cached auth data
-        try {
-          localStorage.removeItem('jobeye-auth-token');
-        } catch (e) {
-          console.warn('Could not clear localStorage:', e);
         }
 
         // Get role from app_metadata or user_metadata
