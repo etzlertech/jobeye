@@ -51,41 +51,8 @@ export const supabase = createBrowserClient<Database>(
   supabaseUrl,
   supabaseAnonKey,
   {
-    cookies: {
-      get(name: string) {
-        if (typeof document === 'undefined') return undefined;
-        const cookie = document.cookie
-          .split('; ')
-          .find(row => row.startsWith(`${name}=`));
-        return cookie ? decodeURIComponent(cookie.split('=')[1]) : undefined;
-      },
-      set(name: string, value: string, options: any) {
-        if (typeof document === 'undefined') return;
-        const cookieOptions = {
-          path: '/',
-          ...options,
-          sameSite: 'lax' as const,
-          secure: window.location.protocol === 'https:'
-        };
-        const cookieString = [
-          `${name}=${encodeURIComponent(value)}`,
-          ...Object.entries(cookieOptions).map(([key, val]) =>
-            val === true ? key : `${key}=${val}`
-          )
-        ].join('; ');
-        document.cookie = cookieString;
-      },
-      remove(name: string, options: any) {
-        if (typeof document === 'undefined') return;
-        this.set(name, '', { ...options, maxAge: 0 });
-      }
-    },
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-      storageKey: 'jobeye-auth-token'
-    },
+    // Let @supabase/ssr handle cookies automatically
+    // This ensures compatibility between client and server
     global: {
       headers: {
         'x-client-info': 'jobeye-v4'
