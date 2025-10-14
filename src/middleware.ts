@@ -40,7 +40,7 @@
  * ]
  */
 
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { isPublicRoute, checkRouteAccess, getDashboardUrl, type UserRole } from '@/lib/auth/route-access';
@@ -73,13 +73,47 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    // Create Supabase client
-    const res = NextResponse.next();
-    const supabase = createMiddlewareClient<Database>({ req: request, res });
+    // Create response object
+    let response = NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    });
+
+    // Create Supabase client with proper cookie handling for middleware
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value;
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            request.cookies.set({ name, value, ...options });
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            });
+            response.cookies.set({ name, value, ...options });
+          },
+          remove(name: string, options: CookieOptions) {
+            request.cookies.set({ name, value: '', ...options });
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            });
+            response.cookies.set({ name, value: '', ...options });
+          },
+        },
+      }
+    );
 
     // Check if route is public
     if (isPublicRoute(pathname)) {
-      return res;
+      return response;
     }
 
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -143,15 +177,11 @@ export async function middleware(request: NextRequest) {
       if (session?.user?.user_metadata) {
         requestHeaders.set('x-user-metadata', JSON.stringify(session.user.user_metadata));
       }
-      const response = NextResponse.next({
+      return NextResponse.next({
         request: {
           headers: requestHeaders
         }
       });
-      res.cookies.getAll().forEach(cookie => {
-        response.cookies.set(cookie);
-      });
-      return response;
     }
 
     // Handle root redirect based on role
@@ -160,7 +190,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(dashboardUrl, request.url));
     }
 
-    return res;
+    return response;
   } catch (error) {
     console.error('Middleware error:', error);
     
