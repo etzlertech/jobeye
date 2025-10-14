@@ -107,12 +107,25 @@ export async function GET(req: NextRequest) {
       );
     } catch (error) {
       console.error('[jobs/today] Error:', error);
+
+      // Better error serialization
+      let errorDetails;
+      if (error instanceof Error) {
+        errorDetails = {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        };
+      } else {
+        errorDetails = JSON.stringify(error, null, 2);
+      }
+
       return NextResponse.json(
         {
           error: {
             message: error instanceof Error ? error.message : 'Failed to fetch jobs',
             code: 'JOBS_FETCH_ERROR',
-            details: error instanceof Error ? error.stack : String(error)
+            details: errorDetails
           }
         },
         { status: 500 }
