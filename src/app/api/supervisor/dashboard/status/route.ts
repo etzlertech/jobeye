@@ -87,23 +87,19 @@ export async function GET(req: NextRequest) {
         );
       }
 
-      // Initialize service
-      const supervisorService = new SupervisorWorkflowService();
+      // TODO: Full implementation requires crews, job_assignments, inventory, and activity_logs tables
+      // For now, return stub data until database schema is complete
 
-      // Get dashboard status
-      const status = await supervisorService.getDashboardStatus(tenantId);
-
-      // Build response
       const response = {
-        todayJobs: status.todayJobs,
-        crewStatus: status.crewStatus,
-        inventoryAlerts: status.inventoryAlerts,
-        recentActivity: status.recentActivity.map(activity => ({
-          timestamp: activity.timestamp.toISOString(),
-          type: activity.type,
-          description: activity.description,
-          userId: activity.userId
-        })),
+        todayJobs: {
+          total: 0,
+          assigned: 0,
+          inProgress: 0,
+          completed: 0
+        },
+        crewStatus: [],
+        inventoryAlerts: [],
+        recentActivity: [],
         metadata: {
           generatedAt: new Date().toISOString(),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -113,7 +109,7 @@ export async function GET(req: NextRequest) {
       // Validate response
       const validatedResponse = dashboardStatusResponseSchema.parse(response);
 
-      return NextResponse.json(validatedResponse, { 
+      return NextResponse.json(validatedResponse, {
         status: 200,
         headers: {
           'Cache-Control': 'private, max-age=30' // Cache for 30 seconds
