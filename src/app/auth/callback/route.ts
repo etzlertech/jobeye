@@ -28,7 +28,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/server';
 import type { Session } from '@supabase/supabase-js';
 
 interface AuthCallbackPayload {
@@ -49,8 +49,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = await createClient();
 
     switch (event) {
       case 'SIGNED_IN':
