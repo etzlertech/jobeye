@@ -51,18 +51,21 @@ function SignInForm() {
         document.cookie = 'demoRole=; Max-Age=0; path=/';
 
         // Get role from app_metadata or user_metadata
-        const role = data.user.app_metadata?.role || data.user.user_metadata?.role || 'crew';
+        const roles = data.user.app_metadata?.roles || data.user.user_metadata?.roles || [];
+        const role = roles.includes('system_admin') ? 'admin' : 
+                    roles.includes('supervisor') ? 'supervisor' : 
+                    roles.includes('crew') ? 'crew' : 'crew';
 
         // Redirect based on role or provided redirect target
         const roleRoutes: Record<string, string> = {
-          admin: '/demo-crud',
-          supervisor: '/demo-crud',
-          crew: '/demo-crud'
+          admin: '/admin/dashboard',
+          supervisor: '/supervisor',
+          crew: '/crew'
         };
 
         const redirectParam = searchParams?.get('redirectTo');
         const hasSafeRedirect = redirectParam?.startsWith('/');
-        const targetRoute = hasSafeRedirect ? redirectParam! : roleRoutes[role] || '/demo-crud';
+        const targetRoute = hasSafeRedirect ? redirectParam! : roleRoutes[role] || '/crew';
 
         router.push(targetRoute);
       }
