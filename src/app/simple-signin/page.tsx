@@ -51,10 +51,21 @@ function SignInForm() {
         document.cookie = 'demoRole=; Max-Age=0; path=/';
 
         // Get role from app_metadata or user_metadata
-        const roles = data.user.app_metadata?.roles || data.user.user_metadata?.roles || [];
-        const role = roles.includes('system_admin') ? 'admin' : 
-                    roles.includes('supervisor') ? 'supervisor' : 
-                    roles.includes('crew') ? 'crew' : 'crew';
+        // Check both 'role' (singular) and 'roles' (array) fields
+        const roleFromMetadata = data.user.app_metadata?.role || data.user.user_metadata?.role;
+        const rolesArray = data.user.app_metadata?.roles || data.user.user_metadata?.roles || [];
+        
+        // Determine role based on email pattern or metadata
+        let role = 'crew'; // default
+        if (data.user.email === 'admin@tophand.tech' || rolesArray.includes('system_admin')) {
+          role = 'admin';
+        } else if (data.user.email === 'super@tophand.tech' || roleFromMetadata === 'supervisor' || rolesArray.includes('supervisor')) {
+          role = 'supervisor';
+        } else if (roleFromMetadata === 'admin') {
+          role = 'admin';
+        } else if (roleFromMetadata === 'crew' || rolesArray.includes('crew')) {
+          role = 'crew';
+        }
 
         // Redirect based on role or provided redirect target
         const roleRoutes: Record<string, string> = {
