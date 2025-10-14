@@ -30,7 +30,22 @@ function SignInForm() {
 
       if (error) throw error;
 
-      if (data.user) {
+      if (data.user && data.session) {
+        try {
+          await fetch('/auth/callback', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              event: 'SIGNED_IN',
+              session: data.session
+            })
+          });
+        } catch (callbackError) {
+          console.warn('Failed to sync Supabase session cookie:', callbackError);
+        }
+
         // Clear any lingering demo cookies
         document.cookie = 'isDemo=; Max-Age=0; path=/';
         document.cookie = 'demoRole=; Max-Age=0; path=/';
