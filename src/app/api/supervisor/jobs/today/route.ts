@@ -39,15 +39,15 @@ export async function GET(req: NextRequest) {
     try {
       const role = user.app_metadata?.role;
       const roles = user.app_metadata?.roles || [];
-      
+
       // Check both role and roles fields, also accept system_admin
-      const hasAccess = role === 'supervisor' || 
-                       role === 'admin' || 
+      const hasAccess = role === 'supervisor' ||
+                       role === 'admin' ||
                        role === 'system_admin' ||
-                       roles.includes('supervisor') || 
+                       roles.includes('supervisor') ||
                        roles.includes('admin') ||
                        roles.includes('system_admin');
-                       
+
       if (!hasAccess) {
         return NextResponse.json(
           { error: 'Insufficient permissions' },
@@ -69,6 +69,7 @@ export async function GET(req: NextRequest) {
         .order('scheduled_start', { ascending: true });
 
       if (error) {
+        console.error('[jobs/today] Database error:', error);
         throw error;
       }
 
@@ -105,7 +106,17 @@ export async function GET(req: NextRequest) {
         }
       );
     } catch (error) {
-      return handleApiError(error);
+      console.error('[jobs/today] Error:', error);
+      return NextResponse.json(
+        {
+          error: {
+            message: error instanceof Error ? error.message : 'Failed to fetch jobs',
+            code: 'JOBS_FETCH_ERROR',
+            details: error instanceof Error ? error.stack : String(error)
+          }
+        },
+        { status: 500 }
+      );
     }
   });
 }
