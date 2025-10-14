@@ -58,31 +58,39 @@ export async function GET(req: NextRequest) {
       const supabase = await createServerClient();
       const today = new Date().toISOString().split('T')[0];
 
+      // Note: jobs table uses scheduled_start (timestamp) instead of scheduled_date/scheduled_time
       // TODO: Full query requires job_templates, customers, properties, and job_assignments tables
-      // For now, query basic job data only
       const { data: jobRows, error } = await supabase
         .from('jobs')
-        .select('id, scheduled_date, scheduled_time, status, special_instructions')
+        .select('id, title, scheduled_start, status, completion_notes, assigned_to')
         .eq('tenant_id', tenantId)
-        .eq('scheduled_date', today)
-        .order('scheduled_time', { ascending: true });
+        .gte('scheduled_start', `${today}T00:00:00Z`)
+        .lt('scheduled_start', `${today}T23:59:59Z`)
+        .order('scheduled_start', { ascending: true });
 
       if (error) {
         throw error;
       }
 
-      const jobs = (jobRows || []).map(job => ({
-        id: job.id,
-        customer_name: 'Demo Customer',
-        property_address: 'Demo Property Address',
-        scheduled_date: job.scheduled_date,
-        scheduled_time: job.scheduled_time,
-        status: job.status,
-        special_instructions: job.special_instructions,
-        template_name: 'Standard Service',
-        estimated_duration: '2 hours',
-        assigned_at: null
-      }));
+      const jobs = (jobRows || []).map(job => {
+        const scheduledStart = new Date(job.scheduled_start);
+        return {
+          id: job.id,
+          customer_name: 'Demo Customer',
+          property_address: 'Demo Property Address',
+          scheduled_date: scheduledStart.toISOString().split('T')[0],
+          scheduled_time: scheduledStart.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          }),
+          status: job.status,
+          special_instructions: job.completion_notes || '',
+          template_name: job.title || 'Standard Service',
+          estimated_duration: '2 hours',
+          assigned_at: job.assigned_to ? new Date().toISOString() : null
+        };
+      });
 
       return NextResponse.json(
         {
