@@ -37,16 +37,28 @@ const context = await getRequestContext(request);
    - Identify next tasks to execute
 
 3. **BEFORE ANY DATABASE WORK:**
-   - Run `npm run check:db-actual` (or `npx tsx scripts/check-actual-db.ts`)
-   - Never assume tables exist from migration files
-   - Check actual schema state first
+   - **PRIMARY METHOD**: Use Supabase MCP server to query LIVE database
+   - Always check actual schema via MCP before making any assumptions
+   - Never trust migration files - query the LIVE database
 
-   **CRITICAL: To execute SQL migrations on Supabase:**
+   **CRITICAL: Database Access Methods (in order of preference):**
+   1. **Supabase MCP Server** (ALWAYS USE FIRST):
+      - Direct access to LIVE database
+      - Query tables, views, functions, and data in real-time
+      - No authentication setup needed - handled automatically
+   
+   2. **TypeScript Scripts** (if MCP unavailable):
+      - Use `client.rpc('exec_sql', { sql })` pattern
+      - See `scripts/fix-rls-policies.ts` for examples
+   
+   3. **Python Fallback** (last resort):
+      - Use the Python script from CLAUDE.md
+      - Only if both MCP and TypeScript fail
+
+   **NEVER USE:**
    - ❌ `psql` command is NOT available
    - ❌ `npx supabase db push` will FAIL with connection errors
-   - ✅ USE: Create TypeScript script with `client.rpc('exec_sql', { sql })`
-   - See `scripts/fix-rls-policies.ts` and `scripts/apply-job-limit-trigger.ts` for working examples
-   - This is the ONLY reliable method to modify hosted Supabase databases
+   - ❌ Migration files to determine schema - always query LIVE database
 
 4. **FOR FILE OPERATIONS:**
    - Use Write tool, not complex shell heredocs

@@ -2,11 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-<!-- Last updated: 2025-10-04 for critical operations clarity -->
+<!-- Last updated: 2025-10-14 for Supabase MCP priority -->
 
 ## 🚨 CRITICAL OPERATIONS - USE THESE EXACT METHODS
 
-### 1️⃣ DATABASE OPERATIONS - PYTHON ONLY (Node.js is BROKEN)
+### 1️⃣ DATABASE OPERATIONS - ALWAYS USE SUPABASE MCP FIRST
+**IMPORTANT**: The Supabase MCP server is now configured and working. You MUST use it as the primary method for all database operations.
+
+#### Primary Method: Supabase MCP (ALWAYS USE THIS FIRST)
+- Use the Supabase MCP server for ALL database queries and schema inspection
+- This provides direct access to the LIVE ACTUAL database
+- Never make assumptions about schema - always query the live database
+- The MCP server handles authentication automatically
+
+#### Fallback Method: Python Script (only if MCP fails)
 ```python
 #!/usr/bin/env python3
 import requests
@@ -63,11 +72,12 @@ git push origin main
 
 ## Supabase Access Guidance
 
-- **IMPORTANT**: You have direct access to Supabase schema
-- Never create SQL for users to run
-- Investigate the schema directly using Supabase client methods
-- Use `client.rpc('exec_sql', { sql: '...' })` for direct database operations
-- Always check the actual database schema before making assumptions
+- **PRIMARY METHOD**: Use Supabase MCP server for ALL database operations
+- **IMPORTANT**: You have direct access to the LIVE database via MCP
+- Never create SQL for users to run - execute it directly
+- Always query the actual database schema via MCP before making changes
+- The MCP server provides real-time access to tables, views, functions, and data
+- Only use Python fallback method if MCP connection fails
 
 ## 🏢 TENANT MANAGEMENT CONTEXT (NEW)
 

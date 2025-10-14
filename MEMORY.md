@@ -2,7 +2,15 @@
 
 ## 🚨 CRITICAL: EXACT WORKING METHODS (USE THESE ONLY)
 
-### 1️⃣ DIRECT SUPABASE CONNECTION - PYTHON ONLY
+### 1️⃣ DIRECT SUPABASE CONNECTION - MCP SERVER FIRST
+
+#### PRIMARY METHOD: Supabase MCP Server (ALWAYS USE THIS)
+- **LIVE DATABASE ACCESS**: Query the actual production database in real-time
+- **NO SETUP NEEDED**: Authentication handled automatically by MCP
+- **FULL CAPABILITIES**: Access to tables, views, functions, and data
+- **ALWAYS USE MCP FIRST** before any other method
+
+#### FALLBACK METHOD: Python Script (only if MCP fails)
 ```python
 #!/usr/bin/env python3
 import requests
@@ -59,16 +67,21 @@ sleep 180
 
 ### 1. ALWAYS CHECK LIVE DATABASE FIRST
 Before ANY database work (new tables, migrations, schema changes, queries):
-```bash
-npm run check:db-actual
-```
+- **PRIMARY**: Use Supabase MCP server to query live database
+- **FALLBACK**: Run `npm run check:db-actual` if MCP unavailable
+- **NEVER**: Trust migration files or make assumptions
 
 ### 2. NEVER TRUST MIGRATION FILES
 Migration files in the codebase DO NOT reflect actual database state. 
 **ALWAYS verify by querying the live database using Supabase client.**
 
-### 3. USE ONLY SUPABASE CLIENT FOR DATABASE OPERATIONS
-**✅ WORKING METHOD - Use Supabase Client RPC:**
+### 3. DATABASE ACCESS METHODS (IN ORDER OF PREFERENCE)
+**✅ METHOD 1 - Supabase MCP Server (USE THIS FIRST):**
+- Direct access to live database via MCP tools
+- No authentication setup needed
+- Query tables, views, functions in real-time
+
+**✅ METHOD 2 - Supabase Client RPC (if MCP unavailable):**
 ```typescript
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
@@ -93,20 +106,20 @@ const { error } = await client.rpc('exec_sql', {
 - PGBouncer URLs with standard postgres clients
 
 ### 4. BEFORE ANY DATABASE CODING
-1. Run `npm run check:db-actual`
-2. Query live schema using Supabase client
-3. Verify actual table structure exists
-4. Check actual RLS policies exist
-5. THEN write code based on ACTUAL state
+1. Query live database via Supabase MCP server
+2. Verify actual table structure exists in LIVE database
+3. Check actual RLS policies exist via MCP
+4. Only if MCP fails: Run `npm run check:db-actual`
+5. THEN write code based on ACTUAL LIVE state
 
 ## 🚨 WORKFLOW ENFORCEMENT
 
 ### Database Decision Checklist
-- [ ] Ran `npm run check:db-actual`
-- [ ] Queried live database with Supabase client
-- [ ] Verified actual schema vs migration files
-- [ ] Confirmed RLS policies exist
-- [ ] Based decisions on LIVE data, not migration files
+- [ ] Used Supabase MCP to query LIVE database
+- [ ] Verified actual schema from LIVE database (not migration files)
+- [ ] Confirmed RLS policies exist in LIVE database
+- [ ] If MCP failed, used Python fallback method
+- [ ] Based ALL decisions on LIVE data, never migration files
 
 ### Working Examples That Succeeded
 - `scripts/fix-rls-policies.ts` - Fixed RLS policies via Supabase RPC
