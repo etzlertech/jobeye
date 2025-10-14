@@ -38,7 +38,17 @@ export async function GET(req: NextRequest) {
   return withAuth(req, async (user, tenantId) => {
     try {
       const role = user.app_metadata?.role;
-      if (role !== 'supervisor' && role !== 'admin') {
+      const roles = user.app_metadata?.roles || [];
+      
+      // Check both role and roles fields, also accept system_admin
+      const hasAccess = role === 'supervisor' || 
+                       role === 'admin' || 
+                       role === 'system_admin' ||
+                       roles.includes('supervisor') || 
+                       roles.includes('admin') ||
+                       roles.includes('system_admin');
+                       
+      if (!hasAccess) {
         return NextResponse.json(
           { error: 'Insufficient permissions' },
           { status: 403 }

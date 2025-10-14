@@ -17,11 +17,9 @@ voice_considerations:
   - Voice endpoints reuse this guard, so errors must be voice-friendly upstream
 */
 
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@/lib/supabase/server';
 import type { User } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
 
 export type AuthenticatedHandler = (
   user: User,
@@ -33,10 +31,7 @@ export async function withAuth(
   handler: AuthenticatedHandler
 ): Promise<NextResponse> {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({
-      cookies: () => cookieStore
-    });
+    const supabase = await createServerClient();
 
     const {
       data: { session },

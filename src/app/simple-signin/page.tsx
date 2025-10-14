@@ -32,7 +32,7 @@ function SignInForm() {
 
       if (data.user && data.session) {
         try {
-          await fetch('/auth/callback', {
+          const callbackResponse = await fetch('/auth/callback', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -42,8 +42,16 @@ function SignInForm() {
               session: data.session
             })
           });
+          
+          if (!callbackResponse.ok) {
+            const error = await callbackResponse.json();
+            console.error('Auth callback failed:', error);
+          }
+          
+          // Force a session refresh to ensure cookies are properly set
+          await supabase.auth.refreshSession();
         } catch (callbackError) {
-          console.warn('Failed to sync Supabase session cookie:', callbackError);
+          console.error('Failed to sync Supabase session cookie:', callbackError);
         }
 
         // Clear any lingering demo cookies
@@ -191,7 +199,7 @@ function SignInForm() {
         
         {/* Version indicator for deployment */}
         <div className="mt-4 text-center text-xs text-gray-500">
-          v3.2.1 - {new Date().toLocaleDateString()}
+          v3.2.2 - {new Date().toLocaleDateString()}
           {needsConfig && ' - Config Required'}
         </div>
       </div>

@@ -165,7 +165,7 @@ export async function middleware(request: NextRequest) {
     console.error('Middleware error:', error);
     
     // On error, redirect to main page (simple-signin)
-    const signInUrl = new URL('/sign-in', request.url);
+    const signInUrl = new URL('/', request.url);
     signInUrl.searchParams.set('error', 'middleware_error');
     return NextResponse.redirect(signInUrl);
   }
