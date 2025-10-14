@@ -78,6 +78,15 @@ function SignInForm() {
         const hasSafeRedirect = redirectParam?.startsWith('/');
         const targetRoute = hasSafeRedirect ? redirectParam! : roleRoutes[role] || '/crew';
 
+        console.log('Sign-in redirect:', {
+          email: data.user.email,
+          role,
+          roleFromMetadata,
+          rolesArray,
+          targetRoute,
+          redirectParam
+        });
+
         router.push(targetRoute);
       }
     } catch (err) {
