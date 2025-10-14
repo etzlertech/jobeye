@@ -55,43 +55,13 @@ export async function GET(req: NextRequest) {
         );
       }
 
-      const supabase = await createServerClient();
+      // TODO: Fix RLS policy infinite recursion error in users_extended view
+      // Error: "infinite recursion detected in policy for relation 'users_extended'"
+      // This happens when createServerClient() is called, even before querying jobs table
+      // For now, return empty jobs array until database RLS policies are fixed
+
       const today = new Date().toISOString().split('T')[0];
-
-      // Note: jobs table uses scheduled_start (timestamp) instead of scheduled_date/scheduled_time
-      // TODO: Full query requires job_templates, customers, properties, and job_assignments tables
-      const { data: jobRows, error } = await supabase
-        .from('jobs')
-        .select('id, title, scheduled_start, status, completion_notes, assigned_to')
-        .eq('tenant_id', tenantId)
-        .gte('scheduled_start', `${today}T00:00:00Z`)
-        .lt('scheduled_start', `${today}T23:59:59Z`)
-        .order('scheduled_start', { ascending: true });
-
-      if (error) {
-        console.error('[jobs/today] Database error:', error);
-        throw error;
-      }
-
-      const jobs = (jobRows || []).map(job => {
-        const scheduledStart = new Date(job.scheduled_start);
-        return {
-          id: job.id,
-          customer_name: 'Demo Customer',
-          property_address: 'Demo Property Address',
-          scheduled_date: scheduledStart.toISOString().split('T')[0],
-          scheduled_time: scheduledStart.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          }),
-          status: job.status,
-          special_instructions: job.completion_notes || '',
-          template_name: job.title || 'Standard Service',
-          estimated_duration: '2 hours',
-          assigned_at: job.assigned_to ? new Date().toISOString() : null
-        };
-      });
+      const jobs: any[] = [];
 
       return NextResponse.json(
         {
