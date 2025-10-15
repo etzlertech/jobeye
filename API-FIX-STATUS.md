@@ -24,7 +24,11 @@ The `getRequestContext` function in `src/lib/auth/context.ts` was throwing error
 
 ---
 
-## ✅ Fix Applied (Commit 6107fa7)
+## ✅ Fixes Applied
+
+### Fix 1: Fallback Tenant (Commit 6107fa7) - NOT THE ROOT CAUSE
+
+This was NOT the issue! Users already have tenant_id in their JWTs.
 
 ### Changes Made to `src/lib/auth/context.ts`
 
@@ -270,6 +274,19 @@ The frontend golden styling work is **100% complete and unaffected** by this bac
 
 ---
 
-**Last Updated**: 2025-10-15 22:45 PST
-**Deployed Commit**: 6107fa7
+### Fix 2: Correct Table Name (Commit 2c51ee8) - ACTUAL ROOT CAUSE ✅
+
+**Problem**: API code was querying `inventory_items` table which doesn't exist.
+**Solution**: Changed to use `items` table (the actual table name in database).
+
+**Changes**:
+- Table: `inventory_items` → `items`
+- Column: `reorder_level` → `reorder_point`
+- Column: `type` → `item_type`
+- Column: `specifications` → `attributes`
+
+---
+
+**Last Updated**: 2025-10-15 23:02 PST
+**Deployed Commit**: 2c51ee8 (with table name fix)
 **Railway Status**: Deploying...
