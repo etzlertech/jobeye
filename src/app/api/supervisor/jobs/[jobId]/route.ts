@@ -1,41 +1,6 @@
-/**
- * AGENT DIRECTIVE BLOCK
- * 
- * file: /src/app/api/supervisor/jobs/[jobId]/route.ts
- * phase: 4
- * domain: jobs
- * purpose: API endpoints for individual job operations
- * spec_ref: 007-mvp-intent-driven/contracts/supervisor-api.md
- * complexity_budget: 150
- * migrations_touched: ['jobs']
- * state_machine: none
- * estimated_llm_cost: {
- *   "read": "$0.00",
- *   "write": "$0.00"
- * }
- * offline_capability: OPTIONAL
- * dependencies: {
- *   internal: ['@/lib/supabase/server', '@/core/errors/error-handler', '@/domains/jobs/repositories/jobs.repository'],
- *   external: ['next/server'],
- *   supabase: ['jobs']
- * }
- * exports: ['GET', 'PUT', 'DELETE']
- * voice_considerations: None - API endpoint
- * test_requirements: {
- *   coverage: 85,
- *   unit_tests: 'tests/api/supervisor/jobs/[jobId].test.ts'
- * }
- * tasks: [
- *   'Get single job',
- *   'Update job',
- *   'Delete job'
- * ]
- */
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
-import { handleApiError, notFound, validationError } from '@/core/errors/error-handler';
-import { JobsRepository } from '@/domains/jobs/repositories/jobs.repository';
+import { handleApiError } from '@/core/errors/error-handler';
 import { getRequestContext } from '@/lib/auth/context';
 
 export async function GET(
@@ -45,110 +10,39 @@ export async function GET(
   try {
     const context = await getRequestContext(request);
     const { tenantId, user } = context;
-
     const supabase = user
       ? await createServerClient()
       : createServiceClient();
-    
-    const jobsRepo = new JobsRepository(supabase);
-    // Use findById without relations for now
-    const job = await jobsRepo.findById(params.jobId, { tenant_id: tenantId });
 
-    if (!job) {
-      return notFound('Job not found');
-    }
+    const { jobId } = params;
+
+    const { data, error } = await supabase
+      .from('jobs')
+      .select(`
+        *,
+        customer:customer_id (
+          name
+        ),
+        property:property_id (
+          name,
+          address
+        )
+      `)
+      .eq('id', jobId)
+      .eq('tenant_id', tenantId)
+      .single();
+
+    if (error) throw error;
+
+    // Map field names for frontend
+    const job = {
+      ...data,
+      primaryImageUrl: data.primary_image_url,
+      mediumUrl: data.medium_url,
+      thumbnailUrl: data.thumbnail_url
+    };
 
     return NextResponse.json({ job });
-
-  } catch (error) {
-    return handleApiError(error);
-  }
-}
-
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { jobId: string } }
-) {
-  try {
-    const body = await request.json();
-    const context = await getRequestContext(request);
-    const { tenantId, user } = context;
-
-    const supabase = user
-      ? await createServerClient()
-      : createServiceClient();
-    
-    const jobsRepo = new JobsRepository(supabase);
-
-    // Check if job exists
-    const existingJob = await jobsRepo.findById(params.jobId, { tenant_id: tenantId });
-    if (!existingJob) {
-      return notFound('Job not found');
-    }
-
-    // Update job
-    const updatedJob = await jobsRepo.update(
-      params.jobId,
-      {
-        ...body,
-        updated_at: new Date().toISOString()
-      },
-      { tenant_id: tenantId }
-    );
-
-    if (!updatedJob) {
-      throw new Error('Failed to update job');
-    }
-
-    // Skip fetching with relations for now due to production issue
-    // Just return the updated job
-    return NextResponse.json({ 
-      job: updatedJob,
-      message: 'Job updated successfully'
-    });
-
-  } catch (error) {
-    return handleApiError(error);
-  }
-}
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { jobId: string } }
-) {
-  try {
-    const context = await getRequestContext(request);
-    const { tenantId, user } = context;
-
-    const supabase = user
-      ? await createServerClient()
-      : createServiceClient();
-    
-    const jobsRepo = new JobsRepository(supabase);
-
-    // Check if job exists
-    const existingJob = await jobsRepo.findById(params.jobId, { tenant_id: tenantId });
-    if (!existingJob) {
-      return notFound('Job not found');
-    }
-
-    // Check if job can be deleted (not in progress or completed)
-    if (['in_progress', 'completed'].includes(existingJob.status)) {
-      return validationError('Cannot delete job in this status', {
-        status: existingJob.status
-      });
-    }
-
-    // Delete job
-    const deleted = await jobsRepo.delete(params.jobId, { tenant_id: tenantId });
-
-    if (!deleted) {
-      throw new Error('Failed to delete job');
-    }
-
-    return NextResponse.json({ 
-      message: 'Job deleted successfully'
-    });
 
   } catch (error) {
     return handleApiError(error);

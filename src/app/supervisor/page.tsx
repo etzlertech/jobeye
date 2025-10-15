@@ -19,7 +19,6 @@ import {
   Users,
   Package,
   AlertTriangle,
-  Plus,
   RefreshCw,
   Clock,
   CheckCircle,
@@ -269,8 +268,7 @@ export default function SupervisorDashboard() {
               onClick={() => router.push('/supervisor/jobs')}
               className="action-button primary"
             >
-              <Plus className="w-6 h-6" />
-              <span className="text-sm">Create Job</span>
+              <span className="text-sm">Jobs</span>
             </button>
             <button
               type="button"

@@ -32,6 +32,7 @@ interface Job {
   scheduled_end?: string;
   customerName: string;
   propertyName?: string;
+  thumbnailUrl?: string;
   created_at: string;
 }
 
@@ -86,6 +87,7 @@ export default function SupervisorJobsPage() {
         scheduled_end: job.scheduled_end,
         customerName: job.customer?.name || job.customer_id || 'Unknown customer',
         propertyName: job.property?.name || job.property?.address?.street || undefined,
+        thumbnailUrl: job.thumbnail_url,
         created_at: job.created_at
       }));
 
@@ -326,49 +328,65 @@ export default function SupervisorJobsPage() {
                   className="job-card"
                   onClick={() => router.push(`/supervisor/jobs/${job.id}`)}
                 >
-                  <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-start gap-3">
+                    <div className="job-thumbnail">
+                      {job.thumbnailUrl ? (
+                        <img
+                          src={job.thumbnailUrl}
+                          alt={job.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Briefcase className="w-6 h-6 text-gray-400" />
+                      )}
+                    </div>
+
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className="status-badge"
-                          style={{
-                            background: `${getStatusColor(job.status)}20`,
-                            color: getStatusColor(job.status),
-                            border: `1px solid ${getStatusColor(job.status)}40`
-                          }}
-                        >
-                          {job.status}
-                        </span>
-                        {job.priority !== 'normal' && (
-                          <span
-                            className="priority-badge"
-                            style={{ color: getPriorityColor(job.priority) }}
-                          >
-                            {job.priority}
-                          </span>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span
+                              className="status-badge"
+                              style={{
+                                background: `${getStatusColor(job.status)}20`,
+                                color: getStatusColor(job.status),
+                                border: `1px solid ${getStatusColor(job.status)}40`
+                              }}
+                            >
+                              {job.status}
+                            </span>
+                            {job.priority !== 'normal' && (
+                              <span
+                                className="priority-badge"
+                                style={{ color: getPriorityColor(job.priority) }}
+                              >
+                                {job.priority}
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="font-semibold text-white">{job.title}</h3>
+                          <p className="text-xs text-gray-500 mt-0.5">{job.job_number}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1 text-xs text-gray-400">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-3 h-3" />
+                          <span>{job.customerName}</span>
+                        </div>
+
+                        {job.propertyName && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-3 h-3" />
+                            <span>{job.propertyName}</span>
+                          </div>
                         )}
+
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-3 h-3" />
+                          <span>{new Date(job.scheduled_start).toLocaleDateString()}</span>
+                        </div>
                       </div>
-                      <h3 className="font-semibold text-white">{job.title}</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">{job.job_number}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 text-xs text-gray-400">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-3 h-3" />
-                      <span>{job.customerName}</span>
-                    </div>
-
-                    {job.propertyName && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-3 h-3" />
-                        <span>{job.propertyName}</span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-3 h-3" />
-                      <span>{new Date(job.scheduled_start).toLocaleDateString()}</span>
                     </div>
                   </div>
                 </div>
@@ -493,6 +511,18 @@ export default function SupervisorJobsPage() {
           background: rgba(255, 255, 255, 0.08);
           border-color: rgba(255, 215, 0, 0.4);
           transform: translateX(2px);
+        }
+
+        .job-thumbnail {
+          width: 3rem;
+          height: 3rem;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 0.5rem;
+          overflow: hidden;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .status-badge {
