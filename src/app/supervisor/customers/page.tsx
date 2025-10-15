@@ -72,6 +72,7 @@ interface Customer {
   address?: string;
   notes?: string;
   property_count?: number;
+  thumbnailUrl?: string;
   created_at: string;
 }
 
@@ -170,7 +171,13 @@ export default function SupervisorCustomersPage() {
 
       if (!response.ok) throw new Error(data.message);
 
-      setCustomers(data.customers || []);
+      // Map thumbnail_url from API response
+      const customersWithImages = (data.customers || []).map((customer: any) => ({
+        ...customer,
+        thumbnailUrl: customer.thumbnail_url
+      }));
+
+      setCustomers(customersWithImages);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load customers');
     } finally {
@@ -395,12 +402,25 @@ export default function SupervisorCustomersPage() {
                   <div
                     key={customer.id}
                     className="customer-card"
-                    onClick={() => handleEdit(customer)}
+                    onClick={() => router.push(`/supervisor/customers/${customer.id}`)}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-start gap-3 mb-2">
-                          <Users className="w-5 h-5 mt-0.5" style={{ color: '#FFD700' }} />
+                    <div className="flex items-start gap-3">
+                      {/* Thumbnail */}
+                      <div className="customer-thumbnail">
+                        {customer.thumbnailUrl ? (
+                          <img
+                            src={customer.thumbnailUrl}
+                            alt={customer.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Users className="w-6 h-6 text-gray-400" />
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
                             <h3 className="font-semibold text-white">
                               {customer.name}
@@ -411,12 +431,35 @@ export default function SupervisorCustomersPage() {
                               </span>
                             )}
                           </div>
+
+                          <div className="flex flex-col gap-2 ml-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(customer);
+                              }}
+                              className="icon-button"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(customer.id);
+                              }}
+                              className="icon-button delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
 
-                        <div className="ml-8 space-y-1 text-xs text-gray-400">
+                        <div className="space-y-1 text-xs text-gray-400">
                           <div className="flex items-center gap-2">
                             <Mail className="w-3 h-3" />
-                            <span>{customer.email}</span>
+                            <span className="truncate">{customer.email}</span>
                           </div>
 
                           {customer.phone && (
@@ -428,34 +471,11 @@ export default function SupervisorCustomersPage() {
 
                           {customer.address && (
                             <div className="flex items-start gap-2 text-gray-500">
-                              <MapPin className="w-3 h-3 mt-0.5" />
+                              <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
                               <span className="line-clamp-2">{customer.address}</span>
                             </div>
                           )}
                         </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(customer);
-                          }}
-                          className="icon-button"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(customer.id);
-                          }}
-                          className="icon-button delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -573,6 +593,18 @@ export default function SupervisorCustomersPage() {
             background: rgba(255, 255, 255, 0.08);
             border-color: rgba(255, 215, 0, 0.4);
             transform: translateX(2px);
+          }
+
+          .customer-thumbnail {
+            width: 3rem;
+            height: 3rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
 
           .property-badge {
