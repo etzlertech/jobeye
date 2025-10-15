@@ -275,10 +275,10 @@ export default function SupervisorJobCreatePage() {
 
       const result = await response.json();
 
-      if (result.success) {
-        router.push(`/supervisor/jobs/${result.data.id}`);
+      if (result.success && result.job) {
+        router.push(`/supervisor/jobs/${result.job.id}`);
       } else {
-        setValidationErrors({ submit: result.message });
+        setValidationErrors({ submit: result.message || 'Failed to create job' });
       }
     } catch (error) {
       setValidationErrors({ submit: 'Failed to create job' });
