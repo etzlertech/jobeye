@@ -109,18 +109,33 @@ export async function POST(request: NextRequest) {
     const missingFields = requiredFields.filter(field => !body[field]);
 
     if (missingFields.length > 0) {
-      return validationError('Missing required fields', { 
-        missing_fields: missingFields 
+      return validationError('Missing required fields', {
+        missing_fields: missingFields
       });
     }
 
-    // Create property
+    // Generate property number
+    const timestamp = Date.now();
+    const propertyNumber = `PROP-${timestamp}`;
+
+    // Create property with required fields
+    const propertyData = {
+      tenant_id: tenantId,
+      customer_id: body.customer_id,
+      property_number: propertyNumber,
+      name: body.name || null,
+      address: typeof body.address === 'string' ? { street: body.address } : body.address,
+      property_type: body.property_type || null,
+      size_sqft: body.size_sqft || null,
+      access_notes: body.access_notes || null,
+      special_instructions: body.special_instructions || null,
+      is_active: true,
+      metadata: body.metadata || {}
+    };
+
     const { data: property, error } = await supabase
       .from('properties')
-      .insert({
-        ...body,
-        tenant_id: tenantId
-      })
+      .insert(propertyData)
       .select()
       .single();
 

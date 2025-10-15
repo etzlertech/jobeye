@@ -219,7 +219,7 @@ export default function SupervisorCustomersPage() {
         ? `/api/supervisor/customers/${selectedCustomer.id}`
         : '/api/supervisor/customers';
 
-      const method = view === 'edit' ? 'PUT' : 'POST';
+      const method = view === 'edit' ? 'PATCH' : 'POST';
 
       console.log('Submitting customer data:', formData);
       console.log('API URL:', url, 'Method:', method);
