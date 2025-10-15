@@ -51,19 +51,19 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const status = searchParams.get('status');
 
-    // Build query for real database
+    // Build query for real database (table is 'items' not 'inventory_items')
     let query = supabase
-      .from('inventory_items')
+      .from('items')
       .select(`
         id,
         name,
         category,
         current_quantity,
-        reorder_level,
+        reorder_point,
         status,
-        type,
+        item_type,
         tracking_mode,
-        specifications,
+        attributes,
         created_at,
         updated_at
       `, { count: 'exact' });
@@ -93,22 +93,22 @@ export async function GET(request: NextRequest) {
 
     // Calculate statistics
     const statsQuery = supabase
-      .from('inventory_items')
-      .select('status, current_quantity, reorder_level', { count: 'exact' });
+      .from('items')
+      .select('status, current_quantity, reorder_point', { count: 'exact' });
 
     statsQuery.eq('tenant_id', tenantId);
 
     const { data: allItems } = await statsQuery;
-    
+
     const stats = {
       total_items: count || 0,
       active: (allItems || []).filter(i => i.status === 'active').length,
-      low_stock: (allItems || []).filter(i => 
-        i.current_quantity !== null && 
-        i.reorder_level !== null && 
-        i.current_quantity <= i.reorder_level
+      low_stock: (allItems || []).filter(i =>
+        i.current_quantity !== null &&
+        i.reorder_point !== null &&
+        i.current_quantity <= i.reorder_point
       ).length,
-      out_of_stock: (allItems || []).filter(i => 
+      out_of_stock: (allItems || []).filter(i =>
         i.current_quantity !== null && i.current_quantity === 0
       ).length
     };
@@ -143,30 +143,28 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Get company ID from headers
     // Determine item type and tracking mode
-    const type = body.category === 'equipment' ? 'equipment' : 'material';
-    const trackingMode = type === 'equipment' ? 'individual' : 'quantity';
-    
-    // Create inventory item with correct schema
+    const itemType = body.category === 'equipment' ? 'equipment' : 'material';
+    const trackingMode = itemType === 'equipment' ? 'individual' : 'quantity';
+
+    // Create inventory item with correct schema (table is 'items')
     const insertData: any = {
       name: body.name,
       category: body.category,
-      type,
+      item_type: itemType,
       tracking_mode: trackingMode,
       status: 'active',
       tenant_id: tenantId,
-      specifications: body.container ? { container: body.container } : {}
+      attributes: body.container ? { container: body.container } : {},
+      unit_of_measure: 'units'
     };
 
-    // Only add quantity for materials (not equipment)
-    if (type === 'material') {
-      insertData.current_quantity = body.quantity || 1;
-      insertData.reorder_level = body.min_quantity || 5;
-    }
+    // Add quantity for all items
+    insertData.current_quantity = body.quantity || 1;
+    insertData.reorder_point = body.min_quantity || 5;
 
     const { data: item, error } = await supabase
-      .from('inventory_items')
+      .from('items')
       .insert(insertData)
       .select()
       .single();
