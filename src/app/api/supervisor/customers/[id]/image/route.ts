@@ -5,10 +5,10 @@ import { getRequestContext } from '@/lib/auth/context';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { customerId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { customerId } = params;
+    const customerId = params.id;
 
     // Get request context (handles both session and header-based auth)
     const context = await getRequestContext(request);
