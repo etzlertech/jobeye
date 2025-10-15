@@ -29,11 +29,26 @@ export async function getRequestContext(request: Request): Promise<RequestContex
     // 1. Try session first (preferred method)
     const supabase = await createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
-    
+
+    console.log('[getRequestContext] Checking user session:', {
+      hasUser: !!user,
+      userEmail: user?.email,
+      hasError: !!error,
+      errorMessage: error?.message
+    });
+
     if (user && !error) {
       // Check app_metadata for tenant info
       const appMetadata = user.app_metadata;
-      
+
+      console.log('[getRequestContext] User app_metadata:', {
+        userId: user.id,
+        email: user.email,
+        hasTenantId: !!appMetadata?.tenant_id,
+        hasRoles: !!appMetadata?.roles,
+        metadata: appMetadata
+      });
+
       if (appMetadata?.tenant_id) {
         return {
           tenantId: appMetadata.tenant_id,
@@ -43,28 +58,38 @@ export async function getRequestContext(request: Request): Promise<RequestContex
           user
         };
       }
-      
+
       // User is authenticated but no tenant metadata
+      // TEMPORARY: Use default tenant as fallback
       console.warn(
-        `User ${user.id} (${user.email}) has no tenant metadata. ` +
-        'Run backfill-metadata script or use header fallback.'
+        `[getRequestContext] User ${user.id} (${user.email}) has no tenant metadata. ` +
+        'Using default tenant as fallback. User should sign out and sign in again.'
       );
+
+      return {
+        tenantId: '550e8400-e29b-41d4-a716-446655440000', // Default tenant
+        roles: ['member'],
+        source: 'header', // Mark as fallback
+        userId: user.id,
+        user
+      };
     }
-    
+
     // 2. No tenant context available
+    console.error('[getRequestContext] No user session found');
     throw new Error(
       'No tenant context available. ' +
-      'User must have tenant_id in JWT metadata.'
+      'User must be authenticated and have tenant_id in JWT metadata.'
     );
-    
+
   } catch (error) {
     // Re-throw if it's our context error
     if (error instanceof Error && error.message.includes('No tenant context')) {
       throw error;
     }
-    
+
     // Log and re-throw other errors
-    console.error('Error resolving request context:', error);
+    console.error('[getRequestContext] Error resolving request context:', error);
     throw new Error('Failed to resolve request context');
   }
 }
