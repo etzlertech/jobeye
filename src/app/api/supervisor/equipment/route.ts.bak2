@@ -3,10 +3,6 @@ import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError } from '@/core/errors/error-handler';
 import { getRequestContext } from '@/lib/auth/context';
 
-// Force dynamic rendering - prevents static analysis during build
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
 export async function GET(request: NextRequest) {
   try {
     const context = await getRequestContext(request);

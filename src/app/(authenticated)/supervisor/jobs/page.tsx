@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import { JobForm } from './_components/JobForm';
@@ -20,9 +20,6 @@ import {
   Clock,
   Loader2
 } from 'lucide-react';
-
-// Force dynamic rendering to prevent build-time static analysis
-export const dynamic = 'force-dynamic';
 
 interface Job {
   id: string;
@@ -44,7 +41,8 @@ interface Job {
   completion_percentage: number;
 }
 
-export default function SupervisorJobsPage() {
+// Inner component that uses searchParams
+function JobsPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -609,5 +607,39 @@ export default function SupervisorJobsPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+// Main export wrapped in Suspense
+export default function SupervisorJobsPage() {
+  return (
+    <Suspense fallback={
+      <div className="mobile-container">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: '#FFD700' }} />
+            <p className="text-gray-400 text-lg">Loading...</p>
+          </div>
+        </div>
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 0 0.5rem;
+            box-sizing: border-box;
+          }
+        `}</style>
+      </div>
+    }>
+      <JobsPageContent />
+    </Suspense>
   );
 }
