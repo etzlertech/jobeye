@@ -89,7 +89,7 @@ const navigationItems: NavigationItem[] = [
 
   // Crew screens
   { id: 'crew-dashboard', label: 'Crew Hub', path: '/crew', icon: Wrench, roles: ['crew', 'supervisor', 'admin'] },
-  { id: 'job-load', label: 'Job Load List', path: '/crew/job-load', icon: Camera, roles: ['crew', 'supervisor', 'admin'] },
+  { id: 'job-status', label: 'Job Status', path: '/supervisor/job-status', icon: Calendar, roles: ['crew', 'supervisor', 'admin'] },
   { id: 'load-verify', label: 'Load Verification', path: '/crew/load-verify', icon: Settings, roles: ['crew', 'supervisor', 'admin'] },
 
   // Vision admin

@@ -104,11 +104,13 @@ export async function GET(request: NextRequest) {
         // Add load status to each job
         const jobsWithLoadStatus = (jobs || []).map((job: any) => {
           const checklistItems = job.checklist_items || [];
-          const totalItems = checklistItems.length;
-          const loadedItems = checklistItems.filter(
+          // Only count items that aren't marked as 'missing'
+          const activeItems = checklistItems.filter((item: any) => item.status !== 'missing');
+          const totalItems = activeItems.length;
+          const loadedItems = activeItems.filter(
             (item: any) => item.status === 'loaded' || item.status === 'verified'
           ).length;
-          const verifiedItems = checklistItems.filter(
+          const verifiedItems = activeItems.filter(
             (item: any) => item.status === 'verified'
           ).length;
 

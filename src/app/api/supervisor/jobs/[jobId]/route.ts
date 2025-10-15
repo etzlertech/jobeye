@@ -26,6 +26,17 @@ export async function GET(
         property:property_id (
           name,
           address
+        ),
+        checklist_items:job_checklist_items(
+          id,
+          item_id,
+          status,
+          item:items(
+            id,
+            name,
+            category,
+            primary_image_url
+          )
         )
       `)
       .eq('id', jobId)
@@ -34,12 +45,27 @@ export async function GET(
 
     if (error) throw error;
 
+    // Calculate load statistics
+    const checklistItems = data.checklist_items || [];
+    const activeItems = checklistItems.filter((item: any) => item.status !== 'missing');
+    const totalItems = activeItems.length;
+    const loadedItems = activeItems.filter(
+      (item: any) => item.status === 'loaded' || item.status === 'verified'
+    ).length;
+    const verifiedItems = activeItems.filter(
+      (item: any) => item.status === 'verified'
+    ).length;
+
     // Map field names for frontend
     const job = {
       ...data,
       primaryImageUrl: data.primary_image_url,
       mediumUrl: data.medium_url,
-      thumbnailUrl: data.thumbnail_url
+      thumbnailUrl: data.thumbnail_url,
+      total_items: totalItems,
+      loaded_items: loadedItems,
+      verified_items: verifiedItems,
+      completion_percentage: totalItems > 0 ? Math.round((loadedItems / totalItems) * 100) : 0
     };
 
     return NextResponse.json({ job });

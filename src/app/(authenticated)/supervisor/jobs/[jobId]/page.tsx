@@ -21,6 +21,18 @@ import {
   FileText
 } from 'lucide-react';
 
+interface ChecklistItem {
+  id: string;
+  item_id: string;
+  status: string;
+  item: {
+    id: string;
+    name: string;
+    category: string;
+    primary_image_url: string | null;
+  };
+}
+
 interface JobDetails {
   id: string;
   job_number: string;
@@ -37,6 +49,11 @@ interface JobDetails {
   property?: { name: string; address?: any };
   created_at: string;
   updated_at?: string;
+  checklist_items?: ChecklistItem[];
+  total_items?: number;
+  loaded_items?: number;
+  verified_items?: number;
+  completion_percentage?: number;
 }
 
 const statusColors = {
@@ -357,6 +374,46 @@ export default function JobDetailPage() {
             </div>
           )}
 
+          {/* Load List Items */}
+          {job.checklist_items && job.checklist_items.length > 0 && (
+            <div className="detail-section">
+              <h3 className="detail-section-title">Load List ({job.loaded_items || 0}/{job.total_items || 0})</h3>
+              <div className="load-items-grid">
+                {job.checklist_items
+                  .filter(item => item.status !== 'missing')
+                  .map((checklistItem) => (
+                  <div
+                    key={checklistItem.id}
+                    className={`load-item-card ${checklistItem.status}`}
+                  >
+                    {checklistItem.item.primary_image_url ? (
+                      <div className="load-item-image">
+                        <img
+                          src={checklistItem.item.primary_image_url}
+                          alt={checklistItem.item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="load-item-image load-item-placeholder">
+                        <Briefcase className="w-8 h-8 text-gray-500" />
+                      </div>
+                    )}
+                    <div className="load-item-content">
+                      <div className="load-item-name">{checklistItem.item.name}</div>
+                      <div className="load-item-category">{checklistItem.item.category}</div>
+                      <div className={`load-item-status status-${checklistItem.status}`}>
+                        {checklistItem.status === 'verified' && '✓ Verified'}
+                        {checklistItem.status === 'loaded' && '✓ Loaded'}
+                        {checklistItem.status === 'pending' && '○ Pending'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Timestamps */}
           <div className="detail-section">
             <h3 className="detail-section-title">Timestamps</h3>
@@ -549,6 +606,78 @@ export default function JobDetailPage() {
         .btn-secondary:hover {
           background: rgba(255, 255, 255, 0.15);
           border-color: #FFD700;
+        }
+
+        .load-items-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 0.75rem;
+        }
+
+        .load-item-card {
+          display: flex;
+          flex-direction: column;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.5rem;
+          overflow: hidden;
+          transition: all 0.2s;
+        }
+
+        .load-item-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+        }
+
+        .load-item-image {
+          width: 100%;
+          height: 80px;
+          background: rgba(0, 0, 0, 0.3);
+          overflow: hidden;
+        }
+
+        .load-item-placeholder {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .load-item-content {
+          padding: 0.75rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+
+        .load-item-name {
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: white;
+          line-height: 1.2;
+        }
+
+        .load-item-category {
+          font-size: 0.75rem;
+          color: #9CA3AF;
+          text-transform: capitalize;
+        }
+
+        .load-item-status {
+          margin-top: 0.25rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .status-verified {
+          color: #22c55e;
+        }
+
+        .status-loaded {
+          color: #3b82f6;
+        }
+
+        .status-pending {
+          color: #f97316;
         }
       `}</style>
     </div>
