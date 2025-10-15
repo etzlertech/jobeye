@@ -378,11 +378,9 @@ export default function SupervisorJobCreatePage() {
     return (
       <div className="mobile-container">
         {/* Mobile Navigation */}
-        <MobileNavigation 
-          currentRole="supervisor" 
+        <MobileNavigation
+          currentRole="supervisor"
           onLogout={() => router.push('/sign-in')}
-          showBackButton={true}
-          onBack={() => setStep('form')}
         />
         
         <div className="header-bar">
@@ -461,11 +459,9 @@ export default function SupervisorJobCreatePage() {
     return (
       <div className="mobile-container">
         {/* Mobile Navigation */}
-        <MobileNavigation 
-          currentRole="supervisor" 
+        <MobileNavigation
+          currentRole="supervisor"
           onLogout={() => router.push('/sign-in')}
-          showBackButton={true}
-          onBack={() => setStep('form')}
         />
         
         <div className="header-bar">
@@ -526,11 +522,9 @@ export default function SupervisorJobCreatePage() {
   return (
     <div className="mobile-container">
       {/* Mobile Navigation */}
-      <MobileNavigation 
-        currentRole="supervisor" 
+      <MobileNavigation
+        currentRole="supervisor"
         onLogout={() => router.push('/sign-in')}
-        showBackButton={true}
-        backTo="/supervisor"
       />
 
       {/* Header */}
@@ -726,6 +720,8 @@ export default function SupervisorJobCreatePage() {
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            padding: 0 0.5rem;
+            box-sizing: border-box;
           }
 
           .header-bar {

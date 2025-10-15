@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { TenantBadge } from '@/components/tenant';
 import { supabase } from '@/lib/supabase/client';
+import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 
 interface DashboardData {
   todayJobs: {
@@ -185,6 +186,8 @@ export default function SupervisorDashboard() {
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            padding: 0 0.5rem;
+            box-sizing: border-box;
           }
         `}</style>
       </div>
@@ -193,14 +196,17 @@ export default function SupervisorDashboard() {
 
   return (
     <div className="mobile-container">
+      {/* Mobile Navigation */}
+      <MobileNavigation
+        currentRole="supervisor"
+        onLogout={() => router.push('/sign-in')}
+      />
+
       {/* Header */}
       <div className="header-bar">
-        <div className="flex items-center gap-2">
-          <Building2 className="w-6 h-6" style={{ color: '#FFD700' }} />
-          <div>
-            <h1 className="text-xl font-semibold">Dashboard</h1>
-            <p className="text-xs text-gray-500">{lastRefresh.toLocaleTimeString()}</p>
-          </div>
+        <div>
+          <h1 className="text-xl font-semibold">Dashboard</h1>
+          <p className="text-xs text-gray-500">{lastRefresh.toLocaleTimeString()}</p>
         </div>
         <div className="flex items-center gap-2">
           <TenantBadge />
@@ -440,6 +446,8 @@ export default function SupervisorDashboard() {
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          padding: 0 0.5rem;
+          box-sizing: border-box;
         }
 
         .header-bar {

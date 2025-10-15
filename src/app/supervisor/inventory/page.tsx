@@ -564,7 +564,7 @@ export default function SupervisorInventoryPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="mobile-container flex items-center justify-center">
+      <div className="mobile-container flex items-center justify-center" style={{ padding: '0 0.5rem', boxSizing: 'border-box' }}>
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-golden mx-auto mb-4" />
           <p className="text-gray-400 text-lg">Loading inventory...</p>
@@ -578,11 +578,9 @@ export default function SupervisorInventoryPage() {
     return (
       <div className="mobile-container">
         {/* Mobile Navigation */}
-        <MobileNavigation 
-          currentRole="supervisor" 
+        <MobileNavigation
+          currentRole="supervisor"
           onLogout={() => router.push('/sign-in')}
-          showBackButton={true}
-          onBack={() => setView('add_form')}
         />
         
         {/* Header */}
@@ -590,7 +588,6 @@ export default function SupervisorInventoryPage() {
           <div>
             <h1 className="text-xl font-semibold">Capture Photo</h1>
           </div>
-          <Camera className="w-6 h-6 text-golden" />
         </div>
 
         {/* Camera Content */}
@@ -617,6 +614,8 @@ export default function SupervisorInventoryPage() {
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            padding: 0 0.5rem;
+            box-sizing: border-box;
           }
           .header-bar {
             display: flex;
@@ -636,11 +635,9 @@ export default function SupervisorInventoryPage() {
     return (
       <div className="mobile-container">
         {/* Mobile Navigation */}
-        <MobileNavigation 
-          currentRole="supervisor" 
+        <MobileNavigation
+          currentRole="supervisor"
           onLogout={() => router.push('/sign-in')}
-          showBackButton={true}
-          onBack={() => setView('list')}
         />
         
         {/* Header */}
@@ -648,7 +645,6 @@ export default function SupervisorInventoryPage() {
           <div>
             <h1 className="text-xl font-semibold">Add New Item</h1>
           </div>
-          <Plus className="w-6 h-6 text-golden" />
         </div>
 
         {/* Notifications */}
@@ -851,6 +847,8 @@ export default function SupervisorInventoryPage() {
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            padding: 0 0.5rem;
+            box-sizing: border-box;
           }
 
           .header-bar {
@@ -950,11 +948,9 @@ export default function SupervisorInventoryPage() {
   return (
     <div className="mobile-container">
       {/* Mobile Navigation */}
-      <MobileNavigation 
-        currentRole="supervisor" 
+      <MobileNavigation
+        currentRole="supervisor"
         onLogout={() => router.push('/sign-in')}
-        showBackButton={true}
-        onBack={() => router.push('/supervisor')}
       />
       
       {/* Header */}
@@ -1112,6 +1108,8 @@ export default function SupervisorInventoryPage() {
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          padding: 0 0.5rem;
+          box-sizing: border-box;
         }
 
         .header-bar {

@@ -230,6 +230,8 @@ export default function SupervisorJobsPage() {
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            padding: 0 0.5rem;
+            box-sizing: border-box;
           }
         `}</style>
       </div>
@@ -246,12 +248,9 @@ export default function SupervisorJobsPage() {
 
       {/* Header */}
       <div className="header-bar">
-        <div className="flex items-center gap-2">
-          <Briefcase className="w-6 h-6" style={{ color: '#FFD700' }} />
-          <div>
-            <h1 className="text-xl font-semibold">Jobs</h1>
-            <p className="text-xs text-gray-500">{filteredJobs.length} total</p>
-          </div>
+        <div>
+          <h1 className="text-xl font-semibold">Jobs</h1>
+          <p className="text-xs text-gray-500">{filteredJobs.length} total</p>
         </div>
       </div>
 
@@ -438,6 +437,8 @@ export default function SupervisorJobsPage() {
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          padding: 0 0.5rem;
+          box-sizing: border-box;
         }
 
         .header-bar {
