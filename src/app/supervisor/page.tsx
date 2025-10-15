@@ -23,7 +23,9 @@ import {
   RefreshCw,
   Clock,
   CheckCircle,
-  WifiOff
+  WifiOff,
+  Home,
+  UserPlus
 } from 'lucide-react';
 import { MobileContainer, MobileHeader, MobileCard } from '@/components/mobile';
 import { Button } from '@/components/ui/button';
@@ -248,6 +250,24 @@ export default function SupervisorDashboard() {
             >
               <Plus className="w-6 h-6" />
               <span className="text-sm">Create Job</span>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => router.push('/supervisor/customers')}
+              className="h-20 flex-col gap-2"
+            >
+              <UserPlus className="w-6 h-6" />
+              <span className="text-sm">Customers</span>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => router.push('/supervisor/properties')}
+              className="h-20 flex-col gap-2"
+            >
+              <Home className="w-6 h-6" />
+              <span className="text-sm">Properties</span>
             </Button>
             <Button
               size="lg"
