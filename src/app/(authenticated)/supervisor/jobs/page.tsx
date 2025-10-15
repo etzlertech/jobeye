@@ -3,6 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
+import { JobForm } from './_components/JobForm';
+import { buildJobPayload, type JobFormState } from './_utils/job-utils';
+import type { CustomerOption, PropertyOption } from './_components/JobForm';
 import {
   Plus,
   Search,
@@ -41,10 +44,27 @@ export default function SupervisorJobsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [customers, setCustomers] = useState<CustomerOption[]>([]);
+  const [properties, setProperties] = useState<PropertyOption[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Job form state
+  const [formData, setFormData] = useState<JobFormState>({
+    customerId: '',
+    propertyId: '',
+    title: '',
+    description: '',
+    scheduledDate: new Date().toISOString().split('T')[0],
+    scheduledTime: '09:00',
+    priority: 'normal'
+  });
 
   // Load jobs on mount
   useEffect(() => {
     loadJobs();
+    loadCustomers();
+    loadProperties();
   }, []);
 
   const loadJobs = async () => {
@@ -75,6 +95,92 @@ export default function SupervisorJobsPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loadCustomers = async () => {
+    try {
+      const response = await fetch('/api/supervisor/customers');
+      const data = await response.json();
+      if (response.ok) {
+        setCustomers((data.customers || []).map((c: any) => ({ id: c.id, name: c.name })));
+      }
+    } catch (err) {
+      console.error('Failed to load customers:', err);
+    }
+  };
+
+  const loadProperties = async () => {
+    try {
+      const response = await fetch('/api/supervisor/properties');
+      const data = await response.json();
+      if (response.ok) {
+        setProperties((data.properties || []).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          address: typeof p.address === 'string' ? p.address : p.address?.street
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to load properties:', err);
+    }
+  };
+
+  const handleCreateJob = async () => {
+    setIsCreating(true);
+    setError(null);
+
+    try {
+      const payload = buildJobPayload(formData);
+      const response = await fetch('/api/supervisor/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create job');
+      }
+
+      setSuccess('Job created successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+
+      // Reset form and hide it
+      setFormData({
+        customerId: '',
+        propertyId: '',
+        title: '',
+        description: '',
+        scheduledDate: new Date().toISOString().split('T')[0],
+        scheduledTime: '09:00',
+        priority: 'normal'
+      });
+      setShowForm(false);
+
+      // Reload jobs list
+      await loadJobs();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create job');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleFormChange = <K extends keyof JobFormState>(field: K, value: JobFormState[K]) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleClearForm = () => {
+    setFormData({
+      customerId: '',
+      propertyId: '',
+      title: '',
+      description: '',
+      scheduledDate: new Date().toISOString().split('T')[0],
+      scheduledTime: '09:00',
+      priority: 'normal'
+    });
   };
 
   const filteredJobs = jobs.filter(job =>
@@ -170,23 +276,41 @@ export default function SupervisorJobsPage() {
       )}
 
       <div className="flex-1 overflow-y-auto">
-        {/* Search */}
-        <div className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search jobs..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input-field"
-              style={{ paddingLeft: '2.5rem' }}
+        {/* Job Creation Form */}
+        {showForm && (
+          <div className="p-4">
+            <JobForm
+              draft={formData}
+              customers={customers}
+              properties={properties}
+              onDraftChange={handleFormChange}
+              onSubmit={handleCreateJob}
+              onClear={handleClearForm}
+              disabled={isCreating}
             />
           </div>
-        </div>
+        )}
+
+        {/* Search */}
+        {!showForm && (
+          <div className="p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search jobs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="input-field"
+                style={{ paddingLeft: '2.5rem' }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Job List */}
-        <div className="px-4 pb-4">
+        {!showForm && (
+          <div className="px-4 pb-4">
           {filteredJobs.length === 0 ? (
             <div className="empty-state">
               <Briefcase className="w-12 h-12 text-gray-600 mx-auto mb-3" />
@@ -251,7 +375,8 @@ export default function SupervisorJobsPage() {
               ))}
             </div>
           )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Bottom Actions */}
@@ -266,11 +391,20 @@ export default function SupervisorJobsPage() {
         </button>
         <button
           type="button"
-          onClick={() => router.push('/supervisor/jobs/create')}
+          onClick={() => setShowForm(!showForm)}
           className="btn-primary flex-1"
         >
-          <Plus className="w-5 h-5 mr-2" />
-          Create Job
+          {showForm ? (
+            <>
+              <X className="w-5 h-5 mr-2" />
+              Cancel
+            </>
+          ) : (
+            <>
+              <Plus className="w-5 h-5 mr-2" />
+              Create Job
+            </>
+          )}
         </button>
       </div>
 
