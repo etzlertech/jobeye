@@ -152,6 +152,8 @@ export default function SupervisorJobCreatePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [step, setStep] = useState<'form' | 'voice' | 'equipment' | 'crew' | 'review'>('form');
+  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Setup button actions
   useEffect(() => {
@@ -288,12 +290,20 @@ export default function SupervisorJobCreatePage() {
   };
 
   const handleSaveDraft = async () => {
-    // Save to localStorage for now
-    localStorage.setItem('job-draft', JSON.stringify({
-      ...formData,
-      voiceRecording,
-      timestamp: Date.now()
-    }));
+    try {
+      // Save to localStorage for now
+      localStorage.setItem('job-draft', JSON.stringify({
+        ...formData,
+        voiceRecording,
+        timestamp: Date.now()
+      }));
+
+      setSuccess('Draft saved successfully');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError('Failed to save draft');
+      setTimeout(() => setError(null), 3000);
+    }
   };
 
   const handleVoiceRecordingComplete = (transcript: string, audioUrl: string) => {
@@ -530,6 +540,28 @@ export default function SupervisorJobCreatePage() {
         </div>
       </div>
 
+      {/* Notifications */}
+      {error && (
+        <div className="notification-bar error">
+          <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{error}</span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="ml-auto"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      {success && (
+        <div className="notification-bar success">
+          <CheckCircle className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{success}</span>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="space-y-6">
             {/* Customer & Property */}
@@ -714,6 +746,28 @@ export default function SupervisorJobCreatePage() {
           }
 
           .golden { color: #FFD700; }
+
+          /* Notification bars */
+          .notification-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 1rem;
+            border-radius: 0.5rem;
+          }
+
+          .notification-bar.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+          }
+
+          .notification-bar.success {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            color: #FFD700;
+          }
 
           /* Form field styles matching DATA-FIELD-STANDARD */
           :global(.form-label) {
