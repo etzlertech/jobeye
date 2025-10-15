@@ -289,7 +289,13 @@ export default function SupervisorInventoryPage() {
         params.append('search', searchQuery);
       }
 
-      const response = await fetch(`/api/supervisor/inventory?${params}`);
+      // Use default tenant for now - TODO: Get from user context
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+
+      const response = await fetch(`/api/supervisor/inventory?${params}`, {
+        headers: { 'x-tenant-id': tenantId },
+        credentials: 'include'
+      });
       const data = await response.json();
       
       if (!response.ok) throw new Error(data.message);
@@ -482,14 +488,19 @@ export default function SupervisorInventoryPage() {
 
   const handleSaveItem = async () => {
     if (!newItem.name) return;
-    
+
     setIsSaving(true);
     try {
+      // Use default tenant for now - TODO: Get from user context
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+
       const response = await fetch('/api/supervisor/inventory', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': tenantId
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: newItem.name,
           category: newItem.category,

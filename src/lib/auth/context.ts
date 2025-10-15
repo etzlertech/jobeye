@@ -60,9 +60,26 @@ export async function getRequestContext(request: Request): Promise<RequestContex
       }
 
       // User is authenticated but no tenant metadata
-      // TEMPORARY: Use default tenant as fallback
+      // Check for x-tenant-id header before falling back to default
+      const headerTenant = request.headers.get('x-tenant-id');
+      if (headerTenant) {
+        console.warn(
+          `[getRequestContext] User ${user.id} (${user.email}) has no tenant metadata. ` +
+          `Using tenant from x-tenant-id header: ${headerTenant}`
+        );
+
+        return {
+          tenantId: headerTenant,
+          roles: ['member'],
+          source: 'header',
+          userId: user.id,
+          user
+        };
+      }
+
+      // TEMPORARY: Use default tenant as ultimate fallback
       console.warn(
-        `[getRequestContext] User ${user.id} (${user.email}) has no tenant metadata. ` +
+        `[getRequestContext] User ${user.id} (${user.email}) has no tenant metadata and no header. ` +
         'Using default tenant as fallback. User should sign out and sign in again.'
       );
 
@@ -75,8 +92,20 @@ export async function getRequestContext(request: Request): Promise<RequestContex
       };
     }
 
-    // 2. No tenant context available
-    console.error('[getRequestContext] No user session found');
+    // 2. No user session - check for x-tenant-id header
+    const headerTenant = request.headers.get('x-tenant-id');
+    if (headerTenant) {
+      console.warn('[getRequestContext] No user session, using x-tenant-id header:', headerTenant);
+
+      return {
+        tenantId: headerTenant,
+        roles: ['member'],
+        source: 'header'
+      };
+    }
+
+    // 3. No tenant context available
+    console.error('[getRequestContext] No user session and no tenant header found');
     throw new Error(
       'No tenant context available. ' +
       'User must be authenticated and have tenant_id in JWT metadata.'

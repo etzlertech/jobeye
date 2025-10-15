@@ -55,7 +55,14 @@ export default function InventoryItemDetailPage() {
   const loadItem = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/supervisor/items/${itemId}`);
+
+      // Use default tenant for now - TODO: Get from user context
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+
+      const response = await fetch(`/api/supervisor/items/${itemId}`, {
+        headers: { 'x-tenant-id': tenantId },
+        credentials: 'include'
+      });
       const data = await response.json();
 
       if (!response.ok) throw new Error(data.message || 'Failed to load item');
@@ -79,11 +86,16 @@ export default function InventoryItemDetailPage() {
     setError(null);
 
     try {
+      // Use default tenant for now - TODO: Get from user context
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+
       const response = await fetch(`/api/supervisor/items/${itemId}/image`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-tenant-id': tenantId
         },
+        credentials: 'include',
         body: JSON.stringify({ images })
       });
 
