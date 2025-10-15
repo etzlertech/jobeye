@@ -43,14 +43,13 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import {
   Plus,
   Search,
   Building,
-  MapPin,
   Users,
   Ruler,
   FileText,
@@ -63,11 +62,9 @@ import {
   X,
   Save,
   Loader2,
-  Trees,
   Building2,
   Warehouse
 } from 'lucide-react';
-import { ButtonLimiter, useButtonActions } from '@/components/ui/ButtonLimiter';
 
 interface Address {
   street?: string;
@@ -124,7 +121,6 @@ const getAddressString = (address?: string | Address): string => {
 
 export default function SupervisorPropertiesPage() {
   const router = useRouter();
-  const { actions, addAction, clearActions } = useButtonActions();
 
   // State
   const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
@@ -150,55 +146,8 @@ export default function SupervisorPropertiesPage() {
   const [formErrors, setFormErrors] = useState<Partial<PropertyFormData>>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  // Set up button actions based on view
-  useEffect(() => {
-    clearActions();
-
-    if (view === 'list') {
-      addAction({
-        id: 'back',
-        label: 'Back to Dashboard',
-        priority: 'medium',
-        icon: ArrowLeft,
-        onClick: () => router.push('/supervisor'),
-        className: 'bg-gray-600 text-white hover:bg-gray-700'
-      });
-
-      addAction({
-        id: 'create-property',
-        label: 'Add New Property',
-        priority: 'high',
-        icon: Plus,
-        onClick: () => {
-          setView('create');
-          resetForm();
-        },
-        className: 'bg-emerald-600 text-white hover:bg-emerald-700'
-      });
-    } else if (view === 'create' || view === 'edit') {
-      addAction({
-        id: 'cancel',
-        label: 'Cancel',
-        priority: 'medium',
-        icon: X,
-        onClick: () => {
-          setView('list');
-          resetForm();
-        },
-        className: 'bg-gray-600 text-white hover:bg-gray-700'
-      });
-
-      addAction({
-        id: 'save',
-        label: isSaving ? 'Saving...' : 'Save Property',
-        priority: 'high',
-        icon: Save,
-        disabled: isSaving,
-        onClick: handleSubmit,
-        className: 'bg-emerald-600 text-white hover:bg-emerald-700'
-      });
-    }
-  }, [view, isSaving, clearActions, addAction, router]);
+  // ButtonLimiter setup - not used in this page but imported
+  // The page uses standard bottom-actions bar instead
 
   // Load data on mount
   useEffect(() => {
