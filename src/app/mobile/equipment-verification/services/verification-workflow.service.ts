@@ -6,8 +6,8 @@
  * @complexity_budget 500
  */
 
-import { YOLOInferenceService } from '@/domains/vision/services/yolo-inference.service';
-import { VLMFallbackService } from '@/domains/vision/services/vlm-fallback.service';
+import { detectObjects as yoloDetectObjects } from '@/domains/vision/services/yolo-inference.service';
+import { detectWithVlm } from '@/domains/vision/services/vlm-fallback.service';
 import { VisionVerificationService } from '@/domains/vision/services/vision-verification.service';
 import { MediaAssetService } from '@/domains/vision/services/media-asset.service';
 import { getOfflineQueue } from '@/domains/vision/lib/offline-queue';
@@ -52,15 +52,11 @@ export interface VerificationComplete {
  * Coordinates YOLO detection, VLM fallback, and offline queueing
  */
 export class VerificationWorkflowService {
-  private yoloService: YOLOInferenceService;
-  private vlmService: VLMFallbackService;
   private verificationService: VisionVerificationService;
   private mediaAssetService: MediaAssetService;
   private offlineQueue: ReturnType<typeof getOfflineQueue>;
 
   constructor() {
-    this.yoloService = new YOLOInferenceService();
-    this.vlmService = new VLMFallbackService();
     this.verificationService = new VisionVerificationService();
     this.mediaAssetService = new MediaAssetService();
     this.offlineQueue = getOfflineQueue();
@@ -110,7 +106,7 @@ export class VerificationWorkflowService {
       const expectedItems = session.checklist.map(item => item.name);
 
       // Attempt YOLO detection first
-      const yoloResult = await this.yoloService.detectObjects(imageData, {
+      const yoloResult = await yoloDetectObjects(imageData, {
         expectedItems,
         confidenceThreshold: 0.7,
       });
@@ -129,15 +125,32 @@ export class VerificationWorkflowService {
         // Convert ImageData to base64 for VLM
         const base64Photo = this.imageDataToBase64(imageData);
 
-        const vlmResult = await this.vlmService.verify({
-          photo: base64Photo,
+        const vlmResult = await detectWithVlm({
+          imageData: base64Photo,
           expectedItems,
         });
 
+        if (vlmResult.data) {
+          const detectedItems = vlmResult.data.detections.map(d => ({
+            class_name: d.label,
+            confidence: d.confidence,
+            bbox: d.bbox
+          } as DetectedItem));
+
+          return {
+            detectedItems,
+            confidenceScore: Math.max(...vlmResult.data.detections.map(d => d.confidence)),
+            shouldFallback: false, // Already used VLM
+            usedVLM: true,
+            retryCount: session.retryCount,
+          };
+        }
+
+        // VLM failed, return empty result
         return {
-          detectedItems: vlmResult.detectedItems,
-          confidenceScore: vlmResult.confidenceScore,
-          shouldFallback: false, // Already used VLM
+          detectedItems: [],
+          confidenceScore: 0,
+          shouldFallback: false,
           usedVLM: true,
           retryCount: session.retryCount,
         };

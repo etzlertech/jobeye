@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  ArrowLeft, 
-  Edit2, 
-  Package, 
-  MapPin, 
+import {
+  ArrowLeft,
+  Edit2,
+  Package,
+  MapPin,
   Calendar,
   DollarSign,
-  Tool,
+  Wrench,
   User,
   Briefcase,
   Clock,
@@ -854,7 +854,7 @@ export default function ItemProfilePage() {
           {(item?.lastMaintenanceDate || item?.nextMaintenanceDate || editMode) && (
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Tool className="w-5 h-5 mr-2" />
+                <Wrench className="w-5 h-5 mr-2" />
                 Maintenance
               </h3>
               

@@ -373,7 +373,7 @@ export class VoiceNavigator {
       'verify load': '/crew/load-verify',
       'supervisor': '/supervisor',
       'admin': '/admin',
-      'create job': '/supervisor/jobs/create'
+      'create job': '/supervisor/jobs?create=1'
     };
 
     for (const [key, path] of Object.entries(pageMapping)) {
@@ -782,7 +782,7 @@ export class VoiceNavigator {
       '/crew': 'crew dashboard',
       '/crew/load-verify': 'load verification',
       '/supervisor': 'supervisor dashboard',
-      '/supervisor/jobs/create': 'job creation',
+      '/supervisor/jobs?create=1': 'job creation',
       '/admin': 'admin panel'
     };
 

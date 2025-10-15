@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { VLMFallbackService } from '@/domains/vision/services/vlm-fallback.service';
+import { detectWithVlm } from '@/domains/vision/services/vlm-fallback.service';
 import { getVLMRateLimiter, type RateLimiterStats } from '../lib/vlm-rate-limiter';
 import type { DetectedItem } from '@/domains/vision/types';
 
@@ -66,7 +66,6 @@ export function useVLMDetection(options: VLMDetectionOptions = {}): VLMDetection
   const fpsIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Services
-  const vlmService = new VLMFallbackService();
   const rateLimiter = getVLMRateLimiter();
 
   // FPS measurement (every 10 seconds to account for VLM latency)
@@ -139,14 +138,19 @@ export function useVLMDetection(options: VLMDetectionOptions = {}): VLMDetection
 
         // Execute with rate limiting
         const result = await rateLimiter.executeWithLimit(async () => {
-          return await vlmService.verify({
-            photo: base64Photo,
+          return await detectWithVlm({
+            imageData: base64Photo,
             expectedItems,
           });
         });
 
-        if (result.verified) {
-          return result.detectedItems;
+        if (result.data && result.data.detections) {
+          // Map VlmDetection to DetectedItem format
+          return result.data.detections.map(d => ({
+            label: d.label,
+            confidence: d.confidence,
+            bbox: d.bbox
+          } as DetectedItem));
         }
 
         return [];
@@ -167,7 +171,7 @@ export function useVLMDetection(options: VLMDetectionOptions = {}): VLMDetection
         throw err;
       }
     },
-    [expectedItems, vlmService, rateLimiter, imageDataToBase64]
+    [expectedItems, rateLimiter, imageDataToBase64]
   );
 
   /**
