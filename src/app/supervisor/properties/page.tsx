@@ -810,7 +810,10 @@ export default function SupervisorPropertiesPage() {
       {/* Bottom Actions */}
       <div className="bottom-actions">
         <button
-          onClick={() => {
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             setView('list');
             resetForm();
           }}
@@ -820,7 +823,12 @@ export default function SupervisorPropertiesPage() {
           Cancel
         </button>
         <button
-          onClick={handleSubmit}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSubmit();
+          }}
           disabled={isSaving}
           className="btn-primary flex-1"
         >
