@@ -7,9 +7,10 @@ import { imageProcessor, type ProcessedImages } from '@/utils/image-processor';
 interface ItemImageUploadProps {
   onImageCapture: (images: ProcessedImages) => void;
   currentImageUrl?: string;
+  disabled?: boolean;
 }
 
-export default function ItemImageUpload({ onImageCapture, currentImageUrl }: ItemImageUploadProps) {
+export function ItemImageUpload({ onImageCapture, currentImageUrl, disabled }: ItemImageUploadProps) {
   const [mode, setMode] = useState<'preview' | 'camera' | 'upload'>('preview');
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -194,16 +195,18 @@ export default function ItemImageUpload({ onImageCapture, currentImageUrl }: Ite
                   console.log('Take Photo button clicked');
                   startCamera();
                 }}
-                className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                disabled={disabled}
+                className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Camera className="w-5 h-5" />
                 Take Photo
               </button>
-              
+
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+                disabled={disabled}
+                className="flex items-center gap-2 px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Upload className="w-5 h-5" />
                 Upload Image
