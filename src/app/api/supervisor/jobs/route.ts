@@ -93,17 +93,32 @@ export async function GET(request: NextRequest) {
           .select(`
             *,
             customer:customers(name),
-            property:properties(name, address),
-            checklist_items:job_checklist_items(id, status)
+            property:properties(name, address)
           `, { count: 'exact' })
           .eq('tenant_id', tenantId)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
 
+        // Fetch all checklist items for all jobs in one query
+        const jobIds = (jobs || []).map(job => job.id);
+        const { data: allChecklistItems } = await supabase
+          .from('job_checklist_items')
+          .select('id, job_id, status')
+          .in('job_id', jobIds);
+
+        // Group checklist items by job_id
+        const checklistByJob = new Map();
+        (allChecklistItems || []).forEach((item: any) => {
+          if (!checklistByJob.has(item.job_id)) {
+            checklistByJob.set(item.job_id, []);
+          }
+          checklistByJob.get(item.job_id).push(item);
+        });
+
         // Add load status to each job
         const jobsWithLoadStatus = (jobs || []).map((job: any) => {
-          const checklistItems = job.checklist_items || [];
+          const checklistItems = checklistByJob.get(job.id) || [];
           // Only count items that aren't marked as 'missing'
           const activeItems = checklistItems.filter((item: any) => item.status !== 'missing');
           const totalItems = activeItems.length;
@@ -122,6 +137,13 @@ export async function GET(request: NextRequest) {
             completion_percentage: totalItems > 0 ? Math.round((loadedItems / totalItems) * 100) : 0
           };
         });
+
+        console.log('Simple mode jobs with load status:', jobsWithLoadStatus.map(j => ({
+          id: j.id,
+          title: j.title,
+          total_items: j.total_items,
+          loaded_items: j.loaded_items
+        })));
 
         return NextResponse.json({
           jobs: jobsWithLoadStatus,
