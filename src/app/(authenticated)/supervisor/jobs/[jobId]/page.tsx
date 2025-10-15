@@ -1,7 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { MobileNavigation } from '@/components/navigation/MobileNavigation';
+import {
+  ArrowLeft,
+  Briefcase,
+  Package,
+  Plus,
+  AlertCircle,
+  CheckCircle,
+  X,
+  Loader2,
+  Trash2
+} from 'lucide-react';
 
 interface Job {
   id: string;
@@ -33,8 +45,7 @@ interface Item {
   current_quantity: number;
 }
 
-// Authentication handled by middleware.ts (checks session, role, tenant)
-function JobItemsPage() {
+export default function JobItemsPage() {
   const params = useParams();
   const router = useRouter();
   const jobId = params.jobId as string;
@@ -42,46 +53,47 @@ function JobItemsPage() {
   const [job, setJob] = useState<Job | null>(null);
   const [assignedItems, setAssignedItems] = useState<AssignedItem[]>([]);
   const [availableItems, setAvailableItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState('1');
-  const [loadError, setLoadError] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   async function loadJobItems() {
-    setLoading(true);
     try {
+      setIsLoading(true);
       const res = await fetch(`/api/supervisor/jobs/${jobId}/items`);
       const data = await res.json();
+
       if (res.ok) {
         setJob(data.job);
         setAssignedItems(data.assignedItems || []);
       } else {
-        setMessage('Failed to load job items');
+        setError(data.error || 'Failed to load job items');
       }
-    } catch (error) {
-      setMessage('Error loading job items');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error loading job items');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }
 
   async function loadAvailableItems() {
     try {
       const res = await fetch('/api/supervisor/items');
-
       const data = await res.json();
 
       if (res.ok && data.items) {
         setAvailableItems(data.items);
         if (data.items.length === 0) {
-          setLoadError('No items found. Please create some items first.');
+          setError('No items found. Please create some items first.');
         }
       } else {
-        setLoadError(data.error || 'Failed to load items');
+        setError(data.error || 'Failed to load items');
       }
-    } catch (error) {
-      setLoadError('Error loading items');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error loading items');
     }
   }
 
@@ -91,14 +103,14 @@ function JobItemsPage() {
     const selectedItem = availableItems.find(i => i.id === selectedItemId);
     if (!selectedItem) return;
 
-    setLoading(true);
-    setMessage('');
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
+
     try {
       const res = await fetch(`/api/supervisor/jobs/${jobId}/items`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           item_id: selectedItem.id,
           quantity: parseFloat(quantity)
@@ -106,38 +118,43 @@ function JobItemsPage() {
       });
 
       const data = await res.json();
+
       if (res.ok) {
-        setMessage(`Added ${selectedItem.name} to job`);
+        setSuccess(`Added ${selectedItem.name} to job`);
         setSelectedItemId('');
         setQuantity('1');
         loadJobItems();
       } else {
-        setMessage(`Error: ${data.error}`);
+        setError(data.error || 'Failed to add item');
       }
-    } catch (error) {
-      setMessage('Failed to add item');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add item');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }
 
   async function removeItem(itemId: string) {
-    setLoading(true);
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
+
     try {
       const res = await fetch(`/api/supervisor/jobs/${jobId}/items/${itemId}`, {
         method: 'DELETE'
       });
 
       if (res.ok) {
-        setMessage('Item returned successfully');
+        setSuccess('Item returned successfully');
         loadJobItems();
       } else {
-        setMessage('Failed to remove item');
+        const data = await res.json();
+        setError(data.error || 'Failed to remove item');
       }
-    } catch (error) {
-      setMessage('Error removing item');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error removing item');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }
 
@@ -146,58 +163,139 @@ function JobItemsPage() {
     loadAvailableItems();
   }, [jobId]);
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return '#22c55e';
+      case 'in_progress': return '#3b82f6';
+      case 'scheduled': return '#FFD700';
+      default: return '#6b7280';
+    }
+  };
+
+  if (isLoading && !job) {
+    return (
+      <div className="mobile-container">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: '#FFD700' }} />
+            <p className="text-gray-400 text-lg">Loading job details...</p>
+          </div>
+        </div>
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   if (!job) {
     return (
-      <div className="min-h-screen bg-black p-8">
-        <div className="mx-auto max-w-6xl">
-          <p className="text-white">Loading...</p>
+      <div className="mobile-container">
+        <MobileNavigation
+          currentRole="supervisor"
+          onLogout={() => router.push('/sign-in')}
+        />
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center p-4">
+            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <p className="text-gray-400">Job not found</p>
+          </div>
         </div>
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+        `}</style>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black p-8">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-6">
-          <button
-            onClick={() => router.push('/supervisor/jobs')}
-            className="mb-4 text-blue-400 hover:text-blue-300"
-          >
-            ← Back to Jobs
-          </button>
+    <div className="mobile-container">
+      {/* Mobile Navigation */}
+      <MobileNavigation
+        currentRole="supervisor"
+        onLogout={() => router.push('/sign-in')}
+      />
 
-          <h1 className="text-3xl font-bold text-white">Job Items Management</h1>
-          <div className="mt-2 text-gray-400">
-            <span className="font-semibold text-white">Job #{job.job_number}:</span> {job.title}
-            <span className={`ml-4 rounded px-2 py-1 text-xs ${
-              job.status === 'scheduled' ? 'bg-blue-900 text-blue-200' :
-              job.status === 'in_progress' ? 'bg-yellow-900 text-yellow-200' :
-              job.status === 'completed' ? 'bg-green-900 text-green-200' :
-              'bg-gray-800 text-gray-200'
-            }`}>
-              {job.status}
-            </span>
+      {/* Header */}
+      <div className="header-bar">
+        <div className="flex items-center gap-2">
+          <Briefcase className="w-6 h-6" style={{ color: '#FFD700' }} />
+          <div>
+            <h1 className="text-xl font-semibold">{job.title}</h1>
+            <p className="text-xs text-gray-500">Job #{job.job_number}</p>
           </div>
         </div>
+        <span
+          className="status-badge"
+          style={{
+            background: `${getStatusColor(job.status)}20`,
+            color: getStatusColor(job.status),
+            border: `1px solid ${getStatusColor(job.status)}40`
+          }}
+        >
+          {job.status}
+        </span>
+      </div>
 
+      {/* Notifications */}
+      {error && (
+        <div className="notification-bar error">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{error}</span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="ml-auto"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      {success && (
+        <div className="notification-bar success">
+          <CheckCircle className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{success}</span>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto">
         {/* Add Item Form */}
-        <div className="mb-6 rounded-lg bg-gray-900 p-6 shadow">
-          <h2 className="mb-4 text-xl font-semibold text-white">Add Item to Job</h2>
+        <div className="p-4">
+          <div className="section-header">
+            <Package className="w-5 h-5" style={{ color: '#FFD700' }} />
+            <h2 className="text-lg font-semibold">Add Item to Job</h2>
+          </div>
 
-          {loadError && (
-            <div className="mb-4 rounded border border-red-700 bg-red-900/50 p-4 text-red-200">
-              {loadError}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-gray-300">Select Item</label>
+          <div className="space-y-3 mt-4">
+            <div>
+              <label className="input-label">Select Item</label>
               <select
                 value={selectedItemId}
                 onChange={(e) => setSelectedItemId(e.target.value)}
-                className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-400"
+                className="input-field"
               >
                 <option value="">Choose an item...</option>
                 {availableItems.length === 0 && (
@@ -205,96 +303,270 @@ function JobItemsPage() {
                 )}
                 {availableItems.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.name} - {item.item_type} ({item.current_quantity} {item.unit_of_measure} available)
+                    {item.name} - {item.item_type} ({item.current_quantity} {item.unit_of_measure})
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">Quantity</label>
+              <label className="input-label">Quantity</label>
               <input
                 type="number"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-                className="w-full rounded-md border border-gray-700 bg-gray-800 px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-400"
+                className="input-field"
                 min="1"
               />
             </div>
-          </div>
 
-          <div className="mt-4 flex items-center gap-4">
             <button
+              type="button"
               onClick={addItemToJob}
-              disabled={loading || !selectedItemId}
-              className="rounded-md bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700 disabled:opacity-50 focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+              disabled={isLoading || !selectedItemId}
+              className="btn-primary w-full"
             >
-              {loading ? 'Adding...' : 'Add to Job'}
+              <Plus className="w-5 h-5 mr-2" />
+              Add to Job
             </button>
-
-            {message && (
-              <span className={message.includes('Error') ? 'text-red-400' : 'text-green-400'}>
-                {message}
-              </span>
-            )}
           </div>
         </div>
 
         {/* Assigned Items */}
-        <div className="rounded-lg bg-gray-900 p-6 shadow">
-          <h2 className="mb-4 text-xl font-semibold text-white">
-            Assigned Items ({assignedItems.length})
-          </h2>
-
-          {loading && <p className="text-gray-400">Loading...</p>}
+        <div className="p-4 pt-0">
+          <div className="section-header">
+            <Package className="w-5 h-5" style={{ color: '#FFD700' }} />
+            <h2 className="text-lg font-semibold">
+              Assigned Items ({assignedItems.length})
+            </h2>
+          </div>
 
           {assignedItems.length === 0 ? (
-            <p className="text-gray-500">No items assigned to this job yet.</p>
+            <div className="empty-state">
+              <Package className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-400">No items assigned to this job yet</p>
+            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-gray-700">
-                    <th className="py-2 text-gray-300">Item Name</th>
-                    <th className="py-2 text-gray-300">Type</th>
-                    <th className="py-2 text-gray-300">Category</th>
-                    <th className="py-2 text-gray-300">Quantity</th>
-                    <th className="py-2 text-gray-300">Unit</th>
-                    <th className="py-2 text-gray-300">Assigned</th>
-                    <th className="py-2 text-gray-300">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {assignedItems.map((item) => (
-                    <tr key={item.transaction_id} className="border-b border-gray-800 hover:bg-gray-800/50">
-                      <td className="py-2 font-medium text-white">{item.item_name}</td>
-                      <td className="py-2 text-gray-400">{item.item_type}</td>
-                      <td className="py-2 text-gray-400">{item.category}</td>
-                      <td className="py-2 text-gray-400">{item.quantity}</td>
-                      <td className="py-2 text-gray-400">{item.unit_of_measure}</td>
-                      <td className="py-2 text-sm text-gray-500">
-                        {new Date(item.assigned_at).toLocaleDateString()}
-                      </td>
-                      <td className="py-2">
-                        <button
-                          onClick={() => removeItem(item.item_id)}
-                          disabled={loading}
-                          className="text-sm text-red-400 hover:text-red-300"
-                        >
-                          Return
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-3 mt-4">
+              {assignedItems.map((item) => (
+                <div key={item.transaction_id} className="item-card">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-white">{item.item_name}</h3>
+                      <div className="text-xs text-gray-500 mt-1 space-y-0.5">
+                        <div>Type: {item.item_type}</div>
+                        <div>Category: {item.category}</div>
+                        <div>Quantity: {item.quantity} {item.unit_of_measure}</div>
+                        <div>Assigned: {new Date(item.assigned_at).toLocaleDateString()}</div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item.item_id)}
+                      disabled={isLoading}
+                      className="delete-button"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
-
         </div>
       </div>
+
+      {/* Bottom Actions */}
+      <div className="bottom-actions">
+        <button
+          type="button"
+          onClick={() => router.push('/supervisor/jobs')}
+          className="btn-secondary w-full"
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back to Jobs
+        </button>
+      </div>
+
+      <style jsx>{`
+        .mobile-container {
+          width: 100%;
+          max-width: 375px;
+          height: 100vh;
+          max-height: 812px;
+          margin: 0 auto;
+          background: #000;
+          color: white;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .header-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem;
+          border-bottom: 1px solid #333;
+          background: rgba(0, 0, 0, 0.9);
+        }
+
+        .status-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 0.125rem 0.5rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+          border-radius: 0.25rem;
+          text-transform: capitalize;
+        }
+
+        .notification-bar {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1rem;
+          margin: 0.5rem 1rem;
+          border-radius: 0.5rem;
+        }
+
+        .notification-bar.error {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #fca5a5;
+        }
+
+        .notification-bar.success {
+          background: rgba(255, 215, 0, 0.1);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          color: #FFD700;
+        }
+
+        .section-header {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding-bottom: 0.5rem;
+          border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .input-label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #d1d5db;
+        }
+
+        .input-field {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.5rem;
+          color: white;
+          font-size: 0.875rem;
+        }
+
+        .input-field:focus {
+          outline: none;
+          border-color: #FFD700;
+          box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
+        }
+
+        .empty-state {
+          text-align: center;
+          padding: 3rem 1rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.75rem;
+          margin-top: 1rem;
+        }
+
+        .item-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.75rem;
+          padding: 1rem;
+          transition: all 0.2s;
+        }
+
+        .item-card:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 215, 0, 0.4);
+        }
+
+        .delete-button {
+          padding: 0.5rem;
+          color: #ef4444;
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          border-radius: 0.375rem;
+          background: rgba(239, 68, 68, 0.1);
+          transition: all 0.2s;
+        }
+
+        .delete-button:hover:not(:disabled) {
+          background: rgba(239, 68, 68, 0.2);
+          border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        .delete-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .bottom-actions {
+          display: flex;
+          gap: 0.75rem;
+          padding: 1rem;
+          background: rgba(0, 0, 0, 0.9);
+          border-top: 1px solid #333;
+        }
+
+        .btn-primary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem 1rem;
+          background: #FFD700;
+          color: #000;
+          font-weight: 600;
+          border-radius: 0.5rem;
+          border: none;
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+          background: #FFC700;
+        }
+
+        .btn-primary:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .btn-secondary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem 1rem;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          font-weight: 600;
+          border-radius: 0.5rem;
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+          background: rgba(255, 255, 255, 0.15);
+          border-color: #FFD700;
+        }
+      `}</style>
     </div>
   );
 }
-
-export default JobItemsPage;
