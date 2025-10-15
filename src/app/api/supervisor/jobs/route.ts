@@ -83,17 +83,42 @@ export async function GET(request: NextRequest) {
     if (searchParams.get('simple') === 'true') {
       try {
         const supabase = await resolveClient();
-        
+
         const { data: jobs, error, count } = await supabase
           .from('jobs')
-          .select('*', { count: 'exact' })
+          .select(`
+            *,
+            customer:customers(name),
+            property:properties(name, address),
+            checklist_items:job_checklist_items(id, status)
+          `, { count: 'exact' })
           .eq('tenant_id', tenantId)
           .order('created_at', { ascending: false });
-          
+
         if (error) throw error;
-          
+
+        // Add load status to each job
+        const jobsWithLoadStatus = (jobs || []).map((job: any) => {
+          const checklistItems = job.checklist_items || [];
+          const totalItems = checklistItems.length;
+          const loadedItems = checklistItems.filter(
+            (item: any) => item.status === 'loaded' || item.status === 'verified'
+          ).length;
+          const verifiedItems = checklistItems.filter(
+            (item: any) => item.status === 'verified'
+          ).length;
+
+          return {
+            ...job,
+            total_items: totalItems,
+            loaded_items: loadedItems,
+            verified_items: verifiedItems,
+            completion_percentage: totalItems > 0 ? Math.round((loadedItems / totalItems) * 100) : 0
+          };
+        });
+
         return NextResponse.json({
-          jobs: jobs || [],
+          jobs: jobsWithLoadStatus,
           total_count: count || 0
         });
       } catch (simpleError) {

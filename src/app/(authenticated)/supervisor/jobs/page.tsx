@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import { JobForm } from './_components/JobForm';
 import { buildJobPayload, type JobFormState } from './_utils/job-utils';
@@ -34,10 +34,17 @@ interface Job {
   propertyName?: string;
   thumbnailUrl?: string;
   created_at: string;
+  // Load tracking
+  total_items: number;
+  loaded_items: number;
+  verified_items: number;
+  completion_percentage: number;
 }
 
 export default function SupervisorJobsPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // State
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -88,7 +95,12 @@ export default function SupervisorJobsPage() {
         customerName: job.customer?.name || job.customer_id || 'Unknown customer',
         propertyName: job.property?.name || job.property?.address?.street || undefined,
         thumbnailUrl: job.thumbnail_url,
-        created_at: job.created_at
+        created_at: job.created_at,
+        // Load tracking - now coming from API
+        total_items: job.total_items || 0,
+        loaded_items: job.loaded_items || 0,
+        verified_items: job.verified_items || 0,
+        completion_percentage: job.completion_percentage || 0
       }));
 
       setJobs(mapped);
@@ -127,6 +139,24 @@ export default function SupervisorJobsPage() {
     }
   };
 
+  useEffect(() => {
+    const createParam = searchParams.get('create');
+    const shouldShow = createParam === '1' || createParam === 'true';
+    setShowForm(shouldShow);
+  }, [searchParams]);
+
+  const updateCreateParam = useCallback((next: boolean) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next) {
+      params.set('create', '1');
+    } else {
+      params.delete('create');
+    }
+    const nextQuery = params.toString();
+    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+    router.replace(nextUrl, { scroll: false });
+  }, [pathname, router, searchParams]);
+
   const handleCreateJob = async () => {
     setIsCreating(true);
     setError(null);
@@ -158,7 +188,7 @@ export default function SupervisorJobsPage() {
         scheduledTime: '09:00',
         priority: 'normal'
       });
-      setShowForm(false);
+      updateCreateParam(false);
 
       // Reload jobs list
       await loadJobs();
@@ -183,6 +213,10 @@ export default function SupervisorJobsPage() {
       scheduledTime: '09:00',
       priority: 'normal'
     });
+  };
+
+  const handleToggleForm = () => {
+    updateCreateParam(!showForm);
   };
 
   const filteredJobs = jobs.filter(job =>
@@ -348,11 +382,12 @@ export default function SupervisorJobsPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      router.push(`/supervisor/jobs/${job.id}`);
+                      router.push(`/crew/load-verify?jobId=${job.id}`);
                     }}
                     className="load-status-btn"
+                    title={`${job.loaded_items} of ${job.total_items} items loaded (${job.completion_percentage}%)`}
                   >
-                    LOAD 0/5
+                    LOAD {job.loaded_items}/{job.total_items}
                   </button>
                 </div>
               ))}
@@ -374,7 +409,7 @@ export default function SupervisorJobsPage() {
         </button>
         <button
           type="button"
-          onClick={() => setShowForm(!showForm)}
+          onClick={handleToggleForm}
           className="btn-primary flex-1"
         >
           {showForm ? (
