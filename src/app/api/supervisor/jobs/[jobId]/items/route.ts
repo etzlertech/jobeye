@@ -207,21 +207,201 @@ export async function POST(
         .update({ current_quantity: newQuantity })
         .eq('id', item.id)
         .eq('tenant_id', job.tenant_id);
-      
+
       if (updateError) {
         console.error('⚠️ Failed to update item quantity:', updateError);
       }
     }
-    
+
+    // Create or update job_checklist_item for load tracking
+    console.log('Creating/updating checklist item for load tracking...');
+    const { data: existingChecklistItem } = await supabase
+      .from('job_checklist_items')
+      .select('id, quantity')
+      .eq('job_id', jobId)
+      .eq('item_id', body.item_id)
+      .single();
+
+    if (existingChecklistItem) {
+      // Update existing checklist item quantity
+      const { error: checklistUpdateError } = await supabase
+        .from('job_checklist_items')
+        .update({
+          quantity: existingChecklistItem.quantity + transaction.quantity,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingChecklistItem.id);
+
+      if (checklistUpdateError) {
+        console.error('⚠️ Failed to update checklist item:', checklistUpdateError);
+      } else {
+        console.log('✅ Updated checklist item quantity');
+      }
+    } else {
+      // Get max sequence number for this job
+      const { data: maxSeqData } = await supabase
+        .from('job_checklist_items')
+        .select('sequence_number')
+        .eq('job_id', jobId)
+        .order('sequence_number', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const nextSequence = (maxSeqData?.sequence_number || 0) + 1;
+
+      // Determine item type based on category or default to 'material'
+      const itemType = item.name.toLowerCase().includes('equipment') ||
+                       body.category === 'equipment' ? 'equipment' : 'material';
+
+      // Insert new checklist item
+      const { error: checklistInsertError } = await supabase
+        .from('job_checklist_items')
+        .insert({
+          job_id: jobId,
+          tenant_id: job.tenant_id,
+          sequence_number: nextSequence,
+          item_type: itemType,
+          item_id: body.item_id,
+          item_name: item.name,
+          quantity: transaction.quantity,
+          status: 'pending'
+        });
+
+      if (checklistInsertError) {
+        console.error('⚠️ Failed to create checklist item:', checklistInsertError);
+      } else {
+        console.log('✅ Created checklist item for load tracking');
+      }
+    }
+
     console.log('✅ Item assigned to job:', txData);
     
     return NextResponse.json({
       transaction: txData,
       message: `Item "${item.name}" assigned to job`
     });
-    
+
   } catch (error) {
     console.error('❌ Error in POST /api/supervisor/jobs/[jobId]/items:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/supervisor/jobs/[jobId]/items?item_id=xxx - Remove item from job
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { jobId: string } }
+) {
+  try {
+    const jobId = params.jobId;
+    const { searchParams } = new URL(request.url);
+    const itemId = searchParams.get('item_id');
+
+    if (!itemId) {
+      return NextResponse.json({ error: 'item_id query parameter required' }, { status: 400 });
+    }
+
+    console.log('➖ Removing item from job:', jobId, itemId);
+
+    const supabase = createServiceClient();
+
+    // Get the job to ensure it exists and get tenant_id
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('id, tenant_id')
+      .eq('id', jobId)
+      .single();
+
+    if (jobError || !job) {
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+    }
+
+    // Get the item details
+    const { data: item, error: itemError } = await supabase
+      .from('items')
+      .select('id, name, tracking_mode, current_quantity')
+      .eq('id', itemId)
+      .eq('tenant_id', job.tenant_id)
+      .single();
+
+    if (itemError || !item) {
+      return NextResponse.json({ error: 'Item not found' }, { status: 404 });
+    }
+
+    // Get the original check_out transaction to know the quantity
+    const { data: checkOutTx } = await supabase
+      .from('item_transactions')
+      .select('quantity')
+      .eq('job_id', jobId)
+      .eq('item_id', itemId)
+      .eq('transaction_type', 'check_out')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const returnQuantity = checkOutTx?.quantity || 1;
+
+    // Create a check_in transaction to return the item
+    const { data: txData, error: txError } = await supabase
+      .from('item_transactions')
+      .insert({
+        tenant_id: job.tenant_id,
+        item_id: itemId,
+        transaction_type: 'check_in',
+        quantity: returnQuantity,
+        job_id: jobId,
+        notes: `Removed from job ${jobId}`
+      })
+      .select()
+      .single();
+
+    if (txError) {
+      console.error('❌ Transaction error:', txError);
+      return NextResponse.json({ error: txError.message }, { status: 400 });
+    }
+
+    // Update item quantity if quantity-tracked
+    if (item.tracking_mode === 'quantity') {
+      const newQuantity = item.current_quantity + returnQuantity;
+      const { error: updateError } = await supabase
+        .from('items')
+        .update({ current_quantity: newQuantity })
+        .eq('id', item.id)
+        .eq('tenant_id', job.tenant_id);
+
+      if (updateError) {
+        console.error('⚠️ Failed to update item quantity:', updateError);
+      }
+    }
+
+    // Update checklist item status to 'missing' (don't delete to preserve history)
+    const { error: checklistUpdateError } = await supabase
+      .from('job_checklist_items')
+      .update({
+        status: 'missing',
+        updated_at: new Date().toISOString()
+      })
+      .eq('job_id', jobId)
+      .eq('item_id', itemId);
+
+    if (checklistUpdateError) {
+      console.error('⚠️ Failed to update checklist item:', checklistUpdateError);
+    } else {
+      console.log('✅ Marked checklist item as missing');
+    }
+
+    console.log('✅ Item removed from job:', txData);
+
+    return NextResponse.json({
+      transaction: txData,
+      message: `Item "${item.name}" removed from job`
+    });
+
+  } catch (error) {
+    console.error('❌ Error in DELETE /api/supervisor/jobs/[jobId]/items:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
