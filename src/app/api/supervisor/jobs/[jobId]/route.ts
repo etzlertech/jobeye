@@ -26,17 +26,6 @@ export async function GET(
         property:property_id (
           name,
           address
-        ),
-        checklist_items:job_checklist_items(
-          id,
-          item_id,
-          status,
-          item:items(
-            id,
-            name,
-            category,
-            primary_image_url
-          )
         )
       `)
       .eq('id', jobId)
@@ -45,8 +34,25 @@ export async function GET(
 
     if (error) throw error;
 
+    // Fetch checklist items separately to avoid nested query issues
+    const { data: checklistData } = await supabase
+      .from('job_checklist_items')
+      .select(`
+        id,
+        item_id,
+        status,
+        item:items!inner(
+          id,
+          name,
+          category,
+          primary_image_url
+        )
+      `)
+      .eq('job_id', jobId);
+
+    const checklistItems = checklistData || [];
+
     // Calculate load statistics
-    const checklistItems = data.checklist_items || [];
     const activeItems = checklistItems.filter((item: any) => item.status !== 'missing');
     const totalItems = activeItems.length;
     const loadedItems = activeItems.filter(
@@ -62,6 +68,7 @@ export async function GET(
       primaryImageUrl: data.primary_image_url,
       mediumUrl: data.medium_url,
       thumbnailUrl: data.thumbnail_url,
+      checklist_items: checklistItems,
       total_items: totalItems,
       loaded_items: loadedItems,
       verified_items: verifiedItems,
