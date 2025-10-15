@@ -162,8 +162,8 @@ export default function SupervisorJobCreatePage() {
     if (step === 'form') {
       addAction({
         id: 'save-draft',
-        label: 'Save Draft',
-        priority: 'medium',
+        label: 'Save Draft (Local)',
+        priority: 'low',
         icon: Save,
         onClick: handleSaveDraft,
         className: 'bg-gray-600 text-white hover:bg-gray-700'
@@ -291,17 +291,17 @@ export default function SupervisorJobCreatePage() {
 
   const handleSaveDraft = async () => {
     try {
-      // Save to localStorage for now
+      // Save to localStorage only - not to database
       localStorage.setItem('job-draft', JSON.stringify({
         ...formData,
         voiceRecording,
         timestamp: Date.now()
       }));
 
-      setSuccess('Draft saved successfully');
-      setTimeout(() => setSuccess(null), 3000);
+      setSuccess('Draft saved locally (not in database). Click "Create Job" to save to database.');
+      setTimeout(() => setSuccess(null), 5000);
     } catch (err) {
-      setError('Failed to save draft');
+      setError('Failed to save draft locally');
       setTimeout(() => setError(null), 3000);
     }
   };
