@@ -25,12 +25,9 @@ import {
   CheckCircle,
   WifiOff,
   Home,
-  UserPlus
+  UserPlus,
+  Building2
 } from 'lucide-react';
-import { MobileContainer, MobileHeader, MobileCard } from '@/components/mobile';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { TenantBadge } from '@/components/tenant';
 import { supabase } from '@/lib/supabase/client';
 
@@ -166,125 +163,146 @@ export default function SupervisorDashboard() {
 
   if (isLoading) {
     return (
-      <MobileContainer className="items-center justify-center">
+      <div className="mobile-container">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
+          className="flex items-center justify-center h-full"
         >
-          <RefreshCw className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground text-lg">Loading dashboard...</p>
+          <div className="text-center">
+            <RefreshCw className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: '#FFD700' }} />
+            <p className="text-gray-400 text-lg">Loading dashboard...</p>
+          </div>
         </motion.div>
-      </MobileContainer>
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+        `}</style>
+      </div>
     );
   }
 
   return (
-    <MobileContainer>
+    <div className="mobile-container">
       {/* Header */}
-      <MobileHeader
-        title="Supervisor Dashboard"
-        subtitle={lastRefresh.toLocaleTimeString()}
-        isOffline={isOffline}
-        rightContent={
-          <>
-            <TenantBadge />
-            {currentUser?.email && (
-              <Badge variant="outline" className="ml-2 mr-2">
-                <Users className="w-3 h-3 mr-1" />
-                {currentUser.name || currentUser.email.split('@')[0]}
-              </Badge>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={fetchDashboardData}
-            >
-              <RefreshCw className="w-5 h-5" />
-            </Button>
-          </>
-        }
-      />
+      <div className="header-bar">
+        <div className="flex items-center gap-2">
+          <Building2 className="w-6 h-6" style={{ color: '#FFD700' }} />
+          <div>
+            <h1 className="text-xl font-semibold">Dashboard</h1>
+            <p className="text-xs text-gray-500">{lastRefresh.toLocaleTimeString()}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <TenantBadge />
+          {currentUser?.email && (
+            <div className="user-badge">
+              <Users className="w-3 h-3 mr-1" />
+              <span className="text-xs">{currentUser.name || currentUser.email.split('@')[0]}</span>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={fetchDashboardData}
+            className="icon-button"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
 
+      {/* Offline indicator */}
+      {isOffline && (
+        <div className="notification-bar error">
+          <WifiOff className="w-4 h-4" />
+          <span className="text-sm">You are offline. Showing cached data.</span>
+        </div>
+      )}
+
+      {/* Main content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="px-4 py-4 space-y-4">
+        <div className="p-4 space-y-4">
           {/* Stats Overview */}
           {dashboardData && (
             <div className="grid grid-cols-3 gap-3">
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <Calendar className="w-6 h-6 text-primary mx-auto mb-2" />
-                  <p className="text-2xl font-bold">{dashboardData.todayJobs.total}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{dashboardData.todayJobs.completed} done</p>
-                </CardContent>
-              </Card>
+              <div className="stat-card">
+                <Calendar className="w-6 h-6 mx-auto mb-2" style={{ color: '#FFD700' }} />
+                <p className="text-2xl font-bold">{dashboardData.todayJobs.total}</p>
+                <p className="text-xs text-gray-500 mt-1">{dashboardData.todayJobs.completed} done</p>
+              </div>
 
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <Users className="w-6 h-6 text-primary mx-auto mb-2" />
-                  <p className="text-2xl font-bold">{dashboardData.crewStatus.length}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {dashboardData.crewStatus.filter(c => c.currentJob).length} working
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="stat-card">
+                <Users className="w-6 h-6 mx-auto mb-2" style={{ color: '#FFD700' }} />
+                <p className="text-2xl font-bold">{dashboardData.crewStatus.length}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {dashboardData.crewStatus.filter(c => c.currentJob).length} working
+                </p>
+              </div>
 
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <Package className={`w-6 h-6 mx-auto mb-2 ${dashboardData.inventoryAlerts.length > 0 ? 'text-orange-500' : 'text-primary'}`} />
-                  <p className="text-2xl font-bold">{dashboardData.inventoryAlerts.length}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {dashboardData.inventoryAlerts.filter(a => a.severity === 'high').length} urgent
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="stat-card">
+                <Package
+                  className="w-6 h-6 mx-auto mb-2"
+                  style={{ color: dashboardData.inventoryAlerts.length > 0 ? '#f97316' : '#FFD700' }}
+                />
+                <p className="text-2xl font-bold">{dashboardData.inventoryAlerts.length}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {dashboardData.inventoryAlerts.filter(a => a.severity === 'high').length} urgent
+                </p>
+              </div>
             </div>
           )}
 
           {/* Quick Actions */}
           <div className="grid grid-cols-2 gap-3">
-            <Button
-              size="lg"
+            <button
+              type="button"
               onClick={() => router.push('/supervisor/jobs')}
-              className="h-20 flex-col gap-2"
+              className="action-button primary"
             >
               <Plus className="w-6 h-6" />
               <span className="text-sm">Create Job</span>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
+            </button>
+            <button
+              type="button"
               onClick={() => router.push('/supervisor/customers')}
-              className="h-20 flex-col gap-2"
+              className="action-button secondary"
             >
               <UserPlus className="w-6 h-6" />
               <span className="text-sm">Customers</span>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
+            </button>
+            <button
+              type="button"
               onClick={() => router.push('/supervisor/properties')}
-              className="h-20 flex-col gap-2"
+              className="action-button secondary"
             >
               <Home className="w-6 h-6" />
               <span className="text-sm">Properties</span>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
+            </button>
+            <button
+              type="button"
               onClick={() => router.push('/supervisor/inventory')}
-              className="h-20 flex-col gap-2"
+              className="action-button secondary"
             >
               <Package className="w-6 h-6" />
               <span className="text-sm">Inventory</span>
-            </Button>
+            </button>
           </div>
 
           {/* Today's Jobs */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold">Today's Jobs</h2>
-              <Badge variant="secondary">{todayJobs.length}</Badge>
+              <span className="count-badge">{todayJobs.length}</span>
             </div>
 
             <div className="space-y-3">
@@ -296,50 +314,48 @@ export default function SupervisorDashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Card
-                      className="cursor-pointer hover:border-primary/50 transition-colors"
+                    <div
+                      className="job-card"
                       onClick={() => router.push(`/supervisor/jobs/${job.id}`)}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Badge variant={getStatusVariant(job.status)}>
-                                {job.status.replace('_', ' ')}
-                              </Badge>
-                              {job.priority === 'high' && (
-                                <span className="text-xs text-orange-500 font-medium">High Priority</span>
-                              )}
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`status-badge ${job.status}`}>
+                              {job.status.replace('_', ' ')}
+                            </span>
+                            {job.priority === 'high' && (
+                              <span className="text-xs font-medium" style={{ color: '#f97316' }}>
+                                High Priority
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="font-semibold truncate">{job.customerName}</h3>
+                          <p className="text-sm text-gray-400 truncate mt-1">
+                            {job.propertyAddress}
+                          </p>
+                          <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span>{job.scheduledTime}</span>
                             </div>
-                            <h3 className="font-semibold truncate">{job.customerName}</h3>
-                            <p className="text-sm text-muted-foreground truncate mt-1">
-                              {job.propertyAddress}
-                            </p>
-                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span>{job.scheduledTime}</span>
+                            {!job.loadVerified && (
+                              <div className="flex items-center gap-1" style={{ color: '#f97316' }}>
+                                <AlertTriangle className="w-3 h-3" />
+                                <span>Verify load</span>
                               </div>
-                              {!job.loadVerified && (
-                                <div className="flex items-center gap-1 text-orange-500">
-                                  <AlertTriangle className="w-3 h-3" />
-                                  <span>Verify load</span>
-                                </div>
-                              )}
-                            </div>
+                            )}
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   </motion.div>
                 ))
               ) : (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">No jobs scheduled for today</p>
-                  </CardContent>
-                </Card>
+                <div className="empty-state">
+                  <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-400">No jobs scheduled for today</p>
+                </div>
               )}
             </div>
           </div>
@@ -349,26 +365,26 @@ export default function SupervisorDashboard() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold">Crew Status</h2>
-                <Badge variant="secondary">{dashboardData.crewStatus.length}</Badge>
+                <span className="count-badge">{dashboardData.crewStatus.length}</span>
               </div>
               <div className="space-y-2">
                 {dashboardData.crewStatus.slice(0, 3).map((crew) => (
-                  <Card key={crew.id}>
-                    <CardContent className="p-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{crew.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {crew.currentJob ? 'Working' : 'Available'}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm text-primary font-semibold">{crew.jobsCompleted} done</p>
-                          <p className="text-xs text-muted-foreground">{crew.jobsRemaining} remain</p>
-                        </div>
+                  <div key={crew.id} className="info-card">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{crew.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {crew.currentJob ? 'Working' : 'Available'}
+                        </p>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold" style={{ color: '#FFD700' }}>
+                          {crew.jobsCompleted} done
+                        </p>
+                        <p className="text-xs text-gray-500">{crew.jobsRemaining} remain</p>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -379,27 +395,31 @@ export default function SupervisorDashboard() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold">Inventory Alerts</h2>
-                <Badge variant="destructive">{dashboardData.inventoryAlerts.length}</Badge>
+                <span className="count-badge urgent">{dashboardData.inventoryAlerts.length}</span>
               </div>
               <div className="space-y-2">
                 {dashboardData.inventoryAlerts.slice(0, 3).map((alert) => (
-                  <Card key={alert.itemId} className="border-orange-500/20">
-                    <CardContent className="p-3">
-                      <div className="flex items-center gap-3">
-                        <AlertTriangle className={`w-5 h-5 shrink-0 ${
-                          alert.severity === 'high' ? 'text-red-500' :
-                          alert.severity === 'medium' ? 'text-orange-500' :
-                          'text-yellow-500'
-                        }`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{alert.itemName}</p>
-                          <p className="text-xs text-muted-foreground capitalize">
-                            {alert.alertType.replace('_', ' ')}
-                          </p>
-                        </div>
+                  <div key={alert.itemId} className="alert-card">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle
+                        className="w-5 h-5 shrink-0"
+                        style={{
+                          color:
+                            alert.severity === 'high'
+                              ? '#ef4444'
+                              : alert.severity === 'medium'
+                              ? '#f97316'
+                              : '#eab308',
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{alert.itemName}</p>
+                        <p className="text-xs text-gray-500 capitalize">
+                          {alert.alertType.replace('_', ' ')}
+                        </p>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -409,6 +429,192 @@ export default function SupervisorDashboard() {
           <div className="h-4" />
         </div>
       </div>
-    </MobileContainer>
+
+      <style jsx>{`
+        .mobile-container {
+          width: 100%;
+          max-width: 375px;
+          height: 100vh;
+          max-height: 812px;
+          margin: 0 auto;
+          background: #000;
+          color: white;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .header-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem;
+          border-bottom: 1px solid #333;
+          background: rgba(0, 0, 0, 0.9);
+        }
+
+        .user-badge {
+          display: flex;
+          align-items: center;
+          padding: 0.25rem 0.5rem;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          border-radius: 0.375rem;
+          color: white;
+        }
+
+        .icon-button {
+          padding: 0.375rem;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.375rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .icon-button:hover {
+          background: rgba(255, 215, 0, 0.2);
+          border-color: #FFD700;
+        }
+
+        .notification-bar {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1rem;
+          margin: 0.5rem 1rem;
+          border-radius: 0.5rem;
+        }
+
+        .notification-bar.error {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #fca5a5;
+        }
+
+        .stat-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.75rem;
+          padding: 1rem;
+          text-align: center;
+        }
+
+        .action-button {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem;
+          height: 5rem;
+          gap: 0.5rem;
+          border-radius: 0.5rem;
+          border: none;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .action-button.primary {
+          background: #FFD700;
+          color: #000;
+        }
+
+        .action-button.primary:hover {
+          background: #FFC700;
+        }
+
+        .action-button.secondary {
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .action-button.secondary:hover {
+          background: rgba(255, 255, 255, 0.15);
+          border-color: #FFD700;
+        }
+
+        .count-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.25rem 0.5rem;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          border-radius: 0.375rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .count-badge.urgent {
+          background: rgba(239, 68, 68, 0.2);
+          color: #fca5a5;
+        }
+
+        .job-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.75rem;
+          padding: 1rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .job-card:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 215, 0, 0.4);
+          transform: translateX(2px);
+        }
+
+        .status-badge {
+          display: inline-block;
+          padding: 0.25rem 0.5rem;
+          border-radius: 0.375rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .status-badge.assigned {
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .status-badge.started,
+        .status-badge.in_progress {
+          background: rgba(59, 130, 246, 0.2);
+          color: #93c5fd;
+        }
+
+        .status-badge.completed {
+          background: rgba(34, 197, 94, 0.2);
+          color: #86efac;
+        }
+
+        .info-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.75rem;
+          padding: 0.75rem;
+        }
+
+        .alert-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(249, 115, 22, 0.3);
+          border-radius: 0.75rem;
+          padding: 0.75rem;
+        }
+
+        .empty-state {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.75rem;
+          padding: 2rem 1rem;
+          text-align: center;
+        }
+      `}</style>
+    </div>
   );
 }
