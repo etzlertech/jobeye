@@ -81,6 +81,7 @@ export async function middleware(request: NextRequest) {
     });
 
     // Create Supabase client with proper cookie handling for middleware
+    const isProduction = process.env.NODE_ENV === 'production';
     const supabase = createServerClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -90,22 +91,39 @@ export async function middleware(request: NextRequest) {
             return request.cookies.get(name)?.value;
           },
           set(name: string, value: string, options: CookieOptions) {
-            request.cookies.set({ name, value, ...options });
+            // In production, ensure cookies work cross-origin with SameSite=None; Secure
+            const cookieOptions = isProduction
+              ? {
+                  ...options,
+                  sameSite: 'none' as const,
+                  secure: true,
+                }
+              : options;
+
+            request.cookies.set({ name, value, ...cookieOptions });
             response = NextResponse.next({
               request: {
                 headers: request.headers,
               },
             });
-            response.cookies.set({ name, value, ...options });
+            response.cookies.set({ name, value, ...cookieOptions });
           },
           remove(name: string, options: CookieOptions) {
-            request.cookies.set({ name, value: '', ...options });
+            const cookieOptions = isProduction
+              ? {
+                  ...options,
+                  sameSite: 'none' as const,
+                  secure: true,
+                }
+              : options;
+
+            request.cookies.set({ name, value: '', ...cookieOptions });
             response = NextResponse.next({
               request: {
                 headers: request.headers,
               },
             });
-            response.cookies.set({ name, value: '', ...options });
+            response.cookies.set({ name, value: '', ...cookieOptions });
           },
         },
       }
