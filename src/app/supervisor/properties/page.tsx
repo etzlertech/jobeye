@@ -166,9 +166,11 @@ export default function SupervisorPropertiesPage() {
 
       if (!response.ok) throw new Error(data.message);
 
-      // Normalize address data immediately to prevent undefined access
-      const normalized = (data.properties || []).map((p: Property) => ({
+      // Normalize data: API returns property_type but UI expects type
+      // Also normalize address immediately to prevent undefined access
+      const normalized = (data.properties || []).map((p: any) => ({
         ...p,
+        type: (p.property_type || 'residential') as Property['type'],
         safeAddress: getAddressString(p.address)
       }));
 
@@ -440,7 +442,11 @@ export default function SupervisorPropertiesPage() {
             ) : (
               <div className="property-list">
                 {filteredProperties.map((property) => {
-                  const TypeIcon = propertyTypeIcons[property.type];
+                  // Guard against undefined type
+                  const propertyType = property.type || 'residential';
+                  const TypeIcon = propertyTypeIcons[propertyType] || Home;
+                  const typeLabel = propertyTypeLabels[propertyType] || 'Residential';
+
                   return (
                     <div
                       key={property.id}
@@ -457,7 +463,7 @@ export default function SupervisorPropertiesPage() {
                               </h3>
                               <div className="flex items-center gap-3 mt-1">
                                 <span className="property-type-badge">
-                                  {propertyTypeLabels[property.type]}
+                                  {typeLabel}
                                 </span>
                                 {property.size && (
                                   <span className="text-xs text-gray-500 flex items-center gap-1">
