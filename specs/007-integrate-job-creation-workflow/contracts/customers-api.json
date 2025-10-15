@@ -1,0 +1,418 @@
+{
+  "apiVersion": "1.0.0",
+  "name": "Customers API",
+  "description": "CRUD operations for customer management with tenant isolation",
+  "basePath": "/api/supervisor/customers",
+  "authentication": {
+    "required": true,
+    "method": "getRequestContext()",
+    "notes": "Supports both session-based auth and x-tenant-id header fallback"
+  },
+  "tenantIsolation": {
+    "method": "RLS + Query Filtering",
+    "queryPattern": ".eq('tenant_id', context.tenantId)",
+    "rlsPolicy": "tenant_isolation policy enforces tenant_id match at database level"
+  },
+  "dataModel": {
+    "table": "customers",
+    "columns": 18,
+    "keyFields": {
+      "id": "UUID (primary key, auto-generated)",
+      "tenant_id": "UUID (FK to tenants, from auth context)",
+      "customer_number": "TEXT (auto-generated, format: 'CUST-{timestamp}')",
+      "name": "TEXT (required)",
+      "email": "TEXT (required)",
+      "phone": "TEXT (optional)",
+      "mobile_phone": "TEXT (optional, separate from phone)",
+      "billing_address": "JSONB { street, city, state, zip }",
+      "service_address": "JSONB { street, city, state, zip }",
+      "created_at": "TIMESTAMPTZ (auto)",
+      "updated_at": "TIMESTAMPTZ (auto)"
+    },
+    "sourceEvidence": "Supabase MCP query: SELECT * FROM customers LIMIT 1"
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/supervisor/customers",
+      "summary": "List all customers for authenticated tenant",
+      "authentication": "Required (session or header)",
+      "requestParams": {
+        "query": {
+          "limit": "number (optional, default: 50)",
+          "offset": "number (optional, default: 0)",
+          "order": "string (optional, default: 'created_at.desc')"
+        }
+      },
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "type": "array",
+          "items": {
+            "id": "uuid",
+            "tenant_id": "uuid",
+            "customer_number": "string",
+            "name": "string",
+            "email": "string",
+            "phone": "string | null",
+            "mobile_phone": "string | null",
+            "billing_address": {
+              "street": "string",
+              "city": "string",
+              "state": "string",
+              "zip": "string"
+            },
+            "service_address": {
+              "street": "string",
+              "city": "string",
+              "state": "string",
+              "zip": "string"
+            },
+            "created_at": "timestamp",
+            "updated_at": "timestamp"
+          }
+        },
+        "example": [
+          {
+            "id": "123e4567-e89b-12d3-a456-426614174000",
+            "tenant_id": "tenant-uuid",
+            "customer_number": "CUST-1758986343919",
+            "name": "ACME Corporation",
+            "email": "contact@acme.com",
+            "phone": "555-0100",
+            "mobile_phone": "555-0101",
+            "billing_address": {
+              "street": "123 Main St",
+              "city": "Springfield",
+              "state": "IL",
+              "zip": "62701"
+            },
+            "service_address": {
+              "street": "456 Oak Ave",
+              "city": "Springfield",
+              "state": "IL",
+              "zip": "62702"
+            },
+            "created_at": "2025-10-14T12:00:00Z",
+            "updated_at": "2025-10-14T12:00:00Z"
+          }
+        ]
+      },
+      "responseErrors": [
+        {
+          "status": 401,
+          "description": "No tenant context (not authenticated)"
+        },
+        {
+          "status": 500,
+          "description": "Database query failed"
+        }
+      ],
+      "testCases": [
+        {
+          "name": "List customers with valid auth",
+          "preconditions": "Authenticated as super@tophand.tech",
+          "expectedResult": "Returns array of customers for tenant"
+        },
+        {
+          "name": "List customers without auth",
+          "preconditions": "No session or header",
+          "expectedResult": "401 Unauthorized"
+        },
+        {
+          "name": "Tenant isolation check",
+          "preconditions": "Authenticated as tenant A, tenant B has customers",
+          "expectedResult": "Returns only tenant A customers (not B's)"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/supervisor/customers",
+      "summary": "Create new customer for authenticated tenant",
+      "authentication": "Required (session or header)",
+      "requestBody": {
+        "required": true,
+        "contentType": "application/json",
+        "schema": {
+          "name": "string (required)",
+          "email": "string (required)",
+          "phone": "string (optional)",
+          "mobile_phone": "string (optional)",
+          "billing_address": {
+            "street": "string (required)",
+            "city": "string (required)",
+            "state": "string (required, 2-letter code)",
+            "zip": "string (required)"
+          },
+          "service_address": {
+            "street": "string (optional)",
+            "city": "string (optional)",
+            "state": "string (optional, 2-letter code)",
+            "zip": "string (optional)"
+          }
+        },
+        "example": {
+          "name": "ACME Corporation",
+          "email": "contact@acme.com",
+          "phone": "555-0100",
+          "mobile_phone": "555-0101",
+          "billing_address": {
+            "street": "123 Main St",
+            "city": "Springfield",
+            "state": "IL",
+            "zip": "62701"
+          },
+          "service_address": {
+            "street": "456 Oak Ave",
+            "city": "Springfield",
+            "state": "IL",
+            "zip": "62702"
+          }
+        },
+        "adapterRequired": true,
+        "adapterNotes": "Form likely has separate input fields (street, city, state, zip) that need to be combined into JSONB objects. See demo-properties/utils.ts buildPropertyPayload for reference pattern."
+      },
+      "responseSuccess": {
+        "status": 201,
+        "body": {
+          "id": "uuid",
+          "customer_number": "string (auto-generated)",
+          "message": "Customer created successfully"
+        },
+        "example": {
+          "id": "123e4567-e89b-12d3-a456-426614174000",
+          "customer_number": "CUST-1729000000000",
+          "message": "Customer created successfully"
+        }
+      },
+      "responseErrors": [
+        {
+          "status": 400,
+          "description": "Validation failed (missing required fields)"
+        },
+        {
+          "status": 401,
+          "description": "No tenant context"
+        },
+        {
+          "status": 409,
+          "description": "Customer with email already exists for tenant"
+        },
+        {
+          "status": 500,
+          "description": "Database insert failed"
+        }
+      ],
+      "validation": {
+        "name": "Required, min 1 char, max 255 chars",
+        "email": "Required, valid email format",
+        "phone": "Optional, valid phone format",
+        "mobile_phone": "Optional, valid phone format",
+        "billing_address.state": "Required, 2-letter uppercase (e.g., 'IL')",
+        "billing_address.zip": "Required, 5 or 9 digits"
+      },
+      "serverSideLogic": [
+        "Auto-generate customer_number: 'CUST-{Date.now()}'",
+        "Extract tenant_id from getRequestContext()",
+        "Set created_at and updated_at to current timestamp",
+        "Transform form data to JSONB address fields"
+      ],
+      "testCases": [
+        {
+          "name": "Create customer with all fields",
+          "preconditions": "Authenticated, valid payload",
+          "expectedResult": "201 Created with customer_number"
+        },
+        {
+          "name": "Create customer with minimal fields",
+          "preconditions": "Only name, email, billing_address provided",
+          "expectedResult": "201 Created (optional fields null)"
+        },
+        {
+          "name": "Create duplicate email",
+          "preconditions": "Customer with email already exists",
+          "expectedResult": "409 Conflict"
+        },
+        {
+          "name": "Create without auth",
+          "preconditions": "No session or header",
+          "expectedResult": "401 Unauthorized"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/supervisor/customers/[id]",
+      "summary": "Get single customer by ID",
+      "authentication": "Required (session or header)",
+      "requestParams": {
+        "path": {
+          "id": "string (customer UUID)"
+        }
+      },
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "type": "object",
+          "schema": "Same as POST response body (full customer record)"
+        }
+      },
+      "responseErrors": [
+        {
+          "status": 401,
+          "description": "No tenant context"
+        },
+        {
+          "status": 404,
+          "description": "Customer not found or belongs to different tenant"
+        },
+        {
+          "status": 500,
+          "description": "Database query failed"
+        }
+      ],
+      "tenantIsolation": "RLS ensures customer must belong to authenticated tenant",
+      "testCases": [
+        {
+          "name": "Get own tenant's customer",
+          "preconditions": "Authenticated, customer ID exists for tenant",
+          "expectedResult": "200 OK with customer data"
+        },
+        {
+          "name": "Get other tenant's customer",
+          "preconditions": "Authenticated as tenant A, customer belongs to tenant B",
+          "expectedResult": "404 Not Found (RLS filters it out)"
+        }
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/supervisor/customers/[id]",
+      "summary": "Update existing customer",
+      "authentication": "Required (session or header)",
+      "requestParams": {
+        "path": {
+          "id": "string (customer UUID)"
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "contentType": "application/json",
+        "schema": "Same as POST (partial updates allowed)",
+        "notes": "Only include fields to update. tenant_id and customer_number cannot be changed."
+      },
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "message": "Customer updated successfully",
+          "updated_at": "timestamp"
+        }
+      },
+      "responseErrors": [
+        {
+          "status": 400,
+          "description": "Validation failed"
+        },
+        {
+          "status": 401,
+          "description": "No tenant context"
+        },
+        {
+          "status": 404,
+          "description": "Customer not found or belongs to different tenant"
+        },
+        {
+          "status": 500,
+          "description": "Database update failed"
+        }
+      ],
+      "serverSideLogic": [
+        "Update updated_at to current timestamp",
+        "Prevent changes to tenant_id, customer_number, id",
+        "Validate email uniqueness within tenant if email is being changed"
+      ],
+      "testCases": [
+        {
+          "name": "Update customer name",
+          "preconditions": "Authenticated, customer exists",
+          "expectedResult": "200 OK, name updated"
+        },
+        {
+          "name": "Update other tenant's customer",
+          "preconditions": "Authenticated as tenant A, update tenant B customer",
+          "expectedResult": "404 Not Found"
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/supervisor/customers/[id]",
+      "summary": "Delete customer (with cascade check)",
+      "authentication": "Required (session or header)",
+      "requestParams": {
+        "path": {
+          "id": "string (customer UUID)"
+        }
+      },
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "message": "Customer deleted successfully"
+        }
+      },
+      "responseErrors": [
+        {
+          "status": 401,
+          "description": "No tenant context"
+        },
+        {
+          "status": 404,
+          "description": "Customer not found or belongs to different tenant"
+        },
+        {
+          "status": 409,
+          "description": "Customer has active properties (foreign key violation)"
+        },
+        {
+          "status": 500,
+          "description": "Database delete failed"
+        }
+      ],
+      "dataIntegrity": {
+        "foreignKeyCheck": "properties table has customer_id FK",
+        "cascadeStrategy": "Prevent deletion if properties exist (ON DELETE RESTRICT)",
+        "recommendation": "Check for properties before deletion, show user warning in UI"
+      },
+      "testCases": [
+        {
+          "name": "Delete customer without properties",
+          "preconditions": "Customer has no linked properties",
+          "expectedResult": "200 OK, customer deleted"
+        },
+        {
+          "name": "Delete customer with properties",
+          "preconditions": "Customer has 1+ properties",
+          "expectedResult": "409 Conflict (cannot delete, has dependencies)"
+        },
+        {
+          "name": "Delete other tenant's customer",
+          "preconditions": "Authenticated as tenant A, delete tenant B customer",
+          "expectedResult": "404 Not Found"
+        }
+      ]
+    }
+  ],
+  "integrationNotes": {
+    "existingPatterns": "See /api/supervisor/items and /api/supervisor/jobs for working examples",
+    "formComponents": "Reuse demo-crud/CustomerForm.tsx with adapter for JSONB addresses",
+    "addressAdapter": "Similar to demo-properties/utils.ts buildPropertyPayload function",
+    "repository": "Create CustomerRepository following pattern in domains/property/repositories"
+  },
+  "mcpQueryEvidence": {
+    "query": "SELECT * FROM customers LIMIT 1",
+    "result": "18 columns confirmed, 1+ records found",
+    "schemaSource": "Live database via Supabase REST API (service role key)",
+    "documentedIn": "specs/007-integrate-job-creation-workflow/data-model.md Section 2.1"
+  }
+}

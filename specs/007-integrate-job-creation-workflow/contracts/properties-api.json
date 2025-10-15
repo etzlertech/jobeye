@@ -1,0 +1,396 @@
+{
+  "apiVersion": "1.0.0",
+  "name": "Properties API",
+  "description": "CRUD operations for property management with customer linkage and tenant isolation",
+  "basePath": "/api/supervisor/properties",
+  "authentication": {
+    "required": true,
+    "method": "getRequestContext()",
+    "notes": "Supports both session-based auth and x-tenant-id header fallback"
+  },
+  "tenantIsolation": {
+    "method": "RLS + Query Filtering",
+    "queryPattern": ".eq('tenant_id', context.tenantId)",
+    "rlsPolicy": "tenant_isolation policy enforces tenant_id match at database level"
+  },
+  "dataModel": {
+    "table": "properties",
+    "columns": 22,
+    "keyFields": {
+      "id": "UUID (primary key, auto-generated)",
+      "tenant_id": "UUID (FK to tenants, from auth context)",
+      "customer_id": "UUID (FK to customers, REQUIRED)",
+      "property_number": "TEXT (auto-generated, format: 'PROP-{timestamp}')",
+      "address": "JSONB { line1, line2, city, state, postal_code, country, lat, lon }",
+      "notes": "TEXT (optional)",
+      "lot_size": "TEXT (optional)",
+      "gate_code": "TEXT (optional)",
+      "created_at": "TIMESTAMPTZ (auto)",
+      "updated_at": "TIMESTAMPTZ (auto)"
+    },
+    "sourceEvidence": "Supabase MCP query: SELECT * FROM properties LIMIT 1"
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/supervisor/properties",
+      "summary": "List all properties for authenticated tenant with customer info",
+      "authentication": "Required (session or header)",
+      "requestParams": {
+        "query": {
+          "limit": "number (optional, default: 50)",
+          "offset": "number (optional, default: 0)",
+          "customer_id": "string (optional, filter by customer)",
+          "order": "string (optional, default: 'created_at.desc')"
+        }
+      },
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "type": "array",
+          "items": {
+            "id": "uuid",
+            "tenant_id": "uuid",
+            "customer_id": "uuid",
+            "property_number": "string",
+            "address": {
+              "line1": "string",
+              "line2": "string | null",
+              "city": "string",
+              "state": "string",
+              "postal_code": "string",
+              "country": "string",
+              "lat": "number | null",
+              "lon": "number | null"
+            },
+            "notes": "string | null",
+            "lot_size": "string | null",
+            "gate_code": "string | null",
+            "created_at": "timestamp",
+            "updated_at": "timestamp",
+            "customer": {
+              "name": "string",
+              "email": "string"
+            }
+          }
+        },
+        "example": [
+          {
+            "id": "prop-uuid",
+            "tenant_id": "tenant-uuid",
+            "customer_id": "cust-uuid",
+            "property_number": "PROP-1758986400000",
+            "address": {
+              "line1": "456 Oak Avenue",
+              "line2": null,
+              "city": "Springfield",
+              "state": "IL",
+              "postal_code": "62702",
+              "country": "US",
+              "lat": 39.7817,
+              "lon": -89.6501
+            },
+            "notes": "Large backyard, weekly mowing",
+            "lot_size": "0.5 acres",
+            "gate_code": "1234",
+            "created_at": "2025-10-14T12:00:00Z",
+            "updated_at": "2025-10-14T12:00:00Z",
+            "customer": {
+              "name": "ACME Corporation",
+              "email": "contact@acme.com"
+            }
+          }
+        ]
+      },
+      "responseErrors": [
+        {
+          "status": 401,
+          "description": "No tenant context"
+        },
+        {
+          "status": 500,
+          "description": "Database query failed"
+        }
+      ],
+      "queryPattern": {
+        "join": "LEFT JOIN customers ON properties.customer_id = customers.id",
+        "select": "properties.*, customers.name as customer_name, customers.email as customer_email"
+      },
+      "testCases": [
+        {
+          "name": "List all properties",
+          "preconditions": "Authenticated, tenant has properties",
+          "expectedResult": "Returns array of properties with customer info"
+        },
+        {
+          "name": "Filter by customer_id",
+          "preconditions": "Authenticated, customer has properties",
+          "expectedResult": "Returns only properties for specified customer"
+        },
+        {
+          "name": "Tenant isolation check",
+          "preconditions": "Authenticated as tenant A, tenant B has properties",
+          "expectedResult": "Returns only tenant A properties"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/supervisor/properties",
+      "summary": "Create new property for authenticated tenant",
+      "authentication": "Required (session or header)",
+      "requestBody": {
+        "required": true,
+        "contentType": "application/json",
+        "schema": {
+          "customer_id": "string (required, UUID)",
+          "address": {
+            "line1": "string (required)",
+            "line2": "string (optional)",
+            "city": "string (required)",
+            "state": "string (required, 2-letter code)",
+            "postal_code": "string (required)",
+            "country": "string (optional, default: 'US')"
+          },
+          "notes": "string (optional)",
+          "lot_size": "string (optional)",
+          "gate_code": "string (optional)"
+        },
+        "example": {
+          "customer_id": "cust-uuid",
+          "address": {
+            "line1": "456 Oak Avenue",
+            "line2": "Suite 200",
+            "city": "Springfield",
+            "state": "IL",
+            "postal_code": "62702"
+          },
+          "notes": "Large backyard, weekly mowing",
+          "lot_size": "0.5 acres",
+          "gate_code": "1234"
+        },
+        "adapterRequired": true,
+        "adapterNotes": "Form has separate input fields (line1, line2, city, state, postal_code) that must be combined into JSONB address object. EXISTING ADAPTER FOUND in demo-properties/utils.ts buildPropertyPayload() - REUSE THIS PATTERN.",
+        "existingAdapter": {
+          "file": "src/app/demo-properties/utils.ts",
+          "function": "buildPropertyPayload(form: PropertyFormState)",
+          "pattern": "{ address: { line1: form.addressLine1, city: form.city || 'N/A', state: form.state || 'N/A', postal_code: form.postalCode || '00000' } }"
+        }
+      },
+      "responseSuccess": {
+        "status": 201,
+        "body": {
+          "id": "uuid",
+          "property_number": "string (auto-generated)",
+          "message": "Property created successfully"
+        }
+      },
+      "responseErrors": [
+        {
+          "status": 400,
+          "description": "Validation failed (missing required fields or invalid customer_id)"
+        },
+        {
+          "status": 401,
+          "description": "No tenant context"
+        },
+        {
+          "status": 404,
+          "description": "Customer not found or belongs to different tenant"
+        },
+        {
+          "status": 500,
+          "description": "Database insert failed"
+        }
+      ],
+      "validation": {
+        "customer_id": "Required, must exist in customers table for same tenant",
+        "address.line1": "Required, min 1 char",
+        "address.city": "Required",
+        "address.state": "Required, 2-letter uppercase",
+        "address.postal_code": "Required, 5 or 9 digits"
+      },
+      "serverSideLogic": [
+        "Auto-generate property_number: 'PROP-{Date.now()}'",
+        "Extract tenant_id from getRequestContext()",
+        "Verify customer_id belongs to same tenant (RLS handles this)",
+        "Set created_at and updated_at to current timestamp",
+        "Transform form data to JSONB address field",
+        "Optional: Geocode address to set lat/lon (future enhancement)"
+      ],
+      "testCases": [
+        {
+          "name": "Create property with valid customer",
+          "preconditions": "Authenticated, customer exists for tenant",
+          "expectedResult": "201 Created with property_number"
+        },
+        {
+          "name": "Create property with invalid customer_id",
+          "preconditions": "customer_id does not exist",
+          "expectedResult": "404 Not Found (customer not found)"
+        },
+        {
+          "name": "Create property with other tenant's customer",
+          "preconditions": "Authenticated as tenant A, use tenant B customer_id",
+          "expectedResult": "404 Not Found (RLS filters customer)"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/supervisor/properties/[id]",
+      "summary": "Get single property by ID with customer info",
+      "authentication": "Required (session or header)",
+      "requestParams": {
+        "path": {
+          "id": "string (property UUID)"
+        }
+      },
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "type": "object",
+          "schema": "Same as POST response (full property + customer info)"
+        }
+      },
+      "responseErrors": [
+        {
+          "status": 401,
+          "description": "No tenant context"
+        },
+        {
+          "status": 404,
+          "description": "Property not found or belongs to different tenant"
+        }
+      ],
+      "testCases": [
+        {
+          "name": "Get own tenant's property",
+          "preconditions": "Authenticated, property exists for tenant",
+          "expectedResult": "200 OK with property data"
+        },
+        {
+          "name": "Get other tenant's property",
+          "preconditions": "Authenticated as tenant A, property belongs to tenant B",
+          "expectedResult": "404 Not Found"
+        }
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/supervisor/properties/[id]",
+      "summary": "Update existing property",
+      "authentication": "Required (session or header)",
+      "requestParams": {
+        "path": {
+          "id": "string (property UUID)"
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "contentType": "application/json",
+        "schema": "Same as POST (partial updates allowed)",
+        "notes": "Cannot change tenant_id or property_number. Can change customer_id if new customer is in same tenant."
+      },
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "message": "Property updated successfully",
+          "updated_at": "timestamp"
+        }
+      },
+      "responseErrors": [
+        {
+          "status": 400,
+          "description": "Validation failed"
+        },
+        {
+          "status": 401,
+          "description": "No tenant context"
+        },
+        {
+          "status": 404,
+          "description": "Property or customer not found"
+        }
+      ],
+      "serverSideLogic": [
+        "Update updated_at to current timestamp",
+        "If customer_id is being changed, verify new customer belongs to same tenant",
+        "Prevent changes to tenant_id, property_number, id"
+      ],
+      "testCases": [
+        {
+          "name": "Update property address",
+          "preconditions": "Authenticated, property exists",
+          "expectedResult": "200 OK, address updated"
+        },
+        {
+          "name": "Change property to different customer",
+          "preconditions": "Both customers in same tenant",
+          "expectedResult": "200 OK, customer_id updated"
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/supervisor/properties/[id]",
+      "summary": "Delete property (with cascade check for jobs)",
+      "authentication": "Required (session or header)",
+      "requestParams": {
+        "path": {
+          "id": "string (property UUID)"
+        }
+      },
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "message": "Property deleted successfully"
+        }
+      },
+      "responseErrors": [
+        {
+          "status": 401,
+          "description": "No tenant context"
+        },
+        {
+          "status": 404,
+          "description": "Property not found"
+        },
+        {
+          "status": 409,
+          "description": "Property has active jobs (foreign key violation)"
+        }
+      ],
+      "dataIntegrity": {
+        "foreignKeyCheck": "jobs table has property_id FK",
+        "cascadeStrategy": "Prevent deletion if jobs exist (ON DELETE RESTRICT)",
+        "recommendation": "Check for jobs before deletion, show user warning in UI"
+      },
+      "testCases": [
+        {
+          "name": "Delete property without jobs",
+          "preconditions": "Property has no linked jobs",
+          "expectedResult": "200 OK, property deleted"
+        },
+        {
+          "name": "Delete property with jobs",
+          "preconditions": "Property has 1+ jobs",
+          "expectedResult": "409 Conflict (cannot delete, has dependencies)"
+        }
+      ]
+    }
+  ],
+  "integrationNotes": {
+    "existingAdapter": "REUSE demo-properties/utils.ts buildPropertyPayload() for address JSONB transformation",
+    "formComponents": "Reuse demo-properties/PropertyForm.tsx (already uses adapter)",
+    "repository": "Domain pattern already exists: domains/property/repositories/property-repository.ts",
+    "customerDropdown": "Need to fetch customers list from /api/supervisor/customers for form dropdown"
+  },
+  "mcpQueryEvidence": {
+    "query": "SELECT * FROM properties LIMIT 1",
+    "result": "22 columns confirmed, 1+ records found",
+    "addressStructure": "JSONB with { line1, line2, city, state, postal_code, country, lat, lon }",
+    "schemaSource": "Live database via Supabase REST API (service role key)",
+    "documentedIn": "specs/007-integrate-job-creation-workflow/data-model.md Section 2.2"
+  }
+}

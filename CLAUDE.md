@@ -6,6 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 🚨 CRITICAL OPERATIONS - USE THESE EXACT METHODS
 
+### 0️⃣ MANDATORY PLANNING WORKFLOW (DO THIS *BEFORE* ANY CODE CHANGE)
+1. **Read & Sync**  
+   - `.specify/constitution.md`, feature `spec.md`, existing `plan.md`, `CLAUDE.md`, `AGENTS.md`, and `MEMORY.md`
+2. **Phase 0 / Phase 1 Completion**  
+   - Run the `/plan` workflow when required and finish Phase 0 (research.md) and Phase 1 (data-model.md, contracts/, quickstart.md) before editing production files  
+   - Every document must cite the Supabase MCP queries (ID, SQL, timestamp, key rows) that informed it
+3. **Live Schema Verification**  
+   - Query the live database via Supabase MCP for each table/policy you plan to touch **before** writing code  
+   - Paste the query output or summary into research/design docs so reviewers can trace the evidence
+4. **Task Alignment**  
+   - Update `/specs/.../tasks.md` and your TODO list (TodoWrite) so work ties back to agreed tasks  
+   - If the spec or tasks are incomplete, resolve that first
+5. **Gatekeepers**  
+   - No implementation edits, migrations, or commits until the user (or documented process) approves the planning artifacts  
+   - Never bypass `npm run pre-commit`; fix all failures before committing  
+   - Final summaries must list the MCP queries executed and the files where the evidence lives
+
 ### 1️⃣ DATABASE OPERATIONS - ALWAYS USE SUPABASE MCP FIRST
 **IMPORTANT**: The Supabase MCP server is now configured and working. You MUST use it as the primary method for all database operations.
 
@@ -61,6 +78,8 @@ git push origin main
 ```
 
 ### 3️⃣ RAILWAY DEPLOY - MANUAL MONITORING
+- **Production URL**: https://jobeye-production.up.railway.app/
+- **Test Account**: super@tophand.tech / demo123
 - Railway scripts are BROKEN (tsx/node module issues)
 - After push: `echo "Pushed at $(date)"`
 - Wait 2-3 minutes (NOT 5)
@@ -78,6 +97,8 @@ git push origin main
 - Always query the actual database schema via MCP before making changes
 - The MCP server provides real-time access to tables, views, functions, and data
 - Only use Python fallback method if MCP connection fails
+- Document every MCP query (include dump/snippet + reasoning) in the relevant planning artifact before committing
+- If an MCP query would alter data, confirm with the user first and capture that confirmation in your notes
 
 ## 🏢 TENANT MANAGEMENT CONTEXT (NEW)
 

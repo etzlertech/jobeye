@@ -3,6 +3,12 @@
 ## IMPORTANT: Main Branch Only Workflow
 **As a single developer, all work happens directly on the main branch. DO NOT create feature branches.**
 
+## 🚀 PRODUCTION ENVIRONMENT
+- **Railway Production URL**: https://jobeye-production.up.railway.app/
+- **Test Supervisor Account**: super@tophand.tech / demo123
+- Use Browser MCP to test deployments in production
+- Auto-deploys from main branch within 2-3 minutes
+
 ## 🏢 TENANT MANAGEMENT CONTEXT (NEW)
 
 ### Context Resolution Pattern
@@ -35,6 +41,13 @@ const context = await getRequestContext(request);
    - Use TodoWrite to parse ALL tasks from the task file
    - Mark completed tasks as DONE
    - Identify next tasks to execute
+
+3. **MANDATORY PLANNING WORKFLOW (NO CODE UNTIL COMPLETE):**
+   - Run `/plan` when entering a new feature and fill out `plan.md` Phase 0 and Phase 1 sections
+   - Produce the required artifacts (`research.md`, `data-model.md`, `contracts/`, `quickstart.md`) and link every insight to a Supabase MCP query
+   - Log each MCP query (SQL, timestamp, key output) inside the planning docs or comments before moving on
+   - Stop and get approval if planning artifacts are incomplete or out of date
+   - Absolutely no production edits, migrations, or commits until planning gates are satisfied and pre-commit hooks pass
 
 3. **BEFORE ANY DATABASE WORK:**
    - **PRIMARY METHOD**: Use Supabase MCP server to query LIVE database

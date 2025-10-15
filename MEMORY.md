@@ -2,6 +2,19 @@
 
 ## 🚨 CRITICAL: EXACT WORKING METHODS (USE THESE ONLY)
 
+### 🧭 MANDATORY PLANNING & EVIDENCE WORKFLOW
+- **Run `/plan` and finish Phase 0/Phase 1** before touching feature code  
+  - `research.md` must include Supabase MCP query transcripts or summarized output  
+  - `data-model.md`, `contracts/`, and `quickstart.md` must reference the same MCP evidence
+- **Log Every MCP Query**  
+  - Record SQL text (or tool call), timestamp, and key rows/fields in the planning docs  
+  - Cite the logged queries in commit summaries and final responses
+- **No Code Without Gates**  
+  - If planning artifacts or TODOs are stale, update them first  
+  - Do not edit implementation files, run migrations, or commit until planning gates are approved and `npm run pre-commit` succeeds
+- **Final Summary Requirement**  
+  - Every session recap must list the MCP queries executed and where the results are documented
+
 ### 1️⃣ DIRECT SUPABASE CONNECTION - MCP SERVER FIRST
 
 #### PRIMARY METHOD: Supabase MCP Server (ALWAYS USE THIS)
@@ -54,6 +67,8 @@ git push origin main
 ```
 
 ### 3️⃣ RAILWAY MONITORING - MANUAL METHOD
+- **Production URL**: https://jobeye-production.up.railway.app/
+- **Test Account**: super@tophand.tech / demo123
 ```bash
 # After push, note the time
 echo "Pushed at $(date)"
@@ -164,9 +179,13 @@ For any task with 3+ steps or complexity, use TodoWrite to:
 - **FORM TESTING**: Fill out forms, click buttons, navigate pages in real-time
 - **PRODUCTION TESTING**: Test CRUD operations on live Railway deployment directly
 
+### Railway Production Environment
+- **Production URL**: https://jobeye-production.up.railway.app/
+- **Test Account**: super@tophand.tech / demo123 (Supervisor role)
+
 ### Browser MCP Tools Available
 ```javascript
-// Navigate to any URL
+// Navigate to production Railway app
 mcp__browsermcp__browser_navigate({ url: "https://jobeye-production.up.railway.app" })
 
 // Take screenshot to see current state

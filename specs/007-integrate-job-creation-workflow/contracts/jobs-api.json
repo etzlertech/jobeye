@@ -1,0 +1,305 @@
+{
+  "apiVersion": "1.0.0",
+  "name": "Jobs API",
+  "description": "EXISTING API for job management - verification contract with modifications needed",
+  "basePath": "/api/supervisor/jobs",
+  "status": "ALREADY EXISTS (needs minor updates for property linking)",
+  "authentication": {
+    "required": true,
+    "method": "getRequestContext()",
+    "implementationStatus": "✅ Working"
+  },
+  "tenantIsolation": {
+    "method": "RLS + Query Filtering",
+    "implementationStatus": "✅ Verified working"
+  },
+  "dataModel": {
+    "table": "jobs",
+    "columns": 54,
+    "keyFields": {
+      "id": "UUID (primary key)",
+      "tenant_id": "UUID (FK to tenants)",
+      "property_id": "UUID (FK to properties, REQUIRED)",
+      "job_number": "TEXT (auto-generated)",
+      "scheduled_start": "TIMESTAMPTZ (required)",
+      "status": "TEXT (e.g., 'scheduled', 'in_progress', 'completed')",
+      "title": "TEXT (optional)",
+      "completion_notes": "TEXT (optional)",
+      "created_at": "TIMESTAMPTZ",
+      "updated_at": "TIMESTAMPTZ"
+    },
+    "voiceFirstFields": [
+      "voice_notes",
+      "auto_status",
+      "auto_confidence",
+      "offline_modified_at",
+      "arrival_latitude",
+      "arrival_longitude"
+    ],
+    "sourceEvidence": "Supabase MCP query: SELECT * FROM jobs LIMIT 1",
+    "importantNote": "Jobs table has 54 columns supporting voice-first, offline-capable workflows. This feature should respect those patterns."
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/supervisor/jobs",
+      "summary": "List all jobs for authenticated tenant with property/customer info",
+      "implementationStatus": "✅ EXISTS and WORKING",
+      "authentication": "Required",
+      "requestParams": {
+        "query": {
+          "limit": "number (optional)",
+          "offset": "number (optional)",
+          "status": "string (optional, filter by status)",
+          "property_id": "string (optional, filter by property)"
+        }
+      },
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "type": "array",
+          "items": {
+            "id": "uuid",
+            "tenant_id": "uuid",
+            "property_id": "uuid",
+            "job_number": "string",
+            "scheduled_start": "timestamp",
+            "status": "string",
+            "title": "string | null",
+            "completion_notes": "string | null",
+            "created_at": "timestamp",
+            "updated_at": "timestamp",
+            "property": {
+              "id": "uuid",
+              "address": "JSONB object",
+              "customer_id": "uuid"
+            },
+            "customer": {
+              "id": "uuid",
+              "name": "string",
+              "email": "string"
+            }
+          }
+        }
+      },
+      "queryPattern": {
+        "joins": [
+          "LEFT JOIN properties ON jobs.property_id = properties.id",
+          "LEFT JOIN customers ON properties.customer_id = customers.id"
+        ],
+        "recommendation": "Return nested property and customer objects for UI display"
+      },
+      "verificationRequired": [
+        "Confirm property and customer joins are included in response",
+        "Test status filtering works correctly",
+        "Verify pagination if implemented"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/supervisor/jobs",
+      "summary": "Create new job linked to property",
+      "implementationStatus": "✅ EXISTS (may need property validation update)",
+      "authentication": "Required",
+      "requestBody": {
+        "required": true,
+        "contentType": "application/json",
+        "schema": {
+          "property_id": "string (required, UUID)",
+          "scheduled_start": "string (required, ISO 8601 timestamp)",
+          "status": "string (optional, default: 'scheduled')",
+          "title": "string (optional)",
+          "completion_notes": "string (optional)"
+        },
+        "example": {
+          "property_id": "prop-uuid",
+          "scheduled_start": "2025-10-15T09:00:00Z",
+          "status": "scheduled",
+          "title": "Lawn mowing and trimming"
+        },
+        "adapterRequired": false,
+        "notes": "Jobs table uses single scheduled_start TIMESTAMPTZ field (NOT separate date + time fields). If form has separate inputs, combine them before submission."
+      },
+      "responseSuccess": {
+        "status": 201,
+        "body": {
+          "id": "uuid",
+          "job_number": "string (auto-generated)",
+          "message": "Job created successfully"
+        }
+      },
+      "responseErrors": [
+        {
+          "status": 400,
+          "description": "Validation failed (missing required fields)"
+        },
+        {
+          "status": 401,
+          "description": "No tenant context"
+        },
+        {
+          "status": 404,
+          "description": "Property not found or belongs to different tenant"
+        },
+        {
+          "status": 500,
+          "description": "Database insert failed"
+        }
+      ],
+      "validation": {
+        "property_id": "Required, must exist in properties table for same tenant",
+        "scheduled_start": "Required, valid ISO 8601 timestamp",
+        "status": "Optional, must be valid status enum value"
+      },
+      "serverSideLogic": [
+        "Auto-generate job_number (format varies, check existing implementation)",
+        "Extract tenant_id from getRequestContext()",
+        "Verify property_id belongs to same tenant (RLS handles this)",
+        "Set created_at and updated_at to current timestamp",
+        "Set default status to 'scheduled' if not provided"
+      ],
+      "verificationRequired": [
+        "Confirm property_id validation prevents cross-tenant access",
+        "Test job_number generation format",
+        "Verify default status is set correctly"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/supervisor/jobs/[jobId]",
+      "summary": "Get single job with full details including items",
+      "implementationStatus": "✅ EXISTS",
+      "authentication": "Required",
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "type": "object",
+          "schema": {
+            "id": "uuid",
+            "job_number": "string",
+            "property_id": "uuid",
+            "scheduled_start": "timestamp",
+            "status": "string",
+            "title": "string | null",
+            "completion_notes": "string | null",
+            "property": {
+              "id": "uuid",
+              "address": "JSONB",
+              "customer_id": "uuid"
+            },
+            "customer": {
+              "id": "uuid",
+              "name": "string",
+              "email": "string"
+            },
+            "items": [
+              {
+                "item_id": "uuid",
+                "item_name": "string",
+                "quantity": "number",
+                "notes": "string | null"
+              }
+            ]
+          }
+        }
+      },
+      "queryPattern": {
+        "joins": [
+          "LEFT JOIN properties ON jobs.property_id = properties.id",
+          "LEFT JOIN customers ON properties.customer_id = customers.id",
+          "LEFT JOIN job_checklist_items ON jobs.id = job_checklist_items.job_id"
+        ],
+        "recommendation": "Include items array from job_checklist_items join"
+      },
+      "verificationRequired": [
+        "Confirm items are included in response",
+        "Test tenant isolation (can't access other tenant's jobs)",
+        "Verify nested property/customer data is returned"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/supervisor/jobs/[jobId]",
+      "summary": "Update existing job",
+      "implementationStatus": "✅ EXISTS",
+      "authentication": "Required",
+      "requestBody": {
+        "schema": "Same as POST (partial updates allowed)",
+        "notes": "Cannot change tenant_id or job_number. Can change property_id if new property is in same tenant."
+      },
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "message": "Job updated successfully",
+          "updated_at": "timestamp"
+        }
+      },
+      "verificationRequired": [
+        "Test status transitions work correctly",
+        "Confirm property_id can be changed to another tenant property",
+        "Verify updated_at timestamp is set"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/supervisor/jobs/[jobId]",
+      "summary": "Delete job (cascades to job_checklist_items)",
+      "implementationStatus": "✅ EXISTS",
+      "authentication": "Required",
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "message": "Job deleted successfully"
+        }
+      },
+      "dataIntegrity": {
+        "foreignKeyCheck": "job_checklist_items has job_id FK",
+        "cascadeStrategy": "ON DELETE CASCADE (likely) - deleting job removes all checklist items",
+        "recommendation": "Confirm cascade behavior, add UI warning before deletion"
+      },
+      "verificationRequired": [
+        "Test deletion removes job and cascades to job_checklist_items",
+        "Verify tenant isolation on deletes"
+      ]
+    }
+  ],
+  "integrationNotes": {
+    "existingImplementation": "src/app/api/supervisor/jobs/route.ts",
+    "formComponents": "demo-jobs/ forms already exist",
+    "propertyDropdown": "Need to fetch properties list from /api/supervisor/properties for form dropdown",
+    "customerDisplay": "After selecting property, display associated customer (read-only)",
+    "scheduledStartField": "Single TIMESTAMPTZ field (NOT separate date + time). Form may need adapter to combine inputs."
+  },
+  "mcpQueryEvidence": {
+    "schemaQuery": "SELECT * FROM jobs LIMIT 1",
+    "schemaResult": "54 columns confirmed (voice-first architecture)",
+    "propertyForeignKey": "property_id column confirmed as FK to properties table",
+    "documentedIn": "specs/007-integrate-job-creation-workflow/data-model.md Section 2.4"
+  },
+  "testCases": [
+    {
+      "name": "Create job for property",
+      "preconditions": "Authenticated, property exists for tenant",
+      "steps": [
+        "POST /api/supervisor/jobs with property_id and scheduled_start"
+      ],
+      "expectedResult": "201 Created with job_number, tenant_id auto-set"
+    },
+    {
+      "name": "List jobs with property/customer info",
+      "preconditions": "Jobs exist for tenant",
+      "steps": [
+        "GET /api/supervisor/jobs"
+      ],
+      "expectedResult": "Returns jobs with nested property and customer objects"
+    },
+    {
+      "name": "Verify property linkage",
+      "preconditions": "Job created for property A",
+      "steps": [
+        "GET /api/supervisor/jobs/[jobId]"
+      ],
+      "expectedResult": "Job includes property details and customer name"
+    }
+  ]
+}

@@ -7,15 +7,27 @@
 
 ## Executive Summary
 
-This research phase audited all existing demo CRUD components, API endpoints, authentication patterns, and database schema to determine the best approach for integrating customer, property, inventory, and job management into the authenticated supervisor dashboard.
+This research phase audited all existing demo CRUD components, API endpoints, authentication patterns, and **queried the ACTUAL live database schema** to determine the best approach for integrating customer, property, inventory, and job management into the authenticated supervisor dashboard.
 
-**Key Finding**: All demo components are highly reusable with minimal modifications needed. The primary changes required are:
-1. Replace hardcoded tenant UUID headers with session-based authentication
-2. Adapt page layout to authenticated supervisor routes
-3. Create missing customer/property API endpoints
-4. Add RLS policies following constitutional requirements
+**✅ Schema Verification Complete**: Used Python + Supabase REST API to query actual database structure
 
-**Estimated Reusability**: 85-90% of existing demo code can be copied and adapted
+**🚨 CRITICAL FINDINGS**:
+1. **Database schemas are MORE complex than expected** - See section 4.2 for actual columns
+2. **Demo forms DO NOT match actual database schema** - Adapter layer required
+   - Properties: Form has separate address fields, DB has single JSONB address field
+   - Customers: Form has single phone field, DB has phone + mobile_phone
+3. **Items table already has `assigned_to_job_id`** - May not need job_items junction table
+4. **All tables have auto-generated number fields** (customer_number, property_number, job_number)
+5. **Extensive voice/offline tracking fields** - JobEye is a voice-first application
+
+**Primary Changes Required**:
+1. ✅ Replace hardcoded tenant UUID headers with session-based authentication
+2. ✅ Adapt page layout to authenticated supervisor routes
+3. ✅ Create missing customer/property API endpoints
+4. ⚠️ **NEW**: Create adapter layer to map form data to database JSONB fields
+5. ⚠️ **NEW**: Clarify if job_items table is still needed (items.assigned_to_job_id exists)
+
+**Estimated Reusability**: 70-80% of demo code can be reused (down from 85-90% due to schema differences)
 
 ---
 
@@ -415,40 +427,79 @@ const { tenantId, user, roles, source } = context;
 
 **Note**: Only `job_items` is required for this feature (007)
 
-### 4.2 Expected Schema
+### 4.2 ACTUAL Schema (Queried from Live Database)
 
-**customers** (exists, schema TBD via Supabase MCP):
+**⚠️ IMPORTANT**: These are the ACTUAL schemas from the live Supabase database, not assumptions.
+
+**customers** (18 columns - MORE comprehensive than expected):
 ```sql
--- Expected columns based on CustomerDraft interface:
+-- ACTUAL columns from live database:
 id UUID PRIMARY KEY
 tenant_id UUID NOT NULL REFERENCES tenants(id)
+customer_number TEXT  -- Auto-generated (e.g., 'CUST-1758986343919')
 name TEXT NOT NULL
 email TEXT NOT NULL
 phone TEXT
-address TEXT  -- May be split into multiple columns
-created_at TIMESTAMPTZ DEFAULT NOW()
-updated_at TIMESTAMPTZ DEFAULT NOW()
+mobile_phone TEXT  -- Separate from phone
+billing_address JSONB  -- Dict with zip, city, state, street
+service_address JSONB  -- Nullable
+notes TEXT
+voice_notes TEXT  -- Voice-specific notes
+tags TEXT[]  -- Nullable
+metadata JSONB  -- Empty dict by default
+is_active BOOLEAN
+intake_session_id UUID  -- Nullable, for voice intake tracking
+created_at TIMESTAMPTZ
+updated_at TIMESTAMPTZ
+created_by UUID  -- Nullable
+version INTEGER  -- For optimistic locking
 ```
 
-**properties** (exists, schema TBD via Supabase MCP):
+**Key Findings**:
+- Has auto-generated `customer_number` field
+- Address stored as JSONB (billing_address and service_address), not separate columns
+- Has `mobile_phone` separate from `phone`
+- Has voice/intake tracking fields
+- Has versioning for optimistic locking
+
+**properties** (22 columns - MUCH more comprehensive than expected):
 ```sql
--- Expected columns based on PropertyFormState interface:
+-- ACTUAL columns from live database:
 id UUID PRIMARY KEY
 tenant_id UUID NOT NULL REFERENCES tenants(id)
-customer_id UUID NOT NULL REFERENCES customers(id)
-name TEXT  -- Optional friendly name
-address_line1 TEXT
-city TEXT
-state TEXT
-postal_code TEXT
-notes TEXT  -- Access notes (gate code, parking, etc.)
-created_at TIMESTAMPTZ DEFAULT NOW()
-updated_at TIMESTAMPTZ DEFAULT NOW()
+customer_id UUID NOT NULL REFERENCES customers(id)  -- VERIFIED FK
+property_number TEXT  -- Auto-generated (e.g., 'PROP-1758986344562-1')
+name TEXT  -- Friendly name
+address JSONB  -- Dict with street, city, state, zip
+property_type TEXT  -- Nullable
+size_sqft NUMERIC  -- Nullable
+lot_size_acres NUMERIC  -- Nullable
+access_notes TEXT  -- Nullable
+gate_code TEXT  -- Nullable
+special_instructions TEXT  -- Nullable
+voice_navigation_notes TEXT  -- Nullable
+zones JSONB  -- Nullable, for property zones
+location GEOMETRY  -- Nullable, PostGIS geometry
+photos TEXT[]  -- Array of photo URLs
+reference_image_id UUID  -- Nullable
+metadata JSONB  -- Empty dict by default
+is_active BOOLEAN
+intake_session_id UUID  -- Nullable
+created_at TIMESTAMPTZ
+updated_at TIMESTAMPTZ
 ```
 
-**items** (exists, schema confirmed in API code):
+**Key Findings**:
+- Has auto-generated `property_number` field
+- Address is single JSONB field, not separate columns (street, city, state, zip)
+- Has `gate_code` separate from `access_notes`
+- Has PostGIS `location` field for GPS coordinates
+- Has `zones` JSONB for property zone management
+- Has voice navigation notes and intake tracking
+
+**items** (42 columns - EXTREMELY comprehensive):
 ```sql
--- Schema inferred from ItemRepository usage:
+-- ACTUAL columns from live database:
 id UUID PRIMARY KEY
 tenant_id UUID NOT NULL REFERENCES tenants(id)
 name TEXT NOT NULL
@@ -458,40 +509,114 @@ tracking_mode TEXT NOT NULL  -- 'individual' | 'quantity' | 'batch'
 current_quantity NUMERIC
 unit_of_measure TEXT NOT NULL
 min_quantity NUMERIC
+max_quantity NUMERIC  -- NEW: Maximum quantity tracking
 reorder_point NUMERIC
+status TEXT  -- 'active' | 'inactive' | etc.
+description TEXT
 manufacturer TEXT
 model TEXT
 sku TEXT
 barcode TEXT
-status TEXT  -- 'active' | 'inactive' | etc.
+serial_number TEXT  -- NEW: For individual item tracking
+purchase_date DATE  -- NEW: Purchase tracking
+purchase_price NUMERIC  -- NEW: Cost tracking
+current_value NUMERIC  -- NEW: Current valuation
+depreciation_method TEXT  -- NEW: For asset depreciation
 primary_image_url TEXT
 thumbnail_url TEXT
 medium_url TEXT
+image_urls TEXT[]
+assigned_to_job_id UUID  -- NEW: Current job assignment
+assigned_to_user_id UUID  -- NEW: Current user assignment
+current_location_id UUID  -- NEW: Current location tracking
+home_location_id UUID  -- NEW: Default/home location
+last_maintenance_date DATE  -- NEW: Maintenance tracking
+next_maintenance_date DATE  -- NEW: Maintenance scheduling
+condition TEXT  -- NEW: Item condition tracking
 tags TEXT[]
 attributes JSONB
 custom_fields JSONB
-image_urls TEXT[]
-created_at TIMESTAMPTZ DEFAULT NOW()
-updated_at TIMESTAMPTZ DEFAULT NOW()
+created_at TIMESTAMPTZ
+updated_at TIMESTAMPTZ
+created_by UUID
+updated_by UUID
 ```
 
-**jobs** (exists, schema confirmed in API code):
+**Key Findings**:
+- Has `assigned_to_job_id` and `assigned_to_user_id` for current assignments
+- Has location tracking (`current_location_id`, `home_location_id`)
+- Has maintenance date tracking (last and next)
+- Has financial tracking (purchase_price, current_value, depreciation_method)
+- Has `serial_number` for individual item tracking
+- Has `max_quantity` in addition to min_quantity and reorder_point
+
+**jobs** (54 columns - EXTREMELY comprehensive):
 ```sql
--- Known columns from JobsRepository:
+-- ACTUAL columns from live database:
 id UUID PRIMARY KEY
 tenant_id UUID NOT NULL REFERENCES tenants(id)
-customer_id UUID NOT NULL REFERENCES customers(id)  -- NOT NULL constraint!
-property_id UUID REFERENCES properties(id)  -- Optional
-job_number TEXT UNIQUE
+customer_id UUID NOT NULL REFERENCES customers(id)  -- VERIFIED FK, NOT NULL
+property_id UUID REFERENCES properties(id)  -- VERIFIED FK, NULLABLE
+job_number TEXT  -- Auto-generated (e.g., 'JOB-DUPE-1759214446791')
 title TEXT NOT NULL
 description TEXT
 status TEXT  -- 'draft' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
 priority TEXT  -- 'low' | 'normal' | 'high' | 'urgent'
-scheduled_start TIMESTAMPTZ  -- NOT separate date/time fields!
+scheduled_start TIMESTAMPTZ  -- Single timestamp field
 scheduled_end TIMESTAMPTZ
-created_at TIMESTAMPTZ DEFAULT NOW()
-updated_at TIMESTAMPTZ DEFAULT NOW()
+actual_start TIMESTAMPTZ  -- NEW: Actual start tracking
+actual_end TIMESTAMPTZ  -- NEW: Actual completion tracking
+estimated_duration INTEGER  -- NEW: Estimated minutes
+estimated_duration_minutes INTEGER  -- Duplicate field?
+actual_duration INTEGER  -- NEW: Actual minutes taken
+actual_duration_minutes INTEGER  -- Duplicate field?
+assigned_to UUID  -- NEW: Assigned crew member
+assigned_team JSONB  -- NEW: Team assignment
+template_id UUID  -- NEW: Job template reference
+checklist_items JSONB  -- NEW: Array of checklist items with icons
+equipment_used JSONB  -- NEW: Array of equipment used
+materials_used JSONB  -- NEW: Array of materials used
+photos_before JSONB  -- NEW: Array of before photos
+photos_after JSONB  -- NEW: Array of after photos
+completion_notes TEXT
+completion_photo_url TEXT  -- Legacy field
+completion_photo_urls TEXT[]  -- NEW: Multiple completion photos
+completion_timestamp TIMESTAMPTZ
+completion_quality_score NUMERIC  -- NEW: Quality rating
+arrival_timestamp TIMESTAMPTZ  -- NEW: Arrival time tracking
+arrival_method TEXT  -- NEW: How arrival was recorded
+arrival_confirmed_at TIMESTAMPTZ  -- NEW: Confirmation timestamp
+arrival_gps_coords GEOMETRY  -- NEW: GPS location at arrival
+arrival_photo_id UUID  -- NEW: Photo at arrival
+arrival_confidence NUMERIC  -- NEW: Confidence score
+signature_required BOOLEAN
+signature_data JSONB
+requires_supervisor_review BOOLEAN  -- NEW: Review flag
+voice_created BOOLEAN  -- NEW: Created via voice?
+voice_notes TEXT  -- NEW: Voice notes
+voice_session_id UUID  -- NEW: Voice session reference
+special_instructions_audio TEXT  -- NEW: Audio instruction URL
+tool_reload_verified BOOLEAN  -- NEW: Tool verification flag
+billing_info JSONB  -- NEW: Billing information
+metadata JSONB
+offline_modified_at TIMESTAMPTZ  -- NEW: Offline edit tracking
+offline_modified_by UUID  -- NEW: Who edited offline
+created_at TIMESTAMPTZ
+updated_at TIMESTAMPTZ
+created_by UUID
 ```
+
+**Key Findings**:
+- Has complete arrival tracking system (timestamp, method, GPS, photo, confidence)
+- Has voice operation support (voice_created, voice_notes, voice_session_id, special_instructions_audio)
+- Has offline modification tracking
+- Has quality scoring (`completion_quality_score`)
+- Has supervisor review flag (`requires_supervisor_review`)
+- Has tool reload verification flag
+- Has actual vs estimated duration tracking
+- Has photos_before and photos_after arrays
+- Has checklist_items with icons
+- Note: Some duplicate fields (estimated_duration vs estimated_duration_minutes)
 
 **job_items** (NEW - needs creation):
 ```sql
@@ -1172,12 +1297,17 @@ test('Customer CRUD workflow', async () => {
 4. **Repository pattern** - Database operations well-abstracted
 5. **Type safety** - Strong TypeScript interfaces throughout
 
-### ⚠️ Concerns
-1. **Schema verification needed** - Must confirm actual database structure via Supabase MCP
-2. **RLS policies unverified** - Must check if using correct app_metadata path
-3. **Missing job_items table** - Critical dependency for job-items feature
-4. **Hardcoded tenant IDs** - Demo pages need header-based auth maintained
-5. **Error handling varies** - Some components have better error states than others
+### ⚠️ Concerns & Discrepancies Found
+1. **✅ Schema verified via live database query** - ACTUAL schemas are MORE comprehensive than expected
+2. **❌ RLS policies NOT verified** - Could not query pg_policies directly (need psql access)
+3. **✅ job_items table confirmed DOES NOT EXIST** - Must be created
+4. **⚠️ Schema mismatch with demo forms**:
+   - PropertyForm expects separate address fields (addressLine1, city, state, postalCode)
+   - Actual DB has single JSONB `address` field
+   - CustomerForm expects single `phone` field
+   - Actual DB has both `phone` and `mobile_phone`
+   - Need adapter layer between forms and database
+5. **⚠️ Items table has job assignment fields** - `assigned_to_job_id` already exists (may not need job_items table? Need clarification)
 
 ### 🎯 Recommendations
 1. **Use Supabase MCP first** - Inspect actual database before any migration planning
@@ -1199,7 +1329,151 @@ test('Customer CRUD workflow', async () => {
 
 ---
 
-**Research Phase Status**: ✅ Complete
-**Ready for Phase 1**: Yes
-**Next Command**: `/plan` (continue to Phase 1)
+---
+
+## 12. Investigation Results: Open Questions Resolved
+
+### 12.1 Question 1: items.assigned_to_job_id vs job_items Junction Table
+
+**Database Query Results**:
+```
+Total items in database: 35
+Items with assigned_to_job_id set: 0
+Items with assigned_to_job_id NULL: 35
+```
+
+**Key Finding**: items.assigned_to_job_id field exists but is **NOT currently used** in production data.
+
+**Codebase Analysis**:
+
+**Pattern 1: Job Checklist Items (PRIMARY PATTERN)**
+- File: `src/domains/job/services/job-load-list-service.ts`
+- Uses: `job_checklist_items` table (separate from items table)
+- Purpose: Manages load lists with vision-based verification
+- Schema:
+  ```typescript
+  job_checklist_items {
+    id: string
+    job_id: string  // FK to jobs
+    item_type: 'equipment' | 'material'
+    item_id: string  // Reference to item name/type, NOT FK
+    item_name: string  // Denormalized for performance
+    quantity: number
+    sequence_number: number
+    container_id: string  // FK to containers
+    status: 'pending' | 'loaded' | 'verified' | 'missing'
+    auto_status: string  // Vision AI determined status
+    auto_confidence: number
+    manual_override_status: string
+    manual_override_reason: string
+  }
+  ```
+
+**Pattern 2: Jobs.checklist_items JSONB Field**
+- File: Database query showed all jobs have `checklist_items` JSONB array
+- Sample structure:
+  ```json
+  {
+    "icon": "🚜",
+    "name": "Commercial Mower (60\")",
+    "checked": false,
+    "category": "primary"
+  }
+  ```
+- Purpose: Simple checklist for job planning (not linked to inventory)
+
+**Pattern 3: items.assigned_to_job_id (UNUSED)**
+- File: `src/app/api/supervisor/items/[itemId]/jobs/route.ts`
+- Code checks this field but finds no data
+- Also checks `item_transactions.job_id` for historical job assignments
+- **Conclusion**: This field was intended for single-item-to-job assignment but is not actively used
+
+**Decision**:
+- ✅ **DO NOT create job_items junction table**
+- ✅ **USE job_checklist_items table** (already exists, actively used)
+- ✅ **Items table assignment fields are for future use** (location/user assignment, not job items)
+
+### 12.2 Question 2: Property Address JSONB Handling
+
+**Existing Adapter Found**: ✅ YES
+
+**PropertyRepository Pattern** (`src/domains/property/repositories/property-repository.ts`):
+
+**Line 84**: `formatAddressForStorage()` method converts form data to JSONB:
+```typescript
+private formatAddressForStorage(address: Address): any {
+  return {
+    street: address.street,
+    unit: address.unit || null,
+    city: address.city,
+    state: address.state.toUpperCase(),
+    zip: address.zip,
+    country: address.country || 'US',
+    formatted: address.formatted ||
+      `${address.street}${address.unit ? ' ' + address.unit : ''}, ${address.city}, ${address.state} ${address.zip}`,
+    landmarks: address.landmarks || [],
+  };
+}
+```
+
+**Line 574**: `mapToProperty()` method reads JSONB address from database:
+```typescript
+private mapToProperty(row: any): Property {
+  return {
+    // ...
+    address: row.address as Address,  // Direct JSONB mapping
+    // ...
+  };
+}
+```
+
+**Demo Page Adapter** (`src/app/demo-properties/utils.ts`):
+
+**Line 37**: `buildPropertyPayload()` converts demo form to database format:
+```typescript
+export function buildPropertyPayload(form: PropertyFormState) {
+  return {
+    customer_id: form.customerId,
+    name: form.propertyName || form.addressLine1,
+    property_number: `PROP-${Date.now()}`,
+    address: {                    // Converts separate fields to JSONB
+      line1: form.addressLine1,
+      city: form.city || 'N/A',
+      state: form.state || 'N/A',
+      postal_code: form.postalCode || '00000'
+    },
+    // ... other fields
+  };
+}
+```
+
+**Line 19**: `formatPropertyAddress()` reads JSONB and formats for display:
+```typescript
+export function formatPropertyAddress(address: Record<string, any> | string | null): string {
+  if (typeof address === 'string') return address;
+
+  const parts = [
+    address.line1 || address.street || address.address1,  // Handles variations
+    [address.city, address.state].filter(Boolean).join(', '),
+    address.postalCode || address.postal_code || address.zip  // Handles snake_case
+  ].filter(Boolean);
+
+  return parts.length > 0 ? parts.join(' ') : 'Address not set';
+}
+```
+
+**Adapter Pattern Confirmed**: ✅ YES
+- Form data (separate fields) → `buildPropertyPayload()` → Database JSONB
+- Database JSONB → `mapToProperty()` / `formatPropertyAddress()` → Display
+
+**Required Action for 007**:
+- ✅ **REUSE existing adapter pattern from demo-properties/utils.ts**
+- ✅ **PropertyRepository already handles JSONB correctly**
+- ⚠️ **Ensure CustomerRepository follows same pattern** (billing_address and service_address are JSONB)
+
+---
+
+**Research Phase Status**: ✅ Complete (with open questions resolved)
+**Ready for Phase 1**: ✅ Awaiting User Confirmation
+**Next Steps**: Create data-model.md, contracts/, quickstart.md
 

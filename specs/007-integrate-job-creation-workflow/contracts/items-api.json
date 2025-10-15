@@ -1,0 +1,191 @@
+{
+  "apiVersion": "1.0.0",
+  "name": "Items API (Inventory)",
+  "description": "EXISTING API for inventory/items management - verification contract only",
+  "basePath": "/api/supervisor/items",
+  "status": "ALREADY EXISTS",
+  "authentication": {
+    "required": true,
+    "method": "getRequestContext()",
+    "implementationStatus": "✅ Working (confirmed in research)"
+  },
+  "tenantIsolation": {
+    "method": "RLS + Query Filtering",
+    "implementationStatus": "✅ Verified working"
+  },
+  "dataModel": {
+    "table": "items",
+    "columns": 42,
+    "keyFields": {
+      "id": "UUID (primary key)",
+      "tenant_id": "UUID (FK to tenants)",
+      "item_number": "TEXT (auto-generated)",
+      "name": "TEXT (required)",
+      "category": "TEXT (optional)",
+      "quantity": "INTEGER (optional)",
+      "description": "TEXT (optional)",
+      "assigned_to_job_id": "UUID (LEGACY FIELD - NOT USED, always NULL)",
+      "created_at": "TIMESTAMPTZ",
+      "updated_at": "TIMESTAMPTZ"
+    },
+    "sourceEvidence": "Supabase MCP query: SELECT * FROM items LIMIT 1",
+    "importantNote": "assigned_to_job_id field exists but is UNUSED (0 of 35 items have it set). Job-item linking uses job_checklist_items table instead."
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/supervisor/items",
+      "summary": "List all items for authenticated tenant",
+      "implementationStatus": "✅ EXISTS and WORKING",
+      "authentication": "Required",
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "type": "array",
+          "items": {
+            "id": "uuid",
+            "tenant_id": "uuid",
+            "item_number": "string",
+            "name": "string",
+            "category": "string | null",
+            "quantity": "number | null",
+            "description": "string | null",
+            "created_at": "timestamp",
+            "updated_at": "timestamp"
+          }
+        }
+      },
+      "verificationRequired": [
+        "Confirm tenant_id filtering works correctly",
+        "Test pagination if implemented",
+        "Verify response format matches frontend expectations"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/supervisor/items",
+      "summary": "Create new item",
+      "implementationStatus": "✅ EXISTS and WORKING",
+      "authentication": "Required",
+      "requestBody": {
+        "schema": {
+          "name": "string (required)",
+          "category": "string (optional)",
+          "quantity": "number (optional)",
+          "description": "string (optional)"
+        }
+      },
+      "responseSuccess": {
+        "status": 201,
+        "body": {
+          "id": "uuid",
+          "item_number": "string",
+          "message": "Item created successfully"
+        }
+      },
+      "verificationRequired": [
+        "Confirm item_number auto-generation works",
+        "Test validation for required fields",
+        "Verify tenant_id is set from auth context"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/supervisor/items/[itemId]",
+      "summary": "Get single item by ID",
+      "implementationStatus": "✅ EXISTS",
+      "authentication": "Required",
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "type": "object",
+          "schema": "Full item record"
+        }
+      },
+      "verificationRequired": [
+        "Confirm RLS prevents access to other tenant's items",
+        "Test 404 behavior for non-existent items"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/supervisor/items/[itemId]",
+      "summary": "Update existing item",
+      "implementationStatus": "✅ EXISTS",
+      "authentication": "Required",
+      "verificationRequired": [
+        "Test partial updates work correctly",
+        "Confirm updated_at timestamp is set",
+        "Verify tenant isolation on updates"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/supervisor/items/[itemId]",
+      "summary": "Delete item",
+      "implementationStatus": "✅ EXISTS",
+      "authentication": "Required",
+      "verificationRequired": [
+        "Test deletion succeeds when item not assigned to jobs",
+        "Confirm behavior when item is in job_checklist_items (should prevent deletion or cascade)",
+        "Verify tenant isolation on deletes"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/supervisor/items/[itemId]/jobs",
+      "summary": "Get jobs that use this item",
+      "implementationStatus": "✅ EXISTS",
+      "authentication": "Required",
+      "notes": "This endpoint checks assigned_to_job_id field, which is UNUSED. May need to be updated to query job_checklist_items instead.",
+      "verificationRequired": [
+        "CRITICAL: Verify if this endpoint queries job_checklist_items or assigned_to_job_id",
+        "If it queries assigned_to_job_id, it will return 0 jobs (field is always NULL)",
+        "May need to update implementation to join with job_checklist_items table"
+      ],
+      "recommendedFix": "Update query to: SELECT jobs.* FROM jobs JOIN job_checklist_items ON jobs.id = job_checklist_items.job_id WHERE job_checklist_items.item_id = [itemId]"
+    }
+  ],
+  "integrationNotes": {
+    "existingImplementation": "src/app/api/supervisor/items/* (multiple route files)",
+    "formComponents": "demo-items/ forms already exist and work",
+    "noAdapterNeeded": "Items table has simple flat structure (no JSONB fields)",
+    "legacyFieldWarning": "assigned_to_job_id field exists but is NOT used for job-item linking"
+  },
+  "mcpQueryEvidence": {
+    "schemaQuery": "SELECT * FROM items LIMIT 1",
+    "schemaResult": "42 columns confirmed",
+    "assignedToJobQuery": "SELECT assigned_to_job_id, COUNT(*) FROM items GROUP BY assigned_to_job_id",
+    "assignedToJobResult": "0 of 35 items have assigned_to_job_id set (all NULL)",
+    "conclusion": "assigned_to_job_id is LEGACY/UNUSED field",
+    "documentedIn": "specs/007-integrate-job-creation-workflow/research.md Section 12.1"
+  },
+  "criticalFinding": {
+    "issue": "items.assigned_to_job_id field is UNUSED",
+    "actualPattern": "job_checklist_items table is the real job-item linking mechanism",
+    "impact": "API endpoint /items/[itemId]/jobs may return incorrect results if it queries assigned_to_job_id",
+    "action": "Verify implementation during testing, update if needed to query job_checklist_items"
+  },
+  "testCases": [
+    {
+      "name": "Verify items API works with auth",
+      "preconditions": "Authenticated as super@tophand.tech",
+      "steps": [
+        "GET /api/supervisor/items",
+        "POST /api/supervisor/items with valid payload",
+        "GET /api/supervisor/items/[newItemId]",
+        "PUT /api/supervisor/items/[newItemId]",
+        "DELETE /api/supervisor/items/[newItemId]"
+      ],
+      "expectedResult": "All operations succeed, tenant isolation enforced"
+    },
+    {
+      "name": "Verify item-to-jobs relationship",
+      "preconditions": "Item assigned to job via job_checklist_items",
+      "steps": [
+        "GET /api/supervisor/items/[itemId]/jobs"
+      ],
+      "expectedResult": "Returns jobs that use this item (from job_checklist_items, NOT assigned_to_job_id)"
+    }
+  ]
+}

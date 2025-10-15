@@ -1,0 +1,360 @@
+{
+  "apiVersion": "1.0.0",
+  "name": "Job Checklist Items API",
+  "description": "EXISTING TABLE - API endpoints for managing job-item assignments via job_checklist_items junction table",
+  "basePath": "/api/supervisor/jobs/[jobId]/items",
+  "status": "TABLE EXISTS, API MAY NEED CREATION OR VERIFICATION",
+  "authentication": {
+    "required": true,
+    "method": "getRequestContext()",
+    "notes": "Must verify job belongs to authenticated tenant before operations"
+  },
+  "tenantIsolation": {
+    "method": "RLS + Query Filtering",
+    "pattern": "Filter by job_id, then RLS ensures job belongs to tenant"
+  },
+  "dataModel": {
+    "table": "job_checklist_items",
+    "columns": "Unknown (needs MCP query to confirm)",
+    "keyFields": {
+      "id": "UUID (primary key, assumed)",
+      "job_id": "UUID (FK to jobs, REQUIRED)",
+      "item_id": "UUID (FK to items, REQUIRED)",
+      "item_name": "TEXT (denormalized for performance)",
+      "quantity": "INTEGER or NUMERIC (optional)",
+      "notes": "TEXT (optional)",
+      "created_at": "TIMESTAMPTZ (assumed)",
+      "updated_at": "TIMESTAMPTZ (assumed)"
+    },
+    "sourceEvidence": "Found via codebase search in src/domains/job/services/job-load-list-service.ts:111-149",
+    "importantNote": "This is the ACTUAL job-item linking table (NOT items.assigned_to_job_id). Denormalizes item_name for offline access.",
+    "schemaConfirmationNeeded": true,
+    "recommendation": "Run MCP query: SELECT * FROM job_checklist_items LIMIT 1 to confirm full schema"
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/supervisor/jobs/[jobId]/items",
+      "summary": "List all items assigned to a job",
+      "implementationStatus": "NEEDS VERIFICATION (may exist in load list service)",
+      "authentication": "Required",
+      "requestParams": {
+        "path": {
+          "jobId": "string (job UUID)"
+        }
+      },
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "type": "array",
+          "items": {
+            "id": "uuid",
+            "job_id": "uuid",
+            "item_id": "uuid",
+            "item_name": "string",
+            "quantity": "number | null",
+            "notes": "string | null",
+            "created_at": "timestamp",
+            "updated_at": "timestamp"
+          }
+        },
+        "example": [
+          {
+            "id": "checklist-item-uuid",
+            "job_id": "job-uuid",
+            "item_id": "item-uuid",
+            "item_name": "Lawn Mower",
+            "quantity": 1,
+            "notes": "Check fuel level before use",
+            "created_at": "2025-10-14T12:00:00Z",
+            "updated_at": "2025-10-14T12:00:00Z"
+          }
+        ]
+      },
+      "responseErrors": [
+        {
+          "status": 401,
+          "description": "No tenant context"
+        },
+        {
+          "status": 404,
+          "description": "Job not found or belongs to different tenant"
+        },
+        {
+          "status": 500,
+          "description": "Database query failed"
+        }
+      ],
+      "queryPattern": {
+        "base": "SELECT * FROM job_checklist_items WHERE job_id = [jobId]",
+        "rlsCheck": "Job must belong to authenticated tenant (checked via jobs table RLS)",
+        "optimization": "May join with items table to get current item details, but item_name is denormalized"
+      },
+      "testCases": [
+        {
+          "name": "List items for own tenant's job",
+          "preconditions": "Job exists with items assigned",
+          "expectedResult": "Returns array of checklist items"
+        },
+        {
+          "name": "List items for other tenant's job",
+          "preconditions": "Authenticated as tenant A, job belongs to tenant B",
+          "expectedResult": "404 Not Found (job RLS filters it)"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/supervisor/jobs/[jobId]/items",
+      "summary": "Add item to job checklist",
+      "implementationStatus": "NEEDS CREATION OR VERIFICATION",
+      "authentication": "Required",
+      "requestParams": {
+        "path": {
+          "jobId": "string (job UUID)"
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "contentType": "application/json",
+        "schema": {
+          "item_id": "string (required, UUID)",
+          "quantity": "number (optional, default: 1)",
+          "notes": "string (optional)"
+        },
+        "example": {
+          "item_id": "item-uuid",
+          "quantity": 2,
+          "notes": "Check fuel level before use"
+        },
+        "denormalizationRequired": true,
+        "denormalizationNotes": "Must fetch item.name from items table and store in item_name column for offline access"
+      },
+      "responseSuccess": {
+        "status": 201,
+        "body": {
+          "id": "uuid",
+          "message": "Item added to job successfully"
+        }
+      },
+      "responseErrors": [
+        {
+          "status": 400,
+          "description": "Validation failed (missing item_id)"
+        },
+        {
+          "status": 401,
+          "description": "No tenant context"
+        },
+        {
+          "status": 404,
+          "description": "Job or item not found (or belongs to different tenant)"
+        },
+        {
+          "status": 409,
+          "description": "Item already assigned to this job"
+        },
+        {
+          "status": 500,
+          "description": "Database insert failed"
+        }
+      ],
+      "validation": {
+        "item_id": "Required, must exist in items table for same tenant",
+        "quantity": "Optional, must be positive integer if provided",
+        "jobId": "Must exist in jobs table for same tenant"
+      },
+      "serverSideLogic": [
+        "Verify job exists and belongs to authenticated tenant",
+        "Verify item exists and belongs to authenticated tenant",
+        "Fetch item.name from items table",
+        "Insert into job_checklist_items with denormalized item_name",
+        "Set created_at and updated_at to current timestamp",
+        "Check for duplicate (job_id + item_id) before insert"
+      ],
+      "testCases": [
+        {
+          "name": "Add item to job",
+          "preconditions": "Job and item exist for same tenant",
+          "expectedResult": "201 Created, item added to checklist"
+        },
+        {
+          "name": "Add duplicate item",
+          "preconditions": "Item already assigned to job",
+          "expectedResult": "409 Conflict (duplicate assignment)"
+        },
+        {
+          "name": "Add other tenant's item to job",
+          "preconditions": "Authenticated as tenant A, item belongs to tenant B",
+          "expectedResult": "404 Not Found (item RLS filters it)"
+        }
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/supervisor/jobs/[jobId]/items/[checklistItemId]",
+      "summary": "Update checklist item (quantity or notes)",
+      "implementationStatus": "NEEDS CREATION OR VERIFICATION",
+      "authentication": "Required",
+      "requestParams": {
+        "path": {
+          "jobId": "string (job UUID)",
+          "checklistItemId": "string (checklist item UUID)"
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "contentType": "application/json",
+        "schema": {
+          "quantity": "number (optional)",
+          "notes": "string (optional)"
+        },
+        "notes": "Cannot change item_id or job_id. To reassign item, delete and create new."
+      },
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "message": "Checklist item updated successfully",
+          "updated_at": "timestamp"
+        }
+      },
+      "responseErrors": [
+        {
+          "status": 400,
+          "description": "Validation failed"
+        },
+        {
+          "status": 401,
+          "description": "No tenant context"
+        },
+        {
+          "status": 404,
+          "description": "Checklist item not found or job belongs to different tenant"
+        }
+      ],
+      "serverSideLogic": [
+        "Verify job belongs to authenticated tenant (via job_id)",
+        "Update only quantity and/or notes fields",
+        "Set updated_at to current timestamp",
+        "Prevent changes to job_id, item_id, item_name"
+      ],
+      "testCases": [
+        {
+          "name": "Update item quantity",
+          "preconditions": "Checklist item exists",
+          "expectedResult": "200 OK, quantity updated"
+        },
+        {
+          "name": "Update other tenant's checklist item",
+          "preconditions": "Authenticated as tenant A, item belongs to tenant B job",
+          "expectedResult": "404 Not Found"
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/supervisor/jobs/[jobId]/items/[checklistItemId]",
+      "summary": "Remove item from job checklist",
+      "implementationStatus": "NEEDS CREATION OR VERIFICATION",
+      "authentication": "Required",
+      "requestParams": {
+        "path": {
+          "jobId": "string (job UUID)",
+          "checklistItemId": "string (checklist item UUID)"
+        }
+      },
+      "responseSuccess": {
+        "status": 200,
+        "body": {
+          "message": "Item removed from job successfully"
+        }
+      },
+      "responseErrors": [
+        {
+          "status": 401,
+          "description": "No tenant context"
+        },
+        {
+          "status": 404,
+          "description": "Checklist item not found or job belongs to different tenant"
+        }
+      ],
+      "serverSideLogic": [
+        "Verify job belongs to authenticated tenant (via job_id)",
+        "Delete checklist item record",
+        "Does NOT delete the item from items table (only removes from job)"
+      ],
+      "testCases": [
+        {
+          "name": "Remove item from job",
+          "preconditions": "Item assigned to job",
+          "expectedResult": "200 OK, item removed from checklist"
+        },
+        {
+          "name": "Verify item still exists in inventory",
+          "preconditions": "Item removed from job checklist",
+          "expectedResult": "GET /api/supervisor/items/[itemId] returns 200 (item not deleted)"
+        }
+      ]
+    }
+  ],
+  "alternativeAPIPattern": {
+    "description": "Simpler API without nested routing",
+    "basePath": "/api/supervisor/job-checklist-items",
+    "endpoints": [
+      "GET /api/supervisor/job-checklist-items?job_id=[jobId]",
+      "POST /api/supervisor/job-checklist-items",
+      "PUT /api/supervisor/job-checklist-items/[id]",
+      "DELETE /api/supervisor/job-checklist-items/[id]"
+    ],
+    "notes": "This pattern avoids nested routing complexity. Consider for implementation.",
+    "tradeoff": "Nested routing (/jobs/[jobId]/items) is more RESTful but requires job_id validation in path"
+  },
+  "integrationNotes": {
+    "existingService": "src/domains/job/services/job-load-list-service.ts queries this table",
+    "denormalization": "item_name is stored in job_checklist_items for offline access (voice-first pattern)",
+    "noExistingForm": "No demo form exists - needs new UI component for job detail page",
+    "uiPattern": "Likely a modal or sidebar to add/remove items from job",
+    "itemDropdown": "Fetch items from /api/supervisor/items for selection"
+  },
+  "mcpQueryEvidence": {
+    "codebaseSearch": "Found in job-load-list-service.ts lines 111-149",
+    "queryPattern": ".from('job_checklist_items').select('*, containers:container_id (id, name, identifier)').eq('job_id', jobId)",
+    "schemaConfirmation": "NEEDED - run SELECT * FROM job_checklist_items LIMIT 1",
+    "documentedIn": "specs/007-integrate-job-creation-workflow/research.md Section 12.1"
+  },
+  "criticalDecision": {
+    "question": "Do we create new API routes or use existing service?",
+    "options": [
+      "Option A: Create new REST API routes at /api/supervisor/jobs/[jobId]/items",
+      "Option B: Use existing job-load-list-service.ts and add methods for add/update/delete",
+      "Option C: Create new service layer and expose via API routes"
+    ],
+    "recommendation": "Option A - Create REST API routes for consistency with other endpoints. Reuse existing service methods if available.",
+    "rationale": "REST API pattern is established in codebase. Frontend components expect REST endpoints."
+  },
+  "testCases": [
+    {
+      "name": "Complete job-items workflow",
+      "preconditions": "Job exists, items exist in inventory",
+      "steps": [
+        "GET /api/supervisor/jobs/[jobId]/items (expect empty array)",
+        "POST /api/supervisor/jobs/[jobId]/items with item_id",
+        "GET /api/supervisor/jobs/[jobId]/items (expect 1 item)",
+        "PUT /api/supervisor/jobs/[jobId]/items/[id] (update quantity)",
+        "DELETE /api/supervisor/jobs/[jobId]/items/[id]",
+        "GET /api/supervisor/jobs/[jobId]/items (expect empty array again)"
+      ],
+      "expectedResult": "All operations succeed, item remains in inventory after removal from job"
+    },
+    {
+      "name": "Verify denormalization",
+      "preconditions": "Item assigned to job",
+      "steps": [
+        "GET /api/supervisor/jobs/[jobId]/items",
+        "Check response includes item_name field"
+      ],
+      "expectedResult": "item_name is populated from items table"
+    }
+  ]
+}
