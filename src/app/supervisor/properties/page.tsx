@@ -69,11 +69,18 @@ import {
 } from 'lucide-react';
 import { ButtonLimiter, useButtonActions } from '@/components/ui/ButtonLimiter';
 
+interface Address {
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+}
+
 interface Property {
   id: string;
-  name: string;
+  name?: string;
   customer_id: string;
-  address: string;
+  address?: string | Address;
   type: 'residential' | 'commercial' | 'industrial';
   size?: string;
   notes?: string;
@@ -105,6 +112,13 @@ const propertyTypeLabels = {
   residential: 'Residential',
   commercial: 'Commercial', 
   industrial: 'Industrial'
+};
+
+// Helper to convert address to display string
+const getAddressString = (address?: string | Address): string => {
+  if (!address) return '';
+  if (typeof address === 'string') return address;
+  return `${address.street ?? ''} ${address.city ?? ''} ${address.state ?? ''} ${address.zip ?? ''}`.trim();
 };
 
 export default function SupervisorPropertiesPage() {
@@ -303,10 +317,11 @@ export default function SupervisorPropertiesPage() {
 
   const handleEdit = (property: Property) => {
     setSelectedProperty(property);
+    const addressString = getAddressString(property.address);
     setFormData({
       name: property.name || '',
       customer_id: property.customer_id,
-      address: property.address,
+      address: addressString,
       type: property.type,
       size: property.size || '',
       notes: property.notes || ''
@@ -337,9 +352,11 @@ export default function SupervisorPropertiesPage() {
   };
 
   const filteredProperties = properties.filter(property => {
-    const matchesSearch = property.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      property.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase());
-    
+    const addressString = getAddressString(property.address);
+    const matchesSearch = addressString.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      property.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (property.name?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+
     const matchesCustomer = !filterCustomerId || property.customer_id === filterCustomerId;
     const matchesType = !filterType || property.type === filterType;
 
@@ -414,7 +431,7 @@ export default function SupervisorPropertiesPage() {
               <select
                 value={filterCustomerId}
                 onChange={(e) => setFilterCustomerId(e.target.value)}
-                className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-golden"
+                className="filter-select"
               >
                 <option value="">All Customers</option>
                 {customers.map((customer) => (
@@ -427,7 +444,7 @@ export default function SupervisorPropertiesPage() {
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-golden"
+                className="filter-select"
               >
                 <option value="">All Types</option>
                 <option value="residential">Residential</option>
@@ -464,7 +481,7 @@ export default function SupervisorPropertiesPage() {
                             <TypeIcon className="w-5 h-5 text-golden mt-0.5" />
                             <div className="flex-1">
                               <h3 className="font-semibold text-white">
-                                {property.address}
+                                {property.name || getAddressString(property.address) || 'Unnamed Property'}
                               </h3>
                               <div className="flex items-center gap-3 mt-1">
                                 <span className="property-type-badge">
@@ -586,6 +603,31 @@ export default function SupervisorPropertiesPage() {
           .notification-bar.success {
             background: rgba(255, 215, 0, 0.1);
             border: 1px solid rgba(255, 215, 0, 0.3);
+          }
+
+          .filter-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .filter-select:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
+          }
+
+          .filter-select option {
+            background: #111827;
+            color: white;
+            padding: 0.5rem;
           }
 
           .empty-state {
