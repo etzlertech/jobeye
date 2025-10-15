@@ -24,23 +24,18 @@ export interface JobFormState {
 }
 
 export function buildJobPayload(form: JobFormState) {
-  // Combine date and time into scheduled_start
-  let scheduled_start = form.scheduledDate;
-  if (form.scheduledTime) {
-    scheduled_start = `${form.scheduledDate}T${form.scheduledTime}:00`;
-  } else {
-    scheduled_start = `${form.scheduledDate}T09:00:00`; // Default to 9 AM
-  }
+  // API expects scheduled_date and scheduled_time as separate fields
+  const scheduledTime = form.scheduledTime || '09:00'; // Default to 9 AM
 
   return {
     customer_id: form.customerId,
     property_id: form.propertyId || null,
     title: form.title.trim(),
     description: form.description.trim() || null,
-    scheduled_start: scheduled_start,
+    scheduled_date: form.scheduledDate,
+    scheduled_time: scheduledTime,
     priority: form.priority,
     status: 'scheduled'
-    // Note: 'notes' field doesn't exist in jobs table
   };
 }
 

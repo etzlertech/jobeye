@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     });
     
     return NextResponse.json({
-      data: result.data,  // Changed from 'items' to 'data' to match expected format
+      items: result.data,  // UI expects 'items' key
       count: result.count,
       page,
       limit,
