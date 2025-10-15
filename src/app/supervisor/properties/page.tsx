@@ -82,6 +82,7 @@ interface Property {
   type: 'residential' | 'commercial' | 'industrial';
   size?: string;
   notes?: string;
+  thumbnailUrl?: string;
   customer?: { name: string };
   created_at: string;
 }
@@ -171,7 +172,8 @@ export default function SupervisorPropertiesPage() {
       const normalized = (data.properties || []).map((p: any) => ({
         ...p,
         type: (p.property_type || 'residential') as Property['type'],
-        safeAddress: getAddressString(p.address)
+        safeAddress: getAddressString(p.address),
+        thumbnailUrl: p.thumbnail_url
       }));
 
       setProperties(normalized);
@@ -451,12 +453,25 @@ export default function SupervisorPropertiesPage() {
                     <div
                       key={property.id}
                       className="property-card"
-                      onClick={() => handleEdit(property)}
+                      onClick={() => router.push(`/supervisor/properties/${property.id}`)}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-start gap-3 mb-2">
-                            <TypeIcon className="w-5 h-5 text-golden mt-0.5" />
+                      <div className="flex items-start gap-3">
+                        {/* Thumbnail */}
+                        <div className="property-thumbnail">
+                          {property.thumbnailUrl ? (
+                            <img
+                              src={property.thumbnailUrl}
+                              alt={property.name || 'Property'}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <TypeIcon className="w-6 h-6 text-gray-400" />
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between mb-2">
                             <div className="flex-1">
                               <h3 className="font-semibold text-white">
                                 {property.name || getAddressString(property.address) || 'Unnamed Property'}
@@ -473,42 +488,42 @@ export default function SupervisorPropertiesPage() {
                                 )}
                               </div>
                             </div>
+
+                            <div className="flex flex-col gap-2 ml-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(property);
+                                }}
+                                className="icon-button"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(property.id);
+                                }}
+                                className="icon-button text-red-500"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
-                          
-                          <div className="ml-8 space-y-1 text-xs">
+
+                          <div className="space-y-1 text-xs">
                             <div className="flex items-center gap-2 text-gray-400">
                               <Users className="w-3 h-3" />
                               <span>{property.customer?.name || 'Unknown Customer'}</span>
                             </div>
-                            
+
                             {property.notes && (
                               <div className="flex items-start gap-2 text-gray-500">
-                                <FileText className="w-3 h-3 mt-0.5" />
+                                <FileText className="w-3 h-3 mt-0.5 flex-shrink-0" />
                                 <span className="line-clamp-2">{property.notes}</span>
                               </div>
                             )}
                           </div>
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(property);
-                            }}
-                            className="icon-button"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(property.id);
-                            }}
-                            className="icon-button text-red-500"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
                         </div>
                       </div>
                     </div>
@@ -632,6 +647,18 @@ export default function SupervisorPropertiesPage() {
             background: rgba(255, 255, 255, 0.08);
             border-color: rgba(255, 215, 0, 0.4);
             transform: translateX(2px);
+          }
+
+          .property-thumbnail {
+            width: 3rem;
+            height: 3rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
 
           .property-type-badge {
