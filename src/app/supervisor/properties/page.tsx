@@ -71,6 +71,7 @@ import { ButtonLimiter, useButtonActions } from '@/components/ui/ButtonLimiter';
 
 interface Property {
   id: string;
+  name: string;
   customer_id: string;
   address: string;
   type: 'residential' | 'commercial' | 'industrial';
@@ -86,6 +87,7 @@ interface Customer {
 }
 
 interface PropertyFormData {
+  name: string;
   customer_id: string;
   address: string;
   type: 'residential' | 'commercial' | 'industrial';
@@ -123,6 +125,7 @@ export default function SupervisorPropertiesPage() {
   
   // Form state
   const [formData, setFormData] = useState<PropertyFormData>({
+    name: '',
     customer_id: '',
     address: '',
     type: 'residential',
@@ -222,6 +225,7 @@ export default function SupervisorPropertiesPage() {
 
   const resetForm = () => {
     setFormData({
+      name: '',
       customer_id: '',
       address: '',
       type: 'residential',
@@ -234,6 +238,10 @@ export default function SupervisorPropertiesPage() {
 
   const validateForm = (): boolean => {
     const errors: Partial<PropertyFormData> = {};
+
+    if (!formData.name.trim()) {
+      errors.name = 'Property name is required';
+    }
 
     if (!formData.customer_id) {
       errors.customer_id = 'Customer is required';
@@ -260,10 +268,11 @@ export default function SupervisorPropertiesPage() {
 
       // Map form data to API format
       const apiData = {
+        name: formData.name,             // Required field
         customer_id: formData.customer_id,
         address: formData.address,
-        property_type: formData.type,  // Map 'type' to 'property_type'
-        size_sqft: formData.size,       // Map 'size' to 'size_sqft'
+        property_type: formData.type,    // Map 'type' to 'property_type'
+        size_sqft: formData.size,        // Map 'size' to 'size_sqft'
         access_notes: formData.notes     // Map 'notes' to 'access_notes'
       };
 
@@ -295,6 +304,7 @@ export default function SupervisorPropertiesPage() {
   const handleEdit = (property: Property) => {
     setSelectedProperty(property);
     setFormData({
+      name: property.name || '',
       customer_id: property.customer_id,
       address: property.address,
       type: property.type,
@@ -725,6 +735,24 @@ export default function SupervisorPropertiesPage() {
             </select>
             {formErrors.customer_id && (
               <p className="error-text">{formErrors.customer_id}</p>
+            )}
+          </div>
+
+          {/* Property Name Field */}
+          <div>
+            <label htmlFor="name" className="form-label">
+              Property Name *
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className={`input-field ${formErrors.name ? 'error' : ''}`}
+              placeholder="e.g., Main Street House, Downtown Office"
+            />
+            {formErrors.name && (
+              <p className="error-text">{formErrors.name}</p>
             )}
           </div>
 
