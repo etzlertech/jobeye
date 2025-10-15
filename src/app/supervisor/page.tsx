@@ -243,7 +243,7 @@ export default function SupervisorDashboard() {
           <div className="grid grid-cols-2 gap-3">
             <Button
               size="lg"
-              onClick={() => router.push('/supervisor/jobs/create')}
+              onClick={() => router.push('/supervisor/jobs')}
               className="h-20 flex-col gap-2"
             >
               <Plus className="w-6 h-6" />
