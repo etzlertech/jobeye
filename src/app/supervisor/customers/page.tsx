@@ -296,11 +296,27 @@ export default function SupervisorCustomersPage() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-[375px] h-screen max-h-[812px] mx-auto bg-black text-white overflow-hidden flex flex-col items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-golden mx-auto mb-4" />
-          <p className="text-gray-400 text-lg">Loading customers...</p>
+      <div className="mobile-container">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: '#FFD700' }} />
+            <p className="text-gray-400 text-lg">Loading customers...</p>
+          </div>
         </div>
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+        `}</style>
       </div>
     );
   }
@@ -308,30 +324,33 @@ export default function SupervisorCustomersPage() {
   // List View
   if (view === 'list') {
     return (
-      <div className="w-full max-w-[375px] h-screen max-h-[812px] mx-auto bg-black text-white overflow-hidden flex flex-col">
+      <div className="mobile-container">
         {/* Mobile Navigation */}
-        <MobileNavigation 
-          currentRole="supervisor" 
+        <MobileNavigation
+          currentRole="supervisor"
           onLogout={() => router.push('/sign-in')}
         />
 
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-black bg-opacity-90">
-          <div>
-            <h1 className="text-xl font-semibold">Customer Management</h1>
-            <p className="text-xs text-gray-500 mt-1">{filteredCustomers.length} customers</p>
+        <div className="header-bar">
+          <div className="flex items-center gap-2">
+            <Users className="w-6 h-6" style={{ color: '#FFD700' }} />
+            <div>
+              <h1 className="text-xl font-semibold">Customers</h1>
+              <p className="text-xs text-gray-500">{filteredCustomers.length} total</p>
+            </div>
           </div>
         </div>
 
-
         {/* Notifications */}
         {error && (
-          <div className="flex items-center gap-2 p-3 mx-4 my-2 bg-red-900 bg-opacity-20 border border-red-500 rounded-lg">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+          <div className="notification-bar error">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <span className="text-sm">{error}</span>
-            <button 
+            <button
+              type="button"
               onClick={() => setError(null)}
-              className="ml-auto text-red-500"
+              className="ml-auto"
             >
               <X className="w-5 h-5" />
             </button>
@@ -339,15 +358,15 @@ export default function SupervisorCustomersPage() {
         )}
 
         {success && (
-          <div className="flex items-center gap-2 p-3 mx-4 my-2 bg-yellow-900 bg-opacity-20 border border-yellow-500 rounded-lg">
-            <CheckCircle className="w-5 h-5 text-golden flex-shrink-0" />
+          <div className="notification-bar success">
+            <CheckCircle className="w-5 h-5 flex-shrink-0" />
             <span className="text-sm">{success}</span>
           </div>
         )}
 
         <div className="flex-1 overflow-y-auto">
           {/* Search */}
-          <div className="px-4 py-4 space-y-4">
+          <div className="p-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
               <input
@@ -355,59 +374,58 @@ export default function SupervisorCustomersPage() {
                 placeholder="Search customers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+                className="input-field"
+                style={{ paddingLeft: '2.5rem' }}
               />
             </div>
           </div>
 
           {/* Customer List */}
-          <div className="px-4">
+          <div className="px-4 pb-4">
             {filteredCustomers.length === 0 ? (
-              <div className="text-center py-12">
+              <div className="empty-state">
                 <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-500">
+                <p className="text-gray-400">
                   {searchQuery ? 'Try adjusting your search' : 'Add your first customer to get started'}
                 </p>
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
+              <div className="space-y-3">
                 {filteredCustomers.map((customer) => (
                   <div
                     key={customer.id}
-                    className="bg-white bg-opacity-5 border border-yellow-500 border-opacity-20 rounded-xl p-4 cursor-pointer transition-all duration-200 hover:bg-opacity-8 hover:border-opacity-40 hover:translate-x-0.5"
+                    className="customer-card"
                     onClick={() => handleEdit(customer)}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-start gap-3 mb-2">
-                          <Users className="w-5 h-5 text-golden mt-0.5" />
+                          <Users className="w-5 h-5 mt-0.5" style={{ color: '#FFD700' }} />
                           <div className="flex-1">
                             <h3 className="font-semibold text-white">
                               {customer.name}
                             </h3>
-                            <div className="flex items-center gap-3 mt-1">
-                              {customer.property_count && customer.property_count > 0 && (
-                                <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-yellow-500 bg-opacity-20 text-yellow-400 rounded-full uppercase">
-                                  {customer.property_count} properties
-                                </span>
-                              )}
-                            </div>
+                            {customer.property_count && customer.property_count > 0 && (
+                              <span className="property-badge">
+                                {customer.property_count} properties
+                              </span>
+                            )}
                           </div>
                         </div>
-                        
-                        <div className="ml-8 space-y-1 text-xs">
-                          <div className="flex items-center gap-2 text-gray-400">
+
+                        <div className="ml-8 space-y-1 text-xs text-gray-400">
+                          <div className="flex items-center gap-2">
                             <Mail className="w-3 h-3" />
                             <span>{customer.email}</span>
                           </div>
-                          
+
                           {customer.phone && (
-                            <div className="flex items-center gap-2 text-gray-400">
+                            <div className="flex items-center gap-2">
                               <Phone className="w-3 h-3" />
                               <span>{customer.phone}</span>
                             </div>
                           )}
-                          
+
                           {customer.address && (
                             <div className="flex items-start gap-2 text-gray-500">
                               <MapPin className="w-3 h-3 mt-0.5" />
@@ -419,20 +437,22 @@ export default function SupervisorCustomersPage() {
 
                       <div className="flex flex-col gap-2">
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEdit(customer);
                           }}
-                          className="p-1.5 bg-white bg-opacity-10 text-white border border-yellow-500 border-opacity-20 rounded-md cursor-pointer transition-all duration-200 hover:bg-yellow-500 hover:bg-opacity-20 hover:border-yellow-400"
+                          className="icon-button"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDelete(customer.id);
                           }}
-                          className="p-1.5 bg-white bg-opacity-10 text-red-500 border border-red-500 border-opacity-20 rounded-md cursor-pointer transition-all duration-200 hover:bg-red-500 hover:bg-opacity-20 hover:border-red-400"
+                          className="icon-button delete"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -446,55 +466,235 @@ export default function SupervisorCustomersPage() {
         </div>
 
         {/* Bottom Actions */}
-        <div className="flex gap-3 p-4 bg-black bg-opacity-90 border-t border-gray-700">
+        <div className="bottom-actions">
           <button
+            type="button"
             onClick={() => router.push('/supervisor')}
-            className="flex items-center justify-center px-4 py-3 bg-white bg-opacity-10 text-white font-semibold rounded-lg border border-yellow-500 border-opacity-30 text-sm cursor-pointer transition-all duration-200 hover:bg-opacity-15 hover:border-yellow-400 flex-1"
+            className="btn-secondary flex-1"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back
           </button>
           <button
+            type="button"
             onClick={() => {
               setView('create');
               resetForm();
             }}
-            className="flex items-center justify-center px-4 py-3 bg-yellow-500 text-black font-semibold rounded-lg border-none text-sm cursor-pointer transition-all duration-200 hover:bg-yellow-400 flex-1"
+            className="btn-primary flex-1"
           >
             <Plus className="w-5 h-5 mr-2" />
             Add Customer
           </button>
         </div>
+
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+            background: rgba(0, 0, 0, 0.9);
+          }
+
+          .notification-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 1rem;
+            border-radius: 0.5rem;
+          }
+
+          .notification-bar.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+          }
+
+          .notification-bar.success {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            color: #FFD700;
+          }
+
+          .input-field {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
+            color: white;
+            font-size: 1rem;
+          }
+
+          .input-field:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
+          }
+
+          .input-field::placeholder {
+            color: #9CA3AF;
+          }
+
+          .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 0.75rem;
+          }
+
+          .customer-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .customer-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 215, 0, 0.4);
+            transform: translateX(2px);
+          }
+
+          .property-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.125rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: rgba(255, 215, 0, 0.2);
+            color: #FFD700;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            margin-top: 0.25rem;
+          }
+
+          .icon-button {
+            padding: 0.375rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .icon-button:hover {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: #FFD700;
+          }
+
+          .icon-button.delete {
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.2);
+          }
+
+          .icon-button.delete:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+          }
+
+          .bottom-actions {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.9);
+            border-top: 1px solid #333;
+          }
+
+          .btn-primary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            background: #FFD700;
+            color: #000;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            border: none;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .btn-primary:hover:not(:disabled) {
+            background: #FFC700;
+          }
+
+          .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+
+          .btn-secondary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #FFD700;
+          }
+        `}</style>
       </div>
     );
   }
 
   // Create/Edit Form View
   return (
-    <div className="w-full max-w-[375px] h-screen max-h-[812px] mx-auto bg-black text-white overflow-hidden flex flex-col">
+    <div className="mobile-container">
       {/* Mobile Navigation */}
-      <MobileNavigation 
-        currentRole="supervisor" 
+      <MobileNavigation
+        currentRole="supervisor"
         onLogout={() => router.push('/sign-in')}
         showBackButton={true}
         backTo="/supervisor/customers"
       />
 
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-black bg-opacity-90">
-        <div>
+      <div className="header-bar">
+        <div className="flex items-center gap-2">
+          <Users className="w-6 h-6" style={{ color: '#FFD700' }} />
           <h1 className="text-xl font-semibold">
-            {view === 'edit' ? 'Edit Customer' : 'Add New Customer'}
+            {view === 'edit' ? 'Edit Customer' : 'New Customer'}
           </h1>
         </div>
-        <Users className="w-6 h-6 text-golden" />
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
           {/* Name Field */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-400 mb-2">
+            <label htmlFor="name" className="form-label">
               Customer Name *
             </label>
             <input
@@ -502,21 +702,17 @@ export default function SupervisorCustomersPage() {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className={`w-full px-4 py-3 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 ${
-                formErrors.name 
-                  ? 'border-red-500 focus:ring-red-500' 
-                  : 'border-gray-800 focus:ring-golden focus:border-golden'
-              }`}
+              className={`input-field ${formErrors.name ? 'error' : ''}`}
               placeholder="Enter customer name"
             />
             {formErrors.name && (
-              <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>
+              <p className="error-text">{formErrors.name}</p>
             )}
           </div>
 
           {/* Email Field */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-400 mb-2">
+            <label htmlFor="email" className="form-label">
               Email Address *
             </label>
             <input
@@ -524,21 +720,17 @@ export default function SupervisorCustomersPage() {
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className={`w-full px-4 py-3 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 ${
-                formErrors.email 
-                  ? 'border-red-500 focus:ring-red-500' 
-                  : 'border-gray-800 focus:ring-golden focus:border-golden'
-              }`}
+              className={`input-field ${formErrors.email ? 'error' : ''}`}
               placeholder="customer@example.com"
             />
             {formErrors.email && (
-              <p className="mt-1 text-sm text-red-500">{formErrors.email}</p>
+              <p className="error-text">{formErrors.email}</p>
             )}
           </div>
 
           {/* Phone Field */}
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-400 mb-2">
+            <label htmlFor="phone" className="form-label">
               Phone Number
             </label>
             <input
@@ -546,14 +738,14 @@ export default function SupervisorCustomersPage() {
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+              className="input-field"
               placeholder="(555) 123-4567"
             />
           </div>
 
           {/* Address Field */}
           <div>
-            <label htmlFor="address" className="block text-sm font-medium text-gray-400 mb-2">
+            <label htmlFor="address" className="form-label">
               Address
             </label>
             <textarea
@@ -561,14 +753,14 @@ export default function SupervisorCustomersPage() {
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               rows={3}
-              className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+              className="input-field"
               placeholder="Enter customer address"
             />
           </div>
 
           {/* Notes Field */}
           <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-400 mb-2">
+            <label htmlFor="notes" className="form-label">
               Notes
             </label>
             <textarea
@@ -576,7 +768,7 @@ export default function SupervisorCustomersPage() {
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={4}
-              className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+              className="input-field"
               placeholder="Additional notes about the customer..."
             />
           </div>
@@ -584,21 +776,23 @@ export default function SupervisorCustomersPage() {
       </div>
 
       {/* Bottom Actions */}
-      <div className="flex gap-3 p-4 bg-black bg-opacity-90 border-t border-gray-700">
+      <div className="bottom-actions">
         <button
+          type="button"
           onClick={() => {
             setView('list');
             resetForm();
           }}
-          className="flex items-center justify-center px-4 py-3 bg-white bg-opacity-10 text-white font-semibold rounded-lg border border-yellow-500 border-opacity-30 text-sm cursor-pointer transition-all duration-200 hover:bg-opacity-15 hover:border-yellow-400 flex-1"
+          className="btn-secondary flex-1"
         >
           <X className="w-5 h-5 mr-2" />
           Cancel
         </button>
         <button
+          type="button"
           onClick={handleSubmit}
           disabled={isSaving}
-          className="flex items-center justify-center px-4 py-3 bg-yellow-500 text-black font-semibold rounded-lg border-none text-sm cursor-pointer transition-all duration-200 hover:bg-yellow-400 disabled:opacity-60 disabled:cursor-not-allowed flex-1"
+          className="btn-primary flex-1"
         >
           {isSaving ? (
             <>
@@ -614,6 +808,124 @@ export default function SupervisorCustomersPage() {
         </button>
       </div>
 
+      <style jsx>{`
+        .mobile-container {
+          width: 100%;
+          max-width: 375px;
+          height: 100vh;
+          max-height: 812px;
+          margin: 0 auto;
+          background: #000;
+          color: white;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .header-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem;
+          border-bottom: 1px solid #333;
+          background: rgba(0, 0, 0, 0.9);
+        }
+
+        .form-label {
+          display: block;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #9CA3AF;
+          margin-bottom: 0.5rem;
+        }
+
+        .input-field {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          background: #111827;
+          border: 1px solid #374151;
+          border-radius: 0.5rem;
+          color: white;
+          font-size: 1rem;
+        }
+
+        .input-field:focus {
+          outline: none;
+          border-color: #FFD700;
+          box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
+        }
+
+        .input-field::placeholder {
+          color: #9CA3AF;
+        }
+
+        .input-field.error {
+          border-color: #ef4444;
+        }
+
+        .input-field.error:focus {
+          border-color: #ef4444;
+          box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+        }
+
+        .error-text {
+          margin-top: 0.25rem;
+          font-size: 0.875rem;
+          color: #ef4444;
+        }
+
+        .bottom-actions {
+          display: flex;
+          gap: 0.75rem;
+          padding: 1rem;
+          background: rgba(0, 0, 0, 0.9);
+          border-top: 1px solid #333;
+        }
+
+        .btn-primary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem 1rem;
+          background: #FFD700;
+          color: #000;
+          font-weight: 600;
+          border-radius: 0.5rem;
+          border: none;
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+          background: #FFC700;
+        }
+
+        .btn-primary:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .btn-secondary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem 1rem;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          font-weight: 600;
+          border-radius: 0.5rem;
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+          background: rgba(255, 255, 255, 0.15);
+          border-color: #FFD700;
+        }
+      `}</style>
     </div>
   );
 }
