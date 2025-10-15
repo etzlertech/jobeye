@@ -1055,17 +1055,24 @@ export default function SupervisorInventoryPage() {
       <div className="bottom-actions">
         <button
           onClick={() => router.push('/supervisor')}
+          className="btn-secondary"
+          style={{flex: '0 0 auto'}}
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => setView('add_form')}
           className="btn-secondary flex-1"
         >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Back
+          <Plus className="w-5 h-5 mr-2" />
+          Add Manually
         </button>
         <button
           onClick={() => setView('camera')}
           className="btn-primary flex-1"
         >
-          <Plus className="w-5 h-5 mr-2" />
-          Add Item
+          <Camera className="w-5 h-5 mr-2" />
+          With Photo
         </button>
       </div>
 

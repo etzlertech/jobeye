@@ -755,16 +755,17 @@ export default function SupervisorPropertiesPage() {
             <div className="grid grid-cols-3 gap-3">
               {(['residential', 'commercial', 'industrial'] as const).map((type) => {
                 const Icon = propertyTypeIcons[type];
+                const isSelected = formData.type === type;
                 return (
                   <button
                     key={type}
                     type="button"
-                    onClick={() => setFormData({ ...formData, type })}
-                    className={`p-3 border-2 rounded-lg flex flex-col items-center gap-1 transition-all ${
-                      formData.type === type
-                        ? 'border-golden bg-golden/20 text-golden'
-                        : 'border-gray-800 bg-gray-900 text-gray-400 hover:border-gray-600'
-                    }`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setFormData({ ...formData, type });
+                    }}
+                    className={`property-type-btn ${isSelected ? 'selected' : ''}`}
                   >
                     <Icon className="w-6 h-6" />
                     <span className="text-xs font-medium">{propertyTypeLabels[type]}</span>
@@ -914,6 +915,37 @@ export default function SupervisorPropertiesPage() {
         }
 
         .golden { color: #FFD700; }
+
+        /* Property type button styles */
+        :global(.property-type-btn) {
+          padding: 0.75rem;
+          border-width: 2px;
+          border-radius: 0.5rem;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.25rem;
+          transition: all 0.2s;
+          cursor: pointer;
+          user-select: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        :global(.property-type-btn.selected) {
+          border-color: #FFD700;
+          background: rgba(255, 215, 0, 0.2);
+          color: #FFD700;
+        }
+
+        :global(.property-type-btn:not(.selected)) {
+          border-color: #374151;
+          background: #111827;
+          color: #9CA3AF;
+        }
+
+        :global(.property-type-btn:hover) {
+          border-color: #4B5563;
+        }
       `}</style>
     </div>
   );
