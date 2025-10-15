@@ -676,8 +676,6 @@ export default function SupervisorCustomersPage() {
       <MobileNavigation
         currentRole="supervisor"
         onLogout={() => router.push('/sign-in')}
-        showBackButton={true}
-        backTo="/supervisor/customers"
       />
 
       {/* Header */}
