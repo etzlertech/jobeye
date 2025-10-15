@@ -58,169 +58,213 @@ export function JobForm({
   const today = new Date().toISOString().split('T')[0];
 
   return (
-    <form onSubmit={handleSubmit} className="mb-8 rounded-lg bg-gray-900 p-6">
-      <h2 className="mb-4 text-xl font-semibold text-white">Create New Job</h2>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <h2 className="text-lg font-semibold text-white mb-4">Create New Job</h2>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Customer Selection */}
-        <div>
-          <label htmlFor="customer" className="mb-1 block text-sm font-medium text-gray-300">
-            Customer <span className="text-red-400">*</span>
-          </label>
-          <select
-            id="customer"
-            value={draft.customerId}
-            onChange={(e) => onDraftChange('customerId', e.target.value)}
-            className="w-full rounded-md bg-gray-800 px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={disabled || customers.length === 0}
-            required
-          >
-            <option value="">Select a customer</option>
-            {customers.map((customer) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Customer Selection */}
+      <div>
+        <label htmlFor="customer" className="form-label">
+          Customer <span style={{ color: '#ef4444' }}>*</span>
+        </label>
+        <select
+          id="customer"
+          value={draft.customerId}
+          onChange={(e) => onDraftChange('customerId', e.target.value)}
+          className="input-field"
+          disabled={disabled || customers.length === 0}
+          required
+        >
+          <option value="">Select a customer</option>
+          {customers.map((customer) => (
+            <option key={customer.id} value={customer.id}>
+              {customer.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        {/* Property Selection */}
-        <div>
-          <label htmlFor="property" className="mb-1 block text-sm font-medium text-gray-300">
-            Property
-          </label>
-          <select
-            id="property"
-            value={draft.propertyId}
-            onChange={(e) => onDraftChange('propertyId', e.target.value)}
-            className="w-full rounded-md bg-gray-800 px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={disabled || properties.length === 0}
-          >
-            <option value="">No specific property</option>
-            {properties.map((property) => (
-              <option key={property.id} value={property.id}>
-                {property.name || property.address || 'Unnamed property'}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Property Selection */}
+      <div>
+        <label htmlFor="property" className="form-label">
+          Property
+        </label>
+        <select
+          id="property"
+          value={draft.propertyId}
+          onChange={(e) => onDraftChange('propertyId', e.target.value)}
+          className="input-field"
+          disabled={disabled || properties.length === 0}
+        >
+          <option value="">No specific property</option>
+          {properties.map((property) => (
+            <option key={property.id} value={property.id}>
+              {property.name || property.address || 'Unnamed property'}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        {/* Title */}
-        <div className="md:col-span-2">
-          <label htmlFor="title" className="mb-1 block text-sm font-medium text-gray-300">
-            Job Title <span className="text-red-400">*</span>
-          </label>
-          <div className="relative">
-            <FileText className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              id="title"
-              type="text"
-              value={draft.title}
-              onChange={(e) => onDraftChange('title', e.target.value)}
-              placeholder="e.g., Lawn maintenance, Spring cleanup"
-              className="w-full rounded-md bg-gray-800 py-2 pl-10 pr-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={disabled}
-              required
-            />
-          </div>
-        </div>
+      {/* Title */}
+      <div>
+        <label htmlFor="title" className="form-label">
+          Job Title <span style={{ color: '#ef4444' }}>*</span>
+        </label>
+        <input
+          id="title"
+          type="text"
+          value={draft.title}
+          onChange={(e) => onDraftChange('title', e.target.value)}
+          placeholder="e.g., Lawn maintenance, Spring cleanup"
+          className="input-field"
+          disabled={disabled}
+          required
+        />
+      </div>
 
-        {/* Description */}
-        <div className="md:col-span-2">
-          <label htmlFor="description" className="mb-1 block text-sm font-medium text-gray-300">
-            Description
-          </label>
-          <textarea
-            id="description"
-            value={draft.description}
-            onChange={(e) => onDraftChange('description', e.target.value)}
-            placeholder="Detailed description of work to be performed..."
-            rows={3}
-            className="w-full rounded-md bg-gray-800 px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={disabled}
-          />
-        </div>
+      {/* Description */}
+      <div>
+        <label htmlFor="description" className="form-label">
+          Description
+        </label>
+        <textarea
+          id="description"
+          value={draft.description}
+          onChange={(e) => onDraftChange('description', e.target.value)}
+          placeholder="Detailed description of work to be performed..."
+          rows={4}
+          className="input-field"
+          disabled={disabled}
+        />
+      </div>
 
-        {/* Scheduled Date */}
-        <div>
-          <label htmlFor="scheduledDate" className="mb-1 block text-sm font-medium text-gray-300">
-            Scheduled Date <span className="text-red-400">*</span>
-          </label>
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              id="scheduledDate"
-              type="date"
-              value={draft.scheduledDate}
-              onChange={(e) => onDraftChange('scheduledDate', e.target.value)}
-              min={today}
-              className="w-full rounded-md bg-gray-800 py-2 pl-10 pr-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={disabled}
-              required
-            />
-          </div>
-        </div>
+      {/* Scheduled Date */}
+      <div>
+        <label htmlFor="scheduledDate" className="form-label">
+          Scheduled Date <span style={{ color: '#ef4444' }}>*</span>
+        </label>
+        <input
+          id="scheduledDate"
+          type="date"
+          value={draft.scheduledDate}
+          onChange={(e) => onDraftChange('scheduledDate', e.target.value)}
+          min={today}
+          className="input-field"
+          disabled={disabled}
+          required
+        />
+      </div>
 
-        {/* Scheduled Time */}
-        <div>
-          <label htmlFor="scheduledTime" className="mb-1 block text-sm font-medium text-gray-300">
-            Scheduled Time
-          </label>
-          <div className="relative">
-            <Clock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              id="scheduledTime"
-              type="time"
-              value={draft.scheduledTime}
-              onChange={(e) => onDraftChange('scheduledTime', e.target.value)}
-              className="w-full rounded-md bg-gray-800 py-2 pl-10 pr-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={disabled}
-            />
-          </div>
-        </div>
+      {/* Scheduled Time */}
+      <div>
+        <label htmlFor="scheduledTime" className="form-label">
+          Scheduled Time
+        </label>
+        <input
+          id="scheduledTime"
+          type="time"
+          value={draft.scheduledTime}
+          onChange={(e) => onDraftChange('scheduledTime', e.target.value)}
+          className="input-field"
+          disabled={disabled}
+        />
+      </div>
 
-        {/* Priority */}
-        <div>
-          <label htmlFor="priority" className="mb-1 block text-sm font-medium text-gray-300">
-            Priority
-          </label>
-          <div className="relative">
-            <AlertCircle className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <select
-              id="priority"
-              value={draft.priority}
-              onChange={(e) => onDraftChange('priority', e.target.value as 'low' | 'normal' | 'high' | 'urgent')}
-              className="w-full rounded-md bg-gray-800 py-2 pl-10 pr-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={disabled}
-            >
-              <option value="low">Low</option>
-              <option value="normal">Normal</option>
-              <option value="high">High</option>
-              <option value="urgent">Urgent</option>
-            </select>
-          </div>
-        </div>
-
+      {/* Priority */}
+      <div>
+        <label htmlFor="priority" className="form-label">
+          Priority
+        </label>
+        <select
+          id="priority"
+          value={draft.priority}
+          onChange={(e) => onDraftChange('priority', e.target.value as 'low' | 'normal' | 'high' | 'urgent')}
+          className="input-field"
+          disabled={disabled}
+        >
+          <option value="low">Low</option>
+          <option value="normal">Normal</option>
+          <option value="high">High</option>
+          <option value="urgent">Urgent</option>
+        </select>
       </div>
 
       {/* Actions */}
-      <div className="mt-6 flex gap-3">
-        <button
-          type="submit"
-          disabled={disabled || !draft.customerId || !draft.title || !draft.scheduledDate}
-          className="flex-1 rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-500 disabled:opacity-60"
-        >
-          Create Job
-        </button>
+      <div className="flex gap-3 pt-2">
         <button
           type="button"
           onClick={onClear}
           disabled={disabled}
-          className="rounded-md bg-gray-700 px-4 py-2 font-medium text-gray-200 transition hover:bg-gray-600 disabled:opacity-60"
+          className="flex-1"
+          style={{
+            padding: '0.75rem 1rem',
+            background: 'rgba(255, 255, 255, 0.1)',
+            color: 'white',
+            fontWeight: 600,
+            borderRadius: '0.5rem',
+            border: '1px solid rgba(255, 215, 0, 0.3)',
+            fontSize: '0.875rem',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            opacity: disabled ? 0.6 : 1,
+            transition: 'all 0.2s'
+          }}
         >
           Clear
         </button>
+        <button
+          type="submit"
+          disabled={disabled || !draft.customerId || !draft.title || !draft.scheduledDate}
+          className="flex-1"
+          style={{
+            padding: '0.75rem 1rem',
+            background: '#FFD700',
+            color: '#000',
+            fontWeight: 600,
+            borderRadius: '0.5rem',
+            border: 'none',
+            fontSize: '0.875rem',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            opacity: disabled ? 0.6 : 1,
+            transition: 'all 0.2s'
+          }}
+        >
+          Create Job
+        </button>
       </div>
+
+      <style jsx>{`
+        .form-label {
+          display: block;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #9CA3AF;
+          margin-bottom: 0.5rem;
+        }
+
+        .input-field {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          background: #111827;
+          border: 1px solid #374151;
+          border-radius: 0.5rem;
+          color: white;
+          font-size: 1rem;
+        }
+
+        .input-field:focus {
+          outline: none;
+          border-color: #FFD700;
+          box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
+        }
+
+        .input-field::placeholder {
+          color: #9CA3AF;
+        }
+
+        .input-field option {
+          background: #111827;
+          color: white;
+        }
+      `}</style>
     </form>
   );
 }
