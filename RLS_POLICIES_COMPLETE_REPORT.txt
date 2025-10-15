@@ -1,0 +1,1232 @@
+[dotenv@17.2.3] injecting env (22) from .env.local -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+🔍 Querying ALL RLS Policies in public schema...
+
+✅ Found 67 tables
+
+======================================================================================================================================================
+
+Table: gps_tracking_records
+Policy Name: gps_tracking_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: customers
+Policy Name: customers_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: service_role
+USING (qual): true
+WITH CHECK: true
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: customers
+Policy Name: customers_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: authenticated
+USING (qual): ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: notification_queue
+Policy Name: notification_queue_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (auth.role() = 'service_role'::text)
+WITH CHECK: (auth.role() = 'service_role'::text)
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: notification_queue
+Policy Name: notification_queue_tenant_access
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: auth_audit_log
+Policy Name: Admins can view tenant audit logs
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text) AND (((((auth.jwt() -> 'app_metadata'::text) ->> 'tenant_id'::text))::uuid = tenant_id) OR (tenant_id IS NULL)))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: jobs
+Policy Name: jobs_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: authenticated
+USING (qual): ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: invoices
+Policy Name: Managers can create invoices
+Command: INSERT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): N/A
+WITH CHECK: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: invoices
+Policy Name: Managers can update invoices
+Command: UPDATE
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: invoices
+Policy Name: Users can view their tenant's invoices
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: properties
+Policy Name: properties_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: authenticated
+USING (qual): ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: items
+Policy Name: items_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((auth.jwt() ->> 'role'::text) = 'service_role'::text)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: items
+Policy Name: items_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: authenticated
+USING (qual): ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: equipment_maintenance
+Policy Name: tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: users_extended
+Policy Name: Admins can view all users in tenant
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((auth.uid() = id) OR ((((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text) AND ((((auth.jwt() -> 'app_metadata'::text) ->> 'tenant_id'::text))::uuid = tenant_id)))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: users_extended
+Policy Name: Users can update own profile
+Command: UPDATE
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (auth.uid() = id)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: users_extended
+Policy Name: Users can view own profile
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (auth.uid() = id)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: kit_items
+Policy Name: kit_items_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (auth.role() = 'service_role'::text)
+WITH CHECK: (auth.role() = 'service_role'::text)
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: kit_items
+Policy Name: kit_items_tenant_access
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: kits
+Policy Name: kits_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (auth.role() = 'service_role'::text)
+WITH CHECK: (auth.role() = 'service_role'::text)
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: kits
+Policy Name: kits_tenant_access
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: companies
+Policy Name: companies_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: service_role
+USING (qual): true
+WITH CHECK: true
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: companies
+Policy Name: companies_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((tenant_id)::text = COALESCE((((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text), (((current_setting('request.jwt.claims'::text, true))::json -> 'user_metadata'::text) ->> 'tenant_id'::text)))
+WITH CHECK: ((tenant_id)::text = COALESCE((((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text), (((current_setting('request.jwt.claims'::text, true))::json -> 'user_metadata'::text) ->> 'tenant_id'::text)))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: kit_variants
+Policy Name: kit_variants_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (auth.role() = 'service_role'::text)
+WITH CHECK: (auth.role() = 'service_role'::text)
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: kit_variants
+Policy Name: kit_variants_tenant_access
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: kit_assignments
+Policy Name: kit_assignments_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (auth.role() = 'service_role'::text)
+WITH CHECK: (auth.role() = 'service_role'::text)
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: kit_assignments
+Policy Name: tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: workflow_tasks
+Policy Name: workflow_tasks_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: geofence_events
+Policy Name: geofence_events_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: day_plans
+Policy Name: day_plans_tenant_access
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: geofences
+Policy Name: geofences_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: vendor_locations
+Policy Name: tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: vendor_locations
+Policy Name: vendor_locations_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: service_role
+USING (qual): true
+WITH CHECK: true
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: job_checklist_items
+Policy Name: job_checklist_items_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: authenticated
+USING (qual): (EXISTS ( SELECT 1
+   FROM jobs j
+  WHERE ((j.id = job_checklist_items.job_id) AND ((j.tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text)))))
+WITH CHECK: (EXISTS ( SELECT 1
+   FROM jobs j
+  WHERE ((j.id = job_checklist_items.job_id) AND ((j.tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text)))))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: notifications
+Policy Name: tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: dev_manifest_history
+Policy Name: Developers can insert manifest history
+Command: INSERT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): N/A
+WITH CHECK: ((auth.uid() IN ( SELECT users.id
+   FROM auth.users
+  WHERE (((users.raw_user_meta_data ->> 'is_developer'::text) = 'true'::text) OR ((users.raw_app_meta_data ->> 'is_developer'::text) = 'true'::text)))) OR ((auth.jwt() ->> 'role'::text) = 'developer'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: dev_manifest_history
+Policy Name: Developers can view manifest history
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((auth.uid() IN ( SELECT users.id
+   FROM auth.users
+  WHERE (((users.raw_user_meta_data ->> 'is_developer'::text) = 'true'::text) OR ((users.raw_app_meta_data ->> 'is_developer'::text) = 'true'::text)))) OR ((auth.jwt() ->> 'role'::text) = 'developer'::text))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: dev_manifest_history
+Policy Name: Users can delete own manifests
+Command: DELETE
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (generated_by = auth.uid())
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: dev_manifest_history
+Policy Name: Users can update own manifests
+Command: UPDATE
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (generated_by = auth.uid())
+WITH CHECK: (generated_by = auth.uid())
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: daily_reports
+Policy Name: tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: material_requests
+Policy Name: Users can create material requests
+Command: INSERT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): N/A
+WITH CHECK: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: material_requests
+Policy Name: Users can view their tenant's material requests
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: customer_feedback
+Policy Name: Managers can create feedback
+Command: INSERT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): N/A
+WITH CHECK: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: customer_feedback
+Policy Name: Users can view their tenant's feedback
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: maintenance_tickets
+Policy Name: Users can create tickets
+Command: INSERT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): N/A
+WITH CHECK: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: maintenance_tickets
+Policy Name: Users can view their tenant's tickets
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: travel_logs
+Policy Name: Users can create their own travel logs
+Command: INSERT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): N/A
+WITH CHECK: (user_id = auth.uid())
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: travel_logs
+Policy Name: Users can view their own travel logs
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((user_id = auth.uid()) OR (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid()))))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: audit_logs
+Policy Name: Admins and managers can view audit logs
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: audit_logs
+Policy Name: System can insert audit logs
+Command: INSERT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): N/A
+WITH CHECK: true
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: job_reschedules
+Policy Name: Users can create reschedules
+Command: INSERT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): N/A
+WITH CHECK: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: job_reschedules
+Policy Name: Users can view their tenant's reschedules
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: routing_schedules
+Policy Name: routing_schedules_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: intake_requests
+Policy Name: intake_requests_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: safety_checklists
+Policy Name: safety_checklists_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: intake_documents
+Policy Name: intake_documents_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (current_setting('app.current_tenant_id'::text, true))::uuid)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: conflict_logs
+Policy Name: Company members view conflict logs
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: conflict_logs
+Policy Name: Supervisors can review conflicts
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text)) AND ((((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['supervisor'::text, 'admin'::text])))
+WITH CHECK: (((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text)) AND ((((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['supervisor'::text, 'admin'::text])))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: conflict_logs
+Policy Name: System can insert conflict logs
+Command: INSERT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): N/A
+WITH CHECK: ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'company_id'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: dev_project_standards
+Policy Name: Anyone can view project standards
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (is_active = true)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: dev_project_standards
+Policy Name: Developers can delete project standards
+Command: DELETE
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((auth.uid() IN ( SELECT users.id
+   FROM auth.users
+  WHERE (((users.raw_user_meta_data ->> 'is_developer'::text) = 'true'::text) OR ((users.raw_app_meta_data ->> 'is_developer'::text) = 'true'::text)))) OR ((auth.jwt() ->> 'role'::text) = 'developer'::text))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: dev_project_standards
+Policy Name: Developers can insert project standards
+Command: INSERT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): N/A
+WITH CHECK: ((auth.uid() IN ( SELECT users.id
+   FROM auth.users
+  WHERE (((users.raw_user_meta_data ->> 'is_developer'::text) = 'true'::text) OR ((users.raw_app_meta_data ->> 'is_developer'::text) = 'true'::text)))) OR ((auth.jwt() ->> 'role'::text) = 'developer'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: dev_project_standards
+Policy Name: Developers can update project standards
+Command: UPDATE
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((auth.uid() IN ( SELECT users.id
+   FROM auth.users
+  WHERE (((users.raw_user_meta_data ->> 'is_developer'::text) = 'true'::text) OR ((users.raw_app_meta_data ->> 'is_developer'::text) = 'true'::text)))) OR ((auth.jwt() ->> 'role'::text) = 'developer'::text))
+WITH CHECK: ((auth.uid() IN ( SELECT users.id
+   FROM auth.users
+  WHERE (((users.raw_user_meta_data ->> 'is_developer'::text) = 'true'::text) OR ((users.raw_app_meta_data ->> 'is_developer'::text) = 'true'::text)))) OR ((auth.jwt() ->> 'role'::text) = 'developer'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: inventory_images
+Policy Name: inventory_images_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: authenticated
+USING (qual): (tenant_id IN ( SELECT tenant_assignments.tenant_id
+   FROM tenant_assignments
+  WHERE ((tenant_assignments.user_id = auth.uid()) AND (tenant_assignments.is_active = true))))
+WITH CHECK: (tenant_id IN ( SELECT tenant_assignments.tenant_id
+   FROM tenant_assignments
+  WHERE ((tenant_assignments.user_id = auth.uid()) AND (tenant_assignments.is_active = true))))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: user_sessions
+Policy Name: Admins can view tenant sessions
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((auth.uid() = user_id) OR ((((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text) AND ((((auth.jwt() -> 'app_metadata'::text) ->> 'tenant_id'::text))::uuid = tenant_id)))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: user_sessions
+Policy Name: System can insert sessions
+Command: INSERT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): N/A
+WITH CHECK: true
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: user_sessions
+Policy Name: Users can update own sessions
+Command: UPDATE
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (auth.uid() = user_id)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: user_sessions
+Policy Name: Users can view own sessions
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (auth.uid() = user_id)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: permissions
+Policy Name: Admins can manage permissions
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: permissions
+Policy Name: Users can view permissions
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): true
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: role_permissions
+Policy Name: Admins can manage role permissions
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: role_permissions
+Policy Name: Users can view role permissions
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): true
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: voice_profiles
+Policy Name: Users can manage own voice profile
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (auth.uid() = user_id)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenant_assignments
+Policy Name: Admins can manage tenant assignments
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((auth.uid() = user_id) OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenant_assignments
+Policy Name: Users can view own tenant assignments
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (auth.uid() = user_id)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: user_invitations
+Policy Name: Admins can manage invitations
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = ANY (ARRAY['admin'::text, 'manager'::text]))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: mfa_settings
+Policy Name: Users can manage own MFA settings
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (auth.uid() = user_id)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: mfa_challenges
+Policy Name: Users can manage own MFA challenges
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (auth.uid() = user_id)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: item_transactions
+Policy Name: transactions_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((auth.jwt() ->> 'role'::text) = 'service_role'::text)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: item_transactions
+Policy Name: transactions_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = ((((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))::uuid)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenants
+Policy Name: System admins full access on tenants
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): is_system_admin()
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenants
+Policy Name: Tenant admins can update own tenant
+Command: UPDATE
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (EXISTS ( SELECT 1
+   FROM tenant_members
+  WHERE ((tenant_members.tenant_id = tenants.id) AND (tenant_members.user_id = auth.uid()) AND (tenant_members.role = 'tenant_admin'::text) AND (tenant_members.status = 'active'::text))))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenants
+Policy Name: Users can view their tenants
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((id = get_tenant_id()) OR (EXISTS ( SELECT 1
+   FROM tenant_members
+  WHERE ((tenant_members.tenant_id = tenants.id) AND (tenant_members.user_id = auth.uid()) AND (tenant_members.status = 'active'::text)))))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenant_members
+Policy Name: System admins full access on members
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): is_system_admin()
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenant_members
+Policy Name: Tenant admins can delete members
+Command: DELETE
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (EXISTS ( SELECT 1
+   FROM tenant_members tm
+  WHERE ((tm.tenant_id = tenant_members.tenant_id) AND (tm.user_id = auth.uid()) AND (tm.role = 'tenant_admin'::text) AND (tm.status = 'active'::text))))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenant_members
+Policy Name: Tenant admins can insert members
+Command: INSERT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): N/A
+WITH CHECK: (EXISTS ( SELECT 1
+   FROM tenant_members tm
+  WHERE ((tm.tenant_id = tenant_members.tenant_id) AND (tm.user_id = auth.uid()) AND (tm.role = 'tenant_admin'::text) AND (tm.status = 'active'::text))))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenant_members
+Policy Name: Tenant admins can update members
+Command: UPDATE
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (EXISTS ( SELECT 1
+   FROM tenant_members tm
+  WHERE ((tm.tenant_id = tenant_members.tenant_id) AND (tm.user_id = auth.uid()) AND (tm.role = 'tenant_admin'::text) AND (tm.status = 'active'::text))))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenant_members
+Policy Name: Users can view tenant members
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((tenant_id = get_tenant_id()) OR (user_id = auth.uid()))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenant_invitations
+Policy Name: System admins full access on invitations
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): is_system_admin()
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenant_invitations
+Policy Name: Tenant admins can create invitations
+Command: INSERT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): N/A
+WITH CHECK: (EXISTS ( SELECT 1
+   FROM tenant_members
+  WHERE ((tenant_members.tenant_id = tenant_invitations.tenant_id) AND (tenant_members.user_id = auth.uid()) AND (tenant_members.role = 'tenant_admin'::text) AND (tenant_members.status = 'active'::text))))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenant_invitations
+Policy Name: Tenant admins can update invitations
+Command: UPDATE
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (EXISTS ( SELECT 1
+   FROM tenant_members
+  WHERE ((tenant_members.tenant_id = tenant_invitations.tenant_id) AND (tenant_members.user_id = auth.uid()) AND (tenant_members.role = 'tenant_admin'::text) AND (tenant_members.status = 'active'::text))))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenant_invitations
+Policy Name: Tenant admins can view invitations
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (EXISTS ( SELECT 1
+   FROM tenant_members
+  WHERE ((tenant_members.tenant_id = tenant_invitations.tenant_id) AND (tenant_members.user_id = auth.uid()) AND (tenant_members.role = 'tenant_admin'::text) AND (tenant_members.status = 'active'::text))))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: tenant_invitations
+Policy Name: Users can view own invitations
+Command: SELECT
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (email = (( SELECT users.email
+   FROM auth.users
+  WHERE (users.id = auth.uid())))::text)
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: vendors
+Policy Name: tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: vendors
+Policy Name: vendors_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: service_role
+USING (qual): true
+WITH CHECK: true
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: vendor_aliases
+Policy Name: tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: vendor_aliases
+Policy Name: vendor_aliases_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: service_role
+USING (qual): true
+WITH CHECK: true
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: ocr_jobs
+Policy Name: ocr_jobs_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: service_role
+USING (qual): true
+WITH CHECK: true
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: ocr_jobs
+Policy Name: ocr_jobs_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: ocr_documents
+Policy Name: ocr_documents_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: service_role
+USING (qual): true
+WITH CHECK: true
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: ocr_documents
+Policy Name: ocr_documents_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: ocr_line_items
+Policy Name: ocr_line_items_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: service_role
+USING (qual): true
+WITH CHECK: true
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: ocr_line_items
+Policy Name: ocr_line_items_tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: (tenant_id = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: ocr_note_entities
+Policy Name: ocr_note_entities_service_role
+Command: ALL
+Permissive: PERMISSIVE
+Roles: service_role
+USING (qual): true
+WITH CHECK: true
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Table: ocr_note_entities
+Policy Name: tenant_isolation
+Command: ALL
+Permissive: PERMISSIVE
+Roles: N/A
+USING (qual): ((tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text))
+WITH CHECK: N/A
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+======================================================================================================================================================
+📊 SUMMARY: Found 105 RLS Policies across 67 tables
+======================================================================================================================================================
+
+
+======================================================================================================================================================
+🚨 SUSPICIOUS POLICIES REFERENCING users_extended (13 found):
+======================================================================================================================================================
+
+
+🔴 Table: invoices
+   Policy: Managers can create invoices
+   Command: INSERT
+   USING: N/A
+   WITH CHECK: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+🔴 Table: invoices
+   Policy: Managers can update invoices
+   Command: UPDATE
+   USING: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+   WITH CHECK: N/A
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+🔴 Table: invoices
+   Policy: Users can view their tenant's invoices
+   Command: SELECT
+   USING: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+   WITH CHECK: N/A
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+🔴 Table: material_requests
+   Policy: Users can create material requests
+   Command: INSERT
+   USING: N/A
+   WITH CHECK: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+🔴 Table: material_requests
+   Policy: Users can view their tenant's material requests
+   Command: SELECT
+   USING: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+   WITH CHECK: N/A
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+🔴 Table: customer_feedback
+   Policy: Managers can create feedback
+   Command: INSERT
+   USING: N/A
+   WITH CHECK: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+🔴 Table: customer_feedback
+   Policy: Users can view their tenant's feedback
+   Command: SELECT
+   USING: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+   WITH CHECK: N/A
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+🔴 Table: maintenance_tickets
+   Policy: Users can create tickets
+   Command: INSERT
+   USING: N/A
+   WITH CHECK: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+🔴 Table: maintenance_tickets
+   Policy: Users can view their tenant's tickets
+   Command: SELECT
+   USING: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+   WITH CHECK: N/A
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+🔴 Table: travel_logs
+   Policy: Users can view their own travel logs
+   Command: SELECT
+   USING: ((user_id = auth.uid()) OR (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid()))))
+   WITH CHECK: N/A
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+🔴 Table: audit_logs
+   Policy: Admins and managers can view audit logs
+   Command: SELECT
+   USING: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+   WITH CHECK: N/A
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+🔴 Table: job_reschedules
+   Policy: Users can create reschedules
+   Command: INSERT
+   USING: N/A
+   WITH CHECK: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+🔴 Table: job_reschedules
+   Policy: Users can view their tenant's reschedules
+   Command: SELECT
+   USING: (tenant_id IN ( SELECT users_extended.tenant_id
+   FROM users_extended
+  WHERE (users_extended.id = auth.uid())))
+   WITH CHECK: N/A
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+
+======================================================================================================================================================
+🔍 POLICIES WITH EXISTS SUBQUERIES (potential recursion risk): 9 found
+======================================================================================================================================================
+
+
+⚠️  Table: job_checklist_items
+   Policy: job_checklist_items_tenant_isolation
+   Command: ALL
+   USING: (EXISTS ( SELECT 1
+   FROM jobs j
+  WHERE ((j.id = job_checklist_items.job_id) AND ((j.tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text)))))
+   WITH CHECK: (EXISTS ( SELECT 1
+   FROM jobs j
+  WHERE ((j.id = job_checklist_items.job_id) AND ((j.tenant_id)::text = (((current_setting('request.jwt.claims'::text, true))::json -> 'app_metadata'::text) ->> 'tenant_id'::text)))))
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+⚠️  Table: tenants
+   Policy: Tenant admins can update own tenant
+   Command: UPDATE
+   USING: (EXISTS ( SELECT 1
+   FROM tenant_members
+  WHERE ((tenant_members.tenant_id = tenants.id) AND (tenant_members.user_id = auth.uid()) AND (tenant_members.role = 'tenant_admin'::text) AND (tenant_members.status = 'active'::text))))
+   WITH CHECK: N/A
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+⚠️  Table: tenants
+   Policy: Users can view their tenants
+   Command: SELECT
+   USING: ((id = get_tenant_id()) OR (EXISTS ( SELECT 1
+   FROM tenant_members
+  WHERE ((tenant_members.tenant_id = tenants.id) AND (tenant_members.user_id = auth.uid()) AND (tenant_members.status = 'active'::text)))))
+   WITH CHECK: N/A
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+⚠️  Table: tenant_members
+   Policy: Tenant admins can delete members
+   Command: DELETE
+   USING: (EXISTS ( SELECT 1
+   FROM tenant_members tm
+  WHERE ((tm.tenant_id = tenant_members.tenant_id) AND (tm.user_id = auth.uid()) AND (tm.role = 'tenant_admin'::text) AND (tm.status = 'active'::text))))
+   WITH CHECK: N/A
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+⚠️  Table: tenant_members
+   Policy: Tenant admins can insert members
+   Command: INSERT
+   USING: N/A
+   WITH CHECK: (EXISTS ( SELECT 1
+   FROM tenant_members tm
+  WHERE ((tm.tenant_id = tenant_members.tenant_id) AND (tm.user_id = auth.uid()) AND (tm.role = 'tenant_admin'::text) AND (tm.status = 'active'::text))))
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+⚠️  Table: tenant_members
+   Policy: Tenant admins can update members
+   Command: UPDATE
+   USING: (EXISTS ( SELECT 1
+   FROM tenant_members tm
+  WHERE ((tm.tenant_id = tenant_members.tenant_id) AND (tm.user_id = auth.uid()) AND (tm.role = 'tenant_admin'::text) AND (tm.status = 'active'::text))))
+   WITH CHECK: N/A
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+⚠️  Table: tenant_invitations
+   Policy: Tenant admins can create invitations
+   Command: INSERT
+   USING: N/A
+   WITH CHECK: (EXISTS ( SELECT 1
+   FROM tenant_members
+  WHERE ((tenant_members.tenant_id = tenant_invitations.tenant_id) AND (tenant_members.user_id = auth.uid()) AND (tenant_members.role = 'tenant_admin'::text) AND (tenant_members.status = 'active'::text))))
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+⚠️  Table: tenant_invitations
+   Policy: Tenant admins can update invitations
+   Command: UPDATE
+   USING: (EXISTS ( SELECT 1
+   FROM tenant_members
+  WHERE ((tenant_members.tenant_id = tenant_invitations.tenant_id) AND (tenant_members.user_id = auth.uid()) AND (tenant_members.role = 'tenant_admin'::text) AND (tenant_members.status = 'active'::text))))
+   WITH CHECK: N/A
+   --------------------------------------------------------------------------------------------------------------------------------------------
+
+⚠️  Table: tenant_invitations
+   Policy: Tenant admins can view invitations
+   Command: SELECT
+   USING: (EXISTS ( SELECT 1
+   FROM tenant_members
+  WHERE ((tenant_members.tenant_id = tenant_invitations.tenant_id) AND (tenant_members.user_id = auth.uid()) AND (tenant_members.role = 'tenant_admin'::text) AND (tenant_members.status = 'active'::text))))
+   WITH CHECK: N/A
+   --------------------------------------------------------------------------------------------------------------------------------------------

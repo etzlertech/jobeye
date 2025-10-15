@@ -67,9 +67,8 @@ export const supabase = createBrowserClient<Database>(
       }
     },
     auth: {
-      // Ensure cookies persist across domains in production
-      storageKey: 'sb',
-      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      // Use cookies for session storage (not localStorage)
+      // This allows server-side API routes to access the session
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true

@@ -49,6 +49,9 @@ export default function JobStatusPage() {
         completion_percentage: job.completion_percentage || 0
       }));
 
+      console.log('Job Status - Raw API response:', data.jobs?.slice(0, 2));
+      console.log('Job Status - Mapped jobs:', mapped.slice(0, 2));
+
       setJobs(mapped);
     } catch (err) {
       console.error('Failed to load jobs:', err);
