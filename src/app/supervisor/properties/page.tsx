@@ -370,6 +370,21 @@ export default function SupervisorPropertiesPage() {
           <Loader2 className="w-12 h-12 animate-spin text-golden mx-auto mb-4" />
           <p className="text-gray-400 text-lg">Loading properties...</p>
         </div>
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+          .golden { color: #FFD700; }
+        `}</style>
       </div>
     );
   }

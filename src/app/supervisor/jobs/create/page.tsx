@@ -538,13 +538,13 @@ export default function SupervisorJobCreatePage() {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <label className="form-label">
                     Customer *
                   </label>
                   <select
                     value={formData.customerId}
                     onChange={(e) => setFormData(prev => ({ ...prev, customerId: e.target.value }))}
-                    className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+                    className="input-field"
                     required
                   >
                     <option value="">Select customer...</option>
@@ -555,18 +555,18 @@ export default function SupervisorJobCreatePage() {
                     ))}
                   </select>
                   {validationErrors.customerId && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.customerId}</p>
+                    <p className="error-text">{validationErrors.customerId}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <label className="form-label">
                     Property *
                   </label>
                   <select
                     value={formData.propertyId}
                     onChange={(e) => setFormData(prev => ({ ...prev, propertyId: e.target.value }))}
-                    className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden disabled:opacity-50"
+                    className="input-field disabled:opacity-50"
                     disabled={!formData.customerId}
                     required
                   >
@@ -578,7 +578,7 @@ export default function SupervisorJobCreatePage() {
                     ))}
                   </select>
                   {validationErrors.propertyId && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.propertyId}</p>
+                    <p className="error-text">{validationErrors.propertyId}</p>
                   )}
                 </div>
               </div>
@@ -603,35 +603,35 @@ export default function SupervisorJobCreatePage() {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <label className="form-label">
                     Date *
                   </label>
                   <input
                     type="date"
                     value={formData.scheduledDate}
                     onChange={(e) => setFormData(prev => ({ ...prev, scheduledDate: e.target.value }))}
-                    className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+                    className="input-field"
                     min={new Date().toISOString().split('T')[0]}
                     required
                   />
                   {validationErrors.scheduledDate && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.scheduledDate}</p>
+                    <p className="error-text">{validationErrors.scheduledDate}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <label className="form-label">
                     Time *
                   </label>
                   <input
                     type="time"
                     value={formData.scheduledTime}
                     onChange={(e) => setFormData(prev => ({ ...prev, scheduledTime: e.target.value }))}
-                    className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+                    className="input-field"
                     required
                   />
                   {validationErrors.scheduledTime && (
-                    <p className="text-red-500 text-sm mt-1">{validationErrors.scheduledTime}</p>
+                    <p className="error-text">{validationErrors.scheduledTime}</p>
                   )}
                 </div>
               </div>
@@ -640,11 +640,11 @@ export default function SupervisorJobCreatePage() {
             {/* Job Template */}
             <div>
               <h2 className="text-lg font-semibold text-white mb-4">Job Template (Optional)</h2>
-              
+
               <select
                 value={formData.templateId}
                 onChange={(e) => setFormData(prev => ({ ...prev, templateId: e.target.value }))}
-                className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+                className="input-field"
               >
                 <option value="">No template</option>
                 {templates.map(template => (
@@ -658,12 +658,12 @@ export default function SupervisorJobCreatePage() {
             {/* Special Instructions */}
             <div>
               <h2 className="text-lg font-semibold text-white mb-4">Special Instructions</h2>
-              
+
               <textarea
                 value={formData.specialInstructions}
                 onChange={(e) => setFormData(prev => ({ ...prev, specialInstructions: e.target.value }))}
                 placeholder="Any special instructions or notes for the crew..."
-                className="w-full p-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+                className="input-field"
                 rows={4}
               />
             </div>
@@ -714,6 +714,47 @@ export default function SupervisorJobCreatePage() {
           }
 
           .golden { color: #FFD700; }
+
+          /* Form field styles matching DATA-FIELD-STANDARD */
+          :global(.form-label) {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #9CA3AF;
+            margin-bottom: 0.5rem;
+          }
+
+          :global(.input-field) {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
+            color: white;
+            font-size: 1rem;
+          }
+
+          :global(.input-field:focus) {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
+          }
+
+          :global(.input-field::placeholder) {
+            color: #9CA3AF;
+          }
+
+          :global(.input-field option) {
+            background: #111827;
+            color: white;
+            padding: 0.5rem;
+          }
+
+          :global(.error-text) {
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: #ef4444;
+          }
         `}</style>
     </div>
   );
