@@ -266,7 +266,7 @@ export default function SupervisorJobsPage() {
         </button>
         <button
           type="button"
-          onClick={() => router.push('/supervisor/jobs/create-new')}
+          onClick={() => router.push('/supervisor/jobs/create')}
           className="btn-primary flex-1"
         >
           <Plus className="w-5 h-5 mr-2" />

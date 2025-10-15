@@ -258,10 +258,19 @@ export default function SupervisorPropertiesPage() {
 
       const method = view === 'edit' ? 'PUT' : 'POST';
 
+      // Map form data to API format
+      const apiData = {
+        customer_id: formData.customer_id,
+        address: formData.address,
+        property_type: formData.type,  // Map 'type' to 'property_type'
+        size_sqft: formData.size,       // Map 'size' to 'size_sqft'
+        access_notes: formData.notes     // Map 'notes' to 'access_notes'
+      };
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(apiData)
       });
 
       const data = await response.json();
@@ -811,16 +820,14 @@ export default function SupervisorPropertiesPage() {
       <div className="bottom-actions">
         <button
           type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
+          onClick={() => {
             setView('list');
             resetForm();
           }}
           className="btn-secondary flex-1"
         >
-          <X className="w-5 h-5 mr-2" />
-          Cancel
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back
         </button>
         <button
           type="button"
