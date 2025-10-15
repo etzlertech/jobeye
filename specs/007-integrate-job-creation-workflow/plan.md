@@ -355,7 +355,10 @@ CREATE POLICY "tenant_isolation" ON table_name
 - [x] Phase 1: Design complete (/plan command) ✅
 - [x] Phase 2: Task planning approach described (/plan command) ✅
 - [x] Phase 3: Tasks generated (/tasks command) ✅ - 36 tasks, 25-26 hours estimated
-- [ ] Phase 4: Implementation complete - NEXT STEP
+- [x] **T001**: Feature branch created (later merged to main for Railway auto-deploy)
+- [x] **T002**: Database schema verified + job_checklist_items table created via migration ✅
+- [x] **T003-T006**: RLS policies fixed to Constitution §1 compliance ✅
+- [ ] Phase 4: Implementation in progress - T007 NEXT
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
@@ -366,6 +369,61 @@ CREATE POLICY "tenant_isolation" ON table_name
 - [x] NEEDS CLARIFICATION resolved ✅ (spec.md has Session 1 clarifications)
 - [x] Complexity deviations documented: REDUCED SCOPE (job_checklist_items exists, no need for job_items)
 
+## Completed Tasks Summary
+
+### T001: Feature Branch (Completed 2025-10-14)
+- Created branch `007-integrate-job-creation-workflow`
+- Later merged to `main` for Railway auto-deploy compatibility
+- All planning artifacts committed
+
+### T002: Database Schema Verification + Migration (Completed 2025-10-15T01:29:53Z)
+**Status**: ✅ COMPLETE
+
+**Key Outcomes**:
+1. Verified 5 core tables via Supabase MCP: customers (19 cols), properties (22 cols), items (40 cols), jobs (51 cols)
+2. Discovered job_checklist_items table was MISSING (despite code references)
+3. Applied migration `scripts/apply-job-checklist-items-minimal.ts`:
+   - Created job_checklist_items table (14 columns)
+   - Added 4 indexes (primary key, unique sequence, job lookup, status filter)
+   - Configured RLS with Constitution §1 pattern (tenant isolation via jobs relationship)
+   - All 9 operations successful
+4. Post-migration snapshot captured: 146 total columns, 32 indexes, 5 foreign keys
+
+**Documentation**: `T002-schema-verification-report.md` (540+ lines with full evidence trail)
+
+**Constitution Compliance**: ✅ §8.1 ACTUAL DB PRECHECK - Queried live database before and after migration
+
+### T003-T006: RLS Policy Fixes (Completed 2025-10-15T01:34:48Z)
+**Status**: ✅ COMPLETE - 5/5 tables Constitution §1 compliant
+
+**Key Outcomes**:
+1. **T003 (customers)**: Fixed hardcoded tenant ID → JWT app_metadata pattern
+2. **T004 (properties)**: Removed tenant_assignments lookup → JWT app_metadata (performance fix)
+3. **T005 (items)**: Added missing WITH CHECK clause → JWT app_metadata
+4. **T006 (jobs)**: Removed tenant_assignments lookup → JWT app_metadata (performance fix)
+5. **Bonus (job_checklist_items)**: Added missing WITH CHECK clause
+
+**Script**: `scripts/fix-t003-t006-rls-policies.ts` - 12/12 operations successful (1.9s duration)
+
+**Impact**:
+- ✅ Multi-tenant support restored (customers no longer hardcoded to demo tenant)
+- ✅ Performance optimized (eliminated extra tenant_assignments queries)
+- ✅ Security hardened (all tables have WITH CHECK clauses)
+- ✅ All policies use 'authenticated' role (not 'public')
+
+**Documentation**: `T003-T006-rls-verification-report.md` (840+ lines with execution logs and validation)
+
+**Constitution Compliance**: ✅ §1 RLS Pattern + §8 Idempotent Operations
+
+---
+
+**Database State**: Ready for T007+ implementation ✅
+- All required tables exist
+- All RLS policies Constitution-compliant
+- Multi-tenant isolation enforced
+- Performance optimized
+
 ---
 *Plan generated on 2025-10-14 for full integration approach*
 *Based on Constitution v1.1.2 - See `/.specify/constitution.md`*
+*Updated 2025-10-15 with T002-T006 completion status*
