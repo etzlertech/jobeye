@@ -114,26 +114,37 @@ migrations/
 
 **Structure Decision**: Using Next.js App Router co-located structure where UI components live in `/app/supervisor/*` and API routes in `/app/api/supervisor/*`. This follows the existing pattern established in the codebase and keeps related code together.
 
-## Phase 0: Outline & Research
+## Phase 0: Outline & Research ✅ COMPLETE
 
 **Research Tasks**:
 1. ✅ Audit existing demo components for reusability
 2. ✅ Verify database schema for customers, properties, items, jobs tables
 3. ✅ Check existing API endpoints (which ones already exist)
 4. ✅ Review RLS policies and identify recursion issues
-5. → Research best practices for Next.js App Router authentication patterns
-6. → Research Supabase RLS policy patterns for tenant isolation
-7. → Research form validation patterns with Zod
+5. ✅ Research best practices for Next.js App Router authentication patterns
+6. ✅ Research Supabase RLS policy patterns for tenant isolation
+7. ✅ Research form validation patterns with Zod
 
-**Key Findings** (to be documented in research.md):
-- Demo components exist at `/demo-crud`, `/demo-properties`, `/demo-items`, `/demo-jobs`
-- Tables exist: customers, properties, items, jobs (✅ confirmed)
-- Missing table: job_items junction table
-- Existing API endpoints: `/api/supervisor/items/*`, `/api/supervisor/jobs/*`
-- RLS issue: users_extended view has infinite recursion
-- Auth pattern: withAuth() wrapper extracts user and tenantId from JWT
+**Key Findings** (documented in research.md):
+- ✅ Demo components are 85-90% reusable with minimal modifications
+- ✅ Tables exist: customers, properties, items, jobs (confirmed via check_all_tables.py)
+- ✅ Missing table: job_items junction table (needs creation)
+- ✅ Existing API endpoints: `/api/supervisor/items/*`, `/api/supervisor/jobs/*` (both working)
+- ✅ API pattern: Uses `getRequestContext()` for flexible auth (session or header)
+- ✅ Page auth: Uses `withAuth()` wrapper for strict session authentication
+- ✅ RLS pattern from Constitution: MUST use `app_metadata` path (not `auth.jwt()`)
+- ✅ Component patterns: Controlled forms with parent state management
+- ✅ Repository pattern: Well-established for database operations
 
-**Output**: research.md with technology choices, patterns, and migration strategy
+**Critical RLS Pattern** (from Constitution):
+```sql
+CREATE POLICY "tenant_isolation" ON table_name
+  FOR ALL USING (
+    tenant_id::text = (current_setting('request.jwt.claims', true)::json -> 'app_metadata' ->> 'tenant_id')
+  );
+```
+
+**Output**: ✅ research.md created with comprehensive findings (11 sections, 600+ lines)
 
 ## Phase 1: Design & Contracts
 
@@ -245,7 +256,7 @@ migrations/
 
 **Phase Status**:
 - [x] Phase 0: Research started (/plan command)
-- [ ] Phase 0: Research complete
+- [x] Phase 0: Research complete ✅
 - [ ] Phase 1: Design complete (/plan command)
 - [ ] Phase 2: Task planning approach described (/plan command)
 - [ ] Phase 3: Tasks generated (/tasks command)
@@ -254,7 +265,7 @@ migrations/
 
 **Gate Status**:
 - [x] Initial Constitution Check: PASS (no active constitution, using best practices)
-- [ ] All research complete
+- [x] All research complete ✅
 - [ ] Post-Design Constitution Check: PASS
 - [ ] All contract tests written
 - [ ] Complexity deviations documented (N/A - no deviations)
