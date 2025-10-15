@@ -35,25 +35,58 @@ export async function GET(
     if (error) throw error;
 
     // Fetch checklist items separately to avoid nested query issues
-    const { data: checklistData } = await supabase
+    const { data: checklistData, error: checklistError } = await supabase
       .from('job_checklist_items')
       .select(`
         id,
         item_id,
+        item_name,
+        item_type,
         status,
-        item:items!inner(
-          id,
-          name,
-          category,
-          primary_image_url
-        )
+        quantity
       `)
       .eq('job_id', jobId);
 
-    const checklistItems = checklistData || [];
+    if (checklistError) {
+      console.error('Error fetching checklist items:', checklistError);
+    }
 
-    // Calculate load statistics
-    const activeItems = checklistItems.filter((item: any) => item.status !== 'missing');
+    // For each checklist item, fetch the related item details if item_id exists
+    const enrichedChecklistItems = await Promise.all(
+      (checklistData || []).map(async (checklistItem: any) => {
+        if (checklistItem.item_id) {
+          const { data: itemData } = await supabase
+            .from('items')
+            .select('id, name, category, primary_image_url')
+            .eq('id', checklistItem.item_id)
+            .single();
+
+          return {
+            ...checklistItem,
+            item: itemData || {
+              id: checklistItem.item_id,
+              name: checklistItem.item_name || 'Unknown Item',
+              category: checklistItem.item_type || 'material',
+              primary_image_url: null
+            }
+          };
+        }
+
+        // If no item_id, use the stored item_name
+        return {
+          ...checklistItem,
+          item: {
+            id: null,
+            name: checklistItem.item_name || 'Unknown Item',
+            category: checklistItem.item_type || 'material',
+            primary_image_url: null
+          }
+        };
+      })
+    );
+
+    // Calculate load statistics using enriched items
+    const activeItems = enrichedChecklistItems.filter((item: any) => item.status !== 'missing');
     const totalItems = activeItems.length;
     const loadedItems = activeItems.filter(
       (item: any) => item.status === 'loaded' || item.status === 'verified'
@@ -62,13 +95,21 @@ export async function GET(
       (item: any) => item.status === 'verified'
     ).length;
 
+    console.log('Job checklist stats:', {
+      jobId,
+      totalChecklistItems: enrichedChecklistItems.length,
+      activeItems: totalItems,
+      loadedItems,
+      verifiedItems
+    });
+
     // Map field names for frontend
     const job = {
       ...data,
       primaryImageUrl: data.primary_image_url,
       mediumUrl: data.medium_url,
       thumbnailUrl: data.thumbnail_url,
-      checklist_items: checklistItems,
+      checklist_items: enrichedChecklistItems,
       total_items: totalItems,
       loaded_items: loadedItems,
       verified_items: verifiedItems,
