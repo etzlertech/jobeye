@@ -1,185 +1,148 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
+import { ItemImageUpload } from '@/components/items/ItemImageUpload';
+import type { ProcessedImages } from '@/utils/image-processor';
 import {
   ArrowLeft,
   Briefcase,
-  Package,
-  Plus,
+  Camera,
+  Loader2,
   AlertCircle,
   CheckCircle,
   X,
-  Loader2,
-  Trash2
+  Edit,
+  Users,
+  MapPin,
+  Calendar,
+  Clock,
+  FileText
 } from 'lucide-react';
 
-interface Job {
+interface JobDetails {
   id: string;
   job_number: string;
   title: string;
+  description?: string;
   status: string;
+  priority: string;
+  scheduled_start: string;
+  scheduled_end?: string;
+  primaryImageUrl: string | null;
+  mediumUrl: string | null;
+  thumbnailUrl: string | null;
+  customer?: { name: string };
+  property?: { name: string; address?: any };
+  created_at: string;
+  updated_at?: string;
 }
 
-interface AssignedItem {
-  transaction_id: string;
-  item_id: string;
-  item_name: string;
-  item_type: string;
-  category: string;
-  quantity: number;
-  unit_of_measure: string;
-  transaction_type: string;
-  assigned_at: string;
-  notes?: string;
-  status: string;
-  thumbnail_url?: string;
-}
+const statusColors = {
+  completed: '#22c55e',
+  in_progress: '#3b82f6',
+  scheduled: '#FFD700',
+  cancelled: '#ef4444'
+};
 
-interface Item {
-  id: string;
-  name: string;
-  item_type: string;
-  category: string;
-  unit_of_measure: string;
-  current_quantity: number;
-}
+const priorityColors = {
+  urgent: '#ef4444',
+  high: '#f97316',
+  normal: '#FFD700',
+  low: '#6b7280'
+};
 
-export default function JobItemsPage() {
-  const params = useParams();
+export default function JobDetailPage() {
   const router = useRouter();
-  const jobId = params.jobId as string;
+  const params = useParams();
+  const jobId = params?.jobId as string;
 
-  const [job, setJob] = useState<Job | null>(null);
-  const [assignedItems, setAssignedItems] = useState<AssignedItem[]>([]);
-  const [availableItems, setAvailableItems] = useState<Item[]>([]);
+  const [job, setJob] = useState<JobDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [message, setMessage] = useState('');
-  const [selectedItemId, setSelectedItemId] = useState('');
-  const [quantity, setQuantity] = useState('1');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showImageUpload, setShowImageUpload] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
-  async function loadJobItems() {
+  // Load job details
+  const loadJob = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(`/api/supervisor/jobs/${jobId}/items`);
-      const data = await res.json();
 
-      if (res.ok) {
-        setJob(data.job);
-        setAssignedItems(data.assignedItems || []);
-      } else {
-        setError(data.error || 'Failed to load job items');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error loading job items');
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function loadAvailableItems() {
-    try {
-      const res = await fetch('/api/supervisor/items');
-      const data = await res.json();
-
-      if (res.ok && data.items) {
-        setAvailableItems(data.items);
-        if (data.items.length === 0) {
-          setError('No items found. Please create some items first.');
-        }
-      } else {
-        setError(data.error || 'Failed to load items');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error loading items');
-    }
-  }
-
-  async function addItemToJob() {
-    if (!selectedItemId) return;
-
-    const selectedItem = availableItems.find(i => i.id === selectedItemId);
-    if (!selectedItem) return;
-
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const res = await fetch(`/api/supervisor/jobs/${jobId}/items`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          item_id: selectedItem.id,
-          quantity: parseFloat(quantity)
-        })
+      const response = await fetch(`/api/supervisor/jobs/${jobId}`, {
+        credentials: 'include'
       });
+      const data = await response.json();
 
-      const data = await res.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to load job');
 
-      if (res.ok) {
-        setSuccess(`Added ${selectedItem.name} to job`);
-        setSelectedItemId('');
-        setQuantity('1');
-        loadJobItems();
-      } else {
-        setError(data.error || 'Failed to add item');
-      }
+      setJob(data.job || data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add item');
+      setError(err instanceof Error ? err.message : 'Failed to load job');
     } finally {
       setIsLoading(false);
-    }
-  }
-
-  async function removeItem(itemId: string) {
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const res = await fetch(`/api/supervisor/jobs/${jobId}/items/${itemId}`, {
-        method: 'DELETE'
-      });
-
-      if (res.ok) {
-        setSuccess('Item returned successfully');
-        loadJobItems();
-      } else {
-        const data = await res.json();
-        setError(data.error || 'Failed to remove item');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error removing item');
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    loadJobItems();
-    loadAvailableItems();
-  }, [jobId]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return '#22c55e';
-      case 'in_progress': return '#3b82f6';
-      case 'scheduled': return '#FFD700';
-      default: return '#6b7280';
     }
   };
 
-  if (isLoading && !job) {
+  useEffect(() => {
+    if (jobId) {
+      loadJob();
+    }
+  }, [jobId]);
+
+  const handleImageCapture = async (images: ProcessedImages) => {
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/supervisor/jobs/${jobId}/image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ images })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload image');
+      }
+
+      setSuccess('Image uploaded successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+
+      // Refresh job data to show new images
+      await loadJob();
+      setShowImageUpload(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload image');
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Format address for display
+  const formatAddress = (address?: any) => {
+    if (!address) return null;
+    if (typeof address === 'string') return address;
+    const parts = [address.street, address.city, address.state, address.zip].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : null;
+  };
+
+  const getStatusColor = (status: string) => statusColors[status as keyof typeof statusColors] || '#6b7280';
+  const getPriorityColor = (priority: string) => priorityColors[priority as keyof typeof priorityColors] || '#6b7280';
+
+  if (isLoading) {
     return (
       <div className="mobile-container">
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: '#FFD700' }} />
-            <p className="text-gray-400 text-lg">Loading job details...</p>
+            <p className="text-gray-400 text-lg">Loading job...</p>
           </div>
         </div>
         <style jsx>{`
@@ -206,30 +169,20 @@ export default function JobItemsPage() {
         <MobileNavigation
           currentRole="supervisor"
           onLogout={() => router.push('/sign-in')}
+          showBackButton={true}
+          onBack={() => router.push('/supervisor/jobs')}
         />
         <div className="flex items-center justify-center h-full">
-          <div className="text-center p-4">
-            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-            <p className="text-gray-400">Job not found</p>
+          <div className="text-center">
+            <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+            <p className="text-gray-400 text-lg">Job not found</p>
           </div>
         </div>
-        <style jsx>{`
-          .mobile-container {
-            width: 100%;
-            max-width: 375px;
-            height: 100vh;
-            max-height: 812px;
-            margin: 0 auto;
-            background: #000;
-            color: white;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-          }
-        `}</style>
       </div>
     );
   }
+
+  const displayAddress = formatAddress(job.property?.address);
 
   return (
     <div className="mobile-container">
@@ -237,27 +190,17 @@ export default function JobItemsPage() {
       <MobileNavigation
         currentRole="supervisor"
         onLogout={() => router.push('/sign-in')}
+        showBackButton={true}
+        onBack={() => router.push('/supervisor/jobs')}
       />
 
       {/* Header */}
       <div className="header-bar">
-        <div className="flex items-center gap-2">
-          <Briefcase className="w-6 h-6" style={{ color: '#FFD700' }} />
-          <div>
-            <h1 className="text-xl font-semibold">{job.title}</h1>
-            <p className="text-xs text-gray-500">Job #{job.job_number}</p>
-          </div>
+        <div>
+          <h1 className="text-xl font-semibold">Job Details</h1>
+          <p className="text-xs text-gray-500">#{job.job_number}</p>
         </div>
-        <span
-          className="status-badge"
-          style={{
-            background: `${getStatusColor(job.status)}20`,
-            color: getStatusColor(job.status),
-            border: `1px solid ${getStatusColor(job.status)}40`
-          }}
-        >
-          {job.status}
-        </span>
+        <Briefcase className="w-6 h-6" style={{ color: '#FFD700' }} />
       </div>
 
       {/* Notifications */}
@@ -265,11 +208,7 @@ export default function JobItemsPage() {
         <div className="notification-bar error">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
           <span className="text-sm">{error}</span>
-          <button
-            type="button"
-            onClick={() => setError(null)}
-            className="ml-auto"
-          >
+          <button type="button" onClick={() => setError(null)} className="ml-auto">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -282,111 +221,163 @@ export default function JobItemsPage() {
         </div>
       )}
 
+      {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {/* Add Item Form */}
+        {/* Image Section */}
         <div className="p-4">
-          <div className="section-header">
-            <Package className="w-5 h-5" style={{ color: '#FFD700' }} />
-            <h2 className="text-lg font-semibold">Add Item to Job</h2>
-          </div>
-
-          <div className="space-y-3 mt-4">
-            <div>
-              <label className="input-label">Select Item</label>
-              <select
-                value={selectedItemId}
-                onChange={(e) => setSelectedItemId(e.target.value)}
-                className="input-field"
-              >
-                <option value="">Choose an item...</option>
-                {availableItems.length === 0 && (
-                  <option disabled>No items available</option>
-                )}
-                {availableItems.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name} - {item.item_type} ({item.current_quantity} {item.unit_of_measure})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="input-label">Quantity</label>
-              <input
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                className="input-field"
-                min="1"
+          <div className="image-container">
+            {job.mediumUrl || job.primaryImageUrl ? (
+              <img
+                src={job.mediumUrl || job.primaryImageUrl || ''}
+                alt={job.title}
+                className="w-full h-full object-cover"
               />
-            </div>
-
-            <button
-              type="button"
-              onClick={addItemToJob}
-              disabled={isLoading || !selectedItemId}
-              className="btn-primary w-full"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Add to Job
-            </button>
-          </div>
-        </div>
-
-        {/* Assigned Items */}
-        <div className="p-4 pt-0">
-          <div className="section-header">
-            <Package className="w-5 h-5" style={{ color: '#FFD700' }} />
-            <h2 className="text-lg font-semibold">
-              Assigned Items ({assignedItems.length})
-            </h2>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <Briefcase className="w-16 h-16 text-gray-600" />
+              </div>
+            )}
           </div>
 
-          {assignedItems.length === 0 ? (
-            <div className="empty-state">
-              <Package className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400">No items assigned to this job yet</p>
+          {/* Image Upload Toggle */}
+          {showImageUpload ? (
+            <div className="mt-4">
+              <ItemImageUpload
+                onImageCapture={handleImageCapture}
+                disabled={isUploading}
+              />
+              <button
+                onClick={() => setShowImageUpload(false)}
+                disabled={isUploading}
+                className="btn-secondary w-full mt-3"
+              >
+                Cancel
+              </button>
             </div>
           ) : (
-            <div className="space-y-3 mt-4">
-              {assignedItems.map((item) => (
-                <div key={item.transaction_id} className="item-card">
-                  <div className="flex items-start gap-3">
-                    <div className="item-thumbnail">
-                      {item.thumbnail_url ? (
-                        <img
-                          src={item.thumbnail_url}
-                          alt={item.item_name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <Package className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex items-start justify-between flex-1">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-white">{item.item_name}</h3>
-                        <div className="text-xs text-gray-500 mt-1 space-y-0.5">
-                          <div>Type: {item.item_type}</div>
-                          <div>Category: {item.category}</div>
-                          <div>Quantity: {item.quantity} {item.unit_of_measure}</div>
-                          <div>Assigned: {new Date(item.assigned_at).toLocaleDateString()}</div>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeItem(item.item_id)}
-                        disabled={isLoading}
-                        className="delete-button"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+            <button
+              onClick={() => setShowImageUpload(true)}
+              className="btn-primary w-full mt-3"
+            >
+              <Camera className="w-5 h-5 mr-2" />
+              {job.primaryImageUrl ? 'Change Image' : 'Add Image'}
+            </button>
+          )}
+        </div>
+
+        {/* Job Information */}
+        <div className="px-4 pb-4 space-y-4">
+          {/* Title */}
+          <div>
+            <label className="detail-label">Job Title</label>
+            <p className="detail-value">{job.title}</p>
+          </div>
+
+          {/* Status & Priority */}
+          <div className="detail-section">
+            <h3 className="detail-section-title">Status</h3>
+            <div className="flex items-center gap-3">
+              <span
+                className="status-badge"
+                style={{
+                  background: `${getStatusColor(job.status)}20`,
+                  color: getStatusColor(job.status),
+                  border: `1px solid ${getStatusColor(job.status)}40`
+                }}
+              >
+                {job.status.replace('_', ' ')}
+              </span>
+              <span
+                className="priority-badge"
+                style={{ color: getPriorityColor(job.priority) }}
+              >
+                {job.priority} priority
+              </span>
+            </div>
+          </div>
+
+          {/* Schedule */}
+          <div className="detail-section">
+            <h3 className="detail-section-title">Schedule</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                <div className="flex-1">
+                  <label className="detail-label">Start Date</label>
+                  <p className="detail-value text-sm">
+                    {new Date(job.scheduled_start).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              {job.scheduled_end && (
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  <div className="flex-1">
+                    <label className="detail-label">End Date</label>
+                    <p className="detail-value text-sm">
+                      {new Date(job.scheduled_end).toLocaleDateString()}
+                    </p>
                   </div>
                 </div>
-              ))}
+              )}
+            </div>
+          </div>
+
+          {/* Customer & Property */}
+          <div className="detail-section">
+            <h3 className="detail-section-title">Location & Contact</h3>
+            <div className="space-y-3">
+              {job.customer?.name && (
+                <div className="flex items-center gap-3">
+                  <Users className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  <div className="flex-1">
+                    <label className="detail-label">Customer</label>
+                    <p className="detail-value text-sm">{job.customer.name}</p>
+                  </div>
+                </div>
+              )}
+              {job.property?.name && (
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
+                  <div className="flex-1">
+                    <label className="detail-label">Property</label>
+                    <p className="detail-value text-sm">{job.property.name}</p>
+                    {displayAddress && (
+                      <p className="text-xs text-gray-500 mt-1">{displayAddress}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Description */}
+          {job.description && (
+            <div className="detail-section">
+              <h3 className="detail-section-title">Description</h3>
+              <div className="flex items-start gap-3">
+                <FileText className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                <p className="detail-value text-sm">{job.description}</p>
+              </div>
             </div>
           )}
+
+          {/* Timestamps */}
+          <div className="detail-section">
+            <h3 className="detail-section-title">Timestamps</h3>
+            <div className="space-y-2">
+              <div>
+                <label className="detail-label">Created</label>
+                <p className="detail-value text-sm">{new Date(job.created_at).toLocaleString()}</p>
+              </div>
+              {job.updated_at && (
+                <div>
+                  <label className="detail-label">Last Updated</label>
+                  <p className="detail-value text-sm">{new Date(job.updated_at).toLocaleString()}</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -395,10 +386,18 @@ export default function JobItemsPage() {
         <button
           type="button"
           onClick={() => router.push('/supervisor/jobs')}
-          className="btn-secondary w-full"
+          className="btn-secondary flex-1"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
-          Back to Jobs
+          Back
+        </button>
+        <button
+          type="button"
+          onClick={() => router.push(`/supervisor/jobs/${jobId}/edit`)}
+          className="btn-primary flex-1"
+        >
+          <Edit className="w-5 h-5 mr-2" />
+          Edit
         </button>
       </div>
 
@@ -425,16 +424,6 @@ export default function JobItemsPage() {
           background: rgba(0, 0, 0, 0.9);
         }
 
-        .status-badge {
-          display: inline-flex;
-          align-items: center;
-          padding: 0.125rem 0.5rem;
-          font-size: 0.75rem;
-          font-weight: 600;
-          border-radius: 0.25rem;
-          text-transform: capitalize;
-        }
-
         .notification-bar {
           display: flex;
           align-items: center;
@@ -456,89 +445,61 @@ export default function JobItemsPage() {
           color: #FFD700;
         }
 
-        .section-header {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding-bottom: 0.5rem;
-          border-bottom: 1px solid rgba(255, 215, 0, 0.2);
-        }
-
-        .input-label {
-          display: block;
-          margin-bottom: 0.5rem;
-          font-size: 0.875rem;
-          font-weight: 500;
-          color: #d1d5db;
-        }
-
-        .input-field {
+        .image-container {
           width: 100%;
-          padding: 0.75rem 1rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 215, 0, 0.2);
-          border-radius: 0.5rem;
-          color: white;
-          font-size: 0.875rem;
-        }
-
-        .input-field:focus {
-          outline: none;
-          border-color: #FFD700;
-          box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
-        }
-
-        .empty-state {
-          text-align: center;
-          padding: 3rem 1rem;
+          height: 300px;
           background: rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 215, 0, 0.2);
           border-radius: 0.75rem;
-          margin-top: 1rem;
-        }
-
-        .item-card {
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 215, 0, 0.2);
-          border-radius: 0.75rem;
-          padding: 1rem;
-          transition: all 0.2s;
-        }
-
-        .item-card:hover {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: rgba(255, 215, 0, 0.4);
-        }
-
-        .item-thumbnail {
-          width: 3rem;
-          height: 3rem;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 0.5rem;
           overflow: hidden;
-          flex-shrink: 0;
-          display: flex;
+        }
+
+        .detail-label {
+          display: block;
+          font-size: 0.75rem;
+          font-weight: 500;
+          color: #9CA3AF;
+          margin-bottom: 0.25rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .detail-value {
+          font-size: 1rem;
+          color: white;
+          margin: 0;
+        }
+
+        .detail-section {
+          padding: 1rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.5rem;
+        }
+
+        .detail-section-title {
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: #FFD700;
+          margin: 0 0 0.75rem 0;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .status-badge {
+          display: inline-flex;
           align-items: center;
-          justify-content: center;
-        }
-
-        .delete-button {
-          padding: 0.5rem;
-          color: #ef4444;
-          border: 1px solid rgba(239, 68, 68, 0.3);
+          padding: 0.25rem 0.75rem;
+          font-size: 0.75rem;
+          font-weight: 600;
           border-radius: 0.375rem;
-          background: rgba(239, 68, 68, 0.1);
-          transition: all 0.2s;
+          text-transform: capitalize;
         }
 
-        .delete-button:hover:not(:disabled) {
-          background: rgba(239, 68, 68, 0.2);
-          border-color: rgba(239, 68, 68, 0.5);
-        }
-
-        .delete-button:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
+        .priority-badge {
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
         }
 
         .bottom-actions {
