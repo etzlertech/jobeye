@@ -81,6 +81,7 @@ interface Property {
   name?: string;
   customer_id: string;
   address?: string | Address;
+  safeAddress?: string; // Normalized address string, set during data loading
   type: 'residential' | 'commercial' | 'industrial';
   size?: string;
   notes?: string;
@@ -210,13 +211,19 @@ export default function SupervisorPropertiesPage() {
       setIsLoading(true);
       const params = new URLSearchParams();
       if (filterCustomerId) params.append('customer_id', filterCustomerId);
-      
+
       const response = await fetch(`/api/supervisor/properties?${params}`);
       const data = await response.json();
 
       if (!response.ok) throw new Error(data.message);
 
-      setProperties(data.properties || []);
+      // Normalize address data immediately to prevent undefined access
+      const normalized = (data.properties || []).map((p: Property) => ({
+        ...p,
+        safeAddress: getAddressString(p.address)
+      }));
+
+      setProperties(normalized);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load properties');
     } finally {
@@ -352,7 +359,8 @@ export default function SupervisorPropertiesPage() {
   };
 
   const filteredProperties = properties.filter(property => {
-    const addressString = getAddressString(property.address);
+    // Use pre-normalized safeAddress to avoid undefined access
+    const addressString = property.safeAddress || '';
     const matchesSearch = addressString.toLowerCase().includes(searchQuery.toLowerCase()) ||
       property.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (property.name?.toLowerCase() || '').includes(searchQuery.toLowerCase());
