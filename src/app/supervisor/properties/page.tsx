@@ -688,11 +688,9 @@ export default function SupervisorPropertiesPage() {
   return (
     <div className="mobile-container">
       {/* Mobile Navigation */}
-      <MobileNavigation 
-        currentRole="supervisor" 
+      <MobileNavigation
+        currentRole="supervisor"
         onLogout={() => router.push('/sign-in')}
-        showBackButton={true}
-        backTo="/supervisor/properties"
       />
 
       {/* Header */}
@@ -709,18 +707,14 @@ export default function SupervisorPropertiesPage() {
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
           {/* Customer Field */}
           <div>
-            <label htmlFor="customer" className="block text-sm font-medium text-gray-400 mb-2">
+            <label htmlFor="customer" className="form-label">
               Customer *
             </label>
             <select
               id="customer"
               value={formData.customer_id}
               onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
-              className={`w-full px-4 py-3 bg-gray-900 border rounded-lg text-white focus:outline-none focus:ring-2 ${
-                formErrors.customer_id 
-                  ? 'border-red-500 focus:ring-red-500' 
-                  : 'border-gray-800 focus:ring-golden focus:border-golden'
-              }`}
+              className={`input-field ${formErrors.customer_id ? 'error' : ''}`}
             >
               <option value="">Select a customer...</option>
               {customers.map((customer) => (
@@ -730,13 +724,13 @@ export default function SupervisorPropertiesPage() {
               ))}
             </select>
             {formErrors.customer_id && (
-              <p className="mt-1 text-sm text-red-500">{formErrors.customer_id}</p>
+              <p className="error-text">{formErrors.customer_id}</p>
             )}
           </div>
 
           {/* Address Field */}
           <div>
-            <label htmlFor="address" className="block text-sm font-medium text-gray-400 mb-2">
+            <label htmlFor="address" className="form-label">
               Property Address *
             </label>
             <textarea
@@ -744,21 +738,17 @@ export default function SupervisorPropertiesPage() {
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               rows={3}
-              className={`w-full px-4 py-3 bg-gray-900 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 ${
-                formErrors.address 
-                  ? 'border-red-500 focus:ring-red-500' 
-                  : 'border-gray-800 focus:ring-golden focus:border-golden'
-              }`}
+              className={`input-field ${formErrors.address ? 'error' : ''}`}
               placeholder="Enter the full property address"
             />
             {formErrors.address && (
-              <p className="mt-1 text-sm text-red-500">{formErrors.address}</p>
+              <p className="error-text">{formErrors.address}</p>
             )}
           </div>
 
           {/* Property Type Field */}
           <div>
-            <label htmlFor="type" className="block text-sm font-medium text-gray-400 mb-2">
+            <label htmlFor="type" className="form-label">
               Property Type *
             </label>
             <div className="grid grid-cols-3 gap-3">
@@ -786,7 +776,7 @@ export default function SupervisorPropertiesPage() {
 
           {/* Size Field */}
           <div>
-            <label htmlFor="size" className="block text-sm font-medium text-gray-400 mb-2">
+            <label htmlFor="size" className="form-label">
               Property Size
             </label>
             <input
@@ -794,14 +784,14 @@ export default function SupervisorPropertiesPage() {
               type="text"
               value={formData.size}
               onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-              className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+              className="input-field"
               placeholder="e.g., 0.25 acres, 2500 sq ft"
             />
           </div>
 
           {/* Notes Field */}
           <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-400 mb-2">
+            <label htmlFor="notes" className="form-label">
               Notes
             </label>
             <textarea
@@ -809,7 +799,7 @@ export default function SupervisorPropertiesPage() {
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={4}
-              className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-golden focus:border-golden"
+              className="input-field"
               placeholder="Additional notes about the property..."
             />
           </div>
@@ -875,6 +865,49 @@ export default function SupervisorPropertiesPage() {
           padding: 1rem;
           border-bottom: 1px solid #333;
           background: rgba(0, 0, 0, 0.9);
+        }
+
+        .form-label {
+          display: block;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #9CA3AF;
+          margin-bottom: 0.5rem;
+        }
+
+        .input-field {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          background: #111827;
+          border: 1px solid #374151;
+          border-radius: 0.5rem;
+          color: white;
+          font-size: 1rem;
+        }
+
+        .input-field:focus {
+          outline: none;
+          border-color: #FFD700;
+          box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
+        }
+
+        .input-field::placeholder {
+          color: #9CA3AF;
+        }
+
+        .input-field.error {
+          border-color: #ef4444;
+        }
+
+        .input-field.error:focus {
+          border-color: #ef4444;
+          box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+        }
+
+        .error-text {
+          margin-top: 0.25rem;
+          font-size: 0.875rem;
+          color: #ef4444;
         }
 
         .bottom-actions {
