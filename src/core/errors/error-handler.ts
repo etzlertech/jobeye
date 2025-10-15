@@ -515,15 +515,34 @@ export function handleApiError(error: unknown): NextResponse {
       return notFound('The requested resource was not found');
     }
 
-    // Generic error handling
+    // Generic error handling - include full error details for debugging
+    const errorDetails: any = {
+      originalMessage: error.message,
+      name: error.name,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    };
+
+    // If error has additional properties (like Supabase errors), include them
+    if (typeof error === 'object' && error !== null) {
+      for (const [key, value] of Object.entries(error)) {
+        if (key !== 'message' && key !== 'name' && key !== 'stack') {
+          try {
+            errorDetails[key] = JSON.stringify(value);
+          } catch {
+            errorDetails[key] = String(value);
+          }
+        }
+      }
+    }
+
     const apiError = new ApiError(
       'An unexpected error occurred',
       500,
       'INTERNAL_ERROR',
-      { originalMessage: error.message }
+      errorDetails
     );
 
-    return NextResponse.json(apiError.toJSON(), { 
+    return NextResponse.json(apiError.toJSON(), {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
