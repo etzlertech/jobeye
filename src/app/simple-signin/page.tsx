@@ -116,7 +116,8 @@ function SignInForm() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
+    <div className="mobile-container">
+      <div className="flex-1 flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold" style={{ color: '#FFD700' }}>JobEye</h1>
@@ -215,13 +216,49 @@ function SignInForm() {
           {needsConfig && ' - Config Required'}
         </div>
       </div>
+      </div>
+
+      <style jsx>{`
+        .mobile-container {
+          width: 100%;
+          max-width: 375px;
+          height: 100vh;
+          max-height: 812px;
+          margin: 0 auto;
+          background: #000;
+          color: white;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+      `}</style>
     </div>
   );
 }
 
 export default function SimpleSignInPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+    <Suspense fallback={
+      <div className="mobile-container">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-white">Loading...</div>
+        </div>
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+        `}</style>
+      </div>
+    }>
       <SignInForm />
     </Suspense>
   );
