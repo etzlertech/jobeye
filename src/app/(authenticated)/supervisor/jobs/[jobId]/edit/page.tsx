@@ -394,11 +394,11 @@ export default function JobItemsPage() {
       <div className="bottom-actions">
         <button
           type="button"
-          onClick={() => router.push('/supervisor/jobs')}
+          onClick={() => router.push(`/supervisor/jobs/${jobId}`)}
           className="btn-secondary w-full"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
-          Back to Jobs
+          Back to Job
         </button>
       </div>
 

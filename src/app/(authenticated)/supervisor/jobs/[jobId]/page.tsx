@@ -169,8 +169,6 @@ export default function JobDetailPage() {
         <MobileNavigation
           currentRole="supervisor"
           onLogout={() => router.push('/sign-in')}
-          showBackButton={true}
-          onBack={() => router.push('/supervisor/jobs')}
         />
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
@@ -190,8 +188,6 @@ export default function JobDetailPage() {
       <MobileNavigation
         currentRole="supervisor"
         onLogout={() => router.push('/sign-in')}
-        showBackButton={true}
-        onBack={() => router.push('/supervisor/jobs')}
       />
 
       {/* Header */}

@@ -155,8 +155,6 @@ export default function PropertyDetailPage() {
         <MobileNavigation
           currentRole="supervisor"
           onLogout={() => router.push('/sign-in')}
-          showBackButton={true}
-          onBack={() => router.push('/supervisor/properties')}
         />
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
@@ -194,8 +192,6 @@ export default function PropertyDetailPage() {
       <MobileNavigation
         currentRole="supervisor"
         onLogout={() => router.push('/sign-in')}
-        showBackButton={true}
-        onBack={() => router.push('/supervisor/properties')}
       />
 
       {/* Header */}
