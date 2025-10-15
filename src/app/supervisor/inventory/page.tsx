@@ -1263,6 +1263,8 @@ export default function SupervisorInventoryPage() {
 
 // Inventory Item Card Component
 function InventoryItemCard({ item }: { item: InventoryItem }) {
+  const router = useRouter();
+
   const statusColors = {
     in_stock: 'bg-emerald-600 text-white',
     low_stock: 'bg-orange-600 text-white',
@@ -1276,7 +1278,10 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
   };
 
   return (
-    <div className="item-card">
+    <div
+      className="item-card"
+      onClick={() => router.push(`/supervisor/inventory/${item.id}`)}
+    >
       <div className="flex items-start gap-3">
         <div className="item-thumbnail">
           {item.thumbnailUrl ? (
@@ -1315,10 +1320,13 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
           background: rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 0.5rem;
-          transition: background-color 0.2s;
+          transition: all 0.2s;
+          cursor: pointer;
         }
         .item-card:hover {
           background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 215, 0, 0.4);
+          transform: translateX(2px);
         }
 
         .item-thumbnail {
