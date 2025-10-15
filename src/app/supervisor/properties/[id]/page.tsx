@@ -26,7 +26,7 @@ interface PropertyDetails {
   id: string;
   name?: string;
   customer_id: string;
-  address?: string;
+  address?: string | { street?: string; city?: string; state?: string; zip?: string };
   property_type?: 'residential' | 'commercial' | 'industrial';
   size_sqft?: string;
   access_notes?: string;
@@ -172,6 +172,22 @@ export default function PropertyDetailPage() {
   const TypeIcon = propertyTypeIcons[propertyType];
   const typeLabel = propertyTypeLabels[propertyType];
 
+  // Format address for display
+  const formatAddress = (address?: string | { street?: string; city?: string; state?: string; zip?: string }) => {
+    if (!address) return null;
+    if (typeof address === 'string') return address;
+    // If it's an object, format it
+    const parts = [
+      address.street,
+      address.city,
+      address.state,
+      address.zip
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : null;
+  };
+
+  const displayAddress = formatAddress(property.address);
+
   return (
     <div className="mobile-container">
       {/* Mobile Navigation */}
@@ -264,12 +280,12 @@ export default function PropertyDetailPage() {
           )}
 
           {/* Address */}
-          {property.address && (
+          {displayAddress && (
             <div className="detail-section">
               <h3 className="detail-section-title">Location</h3>
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
-                <p className="detail-value text-sm">{property.address}</p>
+                <p className="detail-value text-sm">{displayAddress}</p>
               </div>
             </div>
           )}
