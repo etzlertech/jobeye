@@ -297,9 +297,11 @@ export default function SupervisorInventoryPage() {
         credentials: 'include'
       });
       const data = await response.json();
-      
+
       if (!response.ok) throw new Error(data.message);
-      
+
+      console.log('[Inventory] API Response sample:', data.items?.[0]);
+
       // Transform API response to component format
       const transformedItems = (data.items || []).map((item: any) => {
         // Calculate status based on quantity and reorder level
@@ -311,8 +313,8 @@ export default function SupervisorInventoryPage() {
             status = 'low_stock';
           }
         }
-        
-        return {
+
+        const transformed = {
           id: item.id,
           name: item.name,
           category: item.category,
@@ -323,7 +325,17 @@ export default function SupervisorInventoryPage() {
           lastUpdated: item.updated_at || item.created_at,
           status: status
         };
+
+        if (item.thumbnail_url) {
+          console.log('[Inventory] Item with thumbnail:', item.name, item.thumbnail_url);
+        }
+
+        return transformed;
       });
+
+      console.log('[Inventory] Transformed items with thumbnails:',
+        transformedItems.filter((i: any) => i.thumbnailUrl).map((i: any) => ({ name: i.name, url: i.thumbnailUrl }))
+      );
       
       setItems(transformedItems);
     } catch (err) {

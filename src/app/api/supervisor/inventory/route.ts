@@ -64,6 +64,9 @@ export async function GET(request: NextRequest) {
         item_type,
         tracking_mode,
         attributes,
+        thumbnail_url,
+        medium_url,
+        primary_image_url,
         created_at,
         updated_at
       `, { count: 'exact' });
