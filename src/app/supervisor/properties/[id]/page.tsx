@@ -200,7 +200,6 @@ export default function PropertyDetailPage() {
           <h1 className="text-xl font-semibold">Property Details</h1>
           <p className="text-xs text-gray-500">{typeLabel}</p>
         </div>
-        <TypeIcon className="w-6 h-6" style={{ color: '#FFD700' }} />
       </div>
 
       {/* Notifications */}
@@ -384,6 +383,8 @@ export default function PropertyDetailPage() {
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          padding: 0 0.5rem;
+          box-sizing: border-box;
         }
 
         .header-bar {

@@ -167,7 +167,6 @@ export default function CustomerDetailPage() {
             <p className="text-xs text-gray-500">{customer.property_count} properties</p>
           )}
         </div>
-        <Users className="w-6 h-6" style={{ color: '#FFD700' }} />
       </div>
 
       {/* Notifications */}
@@ -339,6 +338,8 @@ export default function CustomerDetailPage() {
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          padding: 0 0.5rem;
+          box-sizing: border-box;
         }
 
         .header-bar {

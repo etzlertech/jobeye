@@ -241,12 +241,9 @@ export default function JobItemsPage() {
 
       {/* Header */}
       <div className="header-bar">
-        <div className="flex items-center gap-2">
-          <Briefcase className="w-6 h-6" style={{ color: '#FFD700' }} />
-          <div>
-            <h1 className="text-xl font-semibold">{job.title}</h1>
-            <p className="text-xs text-gray-500">Job #{job.job_number}</p>
-          </div>
+        <div>
+          <h1 className="text-xl font-semibold">{job.title}</h1>
+          <p className="text-xs text-gray-500">Job #{job.job_number}</p>
         </div>
         <span
           className="status-badge"
@@ -414,6 +411,8 @@ export default function JobItemsPage() {
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          padding: 0 0.5rem;
+          box-sizing: border-box;
         }
 
         .header-bar {
