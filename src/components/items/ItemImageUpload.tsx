@@ -271,3 +271,6 @@ export function ItemImageUpload({ onImageCapture, currentImageUrl, disabled }: I
     </div>
   );
 }
+
+// Default export for backward compatibility
+export default ItemImageUpload;
