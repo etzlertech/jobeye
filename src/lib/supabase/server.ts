@@ -59,6 +59,7 @@ const resolvedSupabaseAnonKey = supabaseAnonKey as string;
 export async function createClient(): Promise<SupabaseClient<Database>> {
   try {
     const cookieStore = await cookies();
+    const isProduction = process.env.NODE_ENV === 'production';
 
     return createSupabaseServerClient<Database>(resolvedSupabaseUrl, resolvedSupabaseAnonKey, {
       cookies: {
@@ -66,7 +67,16 @@ export async function createClient(): Promise<SupabaseClient<Database>> {
         setAll: (cookieList) => {
           cookieList.forEach(({ name, value, options }) => {
             try {
-              cookieStore.set({ name, value, ...options });
+              // In production, ensure cookies work cross-origin with SameSite=None; Secure
+              const cookieOptions = isProduction
+                ? {
+                    ...options,
+                    sameSite: 'none' as const,
+                    secure: true,
+                  }
+                : options;
+
+              cookieStore.set({ name, value, ...cookieOptions });
             } catch {
               // Ignore errors when headers are immutable (e.g., in API routes)
             }

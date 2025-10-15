@@ -65,6 +65,14 @@ export const supabase = createBrowserClient<Database>(
       params: {
         eventsPerSecond: 10
       }
+    },
+    auth: {
+      // Ensure cookies persist across domains in production
+      storageKey: 'sb',
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
     }
   }
 );
@@ -75,6 +83,7 @@ export async function createServerClient(): Promise<SupabaseClient<Database>> {
 
   try {
     const cookieStore = await cookies();
+    const isProduction = process.env.NODE_ENV === 'production';
 
     return createSupabaseServerClient<Database>(
       supabaseUrl!,
@@ -85,7 +94,16 @@ export async function createServerClient(): Promise<SupabaseClient<Database>> {
           setAll: (cookiesToSet) => {
             cookiesToSet.forEach(({ name, value, options }) => {
               try {
-                cookieStore.set({ name, value, ...options });
+                // In production, ensure cookies work cross-origin with SameSite=None; Secure
+                const cookieOptions = isProduction
+                  ? {
+                      ...options,
+                      sameSite: 'none' as const,
+                      secure: true,
+                    }
+                  : options;
+
+                cookieStore.set({ name, value, ...cookieOptions });
               } catch {
                 // Ignore errors when headers are immutable (e.g., in API routes)
               }
