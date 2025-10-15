@@ -38,7 +38,7 @@ interface CustomerDetails {
 export default function CustomerDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const customerId = params?.customerId as string;
+  const customerId = params?.id as string;
 
   const [customer, setCustomer] = useState<CustomerDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
