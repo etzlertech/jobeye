@@ -34,6 +34,7 @@ interface AssignedItem {
   assigned_at: string;
   notes?: string;
   status: string;
+  thumbnail_url?: string;
 }
 
 interface Item {
@@ -350,24 +351,37 @@ export default function JobItemsPage() {
             <div className="space-y-3 mt-4">
               {assignedItems.map((item) => (
                 <div key={item.transaction_id} className="item-card">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-white">{item.item_name}</h3>
-                      <div className="text-xs text-gray-500 mt-1 space-y-0.5">
-                        <div>Type: {item.item_type}</div>
-                        <div>Category: {item.category}</div>
-                        <div>Quantity: {item.quantity} {item.unit_of_measure}</div>
-                        <div>Assigned: {new Date(item.assigned_at).toLocaleDateString()}</div>
-                      </div>
+                  <div className="flex items-start gap-3">
+                    <div className="item-thumbnail">
+                      {item.thumbnail_url ? (
+                        <img
+                          src={item.thumbnail_url}
+                          alt={item.item_name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Package className="w-6 h-6 text-gray-400" />
+                      )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeItem(item.item_id)}
-                      disabled={isLoading}
-                      className="delete-button"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-start justify-between flex-1">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-white">{item.item_name}</h3>
+                        <div className="text-xs text-gray-500 mt-1 space-y-0.5">
+                          <div>Type: {item.item_type}</div>
+                          <div>Category: {item.category}</div>
+                          <div>Quantity: {item.quantity} {item.unit_of_measure}</div>
+                          <div>Assigned: {new Date(item.assigned_at).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.item_id)}
+                        disabled={isLoading}
+                        className="delete-button"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -494,6 +508,18 @@ export default function JobItemsPage() {
         .item-card:hover {
           background: rgba(255, 255, 255, 0.08);
           border-color: rgba(255, 215, 0, 0.4);
+        }
+
+        .item-thumbnail {
+          width: 3rem;
+          height: 3rem;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 0.5rem;
+          overflow: hidden;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .delete-button {

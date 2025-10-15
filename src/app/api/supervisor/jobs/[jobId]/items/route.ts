@@ -73,7 +73,8 @@ export async function GET(
           tracking_mode,
           unit_of_measure,
           current_quantity,
-          status
+          status,
+          thumbnail_url
         )
       `)
       .eq('job_id', jobId)
@@ -99,7 +100,8 @@ export async function GET(
           transaction_type: tx.transaction_type,
           assigned_at: tx.created_at,
           notes: tx.notes,
-          status: tx.transaction_type === 'check_in' ? 'returned' : 'assigned'
+          status: tx.transaction_type === 'check_in' ? 'returned' : 'assigned',
+          thumbnail_url: tx.items.thumbnail_url
         });
       }
     });
