@@ -3,10 +3,6 @@ import { getRequestContext, isTenantAdmin } from '@/lib/auth/context';
 import { createClient } from '@/lib/supabase/server';
 import { TenantService } from '@/domains/tenant';
 
-// Force dynamic rendering - prevents static analysis during build
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
 /**
  * GET /api/tenant/invitations - List pending invitations (tenant admin only)
  */

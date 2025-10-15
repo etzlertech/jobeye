@@ -21,10 +21,6 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { buildKitService, extractCompanyId, mapPgErrorToHttp, requireSession } from './_shared';
 
-// Force dynamic rendering - prevents static analysis during build
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
 const CreateKitSchema = z.object({
   kitCode: z.string().min(1).max(50),
   name: z.string().min(1).max(255),

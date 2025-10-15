@@ -40,6 +40,10 @@ import { JobsRepository } from '@/domains/jobs/repositories/jobs.repository';
 import { getRequestContext } from '@/lib/auth/context';
 import type { Database } from '@/types/database';
 
+// Force dynamic rendering - prevents static analysis during build
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     // Health check

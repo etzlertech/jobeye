@@ -25,6 +25,10 @@ import { TenantService } from '@/domains/tenant/services/tenant.service';
 import { TenantStatus } from '@/domains/tenant/types';
 import { AdminAuditLogService } from '@/domains/admin/audit/admin-audit-log.service';
 
+// Force dynamic rendering - prevents static analysis during build
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { tenantId: string } }

@@ -20,10 +20,6 @@
 import { NextResponse } from 'next/server';
 import { buildKitService, extractCompanyId, requireSession } from '../_shared';
 
-// Force dynamic rendering - prevents static analysis during build
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
 interface RouteParams {
   params: {
     kitId: string;

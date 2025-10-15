@@ -42,10 +42,6 @@ import { withAuth } from '@/lib/auth/with-auth';
 import { handleApiError } from '@/core/errors/error-handler';
 import { z } from 'zod';
 
-// Force dynamic rendering - prevents static analysis during build
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
 // Query params schema
 const jobsQuerySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()

@@ -21,6 +21,9 @@ import {
   Loader2
 } from 'lucide-react';
 
+// Force dynamic rendering to prevent build-time static analysis
+export const dynamic = 'force-dynamic';
+
 interface Job {
   id: string;
   job_number: string;

@@ -21,10 +21,6 @@ import { getRequestContext, isSystemAdmin } from '@/lib/auth/context';
 import { createServiceClient } from '@/lib/supabase/server';
 import { AdminAuditLogService } from '@/domains/admin/audit/admin-audit-log.service';
 
-// Force dynamic rendering - prevents static analysis during build
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
 const DEFAULT_LIMIT = 100;
 
 const actionMap: Record<string, 'approved' | 'suspended' | 'reactivated' | 'updated' | 'comment' | 'created'> = {
