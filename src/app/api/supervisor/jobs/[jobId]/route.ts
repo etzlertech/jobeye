@@ -85,6 +85,42 @@ export async function GET(
       })
     );
 
+    // Fetch job assignments with user details
+    const { data: assignmentsData, error: assignmentsError } = await supabase
+      .from('job_assignments')
+      .select(`
+        assigned_user_id,
+        assigned_at,
+        assigned_by
+      `)
+      .eq('job_id', jobId);
+
+    if (assignmentsError) {
+      console.error('Error fetching assignments:', assignmentsError);
+    }
+
+    // Fetch user details for assignments
+    const assignments = await Promise.all(
+      (assignmentsData || []).map(async (assignment: any) => {
+        const { data: userData } = await supabase
+          .from('users_extended')
+          .select('id, email, full_name')
+          .eq('id', assignment.assigned_user_id)
+          .single();
+
+        return {
+          user_id: assignment.assigned_user_id,
+          assigned_at: assignment.assigned_at,
+          assigned_by: assignment.assigned_by,
+          user: userData || {
+            id: assignment.assigned_user_id,
+            email: 'Unknown',
+            full_name: 'Unknown User'
+          }
+        };
+      })
+    );
+
     // Calculate load statistics using enriched items
     const activeItems = enrichedChecklistItems.filter((item: any) => item.status !== 'missing');
     const totalItems = activeItems.length;
@@ -100,7 +136,8 @@ export async function GET(
       totalChecklistItems: enrichedChecklistItems.length,
       activeItems: totalItems,
       loadedItems,
-      verifiedItems
+      verifiedItems,
+      assignmentsCount: assignments.length
     });
 
     // Map field names for frontend
@@ -113,7 +150,8 @@ export async function GET(
       total_items: totalItems,
       loaded_items: loadedItems,
       verified_items: verifiedItems,
-      completion_percentage: totalItems > 0 ? Math.round((loadedItems / totalItems) * 100) : 0
+      completion_percentage: totalItems > 0 ? Math.round((loadedItems / totalItems) * 100) : 0,
+      assignments: assignments
     };
 
     return NextResponse.json({ job });
