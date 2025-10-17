@@ -16,6 +16,7 @@ import type {
   JobAssignmentWithDetails,
   JobAssignmentInsert,
 } from '../types';
+import { ValidationError } from '@/core/errors/error-types';
 
 export class JobAssignmentRepository {
   constructor(private supabase: SupabaseClient<Database>) {}
@@ -39,22 +40,23 @@ export class JobAssignmentRepository {
     const now = new Date().toISOString();
 
     // Try to insert, ignore conflict if already assigned
+    const insertData: Database['public']['Tables']['job_assignments']['Insert'] = {
+      tenant_id: context.tenantId,
+      job_id: jobId,
+      user_id: userId,
+      assigned_by: assignedBy,
+      assigned_at: now,
+    };
+
     const { data, error } = await this.supabase
       .from('job_assignments')
-      .insert({
-        tenant_id: context.tenantId,
-        job_id: jobId,
-        user_id: userId,
-        assigned_by: assignedBy,
-        assigned_at: now,
-      })
+      .insert(insertData as any) // Type assertion needed due to Supabase client type inference issue
       .select()
       .single();
 
     if (error) {
-      // If duplicate, fetch existing assignment
       if (error.code === '23505') {
-        return this.getAssignment(context, jobId, userId);
+        throw new ValidationError('Crew member already assigned', 'user_id');
       }
       throw error;
     }

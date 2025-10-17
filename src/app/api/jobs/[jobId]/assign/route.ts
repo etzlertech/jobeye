@@ -9,8 +9,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getRequestContext } from '@/lib/auth/context';
-import { JobAssignmentService } from '@/domains/job-assignment/services';
+import { JobAssignmentService } from '@/domains/job-assignment/services/job-assignment.service';
 import type { AssignJobRequest } from '@/domains/job-assignment/types';
+import {
+  NotFoundError,
+  ValidationError,
+  AppError,
+  ErrorCode
+} from '@/core/errors/error-types';
 
 // CRITICAL: Force dynamic rendering for server-side execution
 export const dynamic = 'force-dynamic';
@@ -27,7 +33,11 @@ export async function POST(
     // Validate supervisor role
     if (!context.isSupervisor) {
       return NextResponse.json(
-        { error: 'Forbidden', message: 'Only supervisors can assign jobs' },
+        {
+          error: 'Forbidden',
+          message: 'Only supervisors can assign jobs',
+          code: 'INSUFFICIENT_PERMISSIONS'
+        },
         { status: 403 }
       );
     }
@@ -38,7 +48,23 @@ export async function POST(
 
     if (!Array.isArray(userIds) || userIds.length === 0) {
       return NextResponse.json(
-        { error: 'Bad Request', message: 'user_ids must be a non-empty array' },
+        {
+          error: 'Invalid input',
+          message: 'user_ids must be a non-empty array',
+          code: 'INVALID_INPUT'
+        },
+        { status: 400 }
+      );
+    }
+
+    const invalidIds = userIds.filter(id => typeof id !== 'string' || !/^[0-9a-fA-F-]{36}$/.test(id));
+    if (invalidIds.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Invalid user ID format',
+          message: 'user_ids must be valid UUIDs',
+          code: 'INVALID_INPUT'
+        },
         { status: 400 }
       );
     }
@@ -49,54 +75,140 @@ export async function POST(
       user_ids: userIds,
     };
 
-    // Create service and execute assignment
-    const supabase = await createClient();
+    // Create service with service role client for write operations
+    // The supervisor permission check was already done above via context.isSupervisor
+    const {createClient: createServiceClient} = await import('@supabase/supabase-js');
+    const supabase = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
     const service = new JobAssignmentService(supabase);
 
+    console.log('[POST /api/jobs/[jobId]/assign] About to call service.assignCrewToJob', {
+      jobId: params.jobId,
+      userIds: userIds,
+      supervisorId: context.userId
+    });
+
     const response = await service.assignCrewToJob(context, assignRequest);
+
+    console.log('[POST /api/jobs/[jobId]/assign] Service returned successfully:', {
+      success: response.success,
+      assignmentCount: response.assignments.length
+    });
 
     // Return appropriate status code
     const statusCode = response.success ? 200 : 400;
 
-    return NextResponse.json(response, { status: statusCode });
+    return NextResponse.json(
+      {
+        success: response.success,
+        assignments: response.assignments,
+        message: response.message,
+        crew_limit_violations: response.crew_limit_violations ?? []
+      },
+      { status: statusCode }
+    );
 
   } catch (error) {
     console.error('[POST /api/jobs/[jobId]/assign] Error:', error);
 
-    // Handle specific error cases
-    if (error instanceof Error) {
-      if (error.message.includes('not found')) {
-        return NextResponse.json(
-          { error: 'Not Found', message: error.message },
-          { status: 404 }
-        );
-      }
+    const mapped = mapError(error);
+    return NextResponse.json(mapped.body, { status: mapped.status });
+  }
+}
 
-      if (error.message.includes('completed') || error.message.includes('cancelled')) {
-        return NextResponse.json(
-          { error: 'Unprocessable Entity', message: error.message },
-          { status: 422 }
-        );
+function mapError(error: unknown): { status: number; body: Record<string, unknown> } {
+  if (error instanceof NotFoundError) {
+    return {
+      status: 404,
+      body: {
+        error: error.message,
+        message: error.message,
+        code: 'RESOURCE_NOT_FOUND'
       }
+    };
+  }
 
-      if (error.message.includes('Only supervisors')) {
-        return NextResponse.json(
-          { error: 'Forbidden', message: error.message },
-          { status: 403 }
-        );
-      }
-
-      // Generic bad request
-      return NextResponse.json(
-        { error: 'Bad Request', message: error.message },
-        { status: 400 }
-      );
+  if (error instanceof ValidationError) {
+    if (error.message.includes('already assigned')) {
+      return {
+        status: 400,
+        body: {
+          error: 'Crew member already assigned',
+          message: error.message,
+          code: 'DUPLICATE_ASSIGNMENT'
+        }
+      };
     }
 
-    // Unknown error
-    return NextResponse.json(
-      { error: 'Internal Server Error', message: 'An unexpected error occurred' },
-      { status: 500 }
-    );
+    return {
+      status: 400,
+      body: {
+        error: 'Invalid input',
+        message: error.message,
+        code: 'INVALID_INPUT'
+      }
+    };
   }
+
+  if (error instanceof AppError) {
+    if (error.code === ErrorCode.INVALID_INPUT &&
+        error.message.includes('completed')) {
+      return {
+        status: 422,
+        body: {
+          error: 'Cannot assign to completed job',
+          message: error.message,
+          code: 'INVALID_JOB_STATUS'
+        }
+      };
+    }
+
+    if (error.code === ErrorCode.FORBIDDEN || error.message.includes('Only supervisors')) {
+      return {
+        status: 403,
+        body: {
+          error: 'Forbidden',
+          message: error.message,
+          code: 'INSUFFICIENT_PERMISSIONS'
+        }
+      };
+    }
+
+    return {
+      status: 400,
+      body: {
+        error: 'Bad Request',
+        message: error.message,
+        code: ErrorCode[error.code] ?? 'INVALID_INPUT'
+      }
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      status: 400,
+      body: {
+        error: 'Bad Request',
+        message: error.message,
+        code: 'INVALID_INPUT'
+      }
+    };
+  }
+
+  return {
+    status: 500,
+    body: {
+      error: 'Internal server error',
+      message: 'An unexpected error occurred',
+      code: 'INTERNAL_ERROR'
+    }
+  };
 }

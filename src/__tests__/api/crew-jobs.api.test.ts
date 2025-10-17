@@ -99,29 +99,8 @@ describe('GET /api/crew/jobs (contract)', () => {
   it('returns crew jobs sorted by scheduled_start ASC', async () => {
     getRequestContext.mockResolvedValue(crewContext);
     getCrewJobsMock.mockResolvedValue({
+      success: true,
       jobs: [
-        {
-          id: 'job-2',
-          tenant_id: 'tenant-123',
-          job_number: 'JOB-002',
-          status: 'scheduled',
-          priority: 'normal',
-          customer_id: 'customer-1',
-          customer_name: 'Globex',
-          property_id: 'property-1',
-          property_address: '456 Field St',
-          property_location: { latitude: 37.779, longitude: -122.419 },
-          scheduled_start: '2025-05-01T15:00:00Z',
-          assigned_at: '2025-04-30T10:00:00Z',
-          assigned_by: 'supervisor-1',
-          assigned_by_name: 'Jamie Rivera',
-          total_items: 4,
-          loaded_items: 4,
-          load_percentage: 100,
-          notes: null,
-          created_at: '2025-04-01T10:00:00Z',
-          updated_at: '2025-04-10T11:00:00Z'
-        },
         {
           id: 'job-1',
           tenant_id: 'tenant-123',
@@ -140,13 +119,37 @@ describe('GET /api/crew/jobs (contract)', () => {
           total_items: 5,
           loaded_items: 3,
           load_percentage: 60,
+          is_fully_loaded: false,
           notes: 'Bring HVAC kit',
           created_at: '2025-04-01T09:00:00Z',
           updated_at: '2025-04-09T12:00:00Z'
+        },
+        {
+          id: 'job-2',
+          tenant_id: 'tenant-123',
+          job_number: 'JOB-002',
+          status: 'scheduled',
+          priority: 'normal',
+          customer_id: 'customer-1',
+          customer_name: 'Globex',
+          property_id: 'property-1',
+          property_address: '456 Field St',
+          property_location: { latitude: 37.779, longitude: -122.419 },
+          scheduled_start: '2025-05-01T15:00:00Z',
+          assigned_at: '2025-04-30T10:00:00Z',
+          assigned_by: 'supervisor-1',
+          assigned_by_name: 'Jamie Rivera',
+          total_items: 4,
+          loaded_items: 4,
+          load_percentage: 100,
+          is_fully_loaded: true,
+          notes: null,
+          created_at: '2025-04-01T10:00:00Z',
+          updated_at: '2025-04-10T11:00:00Z'
         }
       ],
-      totalCount: 2,
-      hasMore: false
+      total_count: 2,
+      has_more: false
     });
 
     const req = new Request('https://example.com/api/crew/jobs', {
@@ -184,9 +187,10 @@ describe('GET /api/crew/jobs (contract)', () => {
   it('passes pagination parameters to the service', async () => {
     getRequestContext.mockResolvedValue(crewContext);
     getCrewJobsMock.mockResolvedValue({
+      success: true,
       jobs: [],
-      totalCount: 0,
-      hasMore: false
+      total_count: 0,
+      has_more: false
     });
 
     const req = new Request('https://example.com/api/crew/jobs?status=in_progress&limit=10&offset=5');

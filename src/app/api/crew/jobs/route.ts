@@ -11,6 +11,10 @@ import { createClient } from '@/lib/supabase/server';
 import { getRequestContext } from '@/lib/auth/context';
 import { JobAssignmentService } from '@/domains/job-assignment/services';
 import type { CrewJobsQuery } from '@/domains/job-assignment/types';
+import {
+  AppError,
+  ErrorCode
+} from '@/core/errors/error-types';
 
 // CRITICAL: Force dynamic rendering for server-side execution
 export const dynamic = 'force-dynamic';
@@ -24,17 +28,21 @@ export async function GET(request: NextRequest) {
     // Validate crew role
     if (!context.isCrew) {
       return NextResponse.json(
-        { error: 'Forbidden', message: 'Only crew members can access this endpoint' },
+        {
+          error: 'Forbidden',
+          message: 'Only crew members can access this endpoint',
+          code: 'INVALID_ROLE'
+        },
         { status: 403 }
       );
     }
 
-    // Parse query parameters
+    // Parse query parameters with defaults
     const { searchParams } = new URL(request.url);
     const query: CrewJobsQuery = {
-      status: searchParams.get('status') || undefined,
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
-      offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined,
+      status: searchParams.get('status') || 'scheduled', // Default to scheduled jobs
+      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50, // Default 50
+      offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0, // Default 0
     };
 
     // Validate pagination parameters
@@ -56,45 +64,95 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const service = new JobAssignmentService(supabase);
 
-    // Crew can only view their own jobs
-    const response = await service.getCrewJobs(
-      context,
-      context.userId!,
-      query
-    );
+    // Service will use context.userId to fetch crew's own jobs
+    const response = await service.getCrewJobs(context, query);
 
     return NextResponse.json(response, { status: 200 });
 
   } catch (error) {
     console.error('[GET /api/crew/jobs] Error:', error);
 
-    // Handle specific error cases
-    if (error instanceof Error) {
-      if (error.message.includes('Only crew members')) {
-        return NextResponse.json(
-          { error: 'Forbidden', message: error.message },
-          { status: 403 }
-        );
-      }
+    const mapped = mapError(error);
+    return NextResponse.json(mapped.body, { status: mapped.status });
+  }
+}
 
-      if (error.message.includes('can only view their own')) {
-        return NextResponse.json(
-          { error: 'Forbidden', message: error.message },
-          { status: 403 }
-        );
-      }
-
-      // Generic bad request
-      return NextResponse.json(
-        { error: 'Bad Request', message: error.message },
-        { status: 400 }
-      );
+function mapError(error: unknown): { status: number; body: Record<string, unknown> } {
+  // Handle auth/context errors as 401
+  if (error instanceof Error) {
+    if (error.message.includes('No auth') || error.message.includes('not authenticated')) {
+      return {
+        status: 401,
+        body: {
+          error: 'Unauthorized',
+          message: 'Authentication required',
+          code: 'UNAUTHORIZED'
+        }
+      };
     }
 
-    // Unknown error
-    return NextResponse.json(
-      { error: 'Internal Server Error', message: 'An unexpected error occurred' },
-      { status: 500 }
-    );
+    if (error.message.includes('Only crew members')) {
+      return {
+        status: 403,
+        body: {
+          error: 'Forbidden',
+          message: error.message,
+          code: 'INVALID_ROLE'
+        }
+      };
+    }
+
+    if (error.message.includes('can only view their own')) {
+      return {
+        status: 403,
+        body: {
+          error: 'Forbidden',
+          message: error.message,
+          code: 'INVALID_ROLE'
+        }
+      };
+    }
   }
+
+  if (error instanceof AppError) {
+    if (error.code === ErrorCode.FORBIDDEN) {
+      return {
+        status: 403,
+        body: {
+          error: 'Forbidden',
+          message: error.message,
+          code: 'INVALID_ROLE'
+        }
+      };
+    }
+
+    return {
+      status: 400,
+      body: {
+        error: 'Bad Request',
+        message: error.message,
+        code: 'INVALID_INPUT'
+      }
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      status: 400,
+      body: {
+        error: 'Bad Request',
+        message: error.message,
+        code: 'INVALID_INPUT'
+      }
+    };
+  }
+
+  return {
+    status: 500,
+    body: {
+      error: 'Internal server error',
+      message: 'An unexpected error occurred',
+      code: 'INTERNAL_ERROR'
+    }
+  };
 }

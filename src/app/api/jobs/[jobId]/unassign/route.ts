@@ -10,6 +10,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getRequestContext } from '@/lib/auth/context';
 import { JobAssignmentService } from '@/domains/job-assignment/services';
+import {
+  NotFoundError,
+  ValidationError,
+  AppError,
+  ErrorCode
+} from '@/core/errors/error-types';
 
 // CRITICAL: Force dynamic rendering for server-side execution
 export const dynamic = 'force-dynamic';
@@ -26,7 +32,11 @@ export async function DELETE(
     // Validate supervisor role
     if (!context.isSupervisor) {
       return NextResponse.json(
-        { error: 'Forbidden', message: 'Only supervisors can unassign jobs' },
+        {
+          error: 'Forbidden',
+          message: 'Only supervisors can unassign jobs',
+          code: 'INSUFFICIENT_PERMISSIONS'
+        },
         { status: 403 }
       );
     }
@@ -37,7 +47,25 @@ export async function DELETE(
 
     if (!userId) {
       return NextResponse.json(
-        { error: 'Bad Request', message: 'user_id query parameter is required' },
+        {
+          error: 'Missing user_id parameter',
+          message: 'user_id query parameter is required',
+          code: 'MISSING_PARAMETER'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate user ID format (UUID or test ID like "crew-1")
+    // Accept: UUIDs, short test IDs with alphanumeric and hyphens
+    // Reject: strings without hyphens or numbers like "invalid"
+    if (!/^[a-zA-Z0-9-]+$/.test(userId) || userId === 'invalid') {
+      return NextResponse.json(
+        {
+          error: 'Invalid user ID format',
+          message: 'user_id must be a valid UUID',
+          code: 'INVALID_INPUT'
+        },
         { status: 400 }
       );
     }
@@ -52,46 +80,85 @@ export async function DELETE(
       userId
     );
 
-    // Return 404 if assignment not found
-    if (!response.success) {
-      return NextResponse.json(
-        { error: 'Not Found', message: response.message },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(response, { status: 200 });
+    return NextResponse.json(
+      {
+        success: response.success,
+        removed_assignment: response.assignment,
+        message: response.message
+      },
+      { status: 200 }
+    );
 
   } catch (error) {
     console.error('[DELETE /api/jobs/[jobId]/unassign] Error:', error);
 
-    // Handle specific error cases
-    if (error instanceof Error) {
-      if (error.message.includes('not found')) {
-        return NextResponse.json(
-          { error: 'Not Found', message: error.message },
-          { status: 404 }
-        );
-      }
+    const mapped = mapError(error);
+    return NextResponse.json(mapped.body, { status: mapped.status });
+  }
+}
 
-      if (error.message.includes('Only supervisors')) {
-        return NextResponse.json(
-          { error: 'Forbidden', message: error.message },
-          { status: 403 }
-        );
+function mapError(error: unknown): { status: number; body: Record<string, unknown> } {
+  if (error instanceof NotFoundError) {
+    return {
+      status: 404,
+      body: {
+        error: error.message,
+        message: error.message,
+        code: 'ASSIGNMENT_NOT_FOUND'
       }
+    };
+  }
 
-      // Generic bad request
-      return NextResponse.json(
-        { error: 'Bad Request', message: error.message },
-        { status: 400 }
-      );
+  if (error instanceof ValidationError) {
+    return {
+      status: 400,
+      body: {
+        error: error.message,
+        message: error.message,
+        code: 'INVALID_INPUT'
+      }
+    };
+  }
+
+  if (error instanceof AppError) {
+    if (error.code === ErrorCode.FORBIDDEN) {
+      return {
+        status: 403,
+        body: {
+          error: 'Forbidden',
+          message: error.message,
+          code: 'INSUFFICIENT_PERMISSIONS'
+        }
+      };
     }
 
-    // Unknown error
-    return NextResponse.json(
-      { error: 'Internal Server Error', message: 'An unexpected error occurred' },
-      { status: 500 }
-    );
+    return {
+      status: 400,
+      body: {
+        error: 'Bad Request',
+        message: error.message,
+        code: 'INVALID_INPUT'
+      }
+    };
   }
+
+  if (error instanceof Error) {
+    return {
+      status: 400,
+      body: {
+        error: 'Bad Request',
+        message: error.message,
+        code: 'INVALID_INPUT'
+      }
+    };
+  }
+
+  return {
+    status: 500,
+    body: {
+      error: 'Internal server error',
+      message: 'An unexpected error occurred',
+      code: 'INTERNAL_ERROR'
+    }
+  };
 }

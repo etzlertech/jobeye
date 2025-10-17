@@ -15,7 +15,6 @@
  */
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { createMocks } from 'node-mocks-http';
 import type { NextRequest } from 'next/server';
 import type { RequestContext } from '@/lib/auth/context';
 import { NotFoundError, ValidationError, AppError, ErrorCode } from '@/core/errors/error-types';
@@ -39,6 +38,11 @@ jest.mock('@/lib/auth/context', () => {
     getRequestContext: jest.fn()
   };
 });
+
+jest.mock('@/lib/supabase/server', () => ({
+  __esModule: true,
+  createClient: jest.fn().mockResolvedValue({})
+}));
 
 jest.mock('@/domains/job-assignment/services/job-assignment.service', () => ({
   __esModule: true,
@@ -87,11 +91,12 @@ describe('POST /api/jobs/{jobId}/assign (contract)', () => {
   it('returns assignments for valid supervisor request', async () => {
     getRequestContext.mockResolvedValue(supervisorContext);
     assignCrewToJobMock.mockResolvedValue({
+      success: true,
       assignments: [
         {
           id: 'assignment-1',
           job_id: 'job-123',
-          user_id: 'crew-1',
+          user_id: 'c01b7d68-733e-4c6d-9961-2b282087b12a',
           tenant_id: 'tenant-123',
           assigned_by: 'user-supervisor',
           assigned_at: '2025-01-02T03:04:05Z',
@@ -102,16 +107,8 @@ describe('POST /api/jobs/{jobId}/assign (contract)', () => {
       message: 'Successfully assigned 1 crew member to job'
     });
 
-    const { req } = createMocks({
-      method: 'POST',
-      url: 'https://example.com/api/jobs/job-123/assign',
-      headers: {
-        'content-type': 'application/json',
-        authorization: 'Bearer test-token'
-      },
-      body: {
-        user_ids: ['crew-1']
-      }
+    const req = buildRequest({
+      user_ids: ['c01b7d68-733e-4c6d-9961-2b282087b12a']
     });
 
     const module = await import('@/app/api/jobs/[jobId]/assign/route');
@@ -120,7 +117,10 @@ describe('POST /api/jobs/{jobId}/assign (contract)', () => {
     });
     const body = await response.json();
 
-    expect(assignCrewToJobMock).toHaveBeenCalledWith(supervisorContext, 'job-123', ['crew-1']);
+    expect(assignCrewToJobMock).toHaveBeenCalledWith(supervisorContext, {
+      job_id: 'job-123',
+      user_ids: ['c01b7d68-733e-4c6d-9961-2b282087b12a']
+    });
     expect(response.status).toBe(200);
     expect(body).toMatchObject({
       success: true,
@@ -129,7 +129,7 @@ describe('POST /api/jobs/{jobId}/assign (contract)', () => {
         expect.objectContaining({
           id: 'assignment-1',
           job_id: 'job-123',
-          user_id: 'crew-1',
+          user_id: 'c01b7d68-733e-4c6d-9961-2b282087b12a',
           tenant_id: supervisorContext.tenantId,
           assigned_by: supervisorContext.userId
         })
@@ -140,16 +140,8 @@ describe('POST /api/jobs/{jobId}/assign (contract)', () => {
   it('rejects invalid user ID format', async () => {
     getRequestContext.mockResolvedValue(supervisorContext);
 
-    const { req } = createMocks({
-      method: 'POST',
-      url: 'https://example.com/api/jobs/job-123/assign',
-      headers: {
-        'content-type': 'application/json',
-        authorization: 'Bearer test-token'
-      },
-      body: {
-        user_ids: ['not-a-uuid']
-      }
+    const req = buildRequest({
+      user_ids: ['not-a-uuid']
     });
 
     const module = await import('@/app/api/jobs/[jobId]/assign/route');
@@ -163,16 +155,8 @@ describe('POST /api/jobs/{jobId}/assign (contract)', () => {
   it('forbids non-supervisor roles', async () => {
     getRequestContext.mockResolvedValue(crewContext);
 
-    const { req } = createMocks({
-      method: 'POST',
-      url: 'https://example.com/api/jobs/job-123/assign',
-      headers: {
-        'content-type': 'application/json',
-        authorization: 'Bearer test-token'
-      },
-      body: {
-        user_ids: ['c01b7d68-733e-4c6d-9961-2b282087b12a']
-      }
+    const req = buildRequest({
+      user_ids: ['c01b7d68-733e-4c6d-9961-2b282087b12a']
     });
 
     const module = await import('@/app/api/jobs/[jobId]/assign/route');
@@ -193,17 +177,9 @@ describe('POST /api/jobs/{jobId}/assign (contract)', () => {
     getRequestContext.mockResolvedValue(supervisorContext);
     assignCrewToJobMock.mockRejectedValue(new NotFoundError('Job not found'));
 
-    const { req } = createMocks({
-      method: 'POST',
-      url: 'https://example.com/api/jobs/job-404/assign',
-      headers: {
-        'content-type': 'application/json',
-        authorization: 'Bearer test-token'
-      },
-      body: {
-        user_ids: ['c01b7d68-733e-4c6d-9961-2b282087b12a']
-      }
-    });
+    const req = buildRequest({
+      user_ids: ['c01b7d68-733e-4c6d-9961-2b282087b12a']
+    }, 'https://example.com/api/jobs/job-404/assign');
 
     const module = await import('@/app/api/jobs/[jobId]/assign/route');
     const response = await module.POST(req as unknown as NextRequest, {
@@ -224,17 +200,9 @@ describe('POST /api/jobs/{jobId}/assign (contract)', () => {
       new AppError('Jobs with status completed cannot be assigned', ErrorCode.INVALID_INPUT)
     );
 
-    const { req } = createMocks({
-      method: 'POST',
-      url: 'https://example.com/api/jobs/job-done/assign',
-      headers: {
-        'content-type': 'application/json',
-        authorization: 'Bearer test-token'
-      },
-      body: {
-        user_ids: ['c01b7d68-733e-4c6d-9961-2b282087b12a']
-      }
-    });
+    const req = buildRequest({
+      user_ids: ['c01b7d68-733e-4c6d-9961-2b282087b12a']
+    }, 'https://example.com/api/jobs/job-done/assign');
 
     const module = await import('@/app/api/jobs/[jobId]/assign/route');
     const response = await module.POST(req as unknown as NextRequest, {
@@ -255,16 +223,8 @@ describe('POST /api/jobs/{jobId}/assign (contract)', () => {
       new ValidationError('Crew member already assigned', 'user_ids')
     );
 
-    const { req } = createMocks({
-      method: 'POST',
-      url: 'https://example.com/api/jobs/job-123/assign',
-      headers: {
-        'content-type': 'application/json',
-        authorization: 'Bearer test-token'
-      },
-      body: {
-        user_ids: ['c01b7d68-733e-4c6d-9961-2b282087b12a']
-      }
+    const req = buildRequest({
+      user_ids: ['c01b7d68-733e-4c6d-9961-2b282087b12a']
     });
 
     const module = await import('@/app/api/jobs/[jobId]/assign/route');
@@ -280,3 +240,16 @@ describe('POST /api/jobs/{jobId}/assign (contract)', () => {
     });
   });
 });
+const buildRequest = (body: unknown, url = 'https://example.com/api/jobs/job-123/assign'): NextRequest => {
+  const headers = new Headers({
+    'content-type': 'application/json',
+    authorization: 'Bearer test-token'
+  });
+
+  return {
+    method: 'POST',
+    headers,
+    url,
+    json: jest.fn().mockResolvedValue(body)
+  } as unknown as NextRequest;
+};

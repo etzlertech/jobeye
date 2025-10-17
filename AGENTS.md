@@ -1,5 +1,18 @@
 # CODEX Agent Instructions
 
+## 📖 PROJECT CONSTITUTION LOCATION
+
+**The official JobEye Constitution is located at:**
+```
+.specify/constitution.md
+```
+
+This file contains ALL architectural principles, database patterns, RLS policies, development standards, and non-negotiable rules. **READ THIS FILE FIRST** before any planning or implementation work.
+
+**DO NOT** confuse with:
+- `.specify/memory/constitution.md` (template only)
+- `.claude/commands/constitution.md` (slash command definition)
+
 ## IMPORTANT: Main Branch Only Workflow
 **As a single developer, all work happens directly on the main branch. DO NOT create feature branches.**
 

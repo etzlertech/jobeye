@@ -87,14 +87,18 @@ describe('DELETE /api/jobs/{jobId}/unassign (contract)', () => {
   it('returns removed assignment for valid supervisor request', async () => {
     getRequestContext.mockResolvedValue(supervisorContext);
     unassignCrewFromJobMock.mockResolvedValue({
-      id: 'assignment-1',
-      job_id: 'job-123',
-      user_id: 'crew-1',
-      tenant_id: 'tenant-123',
-      assigned_by: 'user-supervisor',
-      assigned_at: '2025-01-02T03:04:05Z',
-      created_at: '2025-01-02T03:04:05Z',
-      updated_at: '2025-01-02T03:04:05Z'
+      success: true,
+      assignment: {
+        id: 'assignment-1',
+        job_id: 'job-123',
+        user_id: 'crew-1',
+        tenant_id: 'tenant-123',
+        assigned_by: 'user-supervisor',
+        assigned_at: '2025-01-02T03:04:05Z',
+        created_at: '2025-01-02T03:04:05Z',
+        updated_at: '2025-01-02T03:04:05Z'
+      },
+      message: 'Successfully removed crew member from job'
     });
 
     const { req } = createMocks({

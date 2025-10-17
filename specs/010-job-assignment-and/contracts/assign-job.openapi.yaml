@@ -1,0 +1,233 @@
+openapi: 3.0.3
+info:
+  title: Job Assignment API
+  version: 1.0.0
+  description: API contract for assigning crew members to jobs
+
+paths:
+  /api/jobs/{jobId}/assign:
+    post:
+      summary: Assign one or more crew members to a job
+      description: |
+        Allows supervisors to assign crew members (users with role='technician') to a job.
+        Supports bulk assignment of multiple crew members in a single request.
+        Prevents duplicate assignments via unique constraint.
+      operationId: assignJob
+      tags:
+        - Job Assignment
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          description: UUID of the job to assign crew to
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_ids
+              properties:
+                user_ids:
+                  type: array
+                  description: Array of crew member user IDs to assign
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+                  example:
+                    - "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+                    - "8d0e7780-8536-51ef-b827-f18gc2g01bf8"
+      responses:
+        '200':
+          description: Successfully assigned crew to job
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - assignments
+                  - message
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  assignments:
+                    type: array
+                    description: Array of created job assignments
+                    items:
+                      $ref: '#/components/schemas/JobAssignment'
+                  message:
+                    type: string
+                    example: "Successfully assigned 2 crew members to job"
+        '400':
+          description: Bad request - invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidUserId:
+                  value:
+                    error: "Invalid user ID format"
+                    message: "user_ids must be valid UUIDs"
+                    code: "INVALID_INPUT"
+                notCrewMember:
+                  value:
+                    error: "User is not a crew member"
+                    message: "Only users with role='technician' can be assigned to jobs"
+                    code: "INVALID_ROLE"
+                alreadyAssigned:
+                  value:
+                    error: "Crew member already assigned"
+                    message: "One or more crew members are already assigned to this job"
+                    code: "DUPLICATE_ASSIGNMENT"
+        '401':
+          description: Unauthorized - missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Missing or invalid authentication token"
+                code: "AUTH_REQUIRED"
+        '403':
+          description: Forbidden - user doesn't have permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Forbidden"
+                message: "Only supervisors can assign jobs"
+                code: "INSUFFICIENT_PERMISSIONS"
+        '404':
+          description: Not found - job doesn't exist or not in tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Job not found"
+                message: "Job with ID 550e8400-e29b-41d4-a716-446655440000 does not exist"
+                code: "RESOURCE_NOT_FOUND"
+        '422':
+          description: Unprocessable entity - business rule violation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                jobCompleted:
+                  value:
+                    error: "Cannot assign to completed job"
+                    message: "Jobs with status 'completed' or 'cancelled' cannot be assigned"
+                    code: "INVALID_JOB_STATUS"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "An unexpected error occurred"
+                code: "INTERNAL_ERROR"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase JWT token with tenant_id in app_metadata
+
+  schemas:
+    JobAssignment:
+      type: object
+      description: Represents a crew member assigned to a job
+      required:
+        - id
+        - tenant_id
+        - job_id
+        - user_id
+        - assigned_at
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique assignment ID
+          example: "9f1a2b3c-4d5e-6f7g-8h9i-0j1k2l3m4n5o"
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant ID for multi-tenant isolation
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        job_id:
+          type: string
+          format: uuid
+          description: Job ID being assigned
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        user_id:
+          type: string
+          format: uuid
+          description: User ID of crew member assigned
+          example: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+        assigned_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User ID of supervisor who made assignment
+          example: "1a2b3c4d-5e6f-7890-abcd-ef1234567890"
+        assigned_at:
+          type: string
+          format: date-time
+          description: Timestamp when assignment was created
+          example: "2025-10-16T14:30:00Z"
+        created_at:
+          type: string
+          format: date-time
+          description: Record creation timestamp
+          example: "2025-10-16T14:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Record last update timestamp
+          example: "2025-10-16T14:30:00Z"
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+        - code
+      properties:
+        error:
+          type: string
+          description: Short error description
+        message:
+          type: string
+          description: Detailed error message
+        code:
+          type: string
+          description: Machine-readable error code
+          enum:
+            - INVALID_INPUT
+            - INVALID_ROLE
+            - DUPLICATE_ASSIGNMENT
+            - AUTH_REQUIRED
+            - INSUFFICIENT_PERMISSIONS
+            - RESOURCE_NOT_FOUND
+            - INVALID_JOB_STATUS
+            - INTERNAL_ERROR

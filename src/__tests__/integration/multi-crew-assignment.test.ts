@@ -11,7 +11,7 @@
  * Feature: 010-job-assignment-and
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
@@ -78,17 +78,32 @@ describe('T012: Multiple crew assigned to same job', () => {
         is_active: true
       });
 
-    // Create a test job
+    // Get or create a test customer first
+    const { data: customers } = await supabase
+      .from('customers')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .limit(1);
+
+    const customerId = customers?.[0]?.id;
+
+    if (!customerId) {
+      throw new Error('No customers found for tenant. Create test customer first.');
+    }
+
+    // Create a test job (schedule far in future to avoid double-booking)
+    const futureDate = new Date(Date.now() + 86400000 * 30); // 30 days from now
     const { data: job, error: jobError } = await supabase
       .from('jobs')
       .insert({
         tenant_id: tenantId,
+        customer_id: customerId,
         job_number: `JOB-T012-${Date.now()}`,
         status: 'scheduled',
         priority: 'high',
         title: 'Multi-Crew Test Job',
-        scheduled_start: new Date(Date.now() + 86400000).toISOString(),
-        scheduled_end: new Date(Date.now() + 86400000 + 14400000).toISOString(),
+        scheduled_start: futureDate.toISOString(),
+        scheduled_end: new Date(futureDate.getTime() + 14400000).toISOString(),
       })
       .select('id')
       .single();
@@ -203,15 +218,28 @@ describe('T012: Multiple crew assigned to same job', () => {
   });
 
   it('should handle concurrent checklist item updates without conflict', async () => {
+    // Get or create a test item first
+    const { data: items } = await supabase
+      .from('items')
+      .select('id, name')
+      .eq('tenant_id', tenantId)
+      .limit(1);
+
+    const item = items?.[0];
+
+    if (!item) {
+      throw new Error('No items found for tenant. Create test item first.');
+    }
+
     // Create a checklist item for the job
     const { data: checklistItem, error: createError } = await supabase
       .from('job_checklist_items')
       .insert({
-        tenant_id: tenantId,
         job_id: testJobId,
-        item_id: '00000000-0000-0000-0000-000000000001',
+        item_id: item.id,
+        item_name: item.name,
+        sequence_number: 1,
         quantity: 10,
-        loaded_quantity: 0,
       })
       .select()
       .single();
@@ -221,27 +249,27 @@ describe('T012: Multiple crew assigned to same job', () => {
 
     const itemId = checklistItem!.id;
 
-    // Simulate crew1 updating loaded_quantity
+    // Simulate crew1 updating quantity
     const { data: update1, error: error1 } = await supabase
       .from('job_checklist_items')
-      .update({ loaded_quantity: 5 })
+      .update({ quantity: 5 })
       .eq('id', itemId)
       .select()
       .single();
 
     expect(error1).toBeNull();
-    expect(update1?.loaded_quantity).toBe(5);
+    expect(update1?.quantity).toBe(5);
 
-    // Simulate crew2 updating loaded_quantity (should succeed)
+    // Simulate crew2 updating quantity (should succeed)
     const { data: update2, error: error2 } = await supabase
       .from('job_checklist_items')
-      .update({ loaded_quantity: 10 })
+      .update({ quantity: 8 })
       .eq('id', itemId)
       .select()
       .single();
 
     expect(error2).toBeNull();
-    expect(update2?.loaded_quantity).toBe(10);
+    expect(update2?.quantity).toBe(8);
 
     // Verify final state
     const { data: finalItem, error: queryError } = await supabase
@@ -251,7 +279,7 @@ describe('T012: Multiple crew assigned to same job', () => {
       .single();
 
     expect(queryError).toBeNull();
-    expect(finalItem?.loaded_quantity).toBe(10);
+    expect(finalItem?.quantity).toBe(8);
 
     // Cleanup
     await supabase.from('job_checklist_items').delete().eq('id', itemId);

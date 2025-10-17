@@ -15,7 +15,7 @@
  * Feature: 010-job-assignment-and
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
@@ -117,17 +117,60 @@ describe('T013: RLS - Tenant isolation on job_assignments', () => {
       }
     ]);
 
-    // Create jobs in each tenant
+    // Get or create customers for each tenant
+    const { data: customers1 } = await supabaseService
+      .from('customers')
+      .select('id')
+      .eq('tenant_id', tenant1Id)
+      .limit(1);
+
+    const customer1Id = customers1?.[0]?.id;
+
+    if (!customer1Id) {
+      throw new Error('No customers found for tenant1. Create test customer first.');
+    }
+
+    const { data: customers2 } = await supabaseService
+      .from('customers')
+      .select('id')
+      .eq('tenant_id', tenant2Id)
+      .limit(1);
+
+    let customer2Id = customers2?.[0]?.id;
+
+    // If no customer in tenant2, create one
+    if (!customer2Id) {
+      const { data: newCustomer, error: customerError } = await supabaseService
+        .from('customers')
+        .insert({
+          tenant_id: tenant2Id,
+          name: 'RLS Test Customer',
+          email: 'test@rls.com',
+          status: 'active'
+        })
+        .select('id')
+        .single();
+
+      if (customerError || !newCustomer) {
+        throw new Error(`Failed to create customer for tenant2: ${customerError?.message}`);
+      }
+
+      customer2Id = newCustomer.id;
+    }
+
+    // Create jobs in each tenant (schedule far in future to avoid double-booking)
+    const futureDate = new Date(Date.now() + 86400000 * 30); // 30 days from now
     const { data: job1 } = await supabaseService
       .from('jobs')
       .insert({
         tenant_id: tenant1Id,
+        customer_id: customer1Id,
         job_number: `JOB-T013-T1-${Date.now()}`,
         status: 'scheduled',
         priority: 'normal',
         title: 'Tenant 1 Job',
-        scheduled_start: new Date(Date.now() + 86400000).toISOString(),
-        scheduled_end: new Date(Date.now() + 86400000 + 14400000).toISOString(),
+        scheduled_start: futureDate.toISOString(),
+        scheduled_end: new Date(futureDate.getTime() + 14400000).toISOString(),
       })
       .select('id')
       .single();
@@ -138,12 +181,13 @@ describe('T013: RLS - Tenant isolation on job_assignments', () => {
       .from('jobs')
       .insert({
         tenant_id: tenant2Id,
+        customer_id: customer2Id,
         job_number: `JOB-T013-T2-${Date.now()}`,
         status: 'scheduled',
         priority: 'normal',
         title: 'Tenant 2 Job',
-        scheduled_start: new Date(Date.now() + 86400000).toISOString(),
-        scheduled_end: new Date(Date.now() + 86400000 + 14400000).toISOString(),
+        scheduled_start: new Date(futureDate.getTime() + 86400000).toISOString(), // +1 day
+        scheduled_end: new Date(futureDate.getTime() + 86400000 + 14400000).toISOString(),
       })
       .select('id')
       .single();
@@ -409,17 +453,32 @@ describe('T014: RLS - Crew can only view own assignments', () => {
       }
     ]);
 
-    // Create 2 jobs
+    // Get or create a customer
+    const { data: customers } = await supabaseService
+      .from('customers')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .limit(1);
+
+    const customerId = customers?.[0]?.id;
+
+    if (!customerId) {
+      throw new Error('No customers found for tenant. Create test customer first.');
+    }
+
+    // Create 2 jobs (schedule far in future to avoid double-booking)
+    const futureDate = new Date(Date.now() + 86400000 * 30); // 30 days from now
     const { data: job1 } = await supabaseService
       .from('jobs')
       .insert({
         tenant_id: tenantId,
+        customer_id: customerId,
         job_number: `JOB-T014-1-${Date.now()}`,
         status: 'scheduled',
         priority: 'normal',
         title: 'Job for Crew 1',
-        scheduled_start: new Date(Date.now() + 86400000).toISOString(),
-        scheduled_end: new Date(Date.now() + 86400000 + 14400000).toISOString(),
+        scheduled_start: futureDate.toISOString(),
+        scheduled_end: new Date(futureDate.getTime() + 14400000).toISOString(),
       })
       .select('id')
       .single();
@@ -430,12 +489,13 @@ describe('T014: RLS - Crew can only view own assignments', () => {
       .from('jobs')
       .insert({
         tenant_id: tenantId,
+        customer_id: customerId,
         job_number: `JOB-T014-2-${Date.now()}`,
         status: 'scheduled',
         priority: 'normal',
         title: 'Job for Crew 2',
-        scheduled_start: new Date(Date.now() + 86400000).toISOString(),
-        scheduled_end: new Date(Date.now() + 86400000 + 14400000).toISOString(),
+        scheduled_start: new Date(futureDate.getTime() + 86400000).toISOString(), // +1 day
+        scheduled_end: new Date(futureDate.getTime() + 86400000 + 14400000).toISOString(),
       })
       .select('id')
       .single();
