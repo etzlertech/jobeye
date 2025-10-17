@@ -1,158 +1,158 @@
 /**
- * AGENT DIRECTIVE BLOCK
- * 
- * file: /src/app/api/crew/jobs/route.ts
- * phase: 3
- * domain: crew
- * purpose: API endpoint for getting crew member's assigned jobs
- * spec_ref: 007-mvp-intent-driven/contracts/crew-api.md
- * complexity_budget: 150
- * migrations_touched: ['jobs', 'job_assignments']
- * state_machine: null
- * estimated_llm_cost: {
- *   "GET": "$0.00 (no AI calls)"
- * }
- * offline_capability: REQUIRED
- * dependencies: {
- *   internal: [
- *     '@/domains/crew/services/crew-workflow.service',
- *     '@/lib/auth/with-auth',
- *     '@/core/errors/error-handler'
- *   ],
- *   external: [],
- *   supabase: ['jobs', 'job_assignments']
- * }
- * exports: ['GET']
- * voice_considerations: Job list can be read via voice
- * test_requirements: {
- *   coverage: 90,
- *   contract_tests: 'tests/domains/crew/api/test_jobs_get_contract.test.ts'
- * }
- * tasks: [
- *   'Implement GET handler for crew jobs',
- *   'Support date filtering',
- *   'Include job details and equipment',
- *   'Return formatted job list'
- * ]
+ * GET /api/crew/jobs
+ * Get jobs assigned to crew member (Crew Hub dashboard)
+ *
+ * @task T022
+ * @feature 010-job-assignment-and
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { CrewWorkflowService } from '@/domains/crew/services/crew-workflow.service';
-import { withAuth } from '@/lib/auth/with-auth';
-import { handleApiError } from '@/core/errors/error-handler';
-import { z } from 'zod';
+import { createClient } from '@/lib/supabase/server';
+import { getRequestContext } from '@/lib/auth/context';
+import { JobAssignmentService } from '@/domains/job-assignment/services';
+import type { CrewJobsQuery } from '@/domains/job-assignment/types';
+import {
+  AppError,
+  ErrorCode
+} from '@/core/errors/error-types';
 
-// Force dynamic rendering - prevents static analysis during build
+// CRITICAL: Force dynamic rendering for server-side execution
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// Query params schema
-const jobsQuerySchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
-});
+export async function GET(request: NextRequest) {
+  try {
+    // CRITICAL: Get request context first
+    const context = await getRequestContext(request);
 
-// Response schema
-const jobsResponseSchema = z.object({
-  jobs: z.array(z.object({
-    id: z.string(),
-    customerName: z.string(),
-    propertyAddress: z.string(),
-    scheduledTime: z.string(),
-    status: z.enum(['assigned', 'started', 'in_progress', 'completed']),
-    specialInstructions: z.string().optional(),
-    requiredEquipment: z.array(z.string()),
-    loadVerified: z.boolean(),
-    thumbnailUrl: z.string().optional()
-  })),
-  dailyStats: z.object({
-    total: z.number(),
-    completed: z.number(),
-    remaining: z.number()
-  }),
-  metadata: z.object({
-    date: z.string(),
-    crewId: z.string(),
-    generatedAt: z.string()
-  })
-});
-
-export async function GET(req: NextRequest) {
-  return withAuth(req, async (user, tenantId) => {
-    try {
-      // Check role permission
-      const userRole = user.app_metadata?.role;
-      if (userRole !== 'crew' && userRole !== 'admin') {
-        return NextResponse.json(
-          { error: 'Insufficient permissions' },
-          { status: 403 }
-        );
-      }
-
-      // Parse query parameters
-      const { searchParams } = new URL(req.url);
-      const queryParams = jobsQuerySchema.parse({
-        date: searchParams.get('date') || undefined
-      });
-
-      // Get crew ID from user metadata
-      const crewId = user.app_metadata?.crew_id || user.id;
-
-      // Initialize service
-      const crewService = new CrewWorkflowService();
-
-      // Get assigned jobs
-      const jobs = await crewService.getAssignedJobs(
-        crewId,
-        tenantId,
-        queryParams.date
+    // Validate crew role
+    if (!context.isCrew) {
+      return NextResponse.json(
+        {
+          error: 'Forbidden',
+          message: 'Only crew members can access this endpoint',
+          code: 'INVALID_ROLE'
+        },
+        { status: 403 }
       );
-
-      // Calculate daily stats
-      const completed = jobs.filter(j => j.status === 'completed').length;
-      const dailyStats = {
-        total: jobs.length,
-        completed,
-        remaining: jobs.length - completed
-      };
-
-      // Build response
-      const response = {
-        jobs: jobs.map(job => ({
-          ...job,
-          thumbnailUrl: `/api/images/properties/${job.id}/thumbnail`
-        })),
-        dailyStats,
-        metadata: {
-          date: queryParams.date || new Date().toISOString().split('T')[0],
-          crewId,
-          generatedAt: new Date().toISOString()
-        }
-      };
-
-      // Validate response
-      const validatedResponse = jobsResponseSchema.parse(response);
-
-      return NextResponse.json(validatedResponse, { 
-        status: 200,
-        headers: {
-          'Cache-Control': 'private, max-age=60' // Cache for 1 minute
-        }
-      });
-
-    } catch (error) {
-      // Handle validation errors
-      if (error instanceof z.ZodError) {
-        return NextResponse.json(
-          {
-            error: 'Validation error',
-            details: error.errors
-          },
-          { status: 400 }
-        );
-      }
-
-      // Handle other errors
-      return handleApiError(error);
     }
-  });
+
+    // Parse query parameters with defaults
+    const { searchParams } = new URL(request.url);
+    const query: CrewJobsQuery = {
+      status: searchParams.get('status') || 'scheduled', // Default to scheduled jobs
+      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50, // Default 50
+      offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0, // Default 0
+    };
+
+    // Validate pagination parameters
+    if (query.limit && (query.limit < 1 || query.limit > 100)) {
+      return NextResponse.json(
+        { error: 'Bad Request', message: 'limit must be between 1 and 100' },
+        { status: 400 }
+      );
+    }
+
+    if (query.offset && query.offset < 0) {
+      return NextResponse.json(
+        { error: 'Bad Request', message: 'offset must be >= 0' },
+        { status: 400 }
+      );
+    }
+
+    // Create service and get crew jobs
+    const supabase = await createClient();
+    const service = new JobAssignmentService(supabase);
+
+    // Service will use context.userId to fetch crew's own jobs
+    const response = await service.getCrewJobs(context, query);
+
+    return NextResponse.json(response, { status: 200 });
+
+  } catch (error) {
+    console.error('[GET /api/crew/jobs] Error:', error);
+
+    const mapped = mapError(error);
+    return NextResponse.json(mapped.body, { status: mapped.status });
+  }
+}
+
+function mapError(error: unknown): { status: number; body: Record<string, unknown> } {
+  // Handle auth/context errors as 401
+  if (error instanceof Error) {
+    if (error.message.includes('No auth') || error.message.includes('not authenticated')) {
+      return {
+        status: 401,
+        body: {
+          error: 'Unauthorized',
+          message: 'Authentication required',
+          code: 'UNAUTHORIZED'
+        }
+      };
+    }
+
+    if (error.message.includes('Only crew members')) {
+      return {
+        status: 403,
+        body: {
+          error: 'Forbidden',
+          message: error.message,
+          code: 'INVALID_ROLE'
+        }
+      };
+    }
+
+    if (error.message.includes('can only view their own')) {
+      return {
+        status: 403,
+        body: {
+          error: 'Forbidden',
+          message: error.message,
+          code: 'INVALID_ROLE'
+        }
+      };
+    }
+  }
+
+  if (error instanceof AppError) {
+    if (error.code === ErrorCode.FORBIDDEN) {
+      return {
+        status: 403,
+        body: {
+          error: 'Forbidden',
+          message: error.message,
+          code: 'INVALID_ROLE'
+        }
+      };
+    }
+
+    return {
+      status: 400,
+      body: {
+        error: 'Bad Request',
+        message: error.message,
+        code: 'INVALID_INPUT'
+      }
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      status: 400,
+      body: {
+        error: 'Bad Request',
+        message: error.message,
+        code: 'INVALID_INPUT'
+      }
+    };
+  }
+
+  return {
+    status: 500,
+    body: {
+      error: 'Internal server error',
+      message: 'An unexpected error occurred',
+      code: 'INTERNAL_ERROR'
+    }
+  };
 }

@@ -1,0 +1,199 @@
+openapi: 3.0.3
+info:
+  title: Job Unassignment API
+  version: 1.0.0
+  description: API contract for removing crew member assignments from jobs
+
+paths:
+  /api/jobs/{jobId}/unassign:
+    delete:
+      summary: Remove crew member assignment from a job
+      description: |
+        Allows supervisors to remove a crew member's assignment from a job.
+        The crew member will no longer see this job in their Crew Hub dashboard.
+        Deleting the assignment does not change the job status.
+      operationId: unassignJob
+      tags:
+        - Job Assignment
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          description: UUID of the job to remove assignment from
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: user_id
+          in: query
+          required: true
+          description: UUID of the crew member to unassign
+          schema:
+            type: string
+            format: uuid
+            example: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+      responses:
+        '200':
+          description: Successfully removed crew assignment
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - message
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Successfully removed crew member from job"
+                  removed_assignment:
+                    $ref: '#/components/schemas/JobAssignment'
+        '400':
+          description: Bad request - invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidUserId:
+                  value:
+                    error: "Invalid user ID format"
+                    message: "user_id must be a valid UUID"
+                    code: "INVALID_INPUT"
+                missingUserId:
+                  value:
+                    error: "Missing user_id parameter"
+                    message: "user_id query parameter is required"
+                    code: "MISSING_PARAMETER"
+        '401':
+          description: Unauthorized - missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Missing or invalid authentication token"
+                code: "AUTH_REQUIRED"
+        '403':
+          description: Forbidden - user doesn't have permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Forbidden"
+                message: "Only supervisors can remove job assignments"
+                code: "INSUFFICIENT_PERMISSIONS"
+        '404':
+          description: Not found - job or assignment doesn't exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                jobNotFound:
+                  value:
+                    error: "Job not found"
+                    message: "Job with ID 550e8400-e29b-41d4-a716-446655440000 does not exist"
+                    code: "RESOURCE_NOT_FOUND"
+                assignmentNotFound:
+                  value:
+                    error: "Assignment not found"
+                    message: "No assignment found for this job and crew member"
+                    code: "ASSIGNMENT_NOT_FOUND"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "An unexpected error occurred"
+                code: "INTERNAL_ERROR"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase JWT token with tenant_id in app_metadata
+
+  schemas:
+    JobAssignment:
+      type: object
+      description: Represents a crew member assigned to a job
+      required:
+        - id
+        - tenant_id
+        - job_id
+        - user_id
+        - assigned_at
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique assignment ID
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant ID for multi-tenant isolation
+        job_id:
+          type: string
+          format: uuid
+          description: Job ID being assigned
+        user_id:
+          type: string
+          format: uuid
+          description: User ID of crew member assigned
+        assigned_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User ID of supervisor who made assignment
+        assigned_at:
+          type: string
+          format: date-time
+          description: Timestamp when assignment was created
+        created_at:
+          type: string
+          format: date-time
+          description: Record creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Record last update timestamp
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+        - code
+      properties:
+        error:
+          type: string
+          description: Short error description
+        message:
+          type: string
+          description: Detailed error message
+        code:
+          type: string
+          description: Machine-readable error code
+          enum:
+            - INVALID_INPUT
+            - MISSING_PARAMETER
+            - AUTH_REQUIRED
+            - INSUFFICIENT_PERMISSIONS
+            - RESOURCE_NOT_FOUND
+            - ASSIGNMENT_NOT_FOUND
+            - INTERNAL_ERROR

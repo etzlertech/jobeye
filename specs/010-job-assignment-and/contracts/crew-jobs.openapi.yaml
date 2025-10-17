@@ -1,0 +1,293 @@
+openapi: 3.0.3
+info:
+  title: Crew Jobs API
+  version: 1.0.0
+  description: API contract for crew members to view their assigned jobs
+
+paths:
+  /api/crew/jobs:
+    get:
+      summary: Get all jobs assigned to the authenticated crew member
+      description: |
+        Returns all jobs assigned to the currently authenticated crew member,
+        sorted by scheduled start time (earliest first) for "next to load" priority.
+        Includes load status (items loaded/total items) for each job.
+        Only returns jobs with status='scheduled' (active jobs).
+      operationId: getCrewJobs
+      tags:
+        - Crew Hub
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Filter by job status (default: scheduled)
+          schema:
+            type: string
+            enum:
+              - scheduled
+              - in_progress
+              - completed
+              - cancelled
+              - on_hold
+            default: scheduled
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of jobs to return (default: 50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          description: Number of jobs to skip (for pagination)
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Successfully retrieved assigned jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - jobs
+                  - total_count
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  jobs:
+                    type: array
+                    description: Array of jobs assigned to crew member
+                    items:
+                      $ref: '#/components/schemas/CrewJob'
+                  total_count:
+                    type: integer
+                    description: Total number of assigned jobs (for pagination)
+                    example: 15
+                  has_more:
+                    type: boolean
+                    description: Whether more jobs are available (pagination)
+                    example: false
+        '401':
+          description: Unauthorized - missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Missing or invalid authentication token"
+                code: "AUTH_REQUIRED"
+        '403':
+          description: Forbidden - user is not a crew member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Forbidden"
+                message: "Only crew members can access this endpoint"
+                code: "INVALID_ROLE"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "An unexpected error occurred"
+                code: "INTERNAL_ERROR"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase JWT token with tenant_id in app_metadata
+
+  schemas:
+    CrewJob:
+      type: object
+      description: Job with assignment and load status information for crew dashboard
+      required:
+        - id
+        - tenant_id
+        - job_number
+        - status
+        - priority
+        - scheduled_start
+        - customer_name
+        - property_address
+        - assigned_at
+        - total_items
+        - loaded_items
+        - load_percentage
+      properties:
+        # Job identity
+        id:
+          type: string
+          format: uuid
+          description: Job ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant ID
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        job_number:
+          type: string
+          description: Human-readable job number
+          example: "JOB-2025-001"
+
+        # Job scheduling
+        scheduled_start:
+          type: string
+          format: date-time
+          description: Scheduled start time (used for sort order)
+          example: "2025-10-17T08:00:00Z"
+        scheduled_end:
+          type: string
+          format: date-time
+          nullable: true
+          description: Scheduled end time
+          example: "2025-10-17T12:00:00Z"
+
+        # Job status
+        status:
+          type: string
+          description: Current job status
+          enum:
+            - scheduled
+            - in_progress
+            - completed
+            - cancelled
+            - on_hold
+          example: "scheduled"
+        priority:
+          type: string
+          description: Job priority level
+          enum:
+            - low
+            - normal
+            - high
+            - urgent
+          example: "high"
+
+        # Customer context
+        customer_id:
+          type: string
+          format: uuid
+          description: Customer ID
+          example: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+        customer_name:
+          type: string
+          description: Customer display name
+          example: "Acme Corporation"
+
+        # Property context
+        property_id:
+          type: string
+          format: uuid
+          description: Property ID
+          example: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+        property_address:
+          type: string
+          description: Property full address
+          example: "123 Main St, San Francisco, CA 94102"
+        property_location:
+          type: object
+          nullable: true
+          description: Property GPS coordinates
+          properties:
+            latitude:
+              type: number
+              format: double
+              example: 37.7749
+            longitude:
+              type: number
+              format: double
+              example: -122.4194
+
+        # Assignment info
+        assigned_at:
+          type: string
+          format: date-time
+          description: When crew member was assigned to this job
+          example: "2025-10-16T14:30:00Z"
+        assigned_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: Supervisor who assigned the job
+          example: "1a2b3c4d-5e6f-7890-abcd-ef1234567890"
+        assigned_by_name:
+          type: string
+          nullable: true
+          description: Supervisor display name
+          example: "John Smith"
+
+        # Load status (for UI display)
+        total_items:
+          type: integer
+          description: Total number of checklist items for this job
+          example: 5
+        loaded_items:
+          type: integer
+          description: Number of items marked as loaded
+          example: 3
+        load_percentage:
+          type: number
+          format: float
+          description: Percentage of items loaded (0-100)
+          example: 60.0
+        is_fully_loaded:
+          type: boolean
+          description: Whether all items are loaded (convenience field)
+          example: false
+
+        # Job metadata
+        notes:
+          type: string
+          nullable: true
+          description: Job notes/instructions
+          example: "Use back entrance, customer will be onsite"
+        created_at:
+          type: string
+          format: date-time
+          description: Job creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Job last update timestamp
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+        - code
+      properties:
+        error:
+          type: string
+          description: Short error description
+        message:
+          type: string
+          description: Detailed error message
+        code:
+          type: string
+          description: Machine-readable error code
+          enum:
+            - AUTH_REQUIRED
+            - INVALID_ROLE
+            - INTERNAL_ERROR

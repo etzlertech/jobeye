@@ -1,5 +1,18 @@
 # MEMORY.md - Critical Rules for Every Claude Code Session
 
+## 📖 PROJECT CONSTITUTION LOCATION
+
+**The official JobEye Constitution is located at:**
+```
+.specify/constitution.md
+```
+
+This file contains ALL architectural principles, database patterns, RLS policies, development standards, and non-negotiable rules. **READ THIS FILE FIRST** before any planning or implementation work.
+
+**DO NOT** confuse with:
+- `.specify/memory/constitution.md` (template only)
+- `.claude/commands/constitution.md` (slash command definition)
+
 ## 🚨 CRITICAL: EXACT WORKING METHODS (USE THESE ONLY)
 
 ### 🧭 MANDATORY PLANNING & EVIDENCE WORKFLOW

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import { ItemImageUpload } from '@/components/items/ItemImageUpload';
+import { CrewAssignmentSection } from '@/components/supervisor/CrewAssignmentSection';
 import type { ProcessedImages } from '@/utils/image-processor';
 import {
   ArrowLeft,
@@ -33,6 +34,15 @@ interface ChecklistItem {
   };
 }
 
+interface Assignment {
+  user_id: string;
+  user?: {
+    id: string;
+    email: string;
+    full_name?: string;
+  };
+}
+
 interface JobDetails {
   id: string;
   job_number: string;
@@ -54,6 +64,7 @@ interface JobDetails {
   loaded_items?: number;
   verified_items?: number;
   completion_percentage?: number;
+  assignments?: Assignment[];
 }
 
 const statusColors = {
@@ -373,6 +384,13 @@ export default function JobDetailPage() {
               </div>
             </div>
           )}
+
+          {/* Crew Assignment */}
+          <CrewAssignmentSection
+            jobId={jobId}
+            currentAssignments={job.assignments || []}
+            onAssignmentChange={loadJob}
+          />
 
           {/* Load List Items */}
           {job.checklist_items && job.checklist_items.length > 0 && (

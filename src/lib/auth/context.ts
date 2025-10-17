@@ -13,6 +13,9 @@ export interface RequestContext {
   source: 'session' | 'header';
   userId?: string;
   user?: User;
+  // NEW: Role helpers for Job Assignment feature (010-job-assignment-and)
+  isCrew: boolean;       // role === 'crew' or role === 'technician'
+  isSupervisor: boolean; // role === 'supervisor' or role === 'manager' or role === 'admin'
 }
 
 /**
@@ -50,12 +53,19 @@ export async function getRequestContext(request: Request): Promise<RequestContex
       });
 
       if (appMetadata?.tenant_id) {
+        const roles = appMetadata.roles || ['member'];
+        const role = appMetadata.role || roles[0]; // Single role field for backward compat
+
         return {
           tenantId: appMetadata.tenant_id,
-          roles: appMetadata.roles || ['member'],
+          roles,
           source: 'session',
           userId: user.id,
-          user
+          user,
+          // Compute role helpers based on app_metadata.role or roles array
+          isCrew: role === 'crew' || role === 'technician' || roles.includes('crew') || roles.includes('technician'),
+          isSupervisor: role === 'supervisor' || role === 'manager' || role === 'admin' ||
+                        roles.includes('supervisor') || roles.includes('manager') || roles.includes('admin')
         };
       }
 
@@ -73,7 +83,9 @@ export async function getRequestContext(request: Request): Promise<RequestContex
           roles: ['member'],
           source: 'header',
           userId: user.id,
-          user
+          user,
+          isCrew: false,      // Fallback mode - cannot determine role
+          isSupervisor: false // Fallback mode - cannot determine role
         };
       }
 
@@ -88,7 +100,9 @@ export async function getRequestContext(request: Request): Promise<RequestContex
         roles: ['member'],
         source: 'header', // Mark as fallback
         userId: user.id,
-        user
+        user,
+        isCrew: false,      // Fallback mode - cannot determine role
+        isSupervisor: false // Fallback mode - cannot determine role
       };
     }
 
@@ -100,7 +114,9 @@ export async function getRequestContext(request: Request): Promise<RequestContex
       return {
         tenantId: headerTenant,
         roles: ['member'],
-        source: 'header'
+        source: 'header',
+        isCrew: false,      // No session - cannot determine role
+        isSupervisor: false // No session - cannot determine role
       };
     }
 
@@ -166,4 +182,44 @@ export function getClientSafeContext(context: RequestContext) {
     roles: context.roles,
     source: context.source
   };
+}
+
+/**
+ * Check if user is a crew member (technician)
+ * NEW: Added for Job Assignment feature (010-job-assignment-and)
+ */
+export function isCrew(context: RequestContext): boolean {
+  return context.isCrew;
+}
+
+/**
+ * Check if user is a supervisor (manager, admin, or supervisor role)
+ * NEW: Added for Job Assignment feature (010-job-assignment-and)
+ */
+export function isSupervisor(context: RequestContext): boolean {
+  return context.isSupervisor;
+}
+
+/**
+ * Assert that user is a crew member, throw if not
+ */
+export function requireCrew(context: RequestContext, action?: string): void {
+  if (!context.isCrew) {
+    throw new Error(
+      `Unauthorized: ${action || 'This action'} requires crew member role. ` +
+      `Current roles: ${context.roles.join(', ')}`
+    );
+  }
+}
+
+/**
+ * Assert that user is a supervisor, throw if not
+ */
+export function requireSupervisor(context: RequestContext, action?: string): void {
+  if (!context.isSupervisor) {
+    throw new Error(
+      `Unauthorized: ${action || 'This action'} requires supervisor role. ` +
+      `Current roles: ${context.roles.join(', ')}`
+    );
+  }
 }
