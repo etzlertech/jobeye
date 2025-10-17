@@ -1,8 +1,8 @@
 /**
- * GET /api/crew/jobs
- * Get jobs assigned to crew member (Crew Hub dashboard)
+ * DELETE /api/jobs/[jobId]/unassign
+ * Remove crew member from a job
  *
- * @task T022
+ * @task T021
  * @feature 010-job-assignment-and
  */
 
@@ -10,74 +10,71 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getRequestContext } from '@/lib/auth/context';
 import { JobAssignmentService } from '@/domains/job-assignment/services';
-import type { CrewJobsQuery } from '@/domains/job-assignment/types';
 
 // CRITICAL: Force dynamic rendering for server-side execution
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export async function GET(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { jobId: string } }
+) {
   try {
     // CRITICAL: Get request context first
     const context = await getRequestContext(request);
 
-    // Validate crew role
-    if (!context.isCrew) {
+    // Validate supervisor role
+    if (!context.isSupervisor) {
       return NextResponse.json(
-        { error: 'Forbidden', message: 'Only crew members can access this endpoint' },
+        { error: 'Forbidden', message: 'Only supervisors can unassign jobs' },
         { status: 403 }
       );
     }
 
-    // Parse query parameters
+    // Get user_id from query parameters
     const { searchParams } = new URL(request.url);
-    const query: CrewJobsQuery = {
-      status: searchParams.get('status') || undefined,
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
-      offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined,
-    };
+    const userId = searchParams.get('user_id');
 
-    // Validate pagination parameters
-    if (query.limit && (query.limit < 1 || query.limit > 100)) {
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Bad Request', message: 'limit must be between 1 and 100' },
+        { error: 'Bad Request', message: 'user_id query parameter is required' },
         { status: 400 }
       );
     }
 
-    if (query.offset && query.offset < 0) {
-      return NextResponse.json(
-        { error: 'Bad Request', message: 'offset must be >= 0' },
-        { status: 400 }
-      );
-    }
-
-    // Create service and get crew jobs
+    // Create service and execute unassignment
     const supabase = await createClient();
     const service = new JobAssignmentService(supabase);
 
-    // Crew can only view their own jobs
-    const response = await service.getCrewJobs(
+    const response = await service.unassignCrewFromJob(
       context,
-      context.userId!,
-      query
+      params.jobId,
+      userId
     );
+
+    // Return 404 if assignment not found
+    if (!response.success) {
+      return NextResponse.json(
+        { error: 'Not Found', message: response.message },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json(response, { status: 200 });
 
   } catch (error) {
-    console.error('[GET /api/crew/jobs] Error:', error);
+    console.error('[DELETE /api/jobs/[jobId]/unassign] Error:', error);
 
     // Handle specific error cases
     if (error instanceof Error) {
-      if (error.message.includes('Only crew members')) {
+      if (error.message.includes('not found')) {
         return NextResponse.json(
-          { error: 'Forbidden', message: error.message },
-          { status: 403 }
+          { error: 'Not Found', message: error.message },
+          { status: 404 }
         );
       }
 
-      if (error.message.includes('can only view their own')) {
+      if (error.message.includes('Only supervisors')) {
         return NextResponse.json(
           { error: 'Forbidden', message: error.message },
           { status: 403 }
