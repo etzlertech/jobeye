@@ -103,6 +103,9 @@ export default function JobDetailPage() {
       });
       const data = await response.json();
 
+      console.log('[JobDetailPage] API response:', data);
+      console.log('[JobDetailPage] job.assignments:', data.job?.assignments || data.assignments);
+
       if (!response.ok) throw new Error(data.message || 'Failed to load job');
 
       setJob(data.job || data);
