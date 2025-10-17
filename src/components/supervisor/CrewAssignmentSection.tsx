@@ -41,7 +41,7 @@ export function CrewAssignmentSection({
   const [isLoadingCrew, setIsLoadingCrew] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -74,8 +74,8 @@ export function CrewAssignmentSection({
   }, []);
 
   const handleAssign = async () => {
-    if (!selectedUserId) {
-      setError('Please select a crew member');
+    if (selectedUserIds.length === 0) {
+      setError('Please select at least one crew member');
       return;
     }
 
@@ -83,21 +83,26 @@ export function CrewAssignmentSection({
     setError(null);
 
     try {
+      console.log('[CrewAssignmentSection] Assigning users:', selectedUserIds);
+      console.log('[CrewAssignmentSection] Request body:', { user_ids: selectedUserIds });
+
       const response = await fetch(`/api/jobs/${jobId}/assign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_ids: [selectedUserId] })
+        body: JSON.stringify({ user_ids: selectedUserIds })
       });
 
       const data = await response.json();
+      console.log('[CrewAssignmentSection] Response:', { status: response.status, data });
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to assign crew');
+        console.error('[CrewAssignmentSection] Assignment failed:', data);
+        throw new Error(data.message || data.error || 'Failed to assign crew');
       }
 
-      setSuccess('Crew assigned successfully');
+      setSuccess(`${selectedUserIds.length} crew member(s) assigned successfully`);
       setShowDropdown(false);
-      setSelectedUserId('');
+      setSelectedUserIds([]);
       setTimeout(() => setSuccess(null), 3000);
 
       // Notify parent to refresh
@@ -184,25 +189,34 @@ export function CrewAssignmentSection({
       {/* Assignment Dropdown */}
       {showDropdown && (
         <div className="dropdown-container">
-          <select
-            name="crew_member"
-            value={selectedUserId}
-            onChange={(e) => setSelectedUserId(e.target.value)}
-            className="crew-select"
-            disabled={isAssigning}
-          >
-            <option value="">Select crew member...</option>
+          <p className="select-label">Select crew members to assign:</p>
+          <div className="crew-checkbox-list">
             {unassignedCrew.map(user => (
-              <option key={user.id} value={user.id}>
-                {user.full_name || user.email}
-              </option>
+              <label key={user.id} className="crew-checkbox-item">
+                <input
+                  type="checkbox"
+                  checked={selectedUserIds.includes(user.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedUserIds([...selectedUserIds, user.id]);
+                    } else {
+                      setSelectedUserIds(selectedUserIds.filter(id => id !== user.id));
+                    }
+                  }}
+                  disabled={isAssigning}
+                  className="crew-checkbox"
+                />
+                <span className="crew-checkbox-label">
+                  {user.full_name || user.email}
+                </span>
+              </label>
             ))}
-          </select>
-          <div className="flex gap-2 mt-2">
+          </div>
+          <div className="flex gap-2 mt-3">
             <button
               type="button"
               onClick={handleAssign}
-              disabled={isAssigning || !selectedUserId}
+              disabled={isAssigning || selectedUserIds.length === 0}
               className="btn-primary flex-1"
             >
               {isAssigning ? (
@@ -211,12 +225,15 @@ export function CrewAssignmentSection({
                   Assigning...
                 </>
               ) : (
-                'Assign'
+                `Assign ${selectedUserIds.length > 0 ? `(${selectedUserIds.length})` : ''}`
               )}
             </button>
             <button
               type="button"
-              onClick={() => setShowDropdown(false)}
+              onClick={() => {
+                setShowDropdown(false);
+                setSelectedUserIds([]);
+              }}
               className="btn-secondary flex-1"
               disabled={isAssigning}
             >
@@ -324,6 +341,50 @@ export function CrewAssignmentSection({
           background: rgba(0, 0, 0, 0.3);
           border: 1px solid rgba(255, 215, 0, 0.2);
           border-radius: 0.375rem;
+        }
+
+        .select-label {
+          font-size: 0.875rem;
+          color: #FFD700;
+          margin: 0 0 0.75rem 0;
+          font-weight: 600;
+        }
+
+        .crew-checkbox-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          max-height: 200px;
+          overflow-y: auto;
+        }
+
+        .crew-checkbox-item {
+          display: flex;
+          align-items: center;
+          padding: 0.5rem 0.75rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.15);
+          border-radius: 0.375rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .crew-checkbox-item:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        .crew-checkbox {
+          width: 1rem;
+          height: 1rem;
+          margin-right: 0.75rem;
+          cursor: pointer;
+          accent-color: #FFD700;
+        }
+
+        .crew-checkbox-label {
+          font-size: 0.875rem;
+          color: white;
         }
 
         .crew-select {
