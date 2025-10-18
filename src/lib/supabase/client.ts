@@ -36,7 +36,7 @@
 
 import { createBrowserClient, createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/lib/supabase/types';
+import type { Database } from '@/types/database';
 
 // Environment validation
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -149,10 +149,12 @@ export async function getUser() {
     .eq('is_active', true)
     .single();
 
+  const assignment = tenantAssignment as { tenant_id?: string; role?: string } | null;
+
   return {
     ...session.user,
-    tenantId: tenantAssignment?.tenant_id,
-    role: tenantAssignment?.role
+    tenantId: assignment?.tenant_id ?? null,
+    role: assignment?.role ?? null
   };
 }
 

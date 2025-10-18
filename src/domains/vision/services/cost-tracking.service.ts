@@ -170,8 +170,6 @@ export class CostTrackingService {
     } catch (error) {
       throw new Error(`Failed to get cost breakdown: ${error}`);
     }
-
-    return result.data;
   }
 
   /**
@@ -187,13 +185,11 @@ export class CostTrackingService {
     requestCount: number;
     avgCostPerRequest: number;
   }>> {
-    const result = await costRecordRepo.getDailyCostSummaries(tenantId, startDate, endDate);
-
-    if (result.error || !result.data) {
-      throw new Error(`Failed to get daily summaries: ${result.error?.message}`);
+    try {
+      return await this.costRecordRepo.getDailyCostSummaries(tenantId, startDate, endDate);
+    } catch (error) {
+      throw new Error(`Failed to get daily summaries: ${error}`);
     }
-
-    return result.data;
   }
 
   /**

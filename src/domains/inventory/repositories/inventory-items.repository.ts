@@ -14,16 +14,17 @@ import type {
   InventoryItem,
   InventoryItemCreate,
   InventoryItemUpdate,
-  ItemStatus,
   ItemType,
+  TrackingMode,
 } from '../types/inventory-types';
 
 export interface InventoryItemFilter {
   tenantId?: string;
-  type?: ItemType;
-  status?: ItemStatus;
+  itemType?: ItemType | string;
+  status?: string;
   category?: string;
   currentLocationId?: string;
+  trackingMode?: TrackingMode | string;
   search?: string; // Search by name or category
   limit?: number;
   offset?: number;
@@ -37,7 +38,7 @@ export async function findById(
 ): Promise<{ data: InventoryItem | null; error: Error | null }> {
 
   const { data, error } = await supabase
-    .from('inventory_items')
+    .from('items')
     .select('*')
     .eq('id', id)
     .single();
@@ -56,7 +57,7 @@ export async function findAll(
 ): Promise<{ data: InventoryItem[]; error: Error | null; count: number }> {
 
   let query = supabase
-    .from('inventory_items')
+    .from('items')
     .select('*', { count: 'exact' });
 
   // Apply filters
@@ -64,8 +65,8 @@ export async function findAll(
     query = query.eq('tenant_id', filter.tenantId);
   }
 
-  if (filter.type) {
-    query = query.eq('type', filter.type);
+  if (filter.itemType) {
+    query = query.eq('item_type', filter.itemType);
   }
 
   if (filter.status) {
@@ -78,6 +79,10 @@ export async function findAll(
 
   if (filter.currentLocationId) {
     query = query.eq('current_location_id', filter.currentLocationId);
+  }
+
+  if (filter.trackingMode) {
+    query = query.eq('tracking_mode', filter.trackingMode);
   }
 
   if (filter.search) {
@@ -108,8 +113,8 @@ export async function create(
   item: InventoryItemCreate
 ): Promise<{ data: InventoryItem | null; error: Error | null }> {
 
-  const { data, error } = await supabase
-    .from('inventory_items')
+  const { data, error } = await (supabase as any)
+    .from('items')
     .insert(item)
     .select()
     .single();
@@ -128,8 +133,8 @@ export async function update(
   updates: InventoryItemUpdate
 ): Promise<{ data: InventoryItem | null; error: Error | null }> {
 
-  const { data, error } = await supabase
-    .from('inventory_items')
+  const { data, error } = await (supabase as any)
+    .from('items')
     .update(updates)
     .eq('id', id)
     .select()
@@ -149,7 +154,7 @@ export async function deleteById(
 ): Promise<{ error: Error | null }> {
 
   const { error } = await supabase
-    .from('inventory_items')
+    .from('items')
     .delete()
     .eq('id', id);
 

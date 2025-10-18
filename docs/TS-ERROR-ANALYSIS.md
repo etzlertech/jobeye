@@ -20,7 +20,7 @@ The codebase has 828 TypeScript errors primarily caused by:
 | 41 | src/domains/vision/__tests__/unit/detected-item.repository.test.ts | Test - Vision |
 | 40 | src/domains/vision/__tests__/unit/cost-record.repository.test.ts | Test - Vision |
 | 32 | src/domains/inventory/services/container-management.service.ts | Service - Inventory |
-| 31 | src/domains/intent/repositories/offline-sync-queue.repository.ts | Repository - Intent |
+| 31 | ~~src/domains/intent/repositories/offline-sync-queue.repository.ts~~ | Repository - Intent *(removed; feature postponed)* |
 | 28 | src/domains/job/services/checklist-verification-service.ts | Service - Job |
 | 26 | src/domains/supervisor/services/supervisor-workflow.service.ts | Service - Supervisor |
 | 24 | src/domains/vision/__tests__/unit/batch-verification.service.test.ts | Test - Vision |
@@ -36,6 +36,8 @@ The codebase has 828 TypeScript errors primarily caused by:
 | 14 | src/domains/vision/repositories/cost-record.repository.class.ts | Repository - Vision |
 | 14 | src/domains/safety/services/safety-analytics.service.ts | Service - Safety |
 | 13 | src/domains/shared/repositories/item.repository.ts | Repository - Shared |
+
+> Update 2025-10-17: Inventory training-data and purchase-receipts repositories were removed from production (tables absent in Supabase); remaining counts reflect current sources.
 
 ## Error Categories
 

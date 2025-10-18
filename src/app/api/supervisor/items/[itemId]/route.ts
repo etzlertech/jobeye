@@ -55,7 +55,7 @@ export async function PUT(
     const itemRepo = new ItemRepository(supabase);
     
     // Check if item exists
-    const existingItem = await itemRepo.findById(params.itemId, { tenant_id: tenantId });
+    const existingItem = await itemRepo.findById(params.itemId, { tenantId });
     if (!existingItem) {
       return notFound('Item not found');
     }
@@ -72,7 +72,7 @@ export async function PUT(
         ...body,
         updated_at: new Date().toISOString()
       },
-      { tenant_id: tenantId }
+      { tenantId }
     );
     
     if (!updatedItem) {
@@ -111,7 +111,7 @@ export async function PATCH(
     const itemRepo = new ItemRepository(supabase);
     
     // Check if item exists
-    const existingItem = await itemRepo.findById(params.itemId, { tenant_id: tenantId });
+    const existingItem = await itemRepo.findById(params.itemId, { tenantId });
     if (!existingItem) {
       return notFound('Item not found');
     }
@@ -123,7 +123,7 @@ export async function PATCH(
         ...body,
         updated_at: new Date().toISOString()
       },
-      { tenant_id: tenantId }
+      { tenantId }
     );
     
     if (!updatedItem) {
@@ -156,7 +156,7 @@ export async function DELETE(
     const itemRepo = new ItemRepository(supabase);
     
     // Check if item exists
-    const existingItem = await itemRepo.findById(params.itemId, { tenant_id: tenantId });
+    const existingItem = await itemRepo.findById(params.itemId, { tenantId });
     if (!existingItem) {
       return notFound('Item not found');
     }
@@ -165,7 +165,7 @@ export async function DELETE(
     const updated = await itemRepo.update(
       params.itemId,
       { status: 'inactive' },
-      { tenant_id: tenantId }
+      { tenantId }
     );
     
     if (!updated) {

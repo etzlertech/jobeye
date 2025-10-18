@@ -42,7 +42,7 @@
 // --- END DIRECTIVE BLOCK ---
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { BaseRepository } from '@/lib/repositories/base.repository';
+import { v4 as uuidv4 } from 'uuid';
 import {
   JobTemplate,
   JobTemplateCreate,
@@ -55,11 +55,10 @@ import {
 import { JobType } from '@/domains/job/types/job-types';
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
 
-export class JobTemplateRepository extends BaseRepository<'job_templates'> {
+export class JobTemplateRepository {
   private supabaseClient: SupabaseClient;
 
   constructor(supabaseClient: SupabaseClient) {
-    super('job_templates', supabaseClient);
     this.supabaseClient = supabaseClient;
   }
 
@@ -91,7 +90,7 @@ export class JobTemplateRepository extends BaseRepository<'job_templates'> {
         difficulty: validated.difficulty,
         steps: validated.steps.map((step, index) => ({
           ...step,
-          id: `step-${index + 1}`,
+          id: `step-${uuidv4()}`,
           stepNumber: index + 1,
         })),
         estimated_total_duration: estimatedTotalDuration,
@@ -170,7 +169,7 @@ export class JobTemplateRepository extends BaseRepository<'job_templates'> {
       if (validated.steps) {
         updateData.steps = validated.steps.map((step, index) => ({
           ...step,
-          id: step.id || `step-${index + 1}`,
+          id: `step-${uuidv4()}`,
           stepNumber: index + 1,
         }));
 

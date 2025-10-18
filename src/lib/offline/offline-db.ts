@@ -40,8 +40,17 @@
  * ]
  */
 
-import type { Job, EquipmentItem } from '@/types/database';
 import { AppError } from '@/core/errors/error-types';
+
+interface Job {
+  id: string;
+  [key: string]: any;
+}
+
+interface EquipmentItem {
+  id: string;
+  [key: string]: any;
+}
 
 export interface SyncQueueItem {
   id?: string;

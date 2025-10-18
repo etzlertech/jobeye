@@ -43,7 +43,15 @@
 
 import { z } from 'zod';
 import { DetectedObject, ObjectClass } from './vision-types';
-import { Timestamped, TenantAware } from '@/core/types/base-types';
+
+interface TenantAware {
+  tenantId?: string;
+}
+
+interface Timestamped {
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 // Storage/transport location types
 export enum LocationType {

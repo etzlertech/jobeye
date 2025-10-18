@@ -156,7 +156,7 @@ export interface TenantWithMemberCount extends Tenant {
 }
 
 export interface MemberWithUser extends TenantMember {
-  user: {
+  user?: {
     id: string;
     email: string;
     name?: string;
@@ -170,7 +170,7 @@ export interface InvitationWithDetails extends TenantInvitation {
     name: string;
     slug: string;
   };
-  inviter: {
+  inviter?: {
     id: string;
     email: string;
     name?: string;

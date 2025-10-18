@@ -1,15 +1,10 @@
 import { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
-import { CreateKitVariantInput, KitVariant } from '@/domains/lib/scheduling-kits/kit-types';
+import type { Database } from '@/types/database';
+import { CreateKitVariantInput, KitVariant, JsonValue } from '@/domains/lib/scheduling-kits/kit-types';
 
-type KitVariantRow = {
-  id: string;
-  tenant_id: string;
-  kit_id: string;
-  variant_code: string;
-  name: string;
-  is_default: boolean;
-  metadata: Record<string, unknown> | null;
-};
+type KitVariantTable = Database['public']['Tables']['kit_variants'];
+type KitVariantRow = KitVariantTable['Row'];
+type KitVariantInsert = KitVariantTable['Insert'];
 
 export class KitVariantRepository {
   constructor(private readonly supabase: SupabaseClient) {}
@@ -31,13 +26,13 @@ export class KitVariantRepository {
   }
 
   async createVariant(input: CreateKitVariantInput): Promise<KitVariant> {
-    const insertPayload = {
+    const insertPayload: KitVariantInsert = {
       kit_id: input.kitId,
       tenant_id: input.tenantId,
       variant_code: input.variantCode,
       name: input.name,
       is_default: input.isDefault ?? false,
-      metadata: input.metadata ?? {},
+      metadata: (input.metadata ?? null) as KitVariantInsert['metadata'],
     };
 
     const { data, error } = await this.supabase
@@ -61,7 +56,7 @@ export class KitVariantRepository {
       variantCode: row.variant_code,
       name: row.name,
       isDefault: row.is_default,
-      metadata: row.metadata ?? undefined,
+      metadata: (row.metadata ?? undefined) as JsonValue | undefined,
     } satisfies KitVariant;
   }
 

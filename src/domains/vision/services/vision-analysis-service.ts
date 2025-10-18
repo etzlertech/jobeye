@@ -67,7 +67,7 @@ import {
 } from '../types/vision-context-types';
 
 // Known vehicle/trailer mappings
-const KNOWN_VEHICLES = {
+const KNOWN_VEHICLES: Record<string, { type: LocationType; color: LocationColor; name: string }> = {
   'VH-TKR': { type: LocationType.TRUCK_BED, color: LocationColor.RED, name: 'Red Truck' },
   'VH-VN1': { type: LocationType.VAN_CARGO, color: LocationColor.WHITE, name: 'Van #1' },
   'TR-DU12R': { type: LocationType.TRAILER_DUMP, color: LocationColor.RED, name: 'Red Dump Trailer' },
@@ -136,8 +136,6 @@ export class VisionAnalysisService {
           itemDetection: this.averageConfidence(detectionResult.detectedObjects),
           placementAnalysis: this.averageConfidence(placements),
         },
-        createdAt: new Date(),
-        updatedAt: new Date(),
       };
 
       // Log the analysis
@@ -145,7 +143,7 @@ export class VisionAnalysisService {
         jobId,
         locationCount: locations.length,
         itemCount: detectionResult.detectedObjects.length,
-        alertCount: alerts.length,
+        alertCount: alerts?.length ?? 0,
         analysisTimeMs: visionContext.analysisTimeMs,
       });
 
@@ -633,8 +631,6 @@ export class VisionAnalysisService {
         },
       ],
       processingTimeMs: 250,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     };
   }
 

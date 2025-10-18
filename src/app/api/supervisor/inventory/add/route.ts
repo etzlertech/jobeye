@@ -41,6 +41,7 @@ import { SupervisorWorkflowService } from '@/domains/supervisor/services/supervi
 import { withAuth } from '@/lib/auth/with-auth';
 import { handleApiError } from '@/core/errors/error-handler';
 import { z } from 'zod';
+import { createServerClient } from '@/lib/supabase/server';
 
 // Request validation schema
 const inventoryAddRequestSchema = z.object({
@@ -91,7 +92,8 @@ export async function POST(req: NextRequest) {
       const validatedData = inventoryAddRequestSchema.parse(body);
 
       // Initialize service
-      const supervisorService = new SupervisorWorkflowService();
+      const supabase = await createServerClient();
+      const supervisorService = new SupervisorWorkflowService(supabase);
 
       // Add inventory item
       const result = await supervisorService.addInventoryItem(

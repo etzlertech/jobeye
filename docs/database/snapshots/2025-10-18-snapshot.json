@@ -1,0 +1,17 @@
+{
+  "timestamp": "2025-10-18T19:11:51.693Z",
+  "version": "2025-10-18",
+  "tables": [],
+  "columns": [],
+  "foreignKeys": [],
+  "indexes": [],
+  "rlsPolicies": [],
+  "functions": [],
+  "rowCounts": {},
+  "metadata": {
+    "databaseTypesHash": "3358e8d2",
+    "databaseTypesSize": 104467,
+    "migrationCount": 59,
+    "latestMigration": "20251213_tenant_management_tables.sql"
+  }
+}

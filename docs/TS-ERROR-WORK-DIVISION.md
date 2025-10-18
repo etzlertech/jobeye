@@ -43,7 +43,7 @@
 - [ ] Add README explaining vision domain is experimental
 
 **Task 1.4: Review and Remove/Fix Intent Domain** (~46 errors)
-- [ ] `src/domains/intent/repositories/offline-sync-queue.repository.ts` (31 errors)
+- [x] `src/domains/intent/repositories/offline-sync-queue.repository.ts` (removed; offline sync backlog moved to experimental)
 - [ ] `src/domains/intent/repositories/intent-classification.repository.ts` (15 errors)
 - [ ] Decision: Keep or remove? If experimental, move to `/experimental/`
 
@@ -100,8 +100,8 @@
 - [ ] Verify table references and type usage
 
 **Task 3.3: Fix Inventory Repositories** (~40 errors)
-- [ ] `src/domains/inventory/repositories/training-data.repository.class.ts` (16 errors)
-- [ ] `src/domains/inventory/repositories/purchase-receipts.repository.class.ts` (16 errors)
+- [x] `src/domains/inventory/repositories/training-data.repository.class.ts` (removed – table does not exist)
+- [x] `src/domains/inventory/repositories/purchase-receipts.repository.class.ts` (removed – table does not exist)
 - [ ] Fix table references and Insert/Update types
 
 **Task 3.4: Fix Vision Repositories** (~28 errors)

@@ -145,7 +145,7 @@ export default function BatchVerification({
         const result = data.data.results.find((r: any) => r.kitId === item.kitId);
         return {
           ...item,
-          status: result?.success ? 'success' : 'failed',
+          status: result?.success ? ('success' as const) : ('failed' as const),
           result: result?.result,
           error: result?.error?.message
         };
@@ -262,7 +262,9 @@ export default function BatchVerification({
                   Kit Image
                 </label>
                 <input
-                  ref={(ref) => fileInputRefs.current[index] = ref}
+                  ref={(ref) => {
+                    fileInputRefs.current[index] = ref;
+                  }}
                   type="file"
                   accept="image/*"
                   onChange={(e) => {

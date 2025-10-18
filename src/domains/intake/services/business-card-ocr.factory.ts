@@ -21,6 +21,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { PSM } from 'tesseract.js';
 import { voiceLogger } from '@/core/logger/voice-logger';
 import { IntakeExtractionRepository } from '@/domains/intake/repositories/intake-extraction.repository';
 import {
@@ -29,6 +30,7 @@ import {
 } from './business-card-ocr.service';
 import { createTesseractBusinessCardClient } from './business-card-ocr.tesseract';
 import { createVisionBusinessCardClient } from './business-card-ocr.vision';
+import type { BusinessCardExtractionRepository } from './business-card-ocr.types';
 
 export interface BusinessCardOcrFactoryOptions {
   supabaseClient?: SupabaseClient;
@@ -36,7 +38,7 @@ export interface BusinessCardOcrFactoryOptions {
   temperature?: number;
   tesseract?: {
     language?: string;
-    psm?: number;
+    psm?: PSM;
     oem?: number;
   };
   vision?: {
@@ -66,9 +68,7 @@ export function createDefaultBusinessCardDependencies(
     temperature: options.temperature,
   });
 
-  const extractionRepository = options.supabaseClient
-    ? new IntakeExtractionRepository(options.supabaseClient)
-    : undefined;
+  const extractionRepository = createExtractionRepositoryAdapter(options.supabaseClient);
 
   if (!options.supabaseClient) {
     voiceLogger.warn('BusinessCardOcrService factory: extraction repository disabled (missing Supabase client)');
@@ -82,4 +82,33 @@ export function createDefaultBusinessCardDependencies(
     logger: options.logger,
     now: options.now,
   } satisfies BusinessCardOcrDependencies;
+}
+
+function createExtractionRepositoryAdapter(
+  supabaseClient?: SupabaseClient
+): BusinessCardExtractionRepository | undefined {
+  if (!supabaseClient) return undefined;
+
+  const intakeRepo = new IntakeExtractionRepository(supabaseClient);
+
+  return {
+    async create(extraction) {
+      return intakeRepo.create({
+        tenant_id: extraction.tenant_id,
+        session_id: extraction.session_id,
+        extraction_type: extraction.extraction_type,
+        raw_text: extraction.raw_text ?? undefined,
+        structured_data: extraction.structured_data,
+        confidence_score: extraction.confidence_score,
+        provider: extraction.provider,
+        processing_time_ms: extraction.processing_time_ms ?? undefined,
+        cost: extraction.cost ?? undefined,
+        duplicate_of_id: extraction.duplicate_of_id ?? undefined,
+        duplicate_confidence: extraction.duplicate_confidence ?? undefined,
+        status: extraction.status,
+        reviewed_by: extraction.reviewed_by ?? undefined,
+        reviewed_at: extraction.reviewed_at ?? undefined,
+      });
+    },
+  };
 }

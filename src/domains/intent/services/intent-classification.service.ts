@@ -42,7 +42,7 @@
 import { VisionVerificationService } from '@/domains/vision/services/vision-verification.service';
 import { AIInteractionLogger } from './ai-interaction-logger.service';
 import { IntentClassificationRepository, IntentType, IntentContext } from '../repositories/intent-classification.repository';
-import { AppError } from '@/core/errors/error-types';
+import { createAppError, ErrorCategory, ErrorSeverity } from '@/core/errors/error-types';
 import { OfflineDatabase } from '@/lib/offline/offline-db';
 
 export interface IntentClassificationResult {
@@ -72,7 +72,7 @@ export class IntentClassificationService {
     this.visionService = new VisionVerificationService();
     this.aiLogger = new AIInteractionLogger();
     this.repository = new IntentClassificationRepository();
-    this.offlineDb = new OfflineDatabase();
+    this.offlineDb = OfflineDatabase.getInstance();
   }
 
   /**
@@ -85,7 +85,7 @@ export class IntentClassificationService {
 
     try {
       // Check if offline
-      if (navigator && !navigator.onLine) {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
         return this.handleOfflineClassification(options);
       }
 
@@ -155,9 +155,12 @@ export class IntentClassificationService {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
 
-      throw new AppError('Failed to classify intent', {
+      throw createAppError({
         code: 'INTENT_CLASSIFICATION_ERROR',
-        details: error
+        message: 'Failed to classify intent',
+        severity: ErrorSeverity.HIGH,
+        category: ErrorCategory.BUSINESS_LOGIC,
+        originalError: error as Error
       });
     }
   }
@@ -282,9 +285,12 @@ Possible intents based on role:`;
     });
 
     if (!response.ok) {
-      throw new AppError('VLM request failed', {
+      throw createAppError({
         code: 'VLM_REQUEST_ERROR',
-        status: response.status
+        message: 'VLM request failed',
+        severity: ErrorSeverity.HIGH,
+        category: ErrorCategory.EXTERNAL_SERVICE,
+        originalError: new Error(`HTTP ${response.status}`)
       });
     }
 
@@ -477,17 +483,25 @@ Possible intents based on role:`;
 
       // Learn from feedback for future improvements
       if (feedback === 'incorrect' && correctedIntent) {
-        // Store feedback patterns for offline learning
-        await this.offlineDb.storeEntity('intent_feedback_patterns', {
-          originalIntent: classificationId,
-          correctedIntent,
-          timestamp: Date.now()
+        // Store feedback patterns in offline cache when available
+        await this.offlineDb.queueOperation({
+          operation: 'create',
+          entity: 'intent_feedback_patterns',
+          entityId: classificationId,
+          data: {
+            classificationId,
+            correctedIntent,
+            timestamp: Date.now()
+          },
         });
       }
     } catch (error) {
-      throw new AppError('Failed to process feedback', {
+      throw createAppError({
         code: 'FEEDBACK_PROCESSING_ERROR',
-        details: error
+        message: 'Failed to process feedback',
+        severity: ErrorSeverity.MEDIUM,
+        category: ErrorCategory.BUSINESS_LOGIC,
+        originalError: error as Error
       });
     }
   }

@@ -9,7 +9,7 @@
  */
 
 import { supabase } from '@/lib/supabase/client';
-import { Database } from '@/types/database';
+import { Database } from '@/lib/supabase/types';
 
 type VisionVerification = Database['public']['Tables']['vision_verifications']['Row'];
 type VisionVerificationInsert = Database['public']['Tables']['vision_verifications']['Insert'];

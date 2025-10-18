@@ -41,7 +41,6 @@ import {
   InteractionType,
   CreateAIInteractionLogDto 
 } from '../repositories/ai-interaction-log.repository';
-import { AppError } from '@/core/errors/error-types';
 import { OfflineDatabase } from '@/lib/offline/offline-db';
 
 export interface LogInteractionOptions {
@@ -127,7 +126,7 @@ export class AIInteractionLogger {
       console.error('Failed to log AI interaction:', error);
       
       // Queue for offline sync if needed
-      if (navigator && !navigator.onLine) {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
         await this.offlineDb.queueOperation({
           operation: 'create',
           entity: 'ai_interaction_logs',

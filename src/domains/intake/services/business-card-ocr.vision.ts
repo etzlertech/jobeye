@@ -28,7 +28,7 @@ export interface VisionBusinessCardClientOptions {
 }
 
 export interface VisionBusinessCardClient {
-  analyzeBusinessCard(image: Blob, options?: { abortSignal?: AbortSignal }): Promise<VisionBusinessCardExtraction | null>;
+  analyzeBusinessCard(image: Blob, options?: Record<string, unknown>): Promise<VisionBusinessCardExtraction | null>;
 }
 
 const DEFAULT_MODEL = 'gemini-1.5-flash-latest';
@@ -52,21 +52,18 @@ export function createVisionBusinessCardClient(
   const model = genAI.getGenerativeModel({ model: modelName });
 
   return {
-    async analyzeBusinessCard(image, { abortSignal } = {}) {
+    async analyzeBusinessCard(image) {
       try {
         const inlineData = await blobToInlineData(image);
 
         const prompt = 'You are an assistant that extracts information from a business card image. Return a compact JSON object with the following fields: name, company, phone, email, address, confidence (0-1). Use null when a field is missing. Respond with JSON only.';
 
-        const response = await model.generateContent(
-          [
-            { text: prompt },
-            {
-              inlineData,
-            },
-          ],
-          { abortSignal }
-        );
+        const response = await model.generateContent([
+          { text: prompt },
+          {
+            inlineData,
+          },
+        ]);
 
         const text = response.response.text();
         const json = safeParseJson(text);

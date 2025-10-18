@@ -70,7 +70,7 @@ import {
   PropertySearchResult,
 } from '../types/property-types';
 import { Customer } from '@/domains/customer/types/customer-types';
-import { EventBus, DomainEvent } from '@/core/events/event-bus';
+import { EventBus } from '@/core/events/event-bus';
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
 import { z } from 'zod';
 
@@ -96,6 +96,14 @@ export enum PropertyEventType {
   PROPERTY_SERVICE_COMPLETED = 'property.service_completed',
   PROPERTY_ACCESS_UPDATED = 'property.access_updated',
   PROPERTY_DELETED = 'property.deleted',
+}
+
+interface PropertyEventPayload {
+  aggregateId: string;
+  tenantId: string;
+  userId?: string;
+  payload?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -181,8 +189,7 @@ export class PropertyService {
       const property = await this.repository.createProperty(data, tenantId);
 
       // Publish event
-      await this.publishEvent({
-        type: PropertyEventType.PROPERTY_CREATED,
+      this.emitEvent(PropertyEventType.PROPERTY_CREATED, {
         aggregateId: property.id,
         tenantId,
         userId,
@@ -250,8 +257,7 @@ export class PropertyService {
       }
 
       // Publish event
-      await this.publishEvent({
-        type: PropertyEventType.PROPERTY_UPDATED,
+      this.emitEvent(PropertyEventType.PROPERTY_UPDATED, {
         aggregateId: propertyId,
         tenantId,
         userId,
@@ -265,8 +271,7 @@ export class PropertyService {
 
       // Publish state change event if state changed
       if (updates.state && updates.state !== currentProperty.state) {
-        await this.publishEvent({
-          type: PropertyEventType.PROPERTY_STATE_CHANGED,
+        this.emitEvent(PropertyEventType.PROPERTY_STATE_CHANGED, {
           aggregateId: propertyId,
           tenantId,
           userId,
@@ -373,8 +378,7 @@ export class PropertyService {
       }
 
       // Publish event
-      await this.publishEvent({
-        type: PropertyEventType.PROPERTY_ACCESS_UPDATED,
+      this.emitEvent(PropertyEventType.PROPERTY_ACCESS_UPDATED, {
         aggregateId: propertyId,
         tenantId,
         userId,
@@ -460,8 +464,7 @@ export class PropertyService {
       );
 
       // Publish event
-      await this.publishEvent({
-        type: PropertyEventType.PROPERTY_DELETED,
+      this.emitEvent(PropertyEventType.PROPERTY_DELETED, {
         aggregateId: propertyId,
         tenantId,
         userId,
@@ -575,12 +578,12 @@ export class PropertyService {
   }
 
   /**
-   * Publish domain event
+   * Emit domain event through the shared event bus.
    */
-  private async publishEvent(event: Omit<DomainEvent, 'id' | 'timestamp'>): Promise<void> {
-    await this.eventBus.publish({
+  private emitEvent(eventType: PropertyEventType, event: PropertyEventPayload): void {
+    this.eventBus.emit(eventType, {
       ...event,
-      id: crypto.randomUUID(),
+      eventType,
       timestamp: new Date(),
     });
   }

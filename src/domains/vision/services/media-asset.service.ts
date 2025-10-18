@@ -8,6 +8,20 @@
 
 import { supabase } from '@/lib/supabase/client';
 
+interface MediaAssetInsertPayload {
+  tenant_id: string;
+  uploaded_by: string;
+  media_type: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  storage_path: string;
+  public_url: string;
+  job_id: string | null;
+  tags: string[];
+  metadata: Record<string, any>;
+}
+
 export interface UploadImageOptions {
   tenantId: string;
   jobId?: string;
@@ -29,6 +43,10 @@ export interface UploadImageResult {
 export class MediaAssetService {
   private supabase = supabase;
   private readonly STORAGE_BUCKET = 'verification-photos';
+
+  private mediaAssetsTable() {
+    return this.supabase.from('media_assets') as any;
+  }
 
   /**
    * Convert ImageData to Blob
@@ -110,28 +128,29 @@ export class MediaAssetService {
       const publicUrl = urlData.publicUrl;
 
       // Create media_asset record in database
-      const { data: mediaAsset, error: dbError } = await this.supabase
-        .from('media_assets')
-        .insert({
-          tenant_id: tenantId,
-          uploaded_by: userId,
-          media_type: 'photo',
-          file_name: fileName,
-          file_size: imageBlob.size,
-          mime_type: 'image/jpeg',
-          storage_path: uploadData.path,
-          public_url: publicUrl,
-          job_id: jobId || null,
-          tags: [category, 'equipment-verification'],
-          metadata: {
-            ...metadata,
-            upload_source: 'mobile_pwa',
-            image_dimensions: {
-              width: imageData.width,
-              height: imageData.height,
-            },
+      const insertPayload: MediaAssetInsertPayload = {
+        tenant_id: tenantId,
+        uploaded_by: userId,
+        media_type: 'photo',
+        file_name: fileName,
+        file_size: imageBlob.size,
+        mime_type: 'image/jpeg',
+        storage_path: uploadData.path,
+        public_url: publicUrl,
+        job_id: jobId || null,
+        tags: [category, 'equipment-verification'],
+        metadata: {
+          ...metadata,
+          upload_source: 'mobile_pwa',
+          image_dimensions: {
+            width: imageData.width,
+            height: imageData.height,
           },
-        })
+        },
+      };
+
+      const { data: mediaAsset, error: dbError } = await this.mediaAssetsTable()
+        .insert(insertPayload)
         .select('id')
         .single();
 
@@ -170,8 +189,7 @@ export class MediaAssetService {
   ): Promise<{ error: Error | null }> {
     try {
       // Get storage path from database
-      const { data: mediaAsset, error: fetchError } = await this.supabase
-        .from('media_assets')
+      const { data: mediaAsset, error: fetchError } = await this.mediaAssetsTable()
         .select('storage_path')
         .eq('id', mediaAssetId)
         .single();
@@ -191,8 +209,7 @@ export class MediaAssetService {
       }
 
       // Delete from database (will cascade to related records)
-      const { error: dbError } = await this.supabase
-        .from('media_assets')
+      const { error: dbError } = await this.mediaAssetsTable()
         .delete()
         .eq('id', mediaAssetId);
 
@@ -218,8 +235,7 @@ export class MediaAssetService {
     mediaAssetId: string
   ): Promise<{ data: string | null; error: Error | null }> {
     try {
-      const { data: mediaAsset, error: fetchError } = await this.supabase
-        .from('media_assets')
+      const { data: mediaAsset, error: fetchError } = await this.mediaAssetsTable()
         .select('public_url')
         .eq('id', mediaAssetId)
         .single();

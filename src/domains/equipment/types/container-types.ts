@@ -39,7 +39,6 @@
 // --- END DIRECTIVE BLOCK ---
 
 import { z } from 'zod';
-import { BaseEntity, TenantAware, Timestamped, VoiceAware } from '@/core/types/base-types';
 
 // Container types
 export enum ContainerType {
@@ -77,7 +76,11 @@ export interface CapacityInfo {
 }
 
 // Container entity
-export interface Container extends BaseEntity, TenantAware, Timestamped {
+export interface Container {
+  id: string;
+  tenantId: string;
+  createdAt: Date;
+  updatedAt: Date;
   containerType: ContainerType;
   identifier: string; // e.g., 'VH-TKR', 'TR-DU12R'
   name: string; // e.g., 'Red Truck', 'Black Lowboy'

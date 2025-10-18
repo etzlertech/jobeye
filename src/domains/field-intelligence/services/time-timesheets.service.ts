@@ -94,6 +94,18 @@ export interface PayrollExportData {
   exportedAt: Date;
 }
 
+type TimeEntryRecord = {
+  id: string;
+  user_id: string;
+  job_id: string | null;
+  job_description?: string | null;
+  clock_in_time: string;
+  clock_out_time: string | null;
+  regular_hours?: number | null;
+  overtime_hours?: number | null;
+  approval_status: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+};
+
 /**
  * Service for timesheet generation and export
  *
@@ -142,7 +154,7 @@ export class TimeTimesheetsService {
     }
 
     // Get time entries for period
-    const entries = []; // TODO: [],
+    const entries: TimeEntryRecord[] = []; // TODO: [],
     //   clock_in_before: period.endDate.toISOString(),
     // });
 
@@ -171,8 +183,10 @@ export class TimeTimesheetsService {
 
       timesheetEntries.push({
         date: new Date(clockIn.toISOString().split('T')[0]),
-        jobId: entry.job_id,
-        jobDescription: `Job ${entry.job_id}`, // Would look up actual job description
+        jobId: entry.job_id ?? 'UNASSIGNED',
+        jobDescription:
+          entry.job_description ??
+          (entry.job_id ? `Job ${entry.job_id}` : 'Unassigned Job'),
         clockIn,
         clockOut,
         regularHours,
@@ -251,7 +265,7 @@ export class TimeTimesheetsService {
       clock_in_before: period.endDate.toISOString(),
     };
 
-    const allEntries = []; // TODO: [];
+    const allEntries: TimeEntryRecord[] = []; // TODO: [];
 
     // Group by employee
     const employeeMap = new Map<

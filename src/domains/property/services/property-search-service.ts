@@ -49,6 +49,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import Fuse from 'fuse.js';
+import type { IFuseOptions } from 'fuse.js';
 import { PropertyRepository } from '../repositories/property-repository';
 import {
   Property,
@@ -101,7 +102,7 @@ export class PropertySearchService {
   private geocodeCache: Map<string, GeocodingResult> = new Map();
   
   // Fuse.js configuration for fuzzy search
-  private fuseOptions: Fuse.IFuseOptions<Property> = {
+  private fuseOptions: IFuseOptions<Property> = {
     keys: [
       { name: 'address.street', weight: 0.4 },
       { name: 'address.city', weight: 0.3 },
@@ -118,7 +119,7 @@ export class PropertySearchService {
     logger?: VoiceLogger
   ) {
     this.repository = new PropertyRepository(supabaseClient);
-    this.logger = logger || new VoiceLogger({ enableVoice: true });
+    this.logger = logger || new VoiceLogger();
   }
 
   /**
@@ -130,10 +131,12 @@ export class PropertySearchService {
   ): Promise<PropertySearchResult[]> {
     try {
       // Log voice search attempt
-      await this.logger.logVoiceCommand({
+      await this.logger.logVoiceInteraction({
+        action: 'property-voice-search',
         command: command.type,
-        query: command.query,
+        query: command.query ?? '',
         customerId: command.customerId,
+        tenantId,
       });
 
       // Parse voice command
@@ -168,9 +171,9 @@ export class PropertySearchService {
           );
       }
     } catch (error) {
-      await this.logger.logError(error as Error, {
-        operation: 'voice-search',
+      this.logger.error('Property voice search failed', {
         command: command.type,
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }

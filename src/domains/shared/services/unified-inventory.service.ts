@@ -4,7 +4,6 @@
  */
 import { ItemRepository } from '../repositories/item.repository';
 import { ItemTransactionRepository, TransactionCreate } from '../repositories/item-transaction.repository';
-import { ContainerRepository } from '@/domains/equipment/repositories/container-repository-enhanced';
 import { createSupabaseClient } from '@/lib/supabase/client';
 import type {
   Item,
@@ -55,23 +54,21 @@ export interface TransferRequest {
 export class UnifiedInventoryService {
   private itemRepo: ItemRepository;
   private transactionRepo: ItemTransactionRepository;
-  private containerRepo: ContainerRepository;
 
   constructor() {
     const supabase = createSupabaseClient();
     this.itemRepo = new ItemRepository(supabase);
     this.transactionRepo = new ItemTransactionRepository(supabase);
-    this.containerRepo = new ContainerRepository(supabase);
   }
 
   // ========== Item CRUD Operations ==========
 
   async createItem(data: ItemCreate): Promise<Item> {
-    return await this.itemRepo.create(data);
+    return await this.itemRepo.create(data, { tenantId: data.tenantId });
   }
 
   async updateItem(id: string, data: ItemUpdate, tenantId: string): Promise<Item> {
-    return await this.itemRepo.update(id, data, tenantId);
+    return await this.itemRepo.update(id, data, { tenantId });
   }
 
   async getItem(id: string): Promise<Item | null> {
@@ -87,7 +84,7 @@ export class UnifiedInventoryService {
   }
 
   async retireItem(id: string, tenantId: string): Promise<void> {
-    await this.itemRepo.delete(id, tenantId);
+    await this.itemRepo.retire(id, { tenantId });
   }
 
   // ========== Check Out Operations ==========
@@ -133,7 +130,7 @@ export class UnifiedInventoryService {
           transactionType: 'check_out',
           itemId,
           quantity,
-          fromLocationId: item.currentLocationId,
+          fromLocationId: item.currentLocationId ?? undefined,
           toLocationId: locationId,
           fromUserId: undefined,
           toUserId: userId,
@@ -158,23 +155,10 @@ export class UnifiedInventoryService {
           updates.currentQuantity = item.currentQuantity - quantity;
         }
 
-        const updatedItem = await this.itemRepo.update(itemId, updates, tenantId);
+        const updatedItem = await this.itemRepo.update(itemId, updates, { tenantId });
         items.push(updatedItem);
 
-        // Create container assignment if needed
-        if (locationId && item.trackingMode === 'individual') {
-          try {
-            await this.containerRepo.createAssignment({
-              tenant_id: tenantId,
-              container_id: locationId,
-              item_id: itemId,
-              item_type: item.itemType === 'equipment' ? 'equipment' : 'tool',
-              assigned_by: userId,
-            });
-          } catch (err) {
-            console.error('Failed to create container assignment:', err);
-          }
-        }
+        // Container assignments removed (container table unavailable).
       } catch (err: any) {
         errors.push(`Failed to check out item ${itemId}: ${err.message}`);
       }
@@ -222,7 +206,7 @@ export class UnifiedInventoryService {
           transactionType: 'check_in',
           itemId,
           quantity,
-          fromLocationId: fromLocationId || item.currentLocationId,
+          fromLocationId: (fromLocationId ?? item.currentLocationId) ?? undefined,
           toLocationId,
           fromUserId: userId,
           toUserId: undefined,
@@ -255,24 +239,10 @@ export class UnifiedInventoryService {
           updates.currentQuantity = item.currentQuantity + quantity;
         }
 
-        const updatedItem = await this.itemRepo.update(itemId, updates, tenantId);
+        const updatedItem = await this.itemRepo.update(itemId, updates, { tenantId });
         items.push(updatedItem);
 
-        // Close container assignment if exists
-        if (item.trackingMode === 'individual') {
-          const assignment = await this.containerRepo.findActiveAssignment(itemId, tenantId);
-          if (assignment) {
-            try {
-              await this.containerRepo.checkOutAssignment(
-                assignment.id,
-                userId,
-                tenantId
-              );
-            } catch (err) {
-              console.error('Failed to close container assignment:', err);
-            }
-          }
-        }
+        // Container assignment closure removed.
       } catch (err: any) {
         errors.push(`Failed to check in item ${itemId}: ${err.message}`);
       }
@@ -355,31 +325,11 @@ export class UnifiedInventoryService {
         const updatedItem = await this.itemRepo.update(
           itemId,
           { currentLocationId: toLocationId },
-          tenantId
+          { tenantId }
         );
         items.push(updatedItem);
 
-        // Update container assignments if needed
-        if (item.trackingMode === 'individual') {
-          // Close old assignment
-          const oldAssignment = await this.containerRepo.findActiveAssignment(itemId, tenantId);
-          if (oldAssignment) {
-            await this.containerRepo.checkOutAssignment(oldAssignment.id, userId, tenantId);
-          }
-
-          // Create new assignment
-          try {
-            await this.containerRepo.createAssignment({
-              tenant_id: tenantId,
-              container_id: toLocationId,
-              item_id: itemId,
-              item_type: item.itemType === 'equipment' ? 'equipment' : 'tool',
-              assigned_by: userId,
-            });
-          } catch (err) {
-            console.error('Failed to create new container assignment:', err);
-          }
-        }
+        // Container assignment updates removed.
       } catch (err: any) {
         errors.push(`Failed to transfer item ${itemId}: ${err.message}`);
       }

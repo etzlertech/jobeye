@@ -43,6 +43,7 @@ import { VoiceCommandService } from '@/domains/intent/services/voice-command.ser
 import { withAuth } from '@/lib/auth/with-auth';
 import { handleApiError } from '@/core/errors/error-handler';
 import { z } from 'zod';
+import { createServerClient } from '@/lib/supabase/server';
 
 // Request validation schema
 const voiceCommandRequestSchema = z.object({
@@ -93,7 +94,8 @@ export async function POST(req: NextRequest) {
 
       // Initialize services
       const voiceService = new VoiceCommandService();
-      const supervisorService = new SupervisorWorkflowService();
+      const supabase = await createServerClient();
+      const supervisorService = new SupervisorWorkflowService(supabase);
 
       // Process voice command
       const voiceResult = await voiceService.processCommand({

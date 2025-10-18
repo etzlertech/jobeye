@@ -50,7 +50,23 @@
 // --- END DIRECTIVE BLOCK ---
 
 import { z } from 'zod';
-import { BaseEntity, TenantAware, Timestamped, VoiceAware } from '@/core/types/base-types';
+interface BaseEntity {
+  id: string;
+}
+
+interface TenantAware {
+  tenantId: string;
+}
+
+interface Timestamped {
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface VoiceAware {
+  voiceControlEnabled: boolean;
+  voiceCommands: string[];
+}
 
 // Controller types
 export enum ControllerType {

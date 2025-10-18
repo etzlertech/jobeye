@@ -86,7 +86,7 @@ export function useDevTenant(options: UseDevTenantOptions): UseDevTenantState {
 
   const tenantHeaders = useMemo<Record<string, string>>(() => {
     if (!tenantId) {
-      return {};
+      return {} as Record<string, string>;
     }
 
     return { 'x-tenant-id': tenantId };

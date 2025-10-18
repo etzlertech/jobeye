@@ -42,7 +42,22 @@
 // --- END DIRECTIVE BLOCK ---
 
 import { z } from 'zod';
-import { BaseEntity, TenantAware, Timestamped, VoiceAware } from '@/core/types/base-types';
+interface BaseEntity {
+  id: string;
+}
+
+interface TenantAware {
+  tenantId?: string;
+}
+
+interface Timestamped {
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface VoiceAware {
+  voiceContext?: Record<string, any>;
+}
 
 // Vision API providers
 export enum VisionProvider {
@@ -195,6 +210,36 @@ export interface VisionVoiceConfirmation {
     actualCount?: number;
   };
 }
+
+// Detection session lifecycle records
+export type DetectionSessionStatus =
+  | 'pending'
+  | 'detected'
+  | 'confirmed'
+  | 'pending_vlm'
+  | 'completed'
+  | 'failed';
+
+export type DetectionMethod = 'yolo' | 'vlm' | 'hybrid';
+
+export interface DetectionSession {
+  id: string;
+  tenant_id?: string;
+  user_id?: string;
+  image_url?: string;
+  status?: DetectionSessionStatus;
+  detection_method?: DetectionMethod;
+  job_id?: string | null;
+  location_id?: string | null;
+  metadata?: Record<string, any> | null;
+  detection_results?: Record<string, any> | null;
+  selected_detections?: string[] | null;
+  vlm_fallback_reason?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type DetectionSessionCreate = Omit<DetectionSession, 'id'>;
 
 // Validation schemas
 

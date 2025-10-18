@@ -49,6 +49,7 @@ import { Database } from '@/types/database';
 // Base database types
 export type CustomerRow = Database['public']['Tables']['customers']['Row'];
 export type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
+export type CustomerUpdateDb = Database['public']['Tables']['customers']['Update'];
 // CustomerUpdate is defined later from the zod schema
 
 // Customer lifecycle states
@@ -132,12 +133,13 @@ export interface CustomerNote {
   updatedAt: Date;
 }
 
-export interface Customer extends CustomerRow {
-  // Extended fields beyond database
+type CustomerBase = CustomerRow;
+
+export interface CustomerExtras {
   contacts?: Contact[];
   addresses?: Address[];
-  tags?: CustomerTag[];
-  notes?: CustomerNote[];
+  tagDetails?: CustomerTag[];
+  noteHistory?: CustomerNote[];
   propertyCount?: number;
   activeJobCount?: number;
   lastServiceDate?: Date;
@@ -146,6 +148,8 @@ export interface Customer extends CustomerRow {
   outstandingBalance?: number;
   voiceProfile?: CustomerVoiceProfile;
 }
+
+export type Customer = CustomerBase & CustomerExtras;
 
 // Voice-specific types
 export interface CustomerVoiceProfile {
@@ -226,13 +230,15 @@ export const contactSchema = z.object({
 
 export const customerCreateSchema = z.object({
   name: z.string().min(1),
-  email: z.string().email().optional(),
-  phone: z.string().regex(/^\d{3}-\d{3}-\d{4}$/),
-  mobilePhone: z.string().regex(/^\d{3}-\d{3}-\d{4}$/).optional(),
+  email: z.string().email().nullish(),
+  phone: z.string().min(7).max(20).nullish(),
+  mobilePhone: z.string().min(7).max(20).nullish(),
   billingAddress: addressSchema.optional(),
   serviceAddress: addressSchema.optional(),
-  notes: z.string().optional(),
+  notes: z.string().nullish(),
   tags: z.array(z.string()).optional(),
+  metadata: z.record(z.any()).nullish(),
+  voiceNotes: z.string().nullish(),
 });
 
 export const customerUpdateSchema = customerCreateSchema.partial();
@@ -242,11 +248,11 @@ export type CustomerUpdate = z.infer<typeof customerUpdateSchema>;
 
 
 // Utility types
-export type CustomerWithRelations = Customer & {
+export type CustomerWithRelations = CustomerBase & CustomerExtras & {
   contacts: Contact[];
   addresses: Address[];
-  tags: CustomerTag[];
-  recentNotes: CustomerNote[];
+  tagDetails: CustomerTag[];
+  noteHistory: CustomerNote[];
 };
 
 export type CustomerSummary = Pick<

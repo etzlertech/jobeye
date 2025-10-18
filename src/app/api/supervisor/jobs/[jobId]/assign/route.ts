@@ -41,6 +41,7 @@ import { SupervisorWorkflowService } from '@/domains/supervisor/services/supervi
 import { withAuth } from '@/lib/auth/with-auth';
 import { handleApiError } from '@/core/errors/error-handler';
 import { z } from 'zod';
+import { createServerClient } from '@/lib/supabase/server';
 
 // Request validation schema
 const assignRequestSchema = z.object({
@@ -87,7 +88,8 @@ export async function POST(
       const validatedData = assignRequestSchema.parse(body);
 
       // Initialize service
-      const supervisorService = new SupervisorWorkflowService();
+      const supabase = await createServerClient();
+      const supervisorService = new SupervisorWorkflowService(supabase);
 
       // Assign crew to job
       const result = await supervisorService.assignCrewToJob(

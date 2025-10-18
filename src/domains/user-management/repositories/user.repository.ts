@@ -22,8 +22,15 @@ interface ListUsersResult {
   total: number;
 }
 
+type UsersExtendedRow = Database['public']['Tables']['users_extended']['Row'];
+type UsersExtendedUpdate = Database['public']['Tables']['users_extended']['Update'];
+
 export class UserRepository {
   constructor(private readonly supabase: SupabaseClient<Database>) {}
+
+  private usersTable() {
+    return this.supabase.from('users_extended') as any;
+  }
 
   async listUsers(
     context: RequestContext,
@@ -80,8 +87,7 @@ export class UserRepository {
     context: RequestContext,
     userId: string
   ): Promise<Database['public']['Tables']['users_extended']['Row'] | null> {
-    const { data, error } = await this.supabase
-      .from('users_extended')
+    const { data, error } = await this.usersTable()
       .select('*')
       .eq('tenant_id', context.tenantId)
       .eq('id', userId)
@@ -101,14 +107,13 @@ export class UserRepository {
     context: RequestContext,
     userId: string,
     payload: UpdateUserPayload
-  ): Promise<Database['public']['Tables']['users_extended']['Row'] | null> {
-    const updatePayload = {
+  ): Promise<UsersExtendedRow | null> {
+    const updatePayload: UsersExtendedUpdate = {
       ...payload,
       updated_at: new Date().toISOString()
     };
 
-    const { data, error } = await this.supabase
-      .from('users_extended')
+    const { data, error } = await this.usersTable()
       .update(updatePayload)
       .eq('tenant_id', context.tenantId)
       .eq('id', userId)
@@ -122,23 +127,24 @@ export class UserRepository {
       throw error;
     }
 
-    return data;
+    return data as UsersExtendedRow | null;
   }
 
   async updateUserImages(
     context: RequestContext,
     userId: string,
     payload: UpdateUserImagesPayload
-  ): Promise<Database['public']['Tables']['users_extended']['Row'] | null> {
-    const { data, error } = await this.supabase
-      .from('users_extended')
-      .update({
-        primary_image_url: payload.primaryImageUrl,
-        medium_url: payload.mediumImageUrl,
-        thumbnail_url: payload.thumbnailImageUrl,
-        avatar_url: payload.primaryImageUrl,
-        updated_at: new Date().toISOString()
-      })
+  ): Promise<UsersExtendedRow | null> {
+    const updatePayload: UsersExtendedUpdate = {
+      primary_image_url: payload.primaryImageUrl,
+      medium_url: payload.mediumImageUrl,
+      thumbnail_url: payload.thumbnailImageUrl,
+      avatar_url: payload.primaryImageUrl,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await this.usersTable()
+      .update(updatePayload)
       .eq('tenant_id', context.tenantId)
       .eq('id', userId)
       .select()
@@ -151,6 +157,6 @@ export class UserRepository {
       throw error;
     }
 
-    return data;
+    return data as UsersExtendedRow | null;
   }
 }

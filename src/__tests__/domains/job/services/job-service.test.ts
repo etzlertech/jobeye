@@ -464,9 +464,9 @@ describe('JobService', () => {
       const result = await service.scheduleJob(
         'job-123',
         scheduledDate,
-        timeWindow,
         'tenant-1',
-        'user-1'
+        'user-1',
+        timeWindow
       );
 
       expect(mockRepository.updateJob).toHaveBeenCalledWith(

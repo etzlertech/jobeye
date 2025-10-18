@@ -18,7 +18,6 @@ import {
   InvitationStatus,
   TenantWithMemberCount,
   MemberWithUser,
-  InvitationWithDetails,
   UserTenantInfo,
   TenantStatus
 } from '../types';
@@ -170,10 +169,9 @@ export class TenantService {
 
     const { data, error } = await this.supabase
       .from('tenant_members')
-      .select('tenant_id, count:id', { head: false })
+      .select('tenant_id')
       .eq('status', MemberStatus.ACTIVE)
-      .in('tenant_id', tenantIds)
-      .group('tenant_id');
+      .in('tenant_id', tenantIds);
 
     if (error) {
       console.error('[TenantService] Failed to fetch active member counts', error);
@@ -181,7 +179,8 @@ export class TenantService {
     }
 
     (data || []).forEach((row: any) => {
-      counts.set(row.tenant_id, Number(row.count) || 0);
+      const current = counts.get(row.tenant_id) ?? 0;
+      counts.set(row.tenant_id, current + 1);
     });
 
     return counts;
@@ -193,10 +192,9 @@ export class TenantService {
 
     const { data, error } = await this.supabase
       .from('jobs')
-      .select('tenant_id, count:id', { head: false })
+      .select('tenant_id')
       .gte('created_at', since)
-      .in('tenant_id', tenantIds)
-      .group('tenant_id');
+      .in('tenant_id', tenantIds);
 
     if (error) {
       console.error('[TenantService] Failed to fetch jobs count (30d)', error);
@@ -204,7 +202,8 @@ export class TenantService {
     }
 
     (data || []).forEach((row: any) => {
-      counts.set(row.tenant_id, Number(row.count) || 0);
+      const current = counts.get(row.tenant_id) ?? 0;
+      counts.set(row.tenant_id, current + 1);
     });
 
     return counts;
@@ -467,7 +466,7 @@ export class TenantService {
       limit?: number;
       offset?: number;
     }
-  ): Promise<{ data: InvitationWithDetails[]; total: number }> {
+  ): Promise<{ data: TenantInvitation[]; total: number }> {
     const result = await this.invitationRepo.findByTenant(tenantId, options);
     
     // Enrich with inviter data if we have invitations
@@ -498,8 +497,9 @@ export class TenantService {
           // Enrich invitations
           const enrichedData = result.data.map(invitation => ({
             ...invitation,
-            tenant: undefined, // Will need to fetch separately if needed
-            inviter: invitation.createdBy ? userMap.get(invitation.createdBy) : undefined
+            inviter: invitation.createdBy
+              ? userMap.get(invitation.createdBy) ?? invitation.inviter
+              : invitation.inviter
           }));
           
           return {
@@ -513,10 +513,7 @@ export class TenantService {
     }
     
     // Return without enrichment
-    return {
-      data: result.data.map(inv => ({ ...inv, inviter: undefined, tenant: undefined })),
-      total: result.total
-    };
+    return result;
   }
 
   /**

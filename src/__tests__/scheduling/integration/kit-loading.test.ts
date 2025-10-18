@@ -13,8 +13,15 @@ import { KitRepository } from '@/scheduling/repositories/kit.repository';
 import { JobKitRepository } from '@/scheduling/repositories/job-kit.repository';
 import { KitService } from '@/scheduling/services/kit.service';
 import { JobService } from '@/domains/job/services/job.service';
-import { ContainerService } from '@/domains/inventory/services/container.service';
 import type { Database } from '@/types/database';
+
+// TODO: Container domain not implemented. Provide stub so test compiles for TDD.
+class ContainerService {
+  constructor(_supabase: SupabaseClient) {}
+  async createContainer(_input: any) {
+    throw new Error('ContainerService not implemented');
+  }
+}
 
 describe('Kit Loading and Verification Integration', () => {
   let supabase: SupabaseClient;

@@ -16,13 +16,11 @@
 
 import * as inventoryItemsRepo from '../repositories/inventory-items.repository';
 import * as inventoryTransactionsRepo from '../repositories/inventory-transactions.repository';
-import { ContainerRepository } from '@/domains/equipment/repositories/container-repository-enhanced';
-import { createSupabaseClient } from '@/lib/supabase/client';
 import type {
   InventoryItem,
   InventoryTransaction,
+  ContainerAssignment,
 } from '../types/inventory-types';
-import type { ContainerAssignment } from '@/domains/equipment/repositories/container-repository-enhanced';
 import { getOfflineInventoryQueue } from './offline-queue.service';
 
 export interface CheckOutRequest {
@@ -85,9 +83,6 @@ export async function checkOut(
   }
 
   // Initialize container repository
-  const supabase = createSupabaseClient();
-  const containerRepo = new ContainerRepository(supabase);
-
   const transactions: InventoryTransaction[] = [];
   const updatedItems: InventoryItem[] = [];
   const containerAssignments: ContainerAssignment[] = [];
@@ -136,19 +131,21 @@ export async function checkOut(
       // Step 5: Create transaction record
       const transactionResult = await inventoryTransactionsRepo.create({
         tenant_id: tenantId,
+        transaction_type: 'check_out',
         item_id: itemId,
-        type: 'check_out',
         quantity,
         from_location_id: item.current_location_id,
-        to_location_id: locationId,
-        user_id: userId,
-        job_id: jobId,
-        notes,
-        voice_session_id: voiceSessionId,
-        detection_session_id: detectionSessionId,
+        to_location_id: locationId ?? null,
+        from_user_id: null,
+        to_user_id: userId,
+        job_id: jobId ?? null,
+        notes: notes ?? null,
+        voice_session_id: voiceSessionId ?? null,
+        detection_session_id: detectionSessionId ?? null,
         metadata: {
           previousStatus: item.status,
         },
+        created_by: userId,
       });
 
       if (transactionResult.error || !transactionResult.data) {
@@ -183,23 +180,7 @@ export async function checkOut(
 
       updatedItems.push(updateResult.data);
 
-      // Step 7: Create container assignment if going to a container/truck
-      if (locationId && item.tracking_mode === 'individual') {
-        try {
-          const assignment = await containerRepo.createAssignment({
-            tenant_id: tenantId,
-            container_id: locationId,
-            item_id: itemId,
-            item_type: 'tool', // Assuming tools for inventory items
-            assigned_by: userId,
-          });
-
-          containerAssignments.push(assignment);
-        } catch (assignmentError) {
-          // Log assignment error but don't fail the entire checkout
-          console.error('Failed to create container assignment:', assignmentError);
-        }
-      }
+      // Container assignment support removed (container table not available). We return an empty list.
     } catch (err: any) {
       errors.push(new Error(`Check-out failed for item ${itemId}: ${err.message}`));
     }

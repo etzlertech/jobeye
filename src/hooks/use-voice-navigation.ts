@@ -115,23 +115,23 @@ export function useVoiceNavigation(options: VoiceNavigationOptions = {}) {
 
   // Register custom commands
   useEffect(() => {
-    if (options.customCommands) {
-      for (const cmd of options.customCommands) {
-        voiceNavigator.addCustomCommand({
-          command: cmd.command,
-          target: `custom:${cmd.command}`,
-          description: cmd.description,
-          category: 'action'
-        });
-      }
+    const commands = options.customCommands ?? [];
+    if (commands.length === 0) return;
 
-      return () => {
-        // Cleanup custom commands
-        for (const cmd of options.customCommands) {
-          voiceNavigator.removeCustomCommand(cmd.command);
-        }
-      };
+    for (const cmd of commands) {
+      voiceNavigator.addCustomCommand({
+        command: cmd.command,
+        target: `custom:${cmd.command}`,
+        description: cmd.description,
+        category: 'action'
+      });
     }
+
+    return () => {
+      for (const cmd of commands) {
+        voiceNavigator.removeCustomCommand(cmd.command);
+      }
+    };
   }, [options.customCommands]);
 
   const activateVoiceNavigation = useCallback(async () => {

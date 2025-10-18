@@ -22,7 +22,6 @@ import * as materialUsageService from './material-usage.service';
 import * as transferService from './transfer.service';
 import * as auditService from './audit.service';
 import * as detectionOrchestratorService from './detection-orchestrator.service';
-import * as receiptProcessingService from './receipt-processing.service';
 
 export interface VoiceCommandContext {
   tenantId: string;

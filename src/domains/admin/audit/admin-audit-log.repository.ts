@@ -18,29 +18,30 @@ import type { Database } from '@/lib/supabase/types';
 import type { AdminAuditLogInsert, AdminAuditLogEntry } from './admin-audit-log.types';
 
 const TABLE_NAME = 'admin_audit_log';
+type AdminAuditRow = Database['public']['Tables']['admin_audit_log']['Row'];
 
 export class AdminAuditLogRepository {
   constructor(private readonly supabase: SupabaseClient<Database>) {}
 
   async insert(entry: AdminAuditLogInsert): Promise<AdminAuditLogEntry | null> {
-    const payload = {
+    const payload: Database['public']['Tables']['admin_audit_log']['Insert'] = {
       tenant_id: entry.tenantId ?? null,
       target_id: entry.targetId,
       target_type: entry.targetType,
       action: entry.action,
       actor_id: entry.actor.id ?? null,
       actor_email: entry.actor.email ?? null,
-      actor_roles: entry.actor.roles ?? [],
+      actor_roles: entry.actor.roles?.length ? entry.actor.roles : null,
       reason: entry.reason ?? null,
       comment: entry.comment ?? null,
       metadata: entry.metadata ?? null
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from(TABLE_NAME)
       .insert(payload)
       .select()
-      .single();
+      .single() as { data: AdminAuditRow; error: any };
 
     if (error) {
       console.error('[AdminAuditLogRepository] Failed to insert audit log', error);
@@ -66,12 +67,12 @@ export class AdminAuditLogRepository {
   }
 
   async findByTenant(tenantId: string, limit = 100): Promise<AdminAuditLogEntry[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from(TABLE_NAME)
       .select('*')
-      .eq('target_id', tenantId)
+      .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .limit(limit) as { data: AdminAuditRow[]; error: any };
 
     if (error) {
       console.error('[AdminAuditLogRepository] Failed to fetch audit logs', error);

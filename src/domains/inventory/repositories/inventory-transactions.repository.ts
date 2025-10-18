@@ -11,8 +11,8 @@ export async function create(
   transaction: InventoryTransactionCreate
 ): Promise<{ data: InventoryTransaction | null; error: Error | null }> {
 
-  const { data, error } = await supabase
-    .from('inventory_transactions')
+  const { data, error } = await (supabase as any)
+    .from('item_transactions')
     .insert(transaction)
     .select()
     .single();
@@ -30,12 +30,12 @@ export async function findByCompany(
 ): Promise<{ data: InventoryTransaction[]; error: Error | null }> {
 
   let query = supabase
-    .from('inventory_transactions')
+    .from('item_transactions')
     .select('*')
     .eq('tenant_id', tenantId);
 
   if (type) {
-    query = query.eq('type', type);
+    query = query.eq('transaction_type', type);
   }
 
   query = query.order('created_at', { ascending: false }).limit(limit);

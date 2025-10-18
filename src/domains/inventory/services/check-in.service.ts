@@ -16,8 +16,6 @@
 
 import * as inventoryItemsRepo from '../repositories/inventory-items.repository';
 import * as inventoryTransactionsRepo from '../repositories/inventory-transactions.repository';
-import { ContainerRepository } from '@/domains/equipment/repositories/container-repository-enhanced';
-import { createSupabaseClient } from '@/lib/supabase/client';
 import type {
   InventoryItem,
   InventoryTransaction,
@@ -89,9 +87,6 @@ export async function checkIn(
   }
 
   // Initialize container repository
-  const supabase = createSupabaseClient();
-  const containerRepo = new ContainerRepository(supabase);
-
   const transactions: InventoryTransaction[] = [];
   const updatedItems: InventoryItem[] = [];
   const closedAssignments: string[] = [];
@@ -122,20 +117,22 @@ export async function checkIn(
       // Step 4: Create transaction record
       const transactionResult = await inventoryTransactionsRepo.create({
         tenant_id: tenantId,
+        transaction_type: 'check_in',
         item_id: itemId,
-        type: 'check_in',
         quantity,
-        from_location_id: fromLocationId || item.current_location_id,
-        to_location_id: toLocationId,
-        user_id: userId,
-        job_id: jobId,
-        notes,
-        voice_session_id: voiceSessionId,
-        detection_session_id: detectionSessionId,
+        from_location_id: fromLocationId ?? item.current_location_id,
+        to_location_id: toLocationId ?? null,
+        from_user_id: userId,
+        to_user_id: null,
+        job_id: jobId ?? null,
+        notes: notes ?? null,
+        voice_session_id: voiceSessionId ?? null,
+        detection_session_id: detectionSessionId ?? null,
         metadata: {
           previousStatus: item.status,
           newStatus,
         },
+        created_by: userId,
       });
 
       if (transactionResult.error || !transactionResult.data) {
@@ -171,24 +168,7 @@ export async function checkIn(
 
       updatedItems.push(updateResult.data);
 
-      // Step 6: Close container assignment if exists
-      if (item.tracking_mode === 'individual') {
-        const assignment = await containerRepo.findActiveAssignment(itemId, tenantId);
-
-        if (assignment) {
-          try {
-            await containerRepo.checkOutAssignment(
-              assignment.id,
-              new Date().toISOString(),
-              tenantId
-            );
-            closedAssignments.push(assignment.id);
-          } catch (checkOutError) {
-            // Log error but don't fail the entire check-in
-            console.error('Failed to close container assignment:', checkOutError);
-          }
-        }
-      }
+      // Container assignment closure removed (container table unavailable).
     } catch (err: any) {
       errors.push(new Error(`Check-in failed for item ${itemId}: ${err.message}`));
     }

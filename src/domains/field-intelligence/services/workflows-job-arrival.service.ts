@@ -84,6 +84,19 @@ const DEFAULT_CONFIG: ArrivalConfig = {
   requirePhotoProof: false,
 };
 
+type ArrivalRecord = {
+  id: string;
+  job_id: string;
+  user_id: string;
+  arrived_at: string;
+  detection_method: 'GEOFENCE' | 'MANUAL' | 'GPS';
+  latitude: number;
+  longitude: number;
+  photo_proof_url: string | null;
+  checklist_initialized: boolean;
+  notification_sent: boolean;
+};
+
 /**
  * Service for job arrival workflow automation
  *
@@ -154,14 +167,18 @@ export class WorkflowsJobArrivalService {
     }
 
     // Create arrival record
-    const arrival = { id: "mock-id" }; // TODO: { id: "mock-id" }.toISOString(),
-    //   detection_method: data.detectionMethod,
-    //   latitude: data.latitude,
-    //   longitude: data.longitude,
-    //   photo_proof_url: data.photoProofUrl || null,
-    //   checklist_initialized: false,
-    //   notification_sent: false,
-    // });
+    const arrival: ArrivalRecord = {
+      id: `arrival-${Date.now()}`,
+      job_id: data.jobId,
+      user_id: data.userId,
+      arrived_at: new Date().toISOString(),
+      detection_method: data.detectionMethod,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      photo_proof_url: data.photoProofUrl ?? null,
+      checklist_initialized: false,
+      notification_sent: false,
+    };
 
     // Initialize checklist if enabled
     let checklistInitialized = false;
@@ -169,8 +186,7 @@ export class WorkflowsJobArrivalService {
       await this.initializeChecklist(arrival.id, data.jobId);
       checklistInitialized = true;
 
-      // Update arrival record
-      { id: "mock-id" };
+      arrival.checklist_initialized = true;
     }
 
     // Send notification if enabled
@@ -179,8 +195,7 @@ export class WorkflowsJobArrivalService {
       await this.sendArrivalNotification(arrival.id, data.jobId, data.userId);
       notificationSent = true;
 
-      // Update arrival record
-      { id: "mock-id" };
+      arrival.notification_sent = true;
     }
 
     logger.info('Job arrival logged', {
@@ -251,7 +266,7 @@ export class WorkflowsJobArrivalService {
    * Check if user has arrived at job
    */
   async hasArrivedAtJob(userId: string, jobId: string): Promise<boolean> {
-    const arrivals: any[] = [];
+    const arrivals = await this.fetchArrivals({ userId, jobId });
     return arrivals.length > 0;
   }
 
@@ -259,7 +274,7 @@ export class WorkflowsJobArrivalService {
    * Get arrival record for job
    */
   async getArrival(userId: string, jobId: string): Promise<JobArrival | null> {
-    const arrivals: any[] = [];
+    const arrivals = await this.fetchArrivals({ userId, jobId });
 
     if (arrivals.length === 0) {
       return null;
@@ -286,17 +301,17 @@ export class WorkflowsJobArrivalService {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    const arrivals: any[] = []; // TODO: await this.arrivalsRepository.findAll({
-    //   user_id: userId,
-    //   arrived_after: startOfDay.toISOString(),
-    // });
+    const todaysArrivals = await this.fetchArrivals({
+      userId,
+      arrivedAfter: startOfDay,
+    });
 
-    return arrivals.map((a) => ({
+    return todaysArrivals.map((a) => ({
       arrivalId: a.id,
       jobId: a.job_id,
       userId: a.user_id,
       arrivedAt: new Date(a.arrived_at),
-      detectionMethod: a.detection_method as 'GEOFENCE' | 'MANUAL' | 'GPS',
+      detectionMethod: a.detection_method,
       latitude: a.latitude,
       longitude: a.longitude,
       checklistInitialized: a.checklist_initialized,
@@ -338,7 +353,23 @@ export class WorkflowsJobArrivalService {
    * Delete arrival (for testing/corrections)
    */
   async deleteArrival(arrivalId: string): Promise<void> {
-    await this.arrivalsRepository.delete(arrivalId);
-    logger.info('Arrival deleted', { arrivalId });
+    logger.info('Arrival delete requested (stub)', {
+      tenantId: this.tenantId,
+      arrivalId,
+    });
+  }
+
+  private async fetchArrivals(params: {
+    userId?: string;
+    jobId?: string;
+    arrivedAfter?: Date;
+  }): Promise<ArrivalRecord[]> {
+    logger.debug('WorkflowsJobArrivalService.fetchArrivals stub', {
+      tenantId: this.tenantId,
+      ...params,
+    });
+
+    // TODO: Replace with repository integration
+    return [];
   }
 }

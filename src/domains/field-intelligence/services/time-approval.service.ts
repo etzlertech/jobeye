@@ -56,13 +56,31 @@ export type DiscrepancyType =
   | 'MISSING_CLOCKOUT'
   | 'SUSPICIOUS_DURATION';
 
+type TimeEntryRecord = {
+  id: string;
+  user_id: string;
+  job_id: string | null;
+  clock_in_time: string;
+  clock_out_time: string | null;
+  approval_status: ApprovalStatus;
+};
+
+type ApprovalRecord = {
+  id: string;
+  time_entry_id: string;
+  approver_id: string;
+  action: 'APPROVE' | 'REJECT';
+  reason: string | null;
+  approved_at: string;
+};
+
 /**
  * Time entry with approval status
  */
 export interface TimeEntryWithApproval {
   entryId: string;
   userId: string;
-  jobId: string;
+  jobId: string | null;
   clockInTime: Date;
   clockOutTime?: Date;
   durationHours: number;
@@ -148,7 +166,7 @@ export class TimeApprovalService {
     approverId: string
   ): Promise<TimeEntryWithApproval[]> {
     // Get entries pending approval (simplified - would filter by approver)
-    const entries = [];
+    const entries: TimeEntryRecord[] = [];
 
     const withApprovals: TimeEntryWithApproval[] = [];
 
@@ -197,7 +215,7 @@ export class TimeApprovalService {
     approverId: string,
     reason?: string
   ): Promise<ApprovalAction> {
-    const entry = null;
+    const entry = await this.fetchEntryById(entryId);
     if (!entry) {
       throw new NotFoundError(`Time entry not found: ${entryId}`);
     }
@@ -211,7 +229,14 @@ export class TimeApprovalService {
     // });
 
     // Create approval record
-    const approval = { id: "stub-approval", status: "APPROVED" as any };
+    const approval: ApprovalRecord = {
+      id: 'stub-approval',
+      time_entry_id: entryId,
+      approver_id: approverId,
+      action: 'APPROVE',
+      reason: reason ?? null,
+      approved_at: new Date().toISOString(),
+    };
     // TODO: const approval = { id: "mock-id" }.toISOString(),
     // });
 
@@ -239,7 +264,7 @@ export class TimeApprovalService {
     approverId: string,
     reason: string
   ): Promise<ApprovalAction> {
-    const entry = null;
+    const entry = await this.fetchEntryById(entryId);
     if (!entry) {
       throw new NotFoundError(`Time entry not found: ${entryId}`);
     }
@@ -254,7 +279,14 @@ export class TimeApprovalService {
     // });
 
     // Create approval record
-    const approval = { id: "stub-approval", status: "REJECTED" as any };
+    const approval: ApprovalRecord = {
+      id: 'stub-approval',
+      time_entry_id: entryId,
+      approver_id: approverId,
+      action: 'REJECT',
+      reason,
+      approved_at: new Date().toISOString(),
+    };
     // TODO: const approval = { id: "mock-id" }.toISOString(),
     // });
 
@@ -318,7 +350,7 @@ export class TimeApprovalService {
    * Detect discrepancies in time entry
    */
   async detectDiscrepancies(entryId: string): Promise<TimeDiscrepancy[]> {
-    const entry = null;
+    const entry = await this.fetchEntryById(entryId);
     if (!entry) {
       throw new NotFoundError(`Time entry not found: ${entryId}`);
     }
@@ -387,7 +419,7 @@ export class TimeApprovalService {
    * Get approval history for time entry
    */
   async getApprovalHistory(entryId: string): Promise<ApprovalAction[]> {
-    const approvals = [];
+    const approvals: ApprovalRecord[] = [];
 
     return approvals.map((a) => ({
       approvalId: a.id,
@@ -402,7 +434,7 @@ export class TimeApprovalService {
   /**
    * Calculate duration in hours
    */
-  private calculateDuration(entry: any): number {
+  private calculateDuration(entry: Pick<TimeEntryRecord, 'clock_in_time' | 'clock_out_time'>): number {
     if (!entry.clock_out_time) {
       return 0;
     }
@@ -446,5 +478,22 @@ export class TimeApprovalService {
     }
 
     return discrepancies;
+  }
+
+  private async fetchEntryById(entryId: string): Promise<TimeEntryRecord | null> {
+    logger.debug('TimeApprovalService.fetchEntryById stub invoked', {
+      tenantId: this.tenantId,
+      entryId,
+    });
+
+    // TODO: Replace with repository lookup when available.
+    return {
+      id: entryId,
+      user_id: 'stub-user',
+      job_id: null,
+      clock_in_time: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+      clock_out_time: new Date().toISOString(),
+      approval_status: 'PENDING',
+    };
   }
 }

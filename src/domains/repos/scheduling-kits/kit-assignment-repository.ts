@@ -1,32 +1,26 @@
 import { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 import {
   CreateKitAssignmentInput,
   KitAssignment,
+  JsonValue,
 } from '@/domains/lib/scheduling-kits/kit-types';
 
-type KitAssignmentRow = {
-  id: string;
-  tenant_id: string;
-  kit_id: string;
-  variant_id: string | null;
-  external_ref: string;
-  notes: string | null;
-  metadata: Record<string, unknown> | null;
-  created_at: string;
-  updated_at: string;
-};
+type KitAssignmentTable = Database['public']['Tables']['kit_assignments'];
+type KitAssignmentRow = KitAssignmentTable['Row'];
+type KitAssignmentInsert = KitAssignmentTable['Insert'];
 
 export class KitAssignmentRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
   async createAssignment(payload: CreateKitAssignmentInput): Promise<KitAssignment> {
-    const insertPayload = {
+    const insertPayload: KitAssignmentInsert = {
       tenant_id: payload.tenantId,
       kit_id: payload.kitId,
       variant_id: payload.variantId ?? null,
       external_ref: payload.externalRef,
       notes: payload.notes ?? null,
-      metadata: payload.metadata ?? {},
+      metadata: (payload.metadata ?? null) as KitAssignmentInsert['metadata'],
     };
 
     const { data, error } = await this.supabase
@@ -62,6 +56,10 @@ export class KitAssignmentRepository {
   }
 
   private mapRow(row: KitAssignmentRow): KitAssignment {
+    if (!row.tenant_id) {
+      throw new Error('Kit assignment row missing tenant_id');
+    }
+
     return {
       id: row.id,
       tenantId: row.tenant_id,
@@ -69,7 +67,7 @@ export class KitAssignmentRepository {
       variantId: row.variant_id,
       externalRef: row.external_ref,
       notes: row.notes,
-      metadata: row.metadata ?? undefined,
+      metadata: (row.metadata ?? undefined) as JsonValue | undefined,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     } satisfies KitAssignment;

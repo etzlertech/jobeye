@@ -76,9 +76,16 @@ export function createDefaultSafetyVerificationDependencies(
 
           return {
             detections: result.detections.map((detection) => ({
-              label: detection.label,
+              label: detection.itemType,
               confidence: detection.confidence,
-              bbox: detection.bbox,
+              bbox: detection.boundingBox
+                ? {
+                    x: detection.boundingBox.x,
+                    y: detection.boundingBox.y,
+                    width: detection.boundingBox.width,
+                    height: detection.boundingBox.height,
+                  }
+                : undefined,
             })),
             processingTimeMs: result.processingTimeMs ?? 0,
             modelVersion: result.modelVersion ?? remoteYoloConfig.model ?? 'remote-yolo',
@@ -98,7 +105,14 @@ export function createDefaultSafetyVerificationDependencies(
             detections: data.detections.map((detection) => ({
               label: detection.label,
               confidence: detection.confidence,
-              bbox: detection.bbox,
+              bbox: detection.bbox
+                ? {
+                    x: detection.bbox.x,
+                    y: detection.bbox.y,
+                    width: detection.bbox.width,
+                    height: detection.bbox.height,
+                  }
+                : undefined,
             })),
             processingTimeMs: data.processingTimeMs,
             modelVersion: data.modelVersion,
@@ -139,7 +153,7 @@ export function createDefaultSafetyVerificationDependencies(
         confidence: response.confidence ?? 0.75,
         matchedLabels,
         missingLabels,
-        explanation: response.rawText,
+        explanation: response.rawText ?? undefined,
       };
 
       return result;

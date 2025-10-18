@@ -18,28 +18,48 @@ import {
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
 import type { Database } from '@/types/database';
 
-export class ItemRepository extends BaseRepository<'items'> {
-  constructor(supabaseClient: SupabaseClient) {
+type ItemRow = Database['public']['Tables']['items']['Row'];
+type ItemRowInsert = Database['public']['Tables']['items']['Insert'];
+type ItemRowUpdate = Database['public']['Tables']['items']['Update'];
+
+export class ItemRepository extends BaseRepository<'items', Item, ItemCreate, ItemUpdate> {
+  constructor(supabaseClient: SupabaseClient<Database>) {
     super('items', supabaseClient);
+  }
+
+  /**
+   * Typed query builder for the items table. Supabase's generics do not play nicely
+   * with our class abstraction, so we centralise the cast in one place.
+   */
+  private itemsTable() {
+    return this.supabase.from('items') as any;
   }
 
   /**
    * Find item by ID
    */
-  async findById(id: string): Promise<Item | null> {
+  async findById(id: string, options: { tenantId?: string } = {}): Promise<Item | null> {
     try {
-      const { data, error } = await this.supabase
-        .from(this.tableName)
+      let query = this.itemsTable()
         .select('*')
-        .eq('id', id)
-        .single();
+        .eq('id', id);
+
+      if (options.tenantId) {
+        query = query.eq('tenant_id', options.tenantId);
+      }
+
+      const { data, error } = await query.single();
 
       if (error) {
         if (error.code === 'PGRST116') return null; // Not found
         throw error;
       }
 
-      return this.mapFromDb(data);
+      if (!data) {
+        return null;
+      }
+
+      return this.mapFromDb(data as ItemRow);
     } catch (error) {
       throw createAppError({
         code: 'ITEM_FIND_FAILED',
@@ -61,8 +81,7 @@ export class ItemRepository extends BaseRepository<'items'> {
     offset?: number;
   }): Promise<{ data: Item[]; count: number }> {
     try {
-      let query = this.supabase
-        .from(this.tableName)
+      let query = this.itemsTable()
         .select('*', { count: 'exact' })
         .eq('tenant_id', options.tenantId);
 
@@ -118,8 +137,9 @@ export class ItemRepository extends BaseRepository<'items'> {
 
       if (error) throw error;
 
+      const rows = (data ?? []) as ItemRow[];
       return {
-        data: (data || []).map(item => this.mapFromDb(item)),
+        data: rows.map(row => this.mapFromDb(row)),
         count: count || 0,
       };
     } catch (error) {
@@ -169,8 +189,7 @@ export class ItemRepository extends BaseRepository<'items'> {
    */
   async findByIdentifier(identifier: string, tenantId: string): Promise<Item | null> {
     try {
-      const { data, error } = await this.supabase
-        .from(this.tableName)
+      const { data, error } = await this.itemsTable()
         .select('*')
         .eq('tenant_id', tenantId)
         .or(`barcode.eq.${identifier},serial_number.eq.${identifier}`)
@@ -181,7 +200,11 @@ export class ItemRepository extends BaseRepository<'items'> {
         throw error;
       }
 
-      return this.mapFromDb(data);
+      if (!data) {
+        return null;
+      }
+
+      return this.mapFromDb(data as ItemRow);
     } catch (error) {
       throw createAppError({
         code: 'ITEM_IDENTIFIER_FIND_FAILED',
@@ -196,18 +219,34 @@ export class ItemRepository extends BaseRepository<'items'> {
   /**
    * Create new item with validation
    */
-  async create(data: ItemCreate): Promise<Item> {
+  async create(
+    data: ItemCreate,
+    options: { tenantId?: string } = {}
+  ): Promise<Item> {
     try {
       // Validate input
-      const validated = ItemCreateSchema.parse(data);
+      const tenantId = options.tenantId ?? data.tenantId;
+      if (!tenantId) {
+        throw createAppError({
+          code: 'ITEM_TENANT_REQUIRED',
+          message: 'Tenant ID is required to create an item',
+          severity: ErrorSeverity.HIGH,
+          category: ErrorCategory.VALIDATION,
+        });
+      }
+
+      const validated = ItemCreateSchema.parse({
+        ...data,
+        tenantId,
+      });
 
       // Check for duplicate identifiers
       if (validated.barcode || validated.serialNumber || validated.sku) {
         const existing = await this.checkDuplicateIdentifiers(
-          validated.tenantId,
-          validated.barcode,
-          validated.serialNumber,
-          validated.sku
+          tenantId,
+          validated.barcode ?? undefined,
+          validated.serialNumber ?? undefined,
+          validated.sku ?? undefined
         );
         
         if (existing) {
@@ -220,15 +259,25 @@ export class ItemRepository extends BaseRepository<'items'> {
         }
       }
 
-      const { data: created, error } = await this.supabase
-        .from(this.tableName)
-        .insert(this.mapToDb(validated))
+      const dbInsert = this.mapToDb(validated) as ItemRowInsert;
+
+      const { data: created, error } = await this.itemsTable()
+        .insert(dbInsert)
         .select()
         .single();
 
       if (error) throw error;
 
-      return this.mapFromDb(created);
+      if (!created) {
+        throw createAppError({
+          code: 'ITEM_CREATE_FAILED',
+          message: 'Supabase did not return created item',
+          severity: ErrorSeverity.HIGH,
+          category: ErrorCategory.DATABASE,
+        });
+      }
+
+      return this.mapFromDb(created as ItemRow);
     } catch (error) {
       throw createAppError({
         code: 'ITEM_CREATE_FAILED',
@@ -243,17 +292,35 @@ export class ItemRepository extends BaseRepository<'items'> {
   /**
    * Update item with validation
    */
-  async update(id: string, data: ItemUpdate, tenantId: string): Promise<Item> {
+  async update(
+    id: string,
+    data: ItemUpdate,
+    options: { tenantId?: string } = {}
+  ): Promise<Item> {
     try {
       // Validate input
-      const validated = ItemUpdateSchema.parse(data);
+      const tenantId = options.tenantId ?? data.tenantId;
+      if (!tenantId) {
+        throw createAppError({
+          code: 'ITEM_TENANT_REQUIRED',
+          message: 'Tenant ID is required to update an item',
+          severity: ErrorSeverity.HIGH,
+          category: ErrorCategory.VALIDATION,
+        });
+      }
 
-      const { data: updated, error } = await this.supabase
-        .from(this.tableName)
-        .update({
-          ...this.mapToDb(validated),
-          updated_at: new Date().toISOString(),
-        })
+      const validated = ItemUpdateSchema.parse({
+        ...data,
+        tenantId,
+      });
+
+      const dbUpdate = {
+        ...this.mapToDb(validated),
+        updated_at: new Date().toISOString(),
+      } as ItemRowUpdate;
+
+      const { data: updated, error } = await this.itemsTable()
+        .update(dbUpdate)
         .eq('id', id)
         .eq('tenant_id', tenantId)
         .select()
@@ -261,7 +328,16 @@ export class ItemRepository extends BaseRepository<'items'> {
 
       if (error) throw error;
 
-      return this.mapFromDb(updated);
+      if (!updated) {
+        throw createAppError({
+          code: 'ITEM_UPDATE_FAILED',
+          message: 'Supabase did not return updated item',
+          severity: ErrorSeverity.MEDIUM,
+          category: ErrorCategory.DATABASE,
+        });
+      }
+
+      return this.mapFromDb(updated as ItemRow);
     } catch (error) {
       throw createAppError({
         code: 'ITEM_UPDATE_FAILED',
@@ -276,14 +352,25 @@ export class ItemRepository extends BaseRepository<'items'> {
   /**
    * Soft delete item
    */
-  async delete(id: string, tenantId: string): Promise<void> {
+  async retire(id: string, options: { tenantId?: string } = {}): Promise<void> {
     try {
-      const { error } = await this.supabase
-        .from(this.tableName)
-        .update({ 
-          status: 'retired',
-          updated_at: new Date().toISOString()
-        })
+      const tenantId = options.tenantId;
+      if (!tenantId) {
+        throw createAppError({
+          code: 'ITEM_TENANT_REQUIRED',
+          message: 'Tenant ID is required to retire an item',
+          severity: ErrorSeverity.HIGH,
+          category: ErrorCategory.VALIDATION,
+        });
+      }
+
+      const dbUpdate: ItemRowUpdate = {
+        status: 'retired',
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await this.itemsTable()
+        .update(dbUpdate)
         .eq('id', id)
         .eq('tenant_id', tenantId);
 
@@ -316,7 +403,7 @@ export class ItemRepository extends BaseRepository<'items'> {
           code: 'ITEM_NOT_FOUND',
           message: 'Item not found',
           severity: ErrorSeverity.LOW,
-          category: ErrorCategory.NOT_FOUND,
+          category: ErrorCategory.BUSINESS_LOGIC,
         });
       }
 
@@ -345,7 +432,7 @@ export class ItemRepository extends BaseRepository<'items'> {
       return await this.update(
         itemId,
         { currentQuantity: newQuantity },
-        tenantId
+        { tenantId }
       );
     } catch (error) {
       throw createAppError({
@@ -363,8 +450,7 @@ export class ItemRepository extends BaseRepository<'items'> {
    */
   async getItemsNeedingReorder(tenantId: string): Promise<Item[]> {
     try {
-      const { data, error } = await this.supabase
-        .from(this.tableName)
+      const { data, error } = await this.itemsTable()
         .select('*')
         .eq('tenant_id', tenantId)
         .eq('status', 'active')
@@ -374,7 +460,8 @@ export class ItemRepository extends BaseRepository<'items'> {
 
       if (error) throw error;
 
-      return (data || []).map(item => this.mapFromDb(item));
+      const rows = (data ?? []) as ItemRow[];
+      return rows.map(row => this.mapFromDb(row));
     } catch (error) {
       throw createAppError({
         code: 'REORDER_CHECK_FAILED',
@@ -393,8 +480,7 @@ export class ItemRepository extends BaseRepository<'items'> {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      const { data, error } = await this.supabase
-        .from(this.tableName)
+      const { data, error } = await this.itemsTable()
         .select('*')
         .eq('tenant_id', tenantId)
         .eq('status', 'active')
@@ -403,7 +489,8 @@ export class ItemRepository extends BaseRepository<'items'> {
 
       if (error) throw error;
 
-      return (data || []).map(item => this.mapFromDb(item));
+      const rows = (data ?? []) as ItemRow[];
+      return rows.map(row => this.mapFromDb(row));
     } catch (error) {
       throw createAppError({
         code: 'MAINTENANCE_CHECK_FAILED',
@@ -431,8 +518,7 @@ export class ItemRepository extends BaseRepository<'items'> {
 
     if (conditions.length === 0) return false;
 
-    const { data, error } = await this.supabase
-      .from(this.tableName)
+    const { data, error } = await this.itemsTable()
       .select('id')
       .eq('tenant_id', tenantId)
       .or(conditions.join(','))
@@ -446,7 +532,7 @@ export class ItemRepository extends BaseRepository<'items'> {
   /**
    * Map from database format to domain model
    */
-  private mapFromDb(data: any): Item {
+  private mapFromDb(data: ItemRow): Item {
     return ItemSchema.parse({
       id: data.id,
       tenantId: data.tenant_id,
@@ -541,4 +627,4 @@ export class ItemRepository extends BaseRepository<'items'> {
 }
 
 // Export for convenience
-export { Item, ItemCreate, ItemUpdate, ItemFilters } from '@/domains/shared/types/item-types';
+export type { Item, ItemCreate, ItemUpdate, ItemFilters } from '@/domains/shared/types/item-types';

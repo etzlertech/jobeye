@@ -41,6 +41,7 @@ import { SupervisorWorkflowService } from '@/domains/supervisor/services/supervi
 import { withAuth } from '@/lib/auth/with-auth';
 import { handleApiError } from '@/core/errors/error-handler';
 import { z } from 'zod';
+import { createServerClient } from '@/lib/supabase/server';
 
 // Request validation schema
 const jobCreateRequestSchema = z.object({
@@ -108,7 +109,8 @@ export async function POST(req: NextRequest) {
       }
 
       // Initialize service
-      const supervisorService = new SupervisorWorkflowService();
+      const supabase = await createServerClient();
+      const supervisorService = new SupervisorWorkflowService(supabase);
 
       // Create job
       const result = await supervisorService.createJob(

@@ -104,7 +104,7 @@ Total Tables Found: 105 tables in production database
 ### 12. Offline & Sync
 | Table | Repository | Status |
 |-------|-----------|--------|
-| `offline_sync_queue` | ✅ `OfflineSyncQueueRepository` | `/src/domains/intent/repositories/offline-sync-queue.repository.ts` |
+| `offline_sync_queue` | ⚠️ Not implemented (repository removed pending redesign) | N/A |
 | `offline_queue` | ❌ No repository | Missing CRUD |
 | `mobile_sessions` | ❌ No repository | Missing CRUD |
 

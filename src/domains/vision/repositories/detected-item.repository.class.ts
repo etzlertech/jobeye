@@ -55,9 +55,17 @@ export interface DetectedItemFilter {
   offset?: number;
 }
 
+type DetectedItemRow = Database['public']['Tables']['vision_detected_items']['Row'];
+type DetectedItemInsert = Database['public']['Tables']['vision_detected_items']['Insert'];
+type DetectedItemUpdateRow = Database['public']['Tables']['vision_detected_items']['Update'];
+
 export class DetectedItemRepository extends BaseRepository<'vision_detected_items'> {
   constructor(supabaseClient: SupabaseClient) {
     super('vision_detected_items', supabaseClient);
+  }
+
+  private itemsTable() {
+    return this.supabase.from('vision_detected_items') as any;
   }
 
   /**
@@ -65,8 +73,7 @@ export class DetectedItemRepository extends BaseRepository<'vision_detected_item
    */
   async findById(id: string): Promise<DetectedItem | null> {
     try {
-      const { data, error } = await this.supabase
-        .from(this.tableName)
+      const { data, error } = await this.itemsTable()
         .select('*')
         .eq('id', id)
         .single();
@@ -97,8 +104,7 @@ export class DetectedItemRepository extends BaseRepository<'vision_detected_item
     offset?: number;
   }): Promise<{ data: DetectedItem[]; count: number }> {
     try {
-      let query = this.supabase
-        .from(this.tableName)
+      let query = this.itemsTable()
         .select('*', { count: 'exact' });
 
       // Apply filters
@@ -131,8 +137,9 @@ export class DetectedItemRepository extends BaseRepository<'vision_detected_item
 
       if (error) throw error;
 
+      const rows = (data ?? []) as DetectedItemRow[];
       return {
-        data: (data || []).map(item => this.mapFromDb(item)),
+        data: rows.map(item => this.mapFromDb(item)),
         count: count || 0,
       };
     } catch (error) {
@@ -151,15 +158,15 @@ export class DetectedItemRepository extends BaseRepository<'vision_detected_item
    */
   async findByVerificationId(verificationId: string): Promise<DetectedItem[]> {
     try {
-      const { data, error } = await this.supabase
-        .from(this.tableName)
+      const { data, error } = await this.itemsTable()
         .select('*')
         .eq('verification_id', verificationId)
         .order('confidence_score', { ascending: false });
 
       if (error) throw error;
 
-      return (data || []).map(item => this.mapFromDb(item));
+      const rows = (data ?? []) as DetectedItemRow[];
+      return rows.map(item => this.mapFromDb(item));
     } catch (error) {
       throw createAppError({
         code: 'DETECTED_ITEMS_BY_VERIFICATION_FAILED',
@@ -178,15 +185,16 @@ export class DetectedItemRepository extends BaseRepository<'vision_detected_item
     try {
       const validated = DetectedItemCreateSchema.parse(data);
 
-      const { data: created, error } = await this.supabase
-        .from(this.tableName)
-        .insert(this.mapToDb(validated))
+      const insertPayload = this.mapToDb(validated) as DetectedItemInsert;
+
+      const { data: created, error } = await this.itemsTable()
+        .insert(insertPayload)
         .select()
         .single();
 
       if (error) throw error;
 
-      return this.mapFromDb(created);
+      return this.mapFromDb(created as DetectedItemRow);
     } catch (error) {
       throw createAppError({
         code: 'DETECTED_ITEM_CREATE_FAILED',
@@ -205,14 +213,16 @@ export class DetectedItemRepository extends BaseRepository<'vision_detected_item
     try {
       const validated = items.map(item => DetectedItemCreateSchema.parse(item));
 
-      const { data: created, error } = await this.supabase
-        .from(this.tableName)
-        .insert(validated.map(item => this.mapToDb(item)))
+      const insertMany = validated.map(item => this.mapToDb(item) as DetectedItemInsert);
+
+      const { data: created, error } = await this.itemsTable()
+        .insert(insertMany)
         .select();
 
       if (error) throw error;
 
-      return (created || []).map(item => this.mapFromDb(item));
+      const rows = (created ?? []) as DetectedItemRow[];
+      return rows.map(item => this.mapFromDb(item));
     } catch (error) {
       throw createAppError({
         code: 'DETECTED_ITEMS_CREATE_FAILED',
@@ -231,19 +241,20 @@ export class DetectedItemRepository extends BaseRepository<'vision_detected_item
     try {
       const validated = DetectedItemUpdateSchema.parse(data);
 
-      const { data: updated, error } = await this.supabase
-        .from(this.tableName)
-        .update({
-          ...this.mapToDb(validated),
-          updated_at: new Date().toISOString(),
-        })
+      const updatePayload: DetectedItemUpdateRow = {
+        ...this.mapToDb(validated),
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data: updated, error } = await this.itemsTable()
+        .update(updatePayload)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
 
-      return this.mapFromDb(updated);
+      return this.mapFromDb(updated as DetectedItemRow);
     } catch (error) {
       throw createAppError({
         code: 'DETECTED_ITEM_UPDATE_FAILED',
@@ -258,14 +269,14 @@ export class DetectedItemRepository extends BaseRepository<'vision_detected_item
   /**
    * Delete detected item
    */
-  async delete(id: string): Promise<void> {
+  async delete(id: string, _options: { tenantId?: string } = {}): Promise<boolean> {
     try {
-      const { error } = await this.supabase
-        .from(this.tableName)
+      const { error } = await this.itemsTable()
         .delete()
         .eq('id', id);
 
       if (error) throw error;
+      return true;
     } catch (error) {
       throw createAppError({
         code: 'DETECTED_ITEM_DELETE_FAILED',
@@ -282,8 +293,7 @@ export class DetectedItemRepository extends BaseRepository<'vision_detected_item
    */
   async deleteByVerificationId(verificationId: string): Promise<void> {
     try {
-      const { error } = await this.supabase
-        .from(this.tableName)
+      const { error } = await this.itemsTable()
         .delete()
         .eq('verification_id', verificationId);
 
@@ -357,7 +367,7 @@ export class DetectedItemRepository extends BaseRepository<'vision_detected_item
   /**
    * Map from database format to domain model
    */
-  private mapFromDb(data: any): DetectedItem {
+  private mapFromDb(data: DetectedItemRow): DetectedItem {
     return DetectedItemSchema.parse({
       id: data.id,
       verificationId: data.verification_id,
@@ -376,8 +386,8 @@ export class DetectedItemRepository extends BaseRepository<'vision_detected_item
   /**
    * Map from domain model to database format
    */
-  private mapToDb(data: Partial<DetectedItem>): any {
-    const mapped: any = {};
+  private mapToDb(data: Partial<DetectedItem>): Partial<DetectedItemRow> {
+    const mapped: Partial<DetectedItemRow> = {};
 
     if (data.id !== undefined) mapped.id = data.id;
     if (data.verificationId !== undefined) mapped.verification_id = data.verificationId;
@@ -387,11 +397,8 @@ export class DetectedItemRepository extends BaseRepository<'vision_detected_item
     if (data.boundingBox !== undefined) mapped.bounding_box = data.boundingBox;
     if (data.matchStatus !== undefined) mapped.match_status = data.matchStatus;
     if (data.expectedItemId !== undefined) mapped.expected_item_id = data.expectedItemId;
-    if (data.metadata !== undefined) mapped.metadata = data.metadata;
+    if (data.metadata !== undefined) mapped.metadata = data.metadata as DetectedItemRow['metadata'];
 
     return mapped;
   }
 }
-
-// Export for convenience
-export { DetectedItem, DetectedItemCreate, DetectedItemUpdate } from './detected-item.repository.class';

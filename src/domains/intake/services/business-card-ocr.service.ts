@@ -46,7 +46,12 @@ import {
   hasMeaningfulContact,
 } from './business-card-ocr.helpers';
 
-export { BusinessCardContact, BusinessCardOcrDependencies, BusinessCardOcrContext, BusinessCardOcrPersistencePayload } from './business-card-ocr.types';
+export type {
+  BusinessCardContact,
+  BusinessCardOcrDependencies,
+  BusinessCardOcrContext,
+  BusinessCardOcrPersistencePayload,
+} from './business-card-ocr.types';
 
 const DEFAULT_CONFIDENCE_THRESHOLD = 0.6;
 
@@ -215,21 +220,23 @@ export class BusinessCardOcrService {
       context.sessionId
     ) {
       try {
+        const structuredData: Record<string, unknown> = { ...result };
+
         await repository.create({
           tenant_id: context.tenantId,
           session_id: context.sessionId,
           extraction_type: 'contact',
           raw_text: payload.rawText ?? null,
-          structured_data: result,
+          structured_data: structuredData,
           confidence_score: result.confidence,
           provider: source === 'tesseract' ? 'tesseract' : 'gpt-4o-mini',
-          processing_time_ms: context.processingTimeMs ?? null,
-          cost: context.costUsd ?? null,
-          duplicate_of_id: context.duplicateOfId ?? null,
-          duplicate_confidence: context.duplicateConfidence ?? null,
+          processing_time_ms: context.processingTimeMs ?? undefined,
+          cost: context.costUsd ?? undefined,
+          duplicate_of_id: context.duplicateOfId ?? undefined,
+          duplicate_confidence: context.duplicateConfidence ?? undefined,
           status: context.status ?? 'pending_review',
-          reviewed_by: context.reviewedBy ?? null,
-          reviewed_at: context.reviewedAt ?? null,
+          reviewed_by: context.reviewedBy ?? undefined,
+          reviewed_at: context.reviewedAt ?? undefined,
         });
         return;
       } catch (error) {

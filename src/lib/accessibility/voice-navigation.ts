@@ -624,9 +624,10 @@ export class VoiceNavigator {
     
     return elements.filter(element => {
       const style = window.getComputedStyle(element);
+      const isDisabled = 'disabled' in element && Boolean((element as HTMLButtonElement).disabled);
       return style.display !== 'none' && 
              style.visibility !== 'hidden' && 
-             !element.disabled &&
+             !isDisabled &&
              element.tabIndex >= 0;
     });
   }

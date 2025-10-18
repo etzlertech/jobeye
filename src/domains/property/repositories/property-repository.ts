@@ -10,24 +10,18 @@
 //
 // dependencies:
 //   internal:
-//     - /src/lib/repositories/base.repository
 //     - /src/domains/property/types/property-types
 //   external:
 //     - @supabase/supabase-js: ^2.43.0
 //
 // exports:
 //   - PropertyRepository: class - Property data access
-//   - createProperty: function - Create new property
-//   - updateProperty: function - Update property details
-//   - findPropertiesByCustomer: function - Get customer properties
-//   - findPropertiesNearby: function - Geospatial search
-//   - findPropertyByAddress: function - Address lookup
+//   - createPropertyRepository: function - Factory helper
 //
 // voice_considerations: |
-//   Support fuzzy address matching for voice queries.
-//   Store and retrieve voice-friendly nicknames.
-//   Enable landmark-based property searches.
-//   Track access instructions in natural language format.
+//   Store phonetic addresses for voice recognition.
+//   Support landmark-based descriptions for technicians.
+//   Surface access instructions for voice assistants.
 //
 // test_requirements:
 //   coverage: 90%
@@ -35,175 +29,241 @@
 //     - src/__tests__/domains/property/repositories/property-repository.test.ts
 //
 // tasks:
-//   1. Extend BaseRepository for properties
+//   1. Persist properties in the properties table with metadata
 //   2. Implement CRUD with tenant isolation
-//   3. Add customer association methods
-//   4. Create geospatial query methods
-//   5. Implement address fuzzy search
-//   6. Add service location management
+//   3. Support geospatial lookups
+//   4. Provide voice-friendly metadata accessors
+//   5. Handle state transitions and soft deletes
 // --- END DIRECTIVE BLOCK ---
 
-import { SupabaseClient } from '@supabase/supabase-js';
-import { BaseRepository } from '@/lib/repositories/base.repository';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 import {
   Property,
   PropertyCreate,
   PropertyUpdate,
   PropertyType,
   PropertyState,
-  Address,
+  ServiceLocation,
   GeoLocation,
-  propertyCreateSchema,
-  propertyUpdateSchema,
+  Address,
+  PropertyVoiceProfile,
 } from '../types/property-types';
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
 
-export class PropertyRepository extends BaseRepository<'properties'> {
-  private supabaseClient: SupabaseClient;
+type PropertiesTable = Database['public']['Tables']['properties'];
+type PropertyRow = PropertiesTable['Row'];
+type PropertyInsert = PropertiesTable['Insert'];
+type PropertyUpdatePayload = PropertiesTable['Update'];
 
-  constructor(supabaseClient: SupabaseClient) {
-    super('properties', supabaseClient);
-    this.supabaseClient = supabaseClient;
+const DEFAULT_COUNTRY = 'US';
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const coercePropertyType = (value: unknown): PropertyType =>
+  Object.values(PropertyType).includes(value as PropertyType) ? (value as PropertyType) : PropertyType.RESIDENTIAL;
+
+const coercePropertyState = (value: unknown): PropertyState =>
+  Object.values(PropertyState).includes(value as PropertyState) ? (value as PropertyState) : PropertyState.ACTIVE;
+
+const coerceServiceFrequency = (
+  value: unknown
+): Property['serviceFrequency'] => {
+  const allowed: Array<NonNullable<Property['serviceFrequency']>> = [
+    'weekly',
+    'biweekly',
+    'monthly',
+    'quarterly',
+    'annually',
+    'as_needed',
+  ];
+
+  return allowed.includes(value as NonNullable<Property['serviceFrequency']>)
+    ? (value as Property['serviceFrequency'])
+    : undefined;
+};
+
+interface PropertyMetadata {
+  state?: PropertyState;
+  yearBuilt?: number;
+  stories?: number;
+  tags?: string[];
+  serviceFrequency?: Property['serviceFrequency'];
+  customFields?: Record<string, any>;
+  serviceLocation?: Record<string, unknown>;
+  voiceProfile?: Record<string, unknown>;
+  lastServiceDate?: string;
+  nextServiceDate?: string;
+  version?: number;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+}
+
+export class PropertyRepository {
+  constructor(private readonly supabaseClient: SupabaseClient<Database>) {}
+
+  private get client(): SupabaseClient<any> {
+    return this.supabaseClient as unknown as SupabaseClient<any>;
   }
 
   /**
-   * Create a new property with tenant isolation
+   * Create a new property scoped to a tenant.
    */
-  async createProperty(
-    data: PropertyCreate,
-    tenantId: string
-  ): Promise<Property> {
+  async createProperty(data: PropertyCreate, tenantId: string): Promise<Property> {
     try {
-      // Validate input
-      const validated = propertyCreateSchema.parse(data);
-
-      // Generate property number
       const propertyNumber = await this.generatePropertyNumber(tenantId);
+      const addressJson = this.formatAddressForStorage(data.address);
+      const locationPoint = data.location ? this.createPointFromLocation(data.location) : null;
 
-      // Format address for storage
-      const addressJsonb = this.formatAddressForStorage(validated.address);
-
-      // Skip location for now - will add PostGIS support later
-      const locationPoint = null;
-
-      const property = {
-        property_number: propertyNumber,
-        tenant_id: tenantId,
-        customer_id: validated.customerId,
-        name: validated.voiceMetadata?.nickname || 
-              `${validated.address.street}, ${validated.address.city}`,
-        address: addressJsonb,
-        location: locationPoint,
-        property_type: validated.type,
-        size_sqft: validated.size,
-        lot_size_acres: validated.lotSize ? validated.lotSize / 43560 : null, // Convert sqft to acres
-        access_notes: validated.notes,
-        voice_navigation_notes: validated.voiceMetadata?.landmarks?.join(', '),
-        is_active: true,
-        // Note: 'state' field doesn't exist in DB, using metadata instead
-        metadata: {
-          yearBuilt: validated.yearBuilt,
-          stories: validated.stories,
-          tags: validated.tags,
-          serviceFrequency: validated.serviceFrequency,
-          state: PropertyState.ACTIVE,
-        },
+      const metadata: PropertyMetadata = {
+        state: PropertyState.ACTIVE,
+        yearBuilt: data.yearBuilt,
+        stories: data.stories,
+        tags: data.tags ?? [],
+        serviceFrequency: data.serviceFrequency,
+        customFields: {},
+        version: 1,
+        createdBy: null,
+        updatedBy: null,
+        serviceLocation: undefined,
+        voiceProfile: data.voiceMetadata
+          ? {
+              nickname: data.voiceMetadata.nickname,
+              landmarks: data.voiceMetadata.landmarks ?? [],
+              voiceSearchHits: 0,
+            }
+          : undefined,
       };
 
-      const { data: created, error } = await this.supabaseClient
+      const insertPayload: PropertyInsert = {
+        tenant_id: tenantId,
+        customer_id: data.customerId,
+        property_number: propertyNumber,
+        name: data.voiceMetadata?.nickname
+          ? data.voiceMetadata.nickname
+          : `${data.address.street}, ${data.address.city}`,
+        address: addressJson as unknown as PropertyInsert['address'],
+        location: locationPoint,
+        property_type: data.type,
+        size_sqft: data.size ?? null,
+        lot_size_acres: data.lotSize ? data.lotSize / 43560 : null,
+        access_notes: data.notes ?? null,
+        voice_navigation_notes: data.voiceMetadata?.landmarks?.join(', ') ?? null,
+        is_active: true,
+        metadata: metadata as unknown as PropertyInsert['metadata'],
+      };
+
+      const { data: created, error } = await this.client
         .from('properties')
-        .insert(property)
+        .insert(insertPayload)
         .select('*')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       return this.mapToProperty(created);
     } catch (error) {
-      console.error('Property creation failed:', error);
       throw createAppError({
         code: 'PROPERTY_CREATE_FAILED',
         message: 'Failed to create property',
         severity: ErrorSeverity.MEDIUM,
         category: ErrorCategory.DATABASE,
         originalError: error as Error,
-        metadata: { originalError: error },
       });
     }
   }
 
   /**
-   * Update property with version control
+   * Update a property with tenant isolation.
    */
-  async updateProperty(
-    propertyId: string,
-    updates: PropertyUpdate,
-    tenantId: string
-  ): Promise<Property | null> {
+  async updateProperty(propertyId: string, updates: PropertyUpdate, tenantId: string): Promise<Property | null> {
     try {
-      const validated = propertyUpdateSchema.parse(updates);
-
-      const updateData: any = {};
-      
-      if (validated.address) {
-        updateData.address = this.formatAddressForStorage({
-          ...validated.address,
-        } as Address);
-      }
-      
-      if (validated.location) {
-        updateData.location = this.createPointFromLocation(validated.location);
-      }
-
-      if (validated.type) updateData.property_type = validated.type;
-      if (validated.size !== undefined) updateData.size_sqft = validated.size;
-      if (validated.lotSize !== undefined) updateData.lot_size_acres = validated.lotSize / 43560;
-      if (validated.notes !== undefined) updateData.access_notes = validated.notes;
-      if (validated.is_active !== undefined) updateData.is_active = validated.is_active;
-
-      // Get current metadata first if we need to update it
-      let currentMetadata = {};
-      if (validated.state !== undefined || validated.yearBuilt !== undefined || 
-          validated.stories !== undefined || validated.tags !== undefined || 
-          validated.serviceFrequency !== undefined) {
-        const { data: current } = await this.supabaseClient
-          .from('properties')
-          .select('metadata')
-          .eq('id', propertyId)
-          .eq('tenant_id', tenantId)
-          .single();
-        
-        currentMetadata = current?.metadata || {};
-      }
-
-      // Update metadata with any new values
-      const metadata = {
-        ...currentMetadata,
-        ...(validated.state !== undefined && { state: validated.state }),
-        ...(validated.yearBuilt !== undefined && { yearBuilt: validated.yearBuilt }),
-        ...(validated.stories !== undefined && { stories: validated.stories }),
-        ...(validated.tags !== undefined && { tags: validated.tags }),
-        ...(validated.serviceFrequency !== undefined && { serviceFrequency: validated.serviceFrequency }),
-      };
-      updateData.metadata = metadata;
-
-      const { data: updated, error } = await this.supabaseClient
+      const { data: currentRow, error: fetchError } = await this.client
         .from('properties')
-        .update({
-          ...updateData,
-          updated_at: new Date().toISOString(),
-        })
+        .select('*')
+        .eq('id', propertyId)
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (!currentRow) {
+        return null;
+      }
+
+      const metadata = this.ensureMetadata(currentRow.metadata);
+      const existingAddress = this.parseAddress(currentRow.address);
+      const updateData: PropertyUpdatePayload = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (updates.address) {
+        updateData.address = this.formatAddressForStorage({
+          ...existingAddress,
+          ...updates.address,
+        }) as unknown as PropertyUpdatePayload['address'];
+      }
+
+      if (updates.location) {
+        updateData.location = this.createPointFromLocation(updates.location) as PropertyUpdatePayload['location'];
+      }
+
+      if (updates.type) {
+        updateData.property_type = updates.type;
+      }
+
+      if (updates.size !== undefined) {
+        updateData.size_sqft = updates.size ?? null;
+      }
+
+      if (updates.lotSize !== undefined) {
+        updateData.lot_size_acres = updates.lotSize ? updates.lotSize / 43560 : null;
+      }
+
+      if (updates.notes !== undefined) {
+        updateData.access_notes = updates.notes ?? null;
+      }
+
+      const updatedMetadata: PropertyMetadata = {
+        ...metadata,
+        yearBuilt: updates.yearBuilt ?? metadata.yearBuilt,
+        stories: updates.stories ?? metadata.stories,
+        tags: updates.tags ?? metadata.tags ?? [],
+        serviceFrequency: updates.serviceFrequency ?? metadata.serviceFrequency,
+        state: updates.state ?? metadata.state,
+        customFields: metadata.customFields ?? {},
+        version: (metadata.version ?? 1) + 1,
+      };
+
+      if (updates.is_active !== undefined) {
+        updateData.is_active = updates.is_active;
+        if (updates.state === undefined) {
+          updatedMetadata.state = updates.is_active ? PropertyState.ACTIVE : PropertyState.INACTIVE;
+        }
+      }
+
+      updateData.metadata = updatedMetadata as unknown as PropertyUpdatePayload['metadata'];
+
+      const { data, error } = await this.client
+        .from('properties')
+        .update(updateData as any)
         .eq('id', propertyId)
         .eq('tenant_id', tenantId)
         .select('*')
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') return null; // Not found
+        if (error.code === 'PGRST116') {
+          return null;
+        }
         throw error;
       }
 
-      return this.mapToProperty(updated);
+      return this.mapToProperty(data);
     } catch (error) {
       throw createAppError({
         code: 'PROPERTY_UPDATE_FAILED',
@@ -216,190 +276,22 @@ export class PropertyRepository extends BaseRepository<'properties'> {
   }
 
   /**
-   * Find all properties for a customer
-   */
-  async findPropertiesByCustomer(
-    customerId: string,
-    tenantId: string
-  ): Promise<Property[]> {
-    try {
-      const { data, error } = await this.supabaseClient
-        .from('properties')
-        .select(`
-          *,
-          customer:customers!inner(
-            id,
-            customer_number,
-            name
-          )
-        `)
-        .eq('customer_id', customerId)
-        .eq('tenant_id', tenantId)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      return (data || []).map(row => this.mapToProperty(row));
-    } catch (error) {
-      throw createAppError({
-        code: 'PROPERTIES_FETCH_FAILED',
-        message: 'Failed to fetch customer properties',
-        severity: ErrorSeverity.MEDIUM,
-        category: ErrorCategory.DATABASE,
-        originalError: error as Error,
-      });
-    }
-  }
-
-  /**
-   * Find properties near a location (PostGIS query)
-   */
-  async findPropertiesNearby(
-    location: { latitude: number; longitude: number },
-    radiusMeters: number,
-    tenantId: string,
-    limit: number = 20
-  ): Promise<Array<Property & { distance: number }>> {
-    try {
-      // Use PostGIS ST_DWithin for efficient spatial query
-      const { data, error } = await this.supabaseClient
-        .rpc('find_properties_nearby', {
-          p_tenant_id: tenantId,
-          p_longitude: location.longitude,
-          p_latitude: location.latitude,
-          p_radius_meters: radiusMeters,
-          p_limit: limit,
-        });
-
-      if (error) throw error;
-
-      return (data || []).map((row: any) => ({
-        ...this.mapToProperty(row),
-        distance: row.distance_meters,
-      }));
-    } catch (error) {
-      // Fallback to non-spatial query if PostGIS not available
-      const { data, error: fallbackError } = await this.supabaseClient
-        .from('properties')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .eq('is_active', true)
-        .limit(limit);
-
-      if (fallbackError) throw fallbackError;
-
-      // Calculate distances manually
-      return (data || []).map(row => {
-        const prop = this.mapToProperty(row);
-        const distance = prop.location
-          ? this.calculateDistance(location, prop.location)
-          : Infinity;
-        return { ...prop, distance };
-      });
-    }
-  }
-
-  /**
-   * Find property by address with fuzzy matching
-   */
-  async findPropertyByAddress(
-    address: Partial<Address>,
-    tenantId: string
-  ): Promise<Property | null> {
-    try {
-      let query = this.supabaseClient
-        .from('properties')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .eq('is_active', true);
-
-      // Build address query conditions
-      if (address.street) {
-        query = query.ilike('address->>street', `%${address.street}%`);
-      }
-      if (address.city) {
-        query = query.ilike('address->>city', `%${address.city}%`);
-      }
-      if (address.state) {
-        query = query.eq('address->>state', address.state.toUpperCase());
-      }
-      if (address.zip) {
-        query = query.eq('address->>zip', address.zip);
-      }
-
-      const { data, error } = await query.limit(1).single();
-
-      if (error) {
-        if (error.code === 'PGRST116') return null; // Not found
-        throw error;
-      }
-
-      return this.mapToProperty(data);
-    } catch (error) {
-      throw createAppError({
-        code: 'PROPERTY_ADDRESS_SEARCH_FAILED',
-        message: 'Failed to find property by address',
-        severity: ErrorSeverity.MEDIUM,
-        category: ErrorCategory.DATABASE,
-        originalError: error as Error,
-      });
-    }
-  }
-
-  /**
-   * Get property with voice profile
-   */
-  async findPropertyWithVoiceProfile(
-    propertyId: string,
-    tenantId: string
-  ): Promise<Property | null> {
-    try {
-      const { data, error } = await this.supabaseClient
-        .from('properties')
-        .select(`
-          *,
-          voice_profile:property_voice_profiles(*)
-        `)
-        .eq('id', propertyId)
-        .eq('tenant_id', tenantId)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') return null;
-        throw error;
-      }
-
-      return this.mapToProperty(data);
-    } catch (error) {
-      throw createAppError({
-        code: 'PROPERTY_FETCH_FAILED',
-        message: 'Failed to fetch property with voice profile',
-        severity: ErrorSeverity.MEDIUM,
-        category: ErrorCategory.DATABASE,
-        originalError: error as Error,
-      });
-    }
-  }
-
-  /**
-   * Find property by ID with tenant isolation
+   * Look up a property by ID.
    */
   async findById(propertyId: string, tenantId: string): Promise<Property | null> {
     try {
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.client
         .from('properties')
         .select('*')
         .eq('id', propertyId)
         .eq('tenant_id', tenantId)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code === 'PGRST116') return null;
         throw error;
       }
 
-      return this.mapToProperty(data);
+      return data ? this.mapToProperty(data) : null;
     } catch (error) {
       throw createAppError({
         code: 'PROPERTY_FETCH_FAILED',
@@ -412,15 +304,148 @@ export class PropertyRepository extends BaseRepository<'properties'> {
   }
 
   /**
-   * Find all properties with filters
+   * List properties for a customer.
+   */
+  async findPropertiesByCustomer(customerId: string, tenantId: string): Promise<Property[]> {
+    try {
+      const { data, error } = await this.client
+        .from('properties')
+        .select(
+          `
+            *,
+            customer:customers!inner(
+              id,
+              customer_number,
+              name
+            )
+          `
+        )
+        .eq('tenant_id', tenantId)
+        .eq('customer_id', customerId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []).map(row => this.mapToProperty(row as PropertyRow & { customer: any }));
+    } catch (error) {
+      throw createAppError({
+        code: 'PROPERTIES_FETCH_FAILED',
+        message: 'Failed to fetch customer properties',
+        severity: ErrorSeverity.MEDIUM,
+        category: ErrorCategory.DATABASE,
+        originalError: error as Error,
+      });
+    }
+  }
+
+  /**
+   * Find nearby properties using PostGIS fallback when necessary.
+   */
+  async findPropertiesNearby(
+    location: { latitude: number; longitude: number },
+    radiusMeters: number,
+    tenantId: string,
+    limit: number = 20
+  ): Promise<Array<Property & { distance: number }>> {
+    try {
+      const { data, error } = await this.client.rpc('find_properties_nearby', {
+        p_tenant_id: tenantId,
+        p_longitude: location.longitude,
+        p_latitude: location.latitude,
+        p_radius_meters: radiusMeters,
+        p_limit: limit,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []).map((row: any) => ({
+        ...this.mapToProperty(row as PropertyRow),
+        distance: Number(row.distance_meters ?? 0),
+      }));
+    } catch (error) {
+      // Fallback without PostGIS
+      const { data, error: fallbackError } = await this.client
+        .from('properties')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('is_active', true)
+        .limit(limit);
+
+      if (fallbackError) {
+        throw fallbackError;
+      }
+
+      return (data ?? []).map(row => {
+        const mapped = this.mapToProperty(row);
+        const distance = mapped.location ? this.calculateDistance(location, mapped.location) : Number.POSITIVE_INFINITY;
+        return {
+          ...mapped,
+          distance,
+        };
+      });
+    }
+  }
+
+  /**
+   * Locate a property by fuzzy address match.
+   */
+  async findPropertyByAddress(address: Partial<Address>, tenantId: string): Promise<Property | null> {
+    try {
+      let query = this.client
+        .from('properties')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('is_active', true);
+
+      if (address.street) {
+        query = query.ilike('address->>street', `%${address.street}%`);
+      }
+
+      if (address.city) {
+        query = query.ilike('address->>city', `%${address.city}%`);
+      }
+
+      if (address.state) {
+        query = query.eq('address->>state', address.state.toUpperCase());
+      }
+
+      if (address.zip) {
+        query = query.eq('address->>zip', address.zip);
+      }
+
+      const { data, error } = await query.limit(1).maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ? this.mapToProperty(data) : null;
+    } catch (error) {
+      throw createAppError({
+        code: 'PROPERTY_ADDRESS_SEARCH_FAILED',
+        message: 'Failed to find property by address',
+        severity: ErrorSeverity.MEDIUM,
+        category: ErrorCategory.DATABASE,
+        originalError: error as Error,
+      });
+    }
+  }
+
+  /**
+   * List properties with optional filters.
    */
   async findAll(options: {
     tenantId: string;
-    filters?: any;
+    filters?: { is_active?: boolean };
     limit?: number;
   }): Promise<{ data: Property[]; count: number }> {
     try {
-      let query = this.supabaseClient
+      let query = this.client
         .from('properties')
         .select('*', { count: 'exact' })
         .eq('tenant_id', options.tenantId);
@@ -429,17 +454,19 @@ export class PropertyRepository extends BaseRepository<'properties'> {
         query = query.eq('is_active', options.filters.is_active);
       }
 
-      if (options.limit) {
+      if (options.limit !== undefined) {
         query = query.limit(options.limit);
       }
 
       const { data, error, count } = await query;
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       return {
-        data: (data || []).map(row => this.mapToProperty(row)),
-        count: count || 0,
+        data: (data ?? []).map(row => this.mapToProperty(row)),
+        count: count ?? 0,
       };
     } catch (error) {
       throw createAppError({
@@ -453,17 +480,45 @@ export class PropertyRepository extends BaseRepository<'properties'> {
   }
 
   /**
-   * Delete property
+   * Soft delete a property by marking it inactive.
    */
   async delete(propertyId: string, tenantId: string): Promise<boolean> {
     try {
-      const { error } = await this.supabaseClient
+      const { data: currentRow, error: fetchError } = await this.client
         .from('properties')
-        .delete()
+        .select('metadata')
+        .eq('id', propertyId)
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (!currentRow) {
+        return false;
+      }
+
+      const metadata = this.ensureMetadata(currentRow.metadata);
+
+      const { error } = await this.client
+        .from('properties')
+        .update({
+          is_active: false,
+          metadata: {
+            ...metadata,
+            state: PropertyState.INACTIVE,
+            version: (metadata.version ?? 1) + 1,
+          } as unknown as PropertyUpdatePayload['metadata'],
+          updated_at: new Date().toISOString(),
+        } as any)
         .eq('id', propertyId)
         .eq('tenant_id', tenantId);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
+
       return true;
     } catch (error) {
       throw createAppError({
@@ -477,47 +532,48 @@ export class PropertyRepository extends BaseRepository<'properties'> {
   }
 
   /**
-   * Update property state
+   * Update the property state and active flag.
    */
-  async updatePropertyState(
-    propertyId: string,
-    newState: PropertyState,
-    tenantId: string
-  ): Promise<Property | null> {
+  async updatePropertyState(propertyId: string, newState: PropertyState, tenantId: string): Promise<Property | null> {
     try {
-      // First get current metadata
-      const { data: current, error: fetchError } = await this.supabaseClient
+      const { data: current, error: fetchError } = await this.client
         .from('properties')
         .select('metadata')
         .eq('id', propertyId)
         .eq('tenant_id', tenantId)
-        .single();
+        .maybeSingle();
 
-      if (fetchError || !current) {
-        if (fetchError?.code === 'PGRST116') return null;
-        throw fetchError || new Error('Property not found');
+      if (fetchError) {
+        throw fetchError;
       }
 
-      // Update metadata with new state
-      const updatedMetadata = {
-        ...current.metadata,
+      if (!current) {
+        return null;
+      }
+
+      const metadata = this.ensureMetadata(current.metadata);
+      const updatedMetadata: PropertyMetadata = {
+        ...metadata,
         state: newState,
+        version: (metadata.version ?? 1) + 1,
       };
 
-      const { data, error } = await this.supabaseClient
+      const { data, error } = await this.client
         .from('properties')
         .update({
-          metadata: updatedMetadata,
+          metadata: updatedMetadata as unknown as PropertyUpdatePayload['metadata'],
           is_active: newState === PropertyState.ACTIVE,
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', propertyId)
         .eq('tenant_id', tenantId)
         .select('*')
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') return null;
+        if (error.code === 'PGRST116') {
+          return null;
+        }
         throw error;
       }
 
@@ -534,87 +590,162 @@ export class PropertyRepository extends BaseRepository<'properties'> {
   }
 
   /**
-   * Helper: Generate unique property number
+   * Map a row into the domain Property object.
    */
-  private async generatePropertyNumber(tenantId: string): Promise<string> {
-    const prefix = 'PROP';
-    const timestamp = Date.now().toString(36).toUpperCase();
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `${prefix}-${timestamp}-${random}`;
-  }
+  private mapToProperty(row: PropertyRow & { customer?: any }): Property {
+    if (!row) {
+      throw new Error('Cannot map empty property row');
+    }
 
-  /**
-   * Helper: Format address for JSONB storage
-   */
-  private formatAddressForStorage(address: Address): any {
-    return {
-      street: address.street,
-      unit: address.unit || null,
-      city: address.city,
-      state: address.state.toUpperCase(),
-      zip: address.zip,
-      country: address.country || 'US',
-      formatted: address.formatted || 
-        `${address.street}${address.unit ? ' ' + address.unit : ''}, ${address.city}, ${address.state} ${address.zip}`,
-      landmarks: address.landmarks || [],
-    };
-  }
+    const metadata = this.ensureMetadata(row.metadata);
+    const address = this.parseAddress(row.address);
+    const location = this.parseLocation(row.location);
+    const serviceLocation = metadata.serviceLocation
+      ? this.parseServiceLocation(metadata.serviceLocation, row.id)
+      : undefined;
+    const voiceProfile = metadata.voiceProfile
+      ? this.parseVoiceProfile(metadata.voiceProfile, row.id)
+      : undefined;
 
-  /**
-   * Helper: Create PostGIS point from location
-   */
-  private createPointFromLocation(location: Partial<GeoLocation>): string | null {
-    if (!location.latitude || !location.longitude) return null;
-    return `POINT(${location.longitude} ${location.latitude})`;
-  }
+    const lastServiceDate =
+      typeof metadata.lastServiceDate === 'string' ? new Date(metadata.lastServiceDate) : undefined;
+    const nextServiceDate =
+      typeof metadata.nextServiceDate === 'string' ? new Date(metadata.nextServiceDate) : undefined;
 
-  /**
-   * Helper: Map database row to Property type
-   */
-  private mapToProperty(row: any): Property {
-    if (!row) throw new Error('Cannot map null row to Property');
+    const tags = Array.isArray(metadata.tags) ? metadata.tags : [];
+    const customFields = metadata.customFields ?? {};
+
+    const createdAt = row.created_at ? new Date(row.created_at) : new Date();
+    const updatedAt = row.updated_at ? new Date(row.updated_at) : createdAt;
 
     return {
       id: row.id,
       tenant_id: row.tenant_id,
       customerId: row.customer_id,
-      customer: row.customer || undefined,
+      customer: row.customer,
       property_number: row.property_number,
       name: row.name,
-      address: row.address as Address,
-      location: row.location ? this.parseLocation(row.location) : undefined,
-      type: row.property_type as PropertyType,
-      size: row.size_sqft,
-      lotSize: row.lot_size_acres ? row.lot_size_acres * 43560 : undefined, // Convert back to sqft
-      yearBuilt: row.metadata?.yearBuilt,
-      stories: row.metadata?.stories,
-      serviceLocation: row.service_location,
-      lastServiceDate: row.last_service_date ? new Date(row.last_service_date) : undefined,
-      nextServiceDate: row.next_service_date ? new Date(row.next_service_date) : undefined,
-      serviceFrequency: row.metadata?.serviceFrequency,
-      voiceProfile: row.voice_profile,
-      state: row.metadata?.state || PropertyState.ACTIVE,
-      is_active: row.is_active,
-      notes: row.access_notes,
-      tags: row.metadata?.tags || [],
-      customFields: row.metadata?.customFields,
-      version: row.version || 1,
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at),
-      createdBy: row.created_by,
-      updatedBy: row.updated_by,
+      address,
+      location,
+      type: coercePropertyType(row.property_type),
+      size: row.size_sqft ?? undefined,
+      lotSize: row.lot_size_acres ? row.lot_size_acres * 43560 : undefined,
+      yearBuilt: metadata.yearBuilt,
+      stories: metadata.stories,
+      serviceLocation,
+      lastServiceDate,
+      nextServiceDate,
+      serviceFrequency: metadata.serviceFrequency,
+      voiceProfile,
+      state: metadata.state ?? PropertyState.ACTIVE,
+      is_active: row.is_active ?? true,
+      notes: row.access_notes ?? undefined,
+      tags,
+      customFields,
+      version: metadata.version ?? 1,
+      createdAt,
+      updatedAt,
+      createdBy: metadata.createdBy ?? undefined,
+      updatedBy: metadata.updatedBy ?? undefined,
     };
   }
 
-  /**
-   * Helper: Parse PostGIS point to GeoLocation
-   */
-  private parseLocation(locationData: any): GeoLocation | undefined {
-    if (!locationData) return undefined;
-    
-    // Handle different PostGIS formats
+  private ensureMetadata(value: unknown): PropertyMetadata {
+    if (!isRecord(value)) {
+      return {
+        state: PropertyState.ACTIVE,
+        tags: [],
+        customFields: {},
+        version: 1,
+      };
+    }
+
+    return {
+      state: coercePropertyState(value.state),
+      yearBuilt: typeof value.yearBuilt === 'number' ? value.yearBuilt : undefined,
+      stories: typeof value.stories === 'number' ? value.stories : undefined,
+      tags: Array.isArray(value.tags) ? (value.tags as string[]) : [],
+      serviceFrequency: coerceServiceFrequency(value.serviceFrequency),
+      customFields: isRecord(value.customFields) ? (value.customFields as Record<string, any>) : {},
+      serviceLocation: isRecord(value.serviceLocation) ? value.serviceLocation : undefined,
+      voiceProfile: isRecord(value.voiceProfile) ? value.voiceProfile : undefined,
+      lastServiceDate:
+        typeof value.lastServiceDate === 'string' ? value.lastServiceDate : undefined,
+      nextServiceDate:
+        typeof value.nextServiceDate === 'string' ? value.nextServiceDate : undefined,
+      version: typeof value.version === 'number' ? value.version : 1,
+      createdBy: typeof value.createdBy === 'string' ? value.createdBy : null,
+      updatedBy: typeof value.updatedBy === 'string' ? value.updatedBy : null,
+    };
+  }
+
+  private parseAddress(address: unknown): Address {
+    if (!isRecord(address)) {
+      throw new Error('Property address is missing');
+    }
+
+    return {
+      street: String(address.street ?? ''),
+      unit: typeof address.unit === 'string' ? address.unit : undefined,
+      city: String(address.city ?? ''),
+      state: String(address.state ?? ''),
+      zip: String(address.zip ?? ''),
+      country: typeof address.country === 'string' ? address.country : DEFAULT_COUNTRY,
+      formatted: typeof address.formatted === 'string' ? address.formatted : undefined,
+      landmarks: Array.isArray(address.landmarks) ? (address.landmarks as string[]) : [],
+    };
+  }
+
+  private parseServiceLocation(source: Record<string, unknown>, propertyId: string): ServiceLocation {
+    return {
+      id: typeof source.id === 'string' ? source.id : `${propertyId}-primary`,
+      propertyId,
+      gateCode: typeof source.gateCode === 'string' ? source.gateCode : undefined,
+      accessInstructions:
+        typeof source.accessInstructions === 'string' ? source.accessInstructions : undefined,
+      petWarnings: typeof source.petWarnings === 'string' ? source.petWarnings : undefined,
+      equipmentLocation:
+        typeof source.equipmentLocation === 'string' ? source.equipmentLocation : undefined,
+      shutoffLocations: isRecord(source.shutoffLocations)
+        ? (source.shutoffLocations as ServiceLocation['shutoffLocations'])
+        : undefined,
+      specialInstructions:
+        typeof source.specialInstructions === 'string' ? source.specialInstructions : undefined,
+      bestTimeToService:
+        typeof source.bestTimeToService === 'string' ? source.bestTimeToService : undefined,
+      voiceNotes: Array.isArray(source.voiceNotes) ? (source.voiceNotes as string[]) : undefined,
+      createdAt:
+        typeof source.createdAt === 'string' ? new Date(source.createdAt) : new Date(),
+      updatedAt:
+        typeof source.updatedAt === 'string' ? new Date(source.updatedAt) : new Date(),
+    };
+  }
+
+  private parseVoiceProfile(source: Record<string, unknown>, propertyId: string): PropertyVoiceProfile {
+    return {
+      propertyId,
+      nickname: typeof source.nickname === 'string' ? source.nickname : undefined,
+      phoneticAddress:
+        typeof source.phoneticAddress === 'string' ? source.phoneticAddress : undefined,
+      landmarks: Array.isArray(source.landmarks) ? (source.landmarks as string[]) : [],
+      alternateNames: Array.isArray(source.alternateNames)
+        ? (source.alternateNames as string[])
+        : [],
+      commonMispronunciations: Array.isArray(source.commonMispronunciations)
+        ? (source.commonMispronunciations as string[])
+        : undefined,
+      voiceSearchHits: typeof source.voiceSearchHits === 'number' ? source.voiceSearchHits : 0,
+      lastVoiceUpdate:
+        typeof source.lastVoiceUpdate === 'string' ? new Date(source.lastVoiceUpdate) : undefined,
+    };
+  }
+
+  private parseLocation(locationData: unknown): GeoLocation | undefined {
+    if (!locationData) {
+      return undefined;
+    }
+
     if (typeof locationData === 'string') {
-      // Parse POINT(longitude latitude) format
       const match = locationData.match(/POINT\((-?\d+\.?\d*) (-?\d+\.?\d*)\)/);
       if (match) {
         return {
@@ -624,42 +755,76 @@ export class PropertyRepository extends BaseRepository<'properties'> {
           timestamp: new Date(),
         };
       }
-    } else if (locationData.coordinates) {
-      // Handle GeoJSON format
+    }
+
+    if (isRecord(locationData) && Array.isArray(locationData.coordinates)) {
       return {
-        longitude: locationData.coordinates[0],
-        latitude: locationData.coordinates[1],
+        longitude: Number(locationData.coordinates[0]),
+        latitude: Number(locationData.coordinates[1]),
         source: 'geocoding',
         timestamp: new Date(),
       };
     }
-    
+
     return undefined;
   }
 
-  /**
-   * Helper: Calculate distance between two points (Haversine formula)
-   */
+  private createPointFromLocation(location: Partial<GeoLocation>): string | null {
+    if (location.latitude === undefined || location.longitude === undefined) {
+      return null;
+    }
+
+    return `POINT(${location.longitude} ${location.latitude})`;
+  }
+
+  private formatAddressForStorage(address: Address): Record<string, unknown> {
+    return {
+      street: address.street,
+      unit: address.unit ?? null,
+      city: address.city,
+      state: address.state.toUpperCase(),
+      zip: address.zip,
+      country: address.country ?? DEFAULT_COUNTRY,
+      formatted:
+        address.formatted ??
+        `${address.street}${address.unit ? ` ${address.unit}` : ''}, ${address.city}, ${address.state} ${address.zip}`,
+      landmarks: address.landmarks ?? [],
+    };
+  }
+
   private calculateDistance(
     point1: { latitude: number; longitude: number },
     point2: GeoLocation
   ): number {
-    const R = 6371000; // Earth's radius in meters
-    const φ1 = point1.latitude * Math.PI / 180;
-    const φ2 = point2.latitude * Math.PI / 180;
-    const Δφ = (point2.latitude - point1.latitude) * Math.PI / 180;
-    const Δλ = (point2.longitude - point1.longitude) * Math.PI / 180;
+    const R = 6371000;
+    const φ1 = (point1.latitude * Math.PI) / 180;
+    const φ2 = (point2.latitude * Math.PI) / 180;
+    const Δφ = ((point2.latitude - point1.latitude) * Math.PI) / 180;
+    const Δλ = ((point2.longitude - point1.longitude) * Math.PI) / 180;
 
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    return R * c; // Distance in meters
+    return R * c;
+  }
+
+  private async generatePropertyNumber(tenantId: string): Promise<string> {
+    const { count, error } = await this.client
+      .from('properties')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId);
+
+    if (error) {
+      throw error;
+    }
+
+    const next = (count ?? 0) + 1;
+    return `PROP-${next.toString().padStart(5, '0')}`;
   }
 }
 
-// Convenience export
 export const createPropertyRepository = (supabase: SupabaseClient): PropertyRepository => {
-  return new PropertyRepository(supabase);
+  return new PropertyRepository(supabase as SupabaseClient<Database>);
 };

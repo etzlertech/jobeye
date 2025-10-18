@@ -301,8 +301,8 @@ export class CustomerOfflineSync {
       return {
         operationId: operation.id,
         type: 'entity_exists',
-        localData: data,
-        remoteData: existing,
+        localData: data as unknown as Record<string, unknown>,
+        remoteData: existing as unknown as Record<string, unknown>,
         message: 'Customer already exists on server',
       };
     }
@@ -325,7 +325,7 @@ export class CustomerOfflineSync {
       return {
         operationId: operation.id,
         type: 'entity_not_found',
-        localData: data,
+        localData: data as unknown as Record<string, unknown>,
         message: 'Customer not found on server',
       };
     }
@@ -335,8 +335,8 @@ export class CustomerOfflineSync {
       return {
         operationId: operation.id,
         type: 'version_mismatch',
-        localData: data,
-        remoteData: current,
+        localData: data as unknown as Record<string, unknown>,
+        remoteData: current as unknown as Record<string, unknown>,
         message: 'Customer was modified by another user',
       };
     }
@@ -369,7 +369,7 @@ export class CustomerOfflineSync {
    * Apply local version in conflict resolution
    */
   private async applyLocalVersion(conflict: SyncConflict): Promise<void> {
-    const remoteData = conflict.remoteData as Customer | undefined;
+    const remoteData = conflict.remoteData as unknown as Customer | undefined;
     if (!remoteData?.id || !remoteData?.tenant_id) {
       throw createAppError({
         code: 'INVALID_CONFLICT_DATA',
@@ -416,7 +416,7 @@ export class CustomerOfflineSync {
       updatedAt: new Date(),
     };
 
-    const remoteData = conflict.remoteData as Customer | undefined;
+    const remoteData = conflict.remoteData as unknown as Customer | undefined;
     if (!remoteData?.id) {
       throw createAppError({
         code: 'INVALID_CONFLICT_DATA',

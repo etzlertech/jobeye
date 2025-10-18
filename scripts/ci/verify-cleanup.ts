@@ -54,9 +54,7 @@ async function verifyRepositoryPatterns(): Promise<VerificationResult> {
   const classRepos = [
     'src/domains/vision/repositories/vision-verification.repository.class.ts',
     'src/domains/vision/repositories/detected-item.repository.class.ts',
-    'src/domains/vision/repositories/cost-record.repository.class.ts',
-    'src/domains/inventory/repositories/training-data.repository.class.ts',
-    'src/domains/inventory/repositories/purchase-receipts.repository.class.ts'
+    'src/domains/vision/repositories/cost-record.repository.class.ts'
   ];
   
   for (const repo of classRepos) {
@@ -70,9 +68,7 @@ async function verifyRepositoryPatterns(): Promise<VerificationResult> {
   // Check that services use class imports
   const serviceFiles = [
     'src/domains/vision/services/vision-verification.service.ts',
-    'src/domains/vision/services/cost-tracking.service.ts',
-    'src/domains/inventory/services/training-data.service.ts',
-    'src/domains/inventory/services/receipt-processing.service.ts'
+    'src/domains/vision/services/cost-tracking.service.ts'
   ];
   
   for (const service of serviceFiles) {

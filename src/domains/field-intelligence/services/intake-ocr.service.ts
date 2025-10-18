@@ -181,7 +181,13 @@ export class IntakeOCRService {
       };
     } catch (error) {
       logger.error('OCR extraction failed', { documentId, error });
-      throw new ExternalServiceError('OCR extraction failed', { cause: error });
+      const serviceError = new ExternalServiceError('OCR extraction failed', 'intake-ocr');
+      if (error instanceof Error) {
+        serviceError.originalError = error;
+      } else {
+        serviceError.metadata = { ...(serviceError.metadata ?? {}), cause: error };
+      }
+      throw serviceError;
     }
   }
 
@@ -212,10 +218,18 @@ export class IntakeOCRService {
       }
     }
 
-    throw new ExternalServiceError(
+    const serviceError = new ExternalServiceError(
       `OCR extraction failed after ${this.config.maxRetries + 1} attempts`,
-      { cause: lastError }
+      'intake-ocr'
     );
+    serviceError.originalError = lastError ?? undefined;
+    if (lastError) {
+      serviceError.metadata = {
+        ...(serviceError.metadata ?? {}),
+        retryAttempts: this.config.maxRetries + 1,
+      };
+    }
+    throw serviceError;
   }
 
   /**

@@ -152,14 +152,14 @@ export class CustomerSearchService {
     query: string,
     tenantId: string
   ): Promise<CustomerSearchResult[]> {
-    const customers = await this.repository.findAll({ 
-      tenantId,
-      filters: { is_active: true },
-      limit: 100 
-    });
+    const customers = await this.repository.findAll(
+      { is_active: true },
+      { limit: 100 }
+    );
+    const customerRows = customers.data as Customer[];
 
     // Fuzzy search configuration
-    const fuse = new Fuse(customers.data, {
+    const fuse = new Fuse(customerRows, {
       keys: ['name'],
       includeScore: true,
       threshold: 0.4, // Adjust for voice typo tolerance
@@ -185,7 +185,7 @@ export class CustomerSearchService {
     });
 
     // Add phonetic matches
-    customers.data.forEach(customer => {
+    customerRows.forEach(customer => {
       const customerPhonetic = this.getSoundexCode(customer.name);
       if (customerPhonetic === phoneticCode && 
           !results.find(r => r.customer.id === customer.id)) {
@@ -242,7 +242,8 @@ export class CustomerSearchService {
     customerNumber: string,
     tenantId: string
   ): Promise<Customer | null> {
-    return this.repository.findByCustomerNumber(customerNumber);
+    const record = await this.repository.findByCustomerNumber(customerNumber);
+    return record as Customer | null;
   }
 
   /**
@@ -357,12 +358,12 @@ export class CustomerSearchService {
    */
   async updateOfflineCache(tenantId: string): Promise<void> {
     try {
-      const { data } = await this.repository.findAll({
-        tenantId,
-        limit: 500, // Cache top customers
-      });
+      const { data } = await this.repository.findAll(
+        {},
+        { limit: 500 }
+      );
 
-      this.offlineCache = data;
+      this.offlineCache = data as Customer[];
       logger.info('Offline cache updated', { 
         tenantId, 
         customerCount: data.length 

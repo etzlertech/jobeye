@@ -370,7 +370,7 @@ export class RoutingGPSTrackingService {
 
   private async persistBreadcrumb(record: BreadcrumbRecord): Promise<void> {
     logger.debug('RoutingGPSTrackingService.persistBreadcrumb stub invoked', {
-      tenantId: this.companyId,
+      tenantId: this.tenantId,
       record,
     });
 
@@ -383,7 +383,7 @@ export class RoutingGPSTrackingService {
     recordedAfter: Date;
   }): Promise<BreadcrumbRecord[]> {
     logger.debug('RoutingGPSTrackingService.fetchBreadcrumbs stub invoked', {
-      tenantId: this.companyId,
+      tenantId: this.tenantId,
       userId: filters.userId,
       jobId: filters.jobId,
       recordedAfter: filters.recordedAfter.toISOString(),

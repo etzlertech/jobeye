@@ -37,7 +37,7 @@ import {
   summarizeDetections,
 } from './safety-verification.helpers';
 
-export { SafetyVerificationResult, SafetyVerificationDependencies } from './safety-verification.types';
+export type { SafetyVerificationResult, SafetyVerificationDependencies } from './safety-verification.types';
 
 const DEFAULT_CONFIDENCE_THRESHOLD = 0.65;
 const DEFAULT_FALLBACK_THRESHOLD = 0.75;

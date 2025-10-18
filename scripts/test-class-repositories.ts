@@ -12,8 +12,6 @@ import chalk from 'chalk';
 import { VisionVerificationRepository } from '../src/domains/vision/repositories/vision-verification.repository.class';
 import { DetectedItemRepository } from '../src/domains/vision/repositories/detected-item.repository.class';
 import { CostRecordRepository } from '../src/domains/vision/repositories/cost-record.repository.class';
-import { TrainingDataRepository } from '../src/domains/inventory/repositories/training-data.repository.class';
-import { PurchaseReceiptRepository } from '../src/domains/inventory/repositories/purchase-receipts.repository.class';
 
 dotenv.config({ path: '.env.local' });
 
@@ -168,39 +166,6 @@ async function main() {
       costUsd: 0.05
     },
     { tokenCount: 120 }
-  );
-
-  // Test Inventory repositories
-
-  results['TrainingDataRepository'] = await testRepository(
-    'TrainingDataRepository',
-    new TrainingDataRepository(supabase),
-    {
-      tenantId: testTenantId,
-      detectionSessionId: 'test-session',
-      imageUrl: 'https://example.com/image.jpg',
-      detectedLabel: 'mower',
-      detectedConfidence: 0.8,
-      correctedLabel: 'trimmer',
-      detectionMethod: 'yolo',
-      createdBy: testUserId
-    },
-    { detectedConfidence: 0.85 }
-  );
-
-  results['PurchaseReceiptRepository'] = await testRepository(
-    'PurchaseReceiptRepository',
-    new PurchaseReceiptRepository(supabase),
-    {
-      tenantId: testTenantId,
-      vendor: 'Test Vendor',
-      purchaseDate: new Date().toISOString().split('T')[0],
-      totalAmount: 100.00,
-      ocrMethod: 'tesseract',
-      ocrConfidence: 0.9,
-      createdBy: testUserId
-    },
-    { totalAmount: 150.00 }
   );
 
   // Test special methods

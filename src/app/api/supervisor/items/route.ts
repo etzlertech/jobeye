@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     
     console.log('Creating item with data:', itemData);
     
-    const item = await itemRepo.create(itemData);
+    const item = await itemRepo.create(itemData, { tenantId });
     
     if (!item) {
       throw new Error('Failed to create item');

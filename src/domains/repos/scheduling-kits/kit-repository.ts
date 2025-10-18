@@ -1,32 +1,22 @@
 import { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 import {
   CreateKitInput,
   KitDetail,
   KitItem,
   KitItemInput,
   KitSummary,
+  JsonValue,
 } from '@/domains/lib/scheduling-kits/kit-types';
 
-type Json = Record<string, unknown> | null;
-
-type KitItemRow = {
-  id: string;
-  item_type: KitItem['itemType'];
-  quantity: number;
-  unit: string;
-  is_required: boolean;
-  metadata: Json;
-};
-
-type KitRow = {
-  id: string;
-  tenant_id: string;
-  kit_code: string;
-  name: string;
-  is_active: boolean;
-  metadata: Json;
+type KitsTable = Database['public']['Tables']['kits'];
+type KitItemsTable = Database['public']['Tables']['kit_items'];
+type KitRow = KitsTable['Row'] & {
   kit_items?: KitItemRow[];
 };
+type KitItemRow = KitItemsTable['Row'];
+type KitInsert = KitsTable['Insert'];
+type KitItemInsert = KitItemsTable['Insert'];
 
 const KIT_SELECT =
   'id, tenant_id, kit_code, name, is_active, metadata, kit_items ( id, item_type, quantity, unit, is_required, metadata )';
@@ -88,12 +78,12 @@ export class KitRepository {
   }
 
   async createKit(input: CreateKitInput, tenantId: string): Promise<KitDetail> {
-    const kitInsert = {
+    const kitInsert: KitInsert = {
       tenant_id: tenantId,
       kit_code: input.kitCode,
       name: input.name,
       is_active: input.isActive ?? true,
-      metadata: input.metadata ?? {},
+      metadata: (input.metadata ?? null) as KitInsert['metadata'],
     };
 
     const { data: kitData, error: kitError } = await this.supabase
@@ -126,7 +116,7 @@ export class KitRepository {
     return created;
   }
 
-  private buildItemPayloads(items: KitItemInput[], tenantId: string, kitId: string) {
+  private buildItemPayloads(items: KitItemInput[], tenantId: string, kitId: string): KitItemInsert[] {
     return items.map((item) => ({
       tenant_id: tenantId,
       kit_id: kitId,
@@ -134,7 +124,7 @@ export class KitRepository {
       quantity: item.quantity,
       unit: item.unit,
       is_required: item.isRequired,
-      metadata: item.metadata ?? {},
+      metadata: (item.metadata ?? null) as KitItemInsert['metadata'],
     }));
   }
 
@@ -145,7 +135,7 @@ export class KitRepository {
       kitCode: row.kit_code,
       name: row.name,
       isActive: row.is_active,
-      metadata: row.metadata ?? undefined,
+      metadata: (row.metadata ?? undefined) as JsonValue | undefined,
       items: (row.kit_items ?? []).map((item) => this.mapItemRow(item)),
     } satisfies KitDetail;
   }
@@ -153,11 +143,11 @@ export class KitRepository {
   private mapItemRow(row: KitItemRow): KitItem {
     return {
       id: row.id,
-      itemType: row.item_type,
+      itemType: row.item_type as KitItem['itemType'],
       quantity: row.quantity,
-      unit: row.unit,
+      unit: row.unit ?? '',
       isRequired: row.is_required,
-      metadata: row.metadata ?? undefined,
+      metadata: (row.metadata ?? undefined) as JsonValue | undefined,
     } satisfies KitItem;
   }
 

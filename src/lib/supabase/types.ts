@@ -129,6 +129,7 @@ type OtherTables = {
   properties: GenericTable;
   jobs: GenericTable;
   items: GenericTable;
+  job_assignments: GenericTable;
   item_transactions: GenericTable;
   voice_profiles: GenericTable;
   container_assignments: GenericTable;
@@ -144,6 +145,9 @@ type OtherTables = {
   workflow_tasks: GenericTable;
   workflow_task_events: GenericTable;
   tenant_assignments: GenericTable;
+  vision_verifications: GenericTable;
+  vision_cost_records: GenericTable;
+  vision_detected_items: GenericTable;
 };
 
 type SpecificTables = {

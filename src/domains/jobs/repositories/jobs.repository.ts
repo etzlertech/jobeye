@@ -34,12 +34,13 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
+import type { Database, job_status } from '@/types/database';
 
 type JobsTable = Database['public']['Tables']['jobs'];
 export type Job = JobsTable['Row'];
 export type JobInsert = JobsTable['Insert'];
 export type JobUpdate = JobsTable['Update'];
+type JobStatusEnum = job_status;
 
 export interface JobWithRelations extends Job {
   customer?: {
@@ -230,9 +231,9 @@ export class JobsRepository {
    */
   async updateStatus(
     id: string,
-    status: string,
+    status: JobStatusEnum,
     tenantId: string,
-    additionalData?: Partial<JobUpdate>
+    additionalData: Partial<JobUpdate> = {}
   ): Promise<Job | null> {
     const updateData: JobUpdate = {
       status,
@@ -241,10 +242,10 @@ export class JobsRepository {
     };
 
     // Add actual start/end times based on status
-    if (status === 'in_progress' && !additionalData?.actual_start) {
+    if (status === 'in_progress' && !additionalData.actual_start) {
       updateData.actual_start = new Date().toISOString();
     }
-    if (status === 'completed' && !additionalData?.actual_end) {
+    if (status === 'completed' && !additionalData.actual_end) {
       updateData.actual_end = new Date().toISOString();
     }
 

@@ -42,7 +42,7 @@ export class CustomerRepository extends BaseRepository<'customers'> {
   // Search customers by name with fuzzy matching for voice
   async searchByName(searchTerm: string): Promise<Database['public']['Tables']['customers']['Row'][]> {
     try {
-      const tenantId = await this.getTenantId();
+      const tenantId = await this.requireTenantId();
       
       // Use PostgreSQL's similarity functions for fuzzy matching
       const { data, error } = await this.supabase
@@ -64,7 +64,7 @@ export class CustomerRepository extends BaseRepository<'customers'> {
   // Find customer by exact customer number (for voice commands)
   async findByCustomerNumber(customerNumber: string): Promise<Database['public']['Tables']['customers']['Row'] | null> {
     try {
-      const tenantId = await this.getTenantId();
+      const tenantId = await this.requireTenantId();
       
       const { data, error } = await this.supabase
         .from('customers')
@@ -88,7 +88,7 @@ export class CustomerRepository extends BaseRepository<'customers'> {
     Database['public']['Tables']['customers']['Row'] & { property_count: number }
   >> {
     try {
-      const tenantId = await this.getTenantId();
+      const tenantId = await this.requireTenantId();
       
       const { data, error } = await this.supabase
         .from('customers')
@@ -102,7 +102,7 @@ export class CustomerRepository extends BaseRepository<'customers'> {
 
       if (error) throw error;
 
-      return (data || []).map(customer => ({
+      return (data || []).map((customer: any) => ({
         ...customer,
         property_count: customer.properties?.[0]?.count || 0
       }));
@@ -118,7 +118,7 @@ export class CustomerRepository extends BaseRepository<'customers'> {
     }
   >> {
     try {
-      const tenantId = await this.getTenantId();
+      const tenantId = await this.requireTenantId();
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysBack);
       
@@ -140,7 +140,7 @@ export class CustomerRepository extends BaseRepository<'customers'> {
 
       if (error) throw error;
 
-      return (data || []).map(customer => ({
+      return (data || []).map((customer: any) => ({
         ...customer,
         recent_jobs: customer.jobs || []
       }));
@@ -201,7 +201,7 @@ export class CustomerRepository extends BaseRepository<'customers'> {
   // Generate next customer number
   async generateCustomerNumber(): Promise<string> {
     try {
-      const tenantId = await this.getTenantId();
+      const tenantId = await this.requireTenantId();
       
       // Get the highest customer number for this tenant
       const { data, error } = await this.supabase
@@ -213,12 +213,12 @@ export class CustomerRepository extends BaseRepository<'customers'> {
 
       if (error) throw error;
 
-      if (!data || data.length === 0) {
+      const rows = (data ?? []) as Array<{ customer_number: string }>;
+      if (rows.length === 0) {
         return 'C0001';
       }
 
-      // Extract number and increment
-      const lastNumber = data[0].customer_number;
+      const lastNumber = rows[0].customer_number;
       const numericPart = parseInt(lastNumber.replace(/\D/g, ''), 10);
       const nextNumber = numericPart + 1;
 

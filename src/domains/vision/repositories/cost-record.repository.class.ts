@@ -70,9 +70,16 @@ export interface BudgetStatus {
   remainingRequests: number;
 }
 
+type CostRecordRow = Database['public']['Tables']['vision_cost_records']['Row'];
+type CostRecordInsert = Database['public']['Tables']['vision_cost_records']['Insert'];
+
 export class CostRecordRepository extends BaseRepository<'vision_cost_records'> {
   constructor(supabaseClient: SupabaseClient) {
     super('vision_cost_records', supabaseClient);
+  }
+
+  private recordsTable() {
+    return this.supabase.from('vision_cost_records') as any;
   }
 
   /**
@@ -80,8 +87,7 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
    */
   async findById(id: string): Promise<CostRecord | null> {
     try {
-      const { data, error } = await this.supabase
-        .from(this.tableName)
+      const { data, error } = await this.recordsTable()
         .select('*')
         .eq('id', id)
         .single();
@@ -91,7 +97,7 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
         throw error;
       }
 
-      return this.mapFromDb(data);
+      return this.mapFromDb(data as CostRecordRow);
     } catch (error) {
       throw createAppError({
         code: 'COST_RECORD_FIND_FAILED',
@@ -112,8 +118,7 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
     offset?: number;
   }): Promise<{ data: CostRecord[]; count: number }> {
     try {
-      let query = this.supabase
-        .from(this.tableName)
+      let query = this.recordsTable()
         .select('*', { count: 'exact' });
 
       // Apply filters
@@ -146,8 +151,9 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
 
       if (error) throw error;
 
+      const rows = (data ?? []) as CostRecordRow[];
       return {
-        data: (data || []).map(item => this.mapFromDb(item)),
+        data: rows.map(item => this.mapFromDb(item)),
         count: count || 0,
       };
     } catch (error) {
@@ -168,15 +174,16 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
     try {
       const validated = CostRecordCreateSchema.parse(data);
 
-      const { data: created, error } = await this.supabase
-        .from(this.tableName)
-        .insert(this.mapToDb(validated))
+      const insertPayload = this.mapToDb(validated) as CostRecordInsert;
+
+      const { data: created, error } = await this.recordsTable()
+        .insert(insertPayload)
         .select()
         .single();
 
       if (error) throw error;
 
-      return this.mapFromDb(created);
+      return this.mapFromDb(created as CostRecordRow);
     } catch (error) {
       throw createAppError({
         code: 'COST_RECORD_CREATE_FAILED',
@@ -198,16 +205,16 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
       today.setUTCHours(0, 0, 0, 0);
       const todayISO = today.toISOString();
 
-      const { data, error } = await this.supabase
-        .from(this.tableName)
+      const { data, error } = await this.recordsTable()
         .select('cost_usd')
         .eq('tenant_id', tenantId)
         .gte('created_at', todayISO);
 
       if (error) throw error;
 
-      const totalCost = (data || []).reduce((sum, record) => sum + Number(record.cost_usd), 0);
-      const requestCount = data?.length || 0;
+      const rows = (data ?? []) as Array<{ cost_usd: number }>;
+      const totalCost = rows.reduce((sum, record) => sum + Number(record.cost_usd), 0);
+      const requestCount = rows.length;
 
       return { totalCost, requestCount };
     } catch (error) {
@@ -230,8 +237,7 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
     endDate: string
   ): Promise<DailyCostSummary[]> {
     try {
-      const { data, error } = await this.supabase
-        .from(this.tableName)
+      const { data, error } = await this.recordsTable()
         .select('created_at, cost_usd')
         .eq('tenant_id', tenantId)
         .gte('created_at', startDate)
@@ -243,7 +249,9 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
       // Group by date
       const dailyMap = new Map<string, { totalCost: number; count: number }>();
 
-      (data || []).forEach(record => {
+      const rows = (data ?? []) as Array<{ created_at: string; cost_usd: number }>;
+
+      rows.forEach(record => {
         const date = record.created_at.split('T')[0]; // Get YYYY-MM-DD
         const existing = dailyMap.get(date);
 
@@ -285,8 +293,7 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
     endDate?: string
   ): Promise<{ totalCost: number; requestCount: number }> {
     try {
-      let query = this.supabase
-        .from(this.tableName)
+      let query = this.recordsTable()
         .select('cost_usd')
         .eq('tenant_id', tenantId);
 
@@ -301,8 +308,9 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
 
       if (error) throw error;
 
-      const totalCost = (data || []).reduce((sum, record) => sum + Number(record.cost_usd), 0);
-      const requestCount = data?.length || 0;
+      const rows = (data ?? []) as Array<{ cost_usd: number }>;
+      const totalCost = rows.reduce((sum, record) => sum + Number(record.cost_usd), 0);
+      const requestCount = rows.length;
 
       return { totalCost, requestCount };
     } catch (error) {
@@ -368,8 +376,7 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
     endDate?: string
   ): Promise<ProviderStats[]> {
     try {
-      let query = this.supabase
-        .from(this.tableName)
+      let query = this.recordsTable()
         .select('provider, cost_usd')
         .eq('tenant_id', tenantId);
 
@@ -387,7 +394,9 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
       // Group by provider
       const providerMap = new Map<string, { totalCost: number; count: number }>();
 
-      (data || []).forEach(record => {
+      const rows = (data ?? []) as Array<{ provider: string; cost_usd: number }>;
+
+      rows.forEach(record => {
         const existing = providerMap.get(record.provider);
 
         if (existing) {
@@ -422,7 +431,7 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
   /**
    * Map from database format to domain model
    */
-  private mapFromDb(data: any): CostRecord {
+  private mapFromDb(data: CostRecordRow): CostRecord {
     return CostRecordSchema.parse({
       id: data.id,
       tenantId: data.tenant_id,
@@ -441,8 +450,8 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
   /**
    * Map from domain model to database format
    */
-  private mapToDb(data: Partial<CostRecord>): any {
-    const mapped: any = {};
+  private mapToDb(data: Partial<CostRecord>): Partial<CostRecordRow> {
+    const mapped: Partial<CostRecordRow> = {};
 
     if (data.id !== undefined) mapped.id = data.id;
     if (data.tenantId !== undefined) mapped.tenant_id = data.tenantId;
@@ -452,11 +461,8 @@ export class CostRecordRepository extends BaseRepository<'vision_cost_records'> 
     if (data.operation !== undefined) mapped.operation = data.operation;
     if (data.tokenCount !== undefined) mapped.token_count = data.tokenCount;
     if (data.costUsd !== undefined) mapped.cost_usd = data.costUsd;
-    if (data.metadata !== undefined) mapped.metadata = data.metadata;
+    if (data.metadata !== undefined) mapped.metadata = data.metadata as CostRecordRow['metadata'];
 
     return mapped;
   }
 }
-
-// Export for convenience
-export { CostRecord, CostRecordCreate } from './cost-record.repository.class';

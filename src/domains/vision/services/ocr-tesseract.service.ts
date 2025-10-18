@@ -12,7 +12,7 @@
  * Cost: $0 (fully offline)
  */
 
-import Tesseract from 'tesseract.js';
+import Tesseract, { PSM } from 'tesseract.js';
 
 export interface TesseractOcrResult {
   text: string;
@@ -27,7 +27,7 @@ export interface TesseractOcrResult {
 
 export interface TesseractOcrOptions {
   language?: string;
-  psm?: number; // Page segmentation mode
+  psm?: PSM; // Page segmentation mode
   oem?: number; // OCR engine mode
 }
 
@@ -43,7 +43,7 @@ export async function extractText(
   try {
     const {
       language = 'eng',
-      psm = 3, // Auto page segmentation
+      psm = PSM.AUTO, // Auto page segmentation
       oem = 3, // Default OCR engine
     } = options;
 
@@ -71,7 +71,8 @@ export async function extractText(
     const processingTimeMs = Date.now() - startTime;
 
     // Extract blocks with bounding boxes
-    const blocks = result.data.blocks.map((block) => ({
+    const blockSource = result.data.blocks ?? [];
+    const blocks = blockSource.map((block) => ({
       text: block.text,
       confidence: block.confidence,
       bbox: {
@@ -214,7 +215,7 @@ export async function processReceipt(
 }> {
   // Step 1: OCR extraction
   const ocrResult = await extractText(imageData, {
-    psm: 6,  // Assume uniform block of text (receipts)
+    psm: PSM.SINGLE_BLOCK,
   });
 
   if (ocrResult.error || !ocrResult.data) {

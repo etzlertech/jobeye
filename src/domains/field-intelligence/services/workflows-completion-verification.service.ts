@@ -100,6 +100,19 @@ const DEFAULT_CONFIG: VerificationConfig = {
   generateCertificate: true,
 };
 
+type CompletionRecord = {
+  id: string;
+  job_id: string;
+  user_id: string;
+  verified_at: string;
+  photo_proofs: PhotoProof[];
+  checklist_complete: boolean;
+  ai_quality_score: number;
+  requires_supervisor_approval: boolean;
+  approval_status: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+  completion_certificate_url: string | null;
+};
+
 /**
  * Service for job completion verification with photo proof and AI validation
  *
@@ -201,14 +214,18 @@ export class WorkflowsCompletionVerificationService {
       aiQualityScore < this.config.supervisorApprovalThreshold;
 
     // Create completion record
-    const completion = { id: "mock-id" }; // TODO: { id: "mock-id" }.toISOString(),
-    //   photo_proofs: validatedProofs,
-    //   checklist_complete: checklistComplete,
-    //   ai_quality_score: aiQualityScore,
-    //   requires_supervisor_approval: requiresSupervisorApproval,
-    //   approval_status: requiresSupervisorApproval ? 'PENDING' : null,
-    //   completion_certificate_url: null,
-    // });
+    const completion: CompletionRecord = {
+      id: `completion-${Date.now()}`,
+      job_id: data.jobId,
+      user_id: data.userId,
+      verified_at: new Date().toISOString(),
+      photo_proofs: validatedProofs,
+      checklist_complete: checklistComplete,
+      ai_quality_score: aiQualityScore,
+      requires_supervisor_approval: requiresSupervisorApproval,
+      approval_status: requiresSupervisorApproval ? 'PENDING' : null,
+      completion_certificate_url: null,
+    };
 
     // Generate completion certificate if enabled and approved
     let certificateUrl: string | undefined;
@@ -222,7 +239,7 @@ export class WorkflowsCompletionVerificationService {
         data.jobId
       );
 
-      { id: "mock-id" };
+      completion.completion_certificate_url = certificateUrl;
     }
 
     logger.info('Job completion verified', {
@@ -243,7 +260,7 @@ export class WorkflowsCompletionVerificationService {
       aiQualityScore,
       requiresSupervisorApproval,
       approvalStatus: requiresSupervisorApproval ? 'PENDING' : null,
-      completionCertificateUrl: certificateUrl,
+      completionCertificateUrl: certificateUrl ?? undefined,
     };
   }
 
@@ -253,7 +270,7 @@ export class WorkflowsCompletionVerificationService {
   async getCompletionVerification(
     jobId: string
   ): Promise<CompletionVerification | null> {
-    const completions: any[] = [];
+    const completions = await this.fetchCompletionsByJob(jobId);
 
     if (completions.length === 0) {
       return null;
@@ -286,7 +303,7 @@ export class WorkflowsCompletionVerificationService {
     verificationId: string,
     supervisorId: string
   ): Promise<void> {
-    const completion = null;
+    const completion = await this.fetchCompletionById(verificationId);
     if (!completion) {
       throw new NotFoundError(
         `Completion verification not found: ${verificationId}`
@@ -306,7 +323,7 @@ export class WorkflowsCompletionVerificationService {
         completion.job_id
       );
 
-      { id: "mock-id" };
+      completion.completion_certificate_url = certificateUrl;
     }
 
     logger.info('Completion approved', {
@@ -386,7 +403,7 @@ export class WorkflowsCompletionVerificationService {
    * Get pending approvals for supervisor
    */
   async getPendingApprovals(supervisorId: string): Promise<CompletionVerification[]> {
-    const completions: any[] = [];
+    const completions = await this.fetchPendingSupervisorApprovals(supervisorId);
 
     return completions.map((c) => ({
       verificationId: c.id,
@@ -400,5 +417,39 @@ export class WorkflowsCompletionVerificationService {
       approvalStatus: 'PENDING',
       completionCertificateUrl: c.completion_certificate_url || undefined,
     }));
+  }
+
+  private async fetchCompletionsByJob(jobId: string): Promise<CompletionRecord[]> {
+    logger.debug('WorkflowsCompletionVerificationService.fetchCompletionsByJob stub', {
+      tenantId: this.tenantId,
+      jobId,
+    });
+
+    // TODO: Replace with repository call
+    return [];
+  }
+
+  private async fetchCompletionById(
+    verificationId: string
+  ): Promise<CompletionRecord | null> {
+    logger.debug('WorkflowsCompletionVerificationService.fetchCompletionById stub', {
+      tenantId: this.tenantId,
+      verificationId,
+    });
+
+    // TODO: Replace with repository call
+    return null;
+  }
+
+  private async fetchPendingSupervisorApprovals(
+    supervisorId: string
+  ): Promise<CompletionRecord[]> {
+    logger.debug('WorkflowsCompletionVerificationService.fetchPendingSupervisorApprovals stub', {
+      tenantId: this.tenantId,
+      supervisorId,
+    });
+
+    // TODO: Replace with repository call
+    return [];
   }
 }

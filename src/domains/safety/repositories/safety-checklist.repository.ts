@@ -39,14 +39,17 @@ export class SafetyChecklistRepository {
     return data;
   }
 
-  async findAll(): Promise<SafetyChecklist[]> {
-    const { data, error } = await this.supabase
-      .from('safety_checklists')
-      .select('*')
-      .eq('active', true);
+  async findAll(filters: { active?: boolean } = {}): Promise<SafetyChecklist[]> {
+    let query = this.supabase.from('safety_checklists').select('*');
+
+    if (filters.active !== undefined) {
+      query = query.eq('active', filters.active);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
-    return data || [];
+    return (data as SafetyChecklist[] | null) ?? [];
   }
 
   async findByJobType(jobType: string): Promise<SafetyChecklist[]> {
@@ -59,6 +62,16 @@ export class SafetyChecklistRepository {
     return data || [];
   }
 
+  async findByFrequency(frequency: string): Promise<SafetyChecklist[]> {
+    const { data, error } = await this.supabase
+      .from('safety_checklists')
+      .select('*')
+      .eq('frequency', frequency);
+
+    if (error) throw error;
+    return (data as SafetyChecklist[] | null) ?? [];
+  }
+
   async create(checklist: Omit<SafetyChecklist, 'id' | 'created_at' | 'updated_at'>): Promise<SafetyChecklist> {
     const { data, error } = await this.supabase
       .from('safety_checklists')
@@ -67,7 +80,7 @@ export class SafetyChecklistRepository {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as SafetyChecklist;
   }
 
   async update(id: string, updates: Partial<SafetyChecklist>): Promise<SafetyChecklist> {
@@ -79,7 +92,7 @@ export class SafetyChecklistRepository {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as SafetyChecklist;
   }
 
   async delete(id: string): Promise<void> {

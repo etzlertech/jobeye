@@ -415,14 +415,14 @@ export class JobService {
   async scheduleJob(
     jobId: string,
     scheduledDate: Date,
-    timeWindow?: { start: string; end: string },
     tenantId: string,
-    userId: string
+    userId: string,
+    timeWindow?: { start: string; end: string }
   ): Promise<Job> {
     try {
       // Check for scheduling conflicts
       if (this.config.enableAutoScheduling) {
-        await this.checkSchedulingConflicts(scheduledDate, timeWindow, tenantId);
+        await this.checkSchedulingConflicts(tenantId, scheduledDate, timeWindow);
       }
 
       const updates: JobUpdate = {
@@ -616,9 +616,9 @@ export class JobService {
    * Check for scheduling conflicts
    */
   private async checkSchedulingConflicts(
+    tenantId: string,
     scheduledDate: Date,
-    timeWindow?: { start: string; end: string },
-    tenantId: string
+    timeWindow?: { start: string; end: string }
   ): Promise<void> {
     // Implementation would check for:
     // - Technician availability
@@ -659,14 +659,23 @@ export class JobService {
       schedule: {
         scheduledDate: followUpDate,
       },
+      recurrence: JobRecurrence.NONE,
       estimatedCost: 0,
       currency: originalJob.pricing.currency,
-      tags: [...originalJob.tags, 'follow-up'],
+      assignedTo: originalJob.assignment?.assignedTo,
+      tags: Array.from(new Set([...(originalJob.tags ?? []), 'follow-up'])),
       customFields: {
         ...originalJob.customFields,
         originalJobId: originalJob.id,
         isFollowUp: true,
       },
+      teamMembers: [...(originalJob.assignment?.teamMembers ?? [])],
+      equipmentAssigned: [...(originalJob.assignment?.equipmentAssigned ?? [])],
+      materialsAllocated: (originalJob.assignment?.materialsAllocated ?? []).map(material => ({
+        materialId: material.materialId,
+        quantity: material.quantity,
+        unit: material.unit,
+      })),
     };
 
     return this.createJob(followUpJobData, tenantId, userId);

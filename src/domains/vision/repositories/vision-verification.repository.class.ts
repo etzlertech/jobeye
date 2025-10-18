@@ -58,9 +58,17 @@ export interface VisionVerificationFilter {
   offset?: number;
 }
 
+type VisionVerificationRow = Database['public']['Tables']['vision_verifications']['Row'];
+type VisionVerificationInsert = Database['public']['Tables']['vision_verifications']['Insert'];
+type VisionVerificationUpdateRow = Database['public']['Tables']['vision_verifications']['Update'];
+
 export class VisionVerificationRepository extends BaseRepository<'vision_verifications'> {
   constructor(supabaseClient: SupabaseClient) {
     super('vision_verifications', supabaseClient);
+  }
+
+  private verificationsTable() {
+    return this.supabase.from('vision_verifications') as any;
   }
 
   /**
@@ -68,8 +76,7 @@ export class VisionVerificationRepository extends BaseRepository<'vision_verific
    */
   async findById(id: string): Promise<VisionVerification | null> {
     try {
-      const { data, error } = await this.supabase
-        .from(this.tableName)
+      const { data, error } = await this.verificationsTable()
         .select('*')
         .eq('id', id)
         .single();
@@ -100,8 +107,7 @@ export class VisionVerificationRepository extends BaseRepository<'vision_verific
     offset?: number;
   }): Promise<{ data: VisionVerification[]; count: number }> {
     try {
-      let query = this.supabase
-        .from(this.tableName)
+      let query = this.verificationsTable()
         .select('*', { count: 'exact' });
 
       // Apply filters
@@ -143,8 +149,9 @@ export class VisionVerificationRepository extends BaseRepository<'vision_verific
 
       if (error) throw error;
 
+      const rows = (data ?? []) as VisionVerificationRow[];
       return {
-        data: (data || []).map(item => this.mapFromDb(item)),
+        data: rows.map(item => this.mapFromDb(item)),
         count: count || 0,
       };
     } catch (error) {
@@ -165,15 +172,16 @@ export class VisionVerificationRepository extends BaseRepository<'vision_verific
     try {
       const validated = VisionVerificationCreateSchema.parse(data);
 
-      const { data: created, error } = await this.supabase
-        .from(this.tableName)
-        .insert(this.mapToDb(validated))
+      const insertPayload = this.mapToDb(validated) as VisionVerificationInsert;
+
+      const { data: created, error } = await this.verificationsTable()
+        .insert(insertPayload)
         .select()
         .single();
 
       if (error) throw error;
 
-      return this.mapFromDb(created);
+      return this.mapFromDb(created as VisionVerificationRow);
     } catch (error) {
       throw createAppError({
         code: 'VERIFICATION_CREATE_FAILED',
@@ -192,19 +200,20 @@ export class VisionVerificationRepository extends BaseRepository<'vision_verific
     try {
       const validated = VisionVerificationUpdateSchema.parse(data);
 
-      const { data: updated, error } = await this.supabase
-        .from(this.tableName)
-        .update({
-          ...this.mapToDb(validated),
-          updated_at: new Date().toISOString(),
-        })
+      const updatePayload: VisionVerificationUpdateRow = {
+        ...this.mapToDb(validated),
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data: updated, error } = await this.verificationsTable()
+        .update(updatePayload)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
 
-      return this.mapFromDb(updated);
+      return this.mapFromDb(updated as VisionVerificationRow);
     } catch (error) {
       throw createAppError({
         code: 'VERIFICATION_UPDATE_FAILED',
@@ -219,14 +228,14 @@ export class VisionVerificationRepository extends BaseRepository<'vision_verific
   /**
    * Delete verification record
    */
-  async delete(id: string): Promise<void> {
+  async delete(id: string, _options: { tenantId?: string } = {}): Promise<boolean> {
     try {
-      const { error } = await this.supabase
-        .from(this.tableName)
+      const { error } = await this.verificationsTable()
         .delete()
         .eq('id', id);
 
       if (error) throw error;
+      return true;
     } catch (error) {
       throw createAppError({
         code: 'VERIFICATION_DELETE_FAILED',
@@ -255,8 +264,7 @@ export class VisionVerificationRepository extends BaseRepository<'vision_verific
     avgConfidence: number;
   }> {
     try {
-      let query = this.supabase
-        .from(this.tableName)
+      let query = this.verificationsTable()
         .select('verification_result, processing_method, confidence_score')
         .eq('tenant_id', tenantId);
 
@@ -271,7 +279,13 @@ export class VisionVerificationRepository extends BaseRepository<'vision_verific
 
       if (error) throw error;
 
-      if (!data || data.length === 0) {
+      const rows = (data ?? []) as Array<{
+        verification_result: string;
+        processing_method: string;
+        confidence_score: number | null;
+      }>;
+
+      if (rows.length === 0) {
         return {
           total: 0,
           complete: 0,
@@ -284,13 +298,13 @@ export class VisionVerificationRepository extends BaseRepository<'vision_verific
       }
 
       return {
-        total: data.length,
-        complete: data.filter(v => v.verification_result === 'complete').length,
-        incomplete: data.filter(v => v.verification_result === 'incomplete').length,
-        failed: data.filter(v => v.verification_result === 'failed').length,
-        yoloCount: data.filter(v => v.processing_method === 'local_yolo').length,
-        vlmCount: data.filter(v => v.processing_method === 'cloud_vlm').length,
-        avgConfidence: data.reduce((sum, v) => sum + (v.confidence_score || 0), 0) / data.length,
+        total: rows.length,
+        complete: rows.filter(v => v.verification_result === 'complete').length,
+        incomplete: rows.filter(v => v.verification_result === 'incomplete').length,
+        failed: rows.filter(v => v.verification_result === 'failed').length,
+        yoloCount: rows.filter(v => v.processing_method === 'local_yolo').length,
+        vlmCount: rows.filter(v => v.processing_method === 'cloud_vlm').length,
+        avgConfidence: rows.reduce((sum, v) => sum + (v.confidence_score || 0), 0) / rows.length,
       };
     } catch (error) {
       throw createAppError({
@@ -308,8 +322,7 @@ export class VisionVerificationRepository extends BaseRepository<'vision_verific
    */
   async findLatestVerificationForKit(kitId: string): Promise<VisionVerification | null> {
     try {
-      const { data, error } = await this.supabase
-        .from(this.tableName)
+      const { data, error } = await this.verificationsTable()
         .select('*')
         .eq('kit_id', kitId)
         .order('verified_at', { ascending: false })
@@ -321,7 +334,7 @@ export class VisionVerificationRepository extends BaseRepository<'vision_verific
         throw error;
       }
 
-      return this.mapFromDb(data);
+      return this.mapFromDb(data as VisionVerificationRow);
     } catch (error) {
       throw createAppError({
         code: 'LATEST_VERIFICATION_FAILED',
@@ -336,7 +349,7 @@ export class VisionVerificationRepository extends BaseRepository<'vision_verific
   /**
    * Map from database format to domain model
    */
-  private mapFromDb(data: any): VisionVerification {
+  private mapFromDb(data: VisionVerificationRow): VisionVerification {
     return VisionVerificationSchema.parse({
       id: data.id,
       tenantId: data.tenant_id,
@@ -360,8 +373,8 @@ export class VisionVerificationRepository extends BaseRepository<'vision_verific
   /**
    * Map from domain model to database format
    */
-  private mapToDb(data: Partial<VisionVerification>): any {
-    const mapped: any = {};
+  private mapToDb(data: Partial<VisionVerification>): Partial<VisionVerificationRow> {
+    const mapped: Partial<VisionVerificationRow> = {};
 
     if (data.id !== undefined) mapped.id = data.id;
     if (data.tenantId !== undefined) mapped.tenant_id = data.tenantId;
@@ -375,12 +388,9 @@ export class VisionVerificationRepository extends BaseRepository<'vision_verific
     if (data.processingTimeMs !== undefined) mapped.processing_time_ms = data.processingTimeMs;
     if (data.costUsd !== undefined) mapped.cost_usd = data.costUsd;
     if (data.imageUrl !== undefined) mapped.image_url = data.imageUrl;
-    if (data.metadata !== undefined) mapped.metadata = data.metadata;
+    if (data.metadata !== undefined) mapped.metadata = data.metadata as VisionVerificationRow['metadata'];
     if (data.verifiedAt !== undefined) mapped.verified_at = data.verifiedAt;
 
     return mapped;
   }
 }
-
-// Export for convenience
-export { VisionVerification, VisionVerificationCreate, VisionVerificationUpdate } from './vision-verification.repository.class';

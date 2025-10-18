@@ -204,6 +204,35 @@ export class RoutingGeofencingService {
     return this.fetchRecentEvents(userId, since);
   }
 
+  async getJobLocation(jobId: string): Promise<Coordinate | null> {
+    logger.debug('RoutingGeofencingService.getJobLocation stub invoked', {
+      tenantId: this.tenantId,
+      jobId,
+    });
+    // TODO: Retrieve job property coordinates once repository integration is available.
+    return null;
+  }
+
+  async hasDepartedGeofence(
+    jobLocation: Coordinate,
+    currentLocation: Coordinate
+  ): Promise<boolean> {
+    const distance = this.calculateDistance(
+      jobLocation.latitude,
+      jobLocation.longitude,
+      currentLocation.latitude,
+      currentLocation.longitude
+    );
+
+    logger.debug('RoutingGeofencingService.hasDepartedGeofence evaluated', {
+      tenantId: this.tenantId,
+      distance,
+      threshold: this.config.departureThresholdMeters,
+    });
+
+    return distance > this.config.departureThresholdMeters;
+  }
+
   /**
    * Check if coordinate is inside boundary
    */

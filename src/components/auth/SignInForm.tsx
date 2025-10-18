@@ -34,12 +34,23 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { resolveDashboardRoute } from '@/lib/auth/role-routing';
-import type { Database } from '@/types/database';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database, device_type } from '@/types/database';
 
 interface SignInFormData {
   email: string;
   password: string;
 }
+
+type AuthAuditLogInsert = Database['public']['Tables']['auth_audit_log']['Insert'];
+type VoiceProfileMinimal = Pick<Database['public']['Tables']['voice_profiles']['Row'], 'onboarding_completed'>;
+
+const detectDeviceType = (): device_type =>
+  /Mobile|Android|iP(ad|hone)/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
+
+const AUTH_AUDIT_LOG_TABLE = 'auth_audit_log' as const;
+const VOICE_PROFILES_TABLE = 'voice_profiles' as const;
+const supabaseWriter = supabase as unknown as SupabaseClient<any>;
 
 export default function SignInForm() {
   const router = useRouter();
@@ -65,34 +76,47 @@ export default function SignInForm() {
         throw error;
       }
 
-      if (data.user) {
-        // Log auth event
-        const deviceType: Database['public']['Tables']['auth_audit_log']['Row']['device_type'] = /Mobile/.test(navigator.userAgent) ? 'mobile' : 'desktop';
+      const { user, session } = data;
 
-        await supabase.from('auth_audit_log').insert({
-          event_type: 'login_success',
-          user_id: data.user.id,
-          user_email: data.user.email,
-          tenant_id: null, // Will be set by RLS
+      if (user) {
+        const deviceType = detectDeviceType();
+        const userAgent = navigator.userAgent;
+        const auditEntry = {
+          event_type: 'login_success' as const,
+          user_id: user.id,
+          user_email: user.email ?? null,
+          tenant_id: null,
+          session_id: null,
           success: true,
-          ip_address: null, // Would be set server-side
-          user_agent: navigator.userAgent,
+          ip_address: null,
+          user_agent: userAgent,
           device_type: deviceType,
-        });
+          reason: null,
+        } satisfies AuthAuditLogInsert;
+
+        const { error: auditInsertError } = await supabaseWriter
+          .from(AUTH_AUDIT_LOG_TABLE)
+          .insert([auditEntry]);
+
+        if (auditInsertError) {
+          console.warn('Failed to log successful auth audit entry', auditInsertError);
+        }
 
         // Check if user has voice profile
-        const { data: voiceProfile } = await supabase
-          .from('voice_profiles')
+        const { data: voiceProfileData } = await supabaseWriter
+          .from(VOICE_PROFILES_TABLE)
           .select('onboarding_completed')
-          .eq('user_id', data.user.id)
+          .eq('user_id', user.id)
           .maybeSingle();
 
-        if (voiceProfile && !voiceProfile.onboarding_completed) {
+        const voiceProfile = voiceProfileData as VoiceProfileMinimal | null;
+
+        if (voiceProfile?.onboarding_completed === false) {
           router.push('/onboarding/voice');
         } else {
           const role =
-            (data.user.app_metadata?.role as string | undefined) ||
-            (data.user.user_metadata?.role as string | undefined);
+            (user.app_metadata?.role as string | undefined) ||
+            (user.user_metadata?.role as string | undefined);
 
           router.push(resolveDashboardRoute(role));
         }
@@ -102,17 +126,24 @@ export default function SignInForm() {
       
       // Log failed auth attempt
       if (formData.email) {
-        const deviceType: Database['public']['Tables']['auth_audit_log']['Row']['device_type'] = /Mobile/.test(navigator.userAgent) ? 'mobile' : 'desktop';
-
-        const { error: auditError } = await supabase.from('auth_audit_log').insert({
-          event_type: 'login_failed',
+        const deviceType = detectDeviceType();
+        const userAgent = navigator.userAgent;
+        const failureEntry = {
+          event_type: 'login_failed' as const,
           user_email: formData.email,
+          user_id: null,
+          tenant_id: null,
+          session_id: null,
           success: false,
-          reason: err.message,
+          reason: err?.message ?? 'Unknown authentication error',
           ip_address: null,
-          user_agent: navigator.userAgent,
+          user_agent: userAgent,
           device_type: deviceType,
-        });
+        } satisfies AuthAuditLogInsert;
+
+        const { error: auditError } = await supabaseWriter
+          .from(AUTH_AUDIT_LOG_TABLE)
+          .insert([failureEntry]);
 
         if (auditError) {
           console.warn('Failed to log auth audit entry', auditError);

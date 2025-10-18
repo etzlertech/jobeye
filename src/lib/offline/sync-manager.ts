@@ -48,7 +48,7 @@
 
 import { offlineDB, type OfflineQueueItem, type SyncQueueItem, type VoiceRecording, type ImageData, type OfflineEntity } from './offline-db';
 import { createClient } from '@/lib/supabase/client';
-import { AppError } from '@/core/errors/error-types';
+import { AppError, ErrorCode } from '@/core/errors/error-types';
 import { voiceLogger } from '@/core/logger/voice-logger';
 
 export interface SyncResult {
@@ -142,14 +142,21 @@ export class SyncManager {
    */
   async syncPendingOperations(): Promise<SyncResult> {
     if (this.isSyncing || !navigator.onLine) {
-      return { total: 0, successful: 0, failed: 0, errors: [] };
+      return {
+        success: false,
+        synced: 0,
+        failed: 0,
+        conflicts: 0,
+        errors: ['Sync skipped: already in progress or offline'],
+      };
     }
 
     this.isSyncing = true;
     const result: SyncResult = {
-      total: 0,
-      successful: 0,
+      success: true,
+      synced: 0,
       failed: 0,
+      conflicts: 0,
       errors: []
     };
 
@@ -159,25 +166,25 @@ export class SyncManager {
       
       // Get pending operations
       const operations = await offlineDB.getPendingOperations();
-      result.total = operations.length;
 
       // Process each operation
       for (const operation of operations) {
         try {
           await this.processSyncItem(operation);
           await offlineDB.updateOperationStatus(operation.id!, 'completed');
-          result.successful++;
+          result.synced++;
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           await offlineDB.updateOperationStatus(operation.id!, 'failed', errorMessage);
           result.failed++;
-          result.errors.push({ id: operation.id!, error: errorMessage });
+          result.errors.push(`Operation ${operation.id} failed: ${errorMessage}`);
         }
       }
 
       // Sync cache expiration
       await offlineDB.clearExpiredCache();
 
+      result.success = result.failed === 0;
       // Notify UI if registered
       this.notifySyncComplete(result);
     } catch (error) {
@@ -414,8 +421,10 @@ export class SyncManager {
       voiceLogger.info('Enhanced sync completed', combinedResult);
       return combinedResult;
     } catch (error) {
-      voiceLogger.error('Enhanced sync failed', error);
-      throw new AppError('Sync operation failed', 'SYNC_ERROR', { error });
+      voiceLogger.error('Enhanced sync failed', { error });
+      const appError = new AppError('Sync operation failed', ErrorCode.UNKNOWN);
+      appError.metadata = { error };
+      throw appError;
     } finally {
       this.isSyncing = false;
     }
@@ -445,8 +454,9 @@ export class SyncManager {
           await this.handleConflict(operation, result.conflictData);
         } else {
           failed++;
-          await this.handleSyncFailure(operation, result.error);
-          errors.push(result.error || 'Unknown sync error');
+          const errorMessage = result.error ?? 'Unknown sync error';
+          await this.handleSyncFailure(operation, errorMessage);
+          errors.push(errorMessage);
         }
       } catch (error) {
         failed++;

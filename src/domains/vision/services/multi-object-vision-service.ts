@@ -123,6 +123,7 @@ export class MultiObjectVisionService {
       knownMaterials: [],
       loadRequirements: options?.expectedItems?.map(item => ({
         checklistItemId: item.id,
+        itemId: item.inventoryItemId ?? item.itemId ?? item.id,
         itemName: item.name,
         itemType: item.type,
         quantity: item.quantity || 1,
@@ -232,10 +233,10 @@ export class MultiObjectVisionService {
         items: itemsWithContainers,
         ...verification,
         provider,
-        model: modelId,
-        processingTime: Date.now() - startTime,
-        cost: costUsd,
-        confidenceScores: {}
+        modelId: modelId,
+        processingTimeMs: Date.now() - startTime,
+        costUsd,
+        tokensUsed
       };
       
       // Cache result for offline use
@@ -250,7 +251,7 @@ export class MultiObjectVisionService {
         itemsDetected: itemsWithContainers.length,
         verifiedCount: verification.verifiedItems.length,
         missingCount: verification.missingItems.length,
-        processingTimeMs: result.processingTime,
+        processingTimeMs: result.processingTimeMs,
         provider,
         modelId
       });
@@ -937,7 +938,9 @@ ${this.generateVLMPrompt(request)}`;
     // Keep cache size limited
     if (this.offlineCache.size > 50) {
       const firstKey = this.offlineCache.keys().next().value;
-      this.offlineCache.delete(firstKey);
+      if (typeof firstKey === 'string') {
+        this.offlineCache.delete(firstKey);
+      }
     }
 
     this.offlineCache.set(jobId, result);

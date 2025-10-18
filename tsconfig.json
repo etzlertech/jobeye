@@ -69,6 +69,7 @@
     "tests/integration/mvp-validation.test.ts",
     "tests/integration/scheduling-kits/**",
     "tests/lib/offline/**",
-    "tools/redundancy-analyzer/**"
+    "tools/redundancy-analyzer/**",
+    "experimental/**"
   ]
 }

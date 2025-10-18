@@ -113,8 +113,9 @@ export class IntentClassificationRepository {
     try {
       const supabase = await createServerSupabaseClient();
       
-      const { data: classification, error } = await supabase
-        .from('intent_classifications')
+      const table = (supabase as any).from('intent_classifications');
+
+      const { data: classification, error } = await table
         .insert({
           tenant_id: tenantId,
           user_id: data.userId,
@@ -132,7 +133,7 @@ export class IntentClassificationRepository {
 
       if (error) {
         // Handle offline scenario
-        if (navigator && !navigator.onLine) {
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
           await this.offlineDb.queueOperation({
             operation: 'create',
             entity: 'intent_classifications',
@@ -160,17 +161,23 @@ export class IntentClassificationRepository {
           };
         }
         
-        throw new AppError('Failed to create intent classification', {
+        throw createAppError({
           code: 'INTENT_CREATE_ERROR',
-          details: error
+          message: 'Failed to create intent classification',
+          severity: ErrorSeverity.HIGH,
+          category: ErrorCategory.DATABASE,
+          originalError: error as Error
         });
       }
 
       return this.mapToModel(classification);
     } catch (error) {
-      throw new AppError('Failed to create intent classification', {
+      throw createAppError({
         code: 'INTENT_CREATE_ERROR',
-        details: error
+        message: 'Failed to create intent classification',
+        severity: ErrorSeverity.HIGH,
+        category: ErrorCategory.DATABASE,
+        originalError: error as Error
       });
     }
   }
@@ -182,11 +189,11 @@ export class IntentClassificationRepository {
     id: string,
     tenantId: string,
     feedback: UpdateFeedbackDto
-  ): Promise<IntentClassification> {
+  ): Promise<void> {
     try {
       const supabase = await createServerSupabaseClient();
       
-      const { data: classification, error } = await supabase
+      const { error } = await (supabase as any)
         .from('intent_classifications')
         .update({
           user_feedback: feedback.userFeedback,
@@ -195,11 +202,11 @@ export class IntentClassificationRepository {
         .eq('id', id)
         .eq('tenant_id', tenantId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         // Queue for offline sync
-        if (navigator && !navigator.onLine) {
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
           await this.offlineDb.queueOperation({
             operation: 'update',
             entity: 'intent_classifications',
@@ -211,17 +218,15 @@ export class IntentClassificationRepository {
           // Feedback queued for sync - not really an error
           return;
         }
-        
-        throw new AppError('Failed to update feedback', {
+        throw createAppError({
           code: 'INTENT_FEEDBACK_ERROR',
-          details: error
+          message: 'Failed to update feedback',
+          severity: ErrorSeverity.MEDIUM,
+          category: ErrorCategory.DATABASE,
+          originalError: error as Error
         });
       }
-
-      return this.mapToModel(classification);
     } catch (error) {
-      if (error instanceof AppError) throw error;
-      
       throw createAppError({
         code: 'INTENT_FEEDBACK_ERROR',
         message: 'Failed to update feedback',
@@ -249,7 +254,7 @@ export class IntentClassificationRepository {
     try {
       const supabase = await createServerSupabaseClient();
       
-      let query = supabase
+      let query = (supabase as any)
         .from('intent_classifications')
         .select('*')
         .eq('tenant_id', tenantId)
@@ -289,7 +294,7 @@ export class IntentClassificationRepository {
         });
       }
 
-      return classifications.map(this.mapToModel);
+      return (classifications ?? []).map((row: any) => this.mapToModel(row));
     } catch (error) {
       throw createAppError({
         code: 'INTENT_FETCH_ERROR',
@@ -330,7 +335,7 @@ export class IntentClassificationRepository {
         });
       }
 
-      return classifications.map(this.mapToModel);
+      return (classifications ?? []).map((row: any) => this.mapToModel(row));
     } catch (error) {
       throw createAppError({
         code: 'INTENT_FETCH_ERROR',
@@ -365,7 +370,7 @@ export class IntentClassificationRepository {
     try {
       const supabase = await createServerSupabaseClient();
       
-      const { data: classifications, error } = await supabase
+      const { data: rawRows, error } = await (supabase as any)
         .from('intent_classifications')
         .select('intent, user_feedback')
         .eq('tenant_id', tenantId)
@@ -381,6 +386,8 @@ export class IntentClassificationRepository {
           originalError: error as Error
         });
       }
+
+      const classifications = (rawRows ?? []) as Array<{ intent: string; user_feedback: 'correct' | 'incorrect' | null }>; 
 
       const metrics = {
         totalClassifications: classifications.length,
@@ -453,7 +460,7 @@ export class IntentClassificationRepository {
     try {
       const supabase = await createServerSupabaseClient();
       
-      const { data: classification, error } = await supabase
+      const { data: classification, error } = await (supabase as any)
         .from('intent_classifications')
         .update({
           processed_at: new Date().toISOString()

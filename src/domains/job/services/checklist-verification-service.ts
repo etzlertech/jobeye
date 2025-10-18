@@ -39,6 +39,18 @@ import type {
   LoadVerificationPersistencePayload
 } from '@/domains/vision/types/load-verification-types';
 
+type ExtendedDetectedContainer = DetectedContainer & {
+  container_id?: string;
+  container_type?: string;
+};
+
+type ExtendedDetectedItem = DetectedItem & {
+  id?: string;
+  item_name?: string;
+  item_type?: string;
+  container_id?: string;
+};
+
 export interface VerificationRequest {
   job_id: string;
   media_id?: string;
@@ -100,7 +112,7 @@ interface OfflineVerification {
 export class ChecklistVerificationService {
   private supabase: SupabaseClient;
   private loadListService: JobLoadListService;
-  private loadVerificationRepo: LoadVerificationRecordRepository;
+  private loadVerificationRepo: LoadVerificationRepository;
   private visionService: MultiObjectVisionService;
   private logger: VoiceLogger;
   private offlineQueue: OfflineVerification[] = [];
@@ -117,14 +129,14 @@ export class ChecklistVerificationService {
   ) {
     this.supabase = supabase;
     this.loadListService = loadListService || new JobLoadListService(supabase);
-    this.loadVerificationRepo = loadVerificationRepo || new LoadVerificationRecordRepository(supabase);
+    this.loadVerificationRepo = loadVerificationRepo || new LoadVerificationRepository(supabase);
     this.visionService = visionService || new MultiObjectVisionService(supabase);
     this.logger = logger || new VoiceLogger();
     this.loadOfflineQueue();
   }
 
   async verifyChecklist(request: VerificationRequest): Promise<VerificationResult> {
-    if (!navigator.onLine && request.verification_mode === 'auto') {
+    if (typeof navigator !== 'undefined' && !navigator.onLine && request.verification_mode === 'auto') {
       return this.createOfflineResult(request);
     }
 
@@ -175,13 +187,16 @@ export class ChecklistVerificationService {
 
       return result;
     } catch (error) {
-      await this.logger.error('Failed to verify checklist', error as Error, request);
+      await this.logger.error('Failed to verify checklist', {
+        error: error instanceof Error ? error : new Error(String(error)),
+        request,
+      });
       throw error;
     }
   }
 
   async applyManualOverride(override: ManualOverrideRequest): Promise<boolean> {
-    if (!navigator.onLine) {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
       this.queueOfflineOperation('override', override);
       return true;
     }
@@ -201,7 +216,10 @@ export class ChecklistVerificationService {
 
       return success;
     } catch (error) {
-      await this.logger.error('Failed to apply manual override', error as Error, override);
+      await this.logger.error('Failed to apply manual override', {
+        error: error instanceof Error ? error : new Error(String(error)),
+        override,
+      });
       return false;
     }
   }
@@ -262,16 +280,17 @@ export class ChecklistVerificationService {
     // Create verification record
     const verification = await this.loadVerificationRepo.create({
       jobId: request.job_id,
-      media_id: mediaId!,
-      detected_containers: analysisResult.containers,
-      detected_items: analysisResult.items,
-      verified_checklist_items: [],
-      missing_items: [],
-      confidence_scores: analysisResult.confidenceScores || {},
+      mediaId: mediaId!,
       provider: analysisResult.provider,
-      model: analysisResult.model,
-      processing_time_ms: analysisResult.processingTime,
-      cost: analysisResult.cost
+      modelId: analysisResult.modelId,
+      detectedContainers: analysisResult.containers,
+      detectedItems: analysisResult.items,
+      verifiedChecklistItemIds: analysisResult.verifiedItems.map(item => item.checklistItemId),
+      missingChecklistItemIds: analysisResult.missingItems.map(item => item.checklistItemId),
+      unexpectedItems: analysisResult.unexpectedItems,
+      tokensUsed: analysisResult.tokensUsed,
+      costUsd: analysisResult.costUsd,
+      processingTimeMs: analysisResult.processingTimeMs ?? (analysisResult as any).processingTime
     });
 
     return verification;
@@ -282,9 +301,13 @@ export class ChecklistVerificationService {
     verification: LoadVerificationRecord,
     confidenceThreshold: number
   ): Promise<VerificationResult> {
+    const jobId = (verification as any).job_id ?? verification.jobId;
+    const detectedContainers = ((verification as any).detected_containers ?? verification.detectedContainers ?? []) as ExtendedDetectedContainer[];
+    const detectedItems = ((verification as any).detected_items ?? verification.detectedItems ?? []) as ExtendedDetectedItem[];
+
     const result: VerificationResult = {
       verification_id: verification.id,
-      job_id: verification.job_id,
+      job_id: jobId,
       verified_items: [],
       missing_items: [],
       unexpected_items: [],
@@ -296,18 +319,17 @@ export class ChecklistVerificationService {
     };
 
     // Process detected containers
-    if (verification.detected_containers) {
-      result.containers_detected = (verification.detected_containers as DetectedContainer[]).map(c => ({
-        container_id: c.container_id,
+    if (detectedContainers.length > 0) {
+      result.containers_detected = detectedContainers.map((c) => ({
+        container_id: c.container_id ?? c.containerId,
         identifier: c.identifier,
-        type: c.container_type,
+        type: c.container_type ?? c.containerType,
         color: c.color,
-        confidence: c.confidence
+        confidence: c.confidence,
       }));
     }
 
     // Match checklist items with detected items
-    const detectedItems = verification.detected_items as DetectedItem[];
     const matchedDetectedItems = new Set<string>();
 
     for (const checklistItem of checklist) {
@@ -319,7 +341,7 @@ export class ChecklistVerificationService {
           confidence: 1.0,
           container_id: checklistItem.container_id,
           container_name: checklistItem.container_name,
-          status: checklistItem.manual_override_status
+          status: this.mapManualStatus(checklistItem.manual_override_status)
         });
         continue;
       }
@@ -332,37 +354,40 @@ export class ChecklistVerificationService {
         matchedDetectedItems.add(bestMatch.id || '');
 
         // Check confidence
-        if (bestMatch.confidence < confidenceThreshold) {
+        const matchConfidence = bestMatch.confidence ?? 0;
+        const matchContainerId = bestMatch.container_id ?? bestMatch.containerId;
+
+        if (matchConfidence < confidenceThreshold) {
           result.verified_items.push({
             checklist_item_id: checklistItem.id,
             item_name: checklistItem.item_name,
-            confidence: bestMatch.confidence,
-            container_id: bestMatch.container_id,
-            container_name: this.getContainerName(bestMatch.container_id, result.containers_detected),
+            confidence: matchConfidence,
+            container_id: matchContainerId,
+            container_name: this.getContainerName(matchContainerId, result.containers_detected),
             status: 'low_confidence'
           });
         } else {
           // Check container match
           const containerMatch = this.checkContainerMatch(
             checklistItem.container_id,
-            bestMatch.container_id
+            matchContainerId
           );
 
           if (!containerMatch && checklistItem.container_id) {
             result.verified_items.push({
               checklist_item_id: checklistItem.id,
               item_name: checklistItem.item_name,
-              confidence: bestMatch.confidence,
-              container_id: bestMatch.container_id,
-              container_name: this.getContainerName(bestMatch.container_id, result.containers_detected),
+              confidence: matchConfidence,
+              container_id: matchContainerId,
+              container_name: this.getContainerName(matchContainerId, result.containers_detected),
               status: 'wrong_container'
             });
           } else {
             result.verified_items.push({
               checklist_item_id: checklistItem.id,
               item_name: checklistItem.item_name,
-              confidence: bestMatch.confidence,
-              container_id: bestMatch.container_id || checklistItem.container_id,
+              confidence: matchConfidence,
+              container_id: matchContainerId || checklistItem.container_id,
               container_name: checklistItem.container_name,
               status: 'verified'
             });
@@ -382,8 +407,8 @@ export class ChecklistVerificationService {
     for (const detectedItem of detectedItems) {
       if (!matchedDetectedItems.has(detectedItem.id || '')) {
         result.unexpected_items.push({
-          item_name: detectedItem.item_name,
-          container_id: detectedItem.container_id,
+          item_name: detectedItem.item_name ?? detectedItem.itemName,
+          container_id: detectedItem.container_id ?? detectedItem.containerId,
           confidence: detectedItem.confidence
         });
       }
@@ -404,22 +429,23 @@ export class ChecklistVerificationService {
 
   private findMatchingItems(
     checklistItem: LoadListItem,
-    detectedItems: DetectedItem[]
-  ): DetectedItem[] {
+    detectedItems: ExtendedDetectedItem[]
+  ): ExtendedDetectedItem[] {
     return detectedItems
       .filter(detected => {
         // Type match
-        if (detected.item_type !== checklistItem.item_type) return false;
+        const detectedType = detected.item_type ?? detected.itemType;
+        if (detectedType !== checklistItem.item_type) return false;
         
         // Name similarity
         const nameSimilarity = this.calculateNameSimilarity(
           checklistItem.item_name.toLowerCase(),
-          detected.item_name.toLowerCase()
+          (detected.item_name ?? detected.itemName ?? '').toLowerCase()
         );
         
         return nameSimilarity > 0.7;
       })
-      .sort((a, b) => b.confidence - a.confidence);
+      .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
   }
 
   private calculateNameSimilarity(name1: string, name2: string): number {
@@ -441,12 +467,25 @@ export class ChecklistVerificationService {
   }
 
   private getContainerName(
-    containerId?: string, 
+    containerId: string | undefined,
     containers: VerificationResult['containers_detected']
   ): string | undefined {
     if (!containerId) return undefined;
     const container = containers.find(c => c.container_id === containerId);
     return container?.identifier;
+  }
+
+  private mapManualStatus(status?: LoadListItem['status'] | null): VerificationResult['verified_items'][number]['status'] {
+    switch (status) {
+      case 'verified':
+        return 'verified';
+      case 'loaded':
+        return 'loaded';
+      case 'missing':
+        return 'missing';
+      default:
+        return 'missing';
+    }
   }
 
   private async updateChecklistStatuses(
@@ -599,6 +638,7 @@ export class ChecklistVerificationService {
 
   // Offline support
   private loadOfflineQueue() {
+    if (typeof window === 'undefined') return;
     const stored = localStorage.getItem('checklist-verification-offline-queue');
     if (stored) {
       this.offlineQueue = JSON.parse(stored);
@@ -606,10 +646,12 @@ export class ChecklistVerificationService {
   }
 
   private saveOfflineQueue() {
+    if (typeof window === 'undefined') return;
     localStorage.setItem('checklist-verification-offline-queue', JSON.stringify(this.offlineQueue));
   }
 
   private queueOfflineOperation(type: OfflineVerification['type'], payload: any) {
+    if (typeof window === 'undefined') return;
     const operation: OfflineVerification = {
       id: uuidv4(),
       type,
@@ -622,7 +664,9 @@ export class ChecklistVerificationService {
   }
 
   async syncOfflineOperations(): Promise<void> {
-    if (!navigator.onLine || this.offlineQueue.length === 0) {
+    if (typeof window === 'undefined') return;
+
+    if ((typeof navigator !== 'undefined' && !navigator.onLine) || this.offlineQueue.length === 0) {
       return;
     }
 

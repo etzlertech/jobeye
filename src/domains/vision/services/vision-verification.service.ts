@@ -30,6 +30,7 @@ import {
   VlmDetection,
   YoloDetectionBatch,
   VisionBoundingBox,
+  MatchStatus,
 } from '../lib/vision-types';
 
 export interface VerifyKitRequest {
@@ -263,7 +264,7 @@ export class VisionVerificationService {
               provider: 'openai-gpt4-vision',
               model: vlmResult.modelVersion,
               operation: 'vision_verification',
-              tokenCount: vlmResult.tokensUsed,
+              tokenCount: vlmResult.tokensUsed ?? 0,
               costUsd: vlmResult.estimatedCostUsd,
               metadata: {
                 imageSizeBytes: this.getImageSize(imageData),
@@ -303,7 +304,8 @@ export class VisionVerificationService {
           expectedCount: expectedItems.length,
           processingTimeMs: Date.now() - startTime,
           costUsd: totalCost,
-          verifiedAt: new Date().toISOString()
+          verifiedAt: new Date().toISOString(),
+          metadata: {},
         });
 
         verificationId = verification.id;
@@ -360,10 +362,10 @@ export class VisionVerificationService {
           unexpectedItems: matchingResult.unexpectedItems,
           costUsd: totalCost,
           processingTimeMs,
-          budgetStatus: budgetCheck.data ? {
-            allowed: budgetCheck.data.allowed,
-            remainingBudget: budgetCheck.data.remainingBudget,
-            remainingRequests: budgetCheck.data.remainingRequests
+          budgetStatus: budgetCheck ? {
+            allowed: budgetCheck.allowed,
+            remainingBudget: budgetCheck.remainingBudget,
+            remainingRequests: budgetCheck.remainingRequests
           } : undefined
         },
         error: null

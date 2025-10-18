@@ -101,12 +101,12 @@ export async function recordUsage(
     const item = itemResult.data;
 
     // Step 2: Validate item is a material
-    if (item.type !== 'material') {
+    if (item.item_type !== 'material') {
       return {
         success: false,
         transaction: null,
         updatedItem: null,
-        error: new Error(`Item ${item.name} is not a material (type: ${item.type})`),
+        error: new Error(`Item ${item.name} is not a material (type: ${item.item_type})`),
       };
     }
 
@@ -136,18 +136,20 @@ export async function recordUsage(
     // Step 5: Create usage transaction
     const transactionResult = await inventoryTransactionsRepo.create({
       tenant_id: tenantId,
+      transaction_type: 'usage',
       item_id: materialId,
-      type: 'usage',
       quantity,
-      from_location_id: item.current_location_id || locationId,
-      to_location_id: null, // Consumed/used
-      user_id: userId,
+      from_location_id: item.current_location_id ?? locationId ?? null,
+      to_location_id: null,
+      from_user_id: userId,
+      to_user_id: null,
       job_id: jobId,
-      notes,
-      voice_session_id: voiceSessionId,
+      notes: notes ?? null,
+      voice_session_id: voiceSessionId ?? null,
       metadata: {
         previousQuantity: currentQty,
       },
+      created_by: userId,
     });
 
     if (transactionResult.error || !transactionResult.data) {

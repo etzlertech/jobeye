@@ -45,7 +45,6 @@
 // --- END DIRECTIVE BLOCK ---
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { BaseRepository } from '@/lib/repositories/base.repository';
 import {
   Job,
   JobCreate,
@@ -60,11 +59,10 @@ import {
 } from '../types/job-types';
 import { createAppError, ErrorSeverity, ErrorCategory } from '@/core/errors/error-types';
 
-export class JobRepository extends BaseRepository<'jobs'> {
+export class JobRepository {
   private supabaseClient: SupabaseClient;
 
   constructor(supabaseClient: SupabaseClient) {
-    super('jobs', supabaseClient);
     this.supabaseClient = supabaseClient;
   }
 

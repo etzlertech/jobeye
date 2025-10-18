@@ -71,6 +71,8 @@ import {
   CustomerSearchResult,
   CustomerVoiceCommand,
   AddressType,
+  CustomerInsert,
+  CustomerUpdateDb,
 } from '../types/customer-types';
 import { CustomerSearchService } from './customer-search-service';
 import { voiceLogger } from '@/core/logger/voice-logger';
@@ -137,21 +139,31 @@ export class CustomerService {
       const customerNumber = await this.repository.generateCustomerNumber();
 
       // Create customer
-      const customer = await this.repository.create({
-        ...validated,
-        tenant_id: this.tenantId,
+      const insertPayload: Omit<
+        CustomerInsert,
+        'id' | 'tenant_id' | 'created_at' | 'updated_at'
+      > = {
         customer_number: customerNumber,
-        created_by: this.userId,
-        metadata: {
-          source: this.voiceSessionId ? 'voice' : 'web',
-          voiceSessionId: this.voiceSessionId,
-        },
-      });
+        name: validated.name,
+        email: validated.email ?? null,
+        phone: validated.phone ?? null,
+        mobile_phone: validated.mobilePhone ?? null,
+        billing_address: validated.billingAddress ?? null,
+        service_address: validated.serviceAddress ?? null,
+        notes: validated.notes ?? null,
+        tags: validated.tags ?? null,
+        metadata: validated.metadata ?? null,
+        voice_notes: validated.voiceNotes ?? null,
+        created_by: this.userId ?? null,
+        is_active: true,
+      };
+
+      const customerRecord = await this.repository.create(insertPayload);
 
       // Create addresses if provided
       if (validated.billingAddress || validated.serviceAddress) {
         await this.createCustomerAddresses(
-          customer.id,
+          customerRecord.id,
           validated.billingAddress,
           validated.serviceAddress
         );
@@ -159,7 +171,7 @@ export class CustomerService {
 
       // Emit event
       this.eventBus.emit('customer:created', {
-        customer,
+        customer: customerRecord,
         userId: this.userId,
         source: this.voiceSessionId ? 'voice' : 'web',
       });
@@ -167,12 +179,12 @@ export class CustomerService {
       // Voice confirmation
       if (this.voiceSessionId) {
         await voiceLogger.speak(
-          `Customer ${customer.name} created with number ${customerNumber}`,
+          `Customer ${customerRecord.name} created with number ${customerNumber}`,
           { voiceSessionId: this.voiceSessionId }
         );
       }
 
-      return customer;
+      return customerRecord as Customer;
     } catch (error) {
       const errorContext: ErrorContext = {
         operation: 'createCustomer',
@@ -207,10 +219,24 @@ export class CustomerService {
       }
 
       // Update customer
-      const updated = await this.repository.update(
-        customerId,
-        validated
-      );
+      const updatePayload: Partial<CustomerUpdateDb> = {};
+
+      if (validated.name !== undefined) updatePayload.name = validated.name;
+      if (validated.email !== undefined) updatePayload.email = validated.email ?? null;
+      if (validated.phone !== undefined) updatePayload.phone = validated.phone ?? null;
+      if (validated.mobilePhone !== undefined) updatePayload.mobile_phone = validated.mobilePhone ?? null;
+      if (validated.billingAddress !== undefined) {
+        updatePayload.billing_address = validated.billingAddress ?? null;
+      }
+      if (validated.serviceAddress !== undefined) {
+        updatePayload.service_address = validated.serviceAddress ?? null;
+      }
+      if (validated.notes !== undefined) updatePayload.notes = validated.notes ?? null;
+      if (validated.tags !== undefined) updatePayload.tags = validated.tags ?? null;
+      if (validated.metadata !== undefined) updatePayload.metadata = validated.metadata ?? null;
+      if (validated.voiceNotes !== undefined) updatePayload.voice_notes = validated.voiceNotes ?? null;
+
+      const updated = await this.repository.update(customerId, updatePayload);
 
       if (!updated) {
         return null;
@@ -223,7 +249,7 @@ export class CustomerService {
         userId: this.userId,
       });
 
-      return updated;
+      return updated as Customer;
     } catch (error) {
       await handleError(error as Error, {
         operation: 'updateCustomer',
@@ -236,7 +262,8 @@ export class CustomerService {
 
   async findById(customerId: string): Promise<Customer | null> {
     try {
-      return await this.repository.findById(customerId);
+      const record = await this.repository.findById(customerId);
+      return record as Customer | null;
     } catch (error) {
       await handleError(error as Error, {
         operation: 'findById',
@@ -386,11 +413,11 @@ export class CustomerService {
 
       // In a real implementation, fetch related data
       const customerWithRelations: CustomerWithRelations = {
-        ...customer,
+        ...(customer as Customer),
         contacts: [],
         addresses: [],
-        tags: [],
-        recentNotes: [],
+        tagDetails: [],
+        noteHistory: [],
       };
 
       return customerWithRelations;
@@ -427,7 +454,8 @@ export class CustomerService {
         [CustomerStatus.ARCHIVED]: [], // No transitions from archived
       };
 
-      const currentStatus = customer.metadata?.status || CustomerStatus.ACTIVE;
+      const currentMetadata = (customer.metadata ?? {}) as Record<string, unknown>;
+      const currentStatus = (currentMetadata.status as CustomerStatus | undefined) || CustomerStatus.ACTIVE;
       const allowedTransitions = validTransitions[currentStatus] || [];
 
       if (!allowedTransitions.includes(newStatus)) {
@@ -440,17 +468,16 @@ export class CustomerService {
       }
 
       // Update status
-      const updated = await this.repository.update(
-        customerId,
-        {
-          metadata: {
-            ...customer.metadata,
-            status: newStatus,
-            statusChangedAt: new Date().toISOString(),
-            statusChangedBy: this.userId,
-          },
-        }
-      );
+      const updatedMetadata: Record<string, unknown> = {
+        ...currentMetadata,
+        status: newStatus,
+        statusChangedAt: new Date().toISOString(),
+        statusChangedBy: this.userId,
+      };
+
+      const updated = await this.repository.update(customerId, {
+        metadata: updatedMetadata as any,
+      });
 
       // Emit event
       this.eventBus.emit('customer:status:changed', {

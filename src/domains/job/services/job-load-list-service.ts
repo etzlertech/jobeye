@@ -28,7 +28,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 import type { Database } from '@/types/database';
-import { ContainerService } from '@/domains/equipment/services/container-service';
 import { LoadVerificationRepository } from '@/domains/vision/repositories/load-verification-repository';
 import { VoiceLogger } from '@/core/logger/voice-logger';
 
@@ -90,19 +89,16 @@ interface OfflineOperation {
 
 export class JobLoadListService {
   private supabase: SupabaseClient;
-  private containerService: ContainerService;
   private loadVerificationRepo: LoadVerificationRepository;
   private logger: VoiceLogger;
   private offlineQueue: OfflineOperation[] = [];
 
   constructor(
     supabase: SupabaseClient,
-    containerService?: ContainerService,
     loadVerificationRepo?: LoadVerificationRepository,
     logger?: VoiceLogger
   ) {
     this.supabase = supabase;
-    this.containerService = containerService || new ContainerService(supabase);
     this.loadVerificationRepo = loadVerificationRepo || new LoadVerificationRepository(supabase);
     this.logger = logger || new VoiceLogger();
     this.loadOfflineQueue();
@@ -143,7 +139,10 @@ export class JobLoadListService {
         manual_override_reason: item.manual_override_reason
       }));
     } catch (error) {
-      await this.logger.error('Failed to get load list', error as Error, { jobId });
+      await this.logger.error('Failed to get load list', {
+        error: error instanceof Error ? error : new Error(String(error)),
+        jobId,
+      });
       throw error;
     }
   }
@@ -199,7 +198,10 @@ export class JobLoadListService {
 
       return summary;
     } catch (error) {
-      await this.logger.error('Failed to get load list summary', error as Error, { jobId });
+      await this.logger.error('Failed to get load list summary', {
+        error: error instanceof Error ? error : new Error(String(error)),
+        jobId,
+      });
       throw error;
     }
   }
@@ -210,8 +212,8 @@ export class JobLoadListService {
     status: LoadListItem['status'],
     userId: string
   ): Promise<boolean> {
-    if (!navigator.onLine) {
-      this.queueOfflineOperation('update_status', jobId, { itemId, status, userId });
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      this.queueOfflineOperation('update_status', { jobId, itemId, status, userId });
       return true;
     }
 
@@ -236,10 +238,11 @@ export class JobLoadListService {
 
       return true;
     } catch (error) {
-      await this.logger.error('Failed to update item status', error as Error, {
+      await this.logger.error('Failed to update item status', {
+        error: error instanceof Error ? error : new Error(String(error)),
         jobId,
         itemId,
-        status
+        status,
       });
       return false;
     }
@@ -252,8 +255,9 @@ export class JobLoadListService {
     reason: string,
     userId: string
   ): Promise<boolean> {
-    if (!navigator.onLine) {
-      this.queueOfflineOperation('manual_override', jobId, { 
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      this.queueOfflineOperation('manual_override', { 
+        jobId,
         itemId, 
         overrideStatus, 
         reason, 
@@ -287,10 +291,11 @@ export class JobLoadListService {
 
       return true;
     } catch (error) {
-      await this.logger.error('Failed to apply manual override', error as Error, {
+      await this.logger.error('Failed to apply manual override', {
+        error: error instanceof Error ? error : new Error(String(error)),
         jobId,
         itemId,
-        overrideStatus
+        overrideStatus,
       });
       return false;
     }
@@ -303,17 +308,18 @@ export class JobLoadListService {
       
       // Create load verification record
       const verification = await this.loadVerificationRepo.create({
-        job_id: request.job_id,
-        media_id: request.media_id,
-        verified_checklist_items: [],
-        missing_items: [],
-        detected_containers: [],
-        detected_items: [],
-        confidence_scores: {},
+        jobId: request.job_id,
+        mediaId: request.media_id,
         provider: 'multi-object-vision',
-        model: 'yolo-vlm-hybrid',
-        processing_time_ms: 0,
-        cost: 0
+        modelId: 'yolo-vlm-hybrid',
+        detectedContainers: [],
+        detectedItems: [],
+        verifiedChecklistItemIds: [],
+        missingChecklistItemIds: [],
+        unexpectedItems: [],
+        tokensUsed: 0,
+        costUsd: 0,
+        processingTimeMs: 0
       });
 
       // TODO: Integrate with actual vision service
@@ -329,7 +335,10 @@ export class JobLoadListService {
 
       return result;
     } catch (error) {
-      await this.logger.error('Failed to verify load with vision', error as Error, request);
+      await this.logger.error('Failed to verify load with vision', {
+        error: error instanceof Error ? error : new Error(String(error)),
+        request,
+      });
       throw error;
     }
   }
@@ -361,10 +370,11 @@ export class JobLoadListService {
 
       return true;
     } catch (error) {
-      await this.logger.error('Failed to assign item to container', error as Error, {
+      await this.logger.error('Failed to assign item to container', {
+        error: error instanceof Error ? error : new Error(String(error)),
         jobId,
         itemId,
-        containerId
+        containerId,
       });
       return false;
     }
@@ -417,6 +427,7 @@ export class JobLoadListService {
 
   // Offline support methods
   private loadOfflineQueue() {
+    if (typeof window === 'undefined') return;
     const stored = localStorage.getItem('job-load-list-offline-queue');
     if (stored) {
       this.offlineQueue = JSON.parse(stored);
@@ -424,14 +435,20 @@ export class JobLoadListService {
   }
 
   private saveOfflineQueue() {
+    if (typeof window === 'undefined') return;
     localStorage.setItem('job-load-list-offline-queue', JSON.stringify(this.offlineQueue));
   }
 
-  private queueOfflineOperation(type: OfflineOperation['type'], jobId: string, payload: any) {
+  private queueOfflineOperation(
+    type: OfflineOperation['type'],
+    payload: { jobId: string } & Record<string, unknown>
+  ) {
+    if (typeof window === 'undefined') return;
+
     const operation: OfflineOperation = {
       id: uuidv4(),
       type,
-      job_id: jobId,
+      job_id: payload.jobId,
       payload,
       timestamp: Date.now()
     };
@@ -441,7 +458,10 @@ export class JobLoadListService {
   }
 
   async syncOfflineOperations(): Promise<void> {
-    if (!navigator.onLine || this.offlineQueue.length === 0) {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return;
+    }
+    if (this.offlineQueue.length === 0) {
       return;
     }
 
@@ -453,23 +473,23 @@ export class JobLoadListService {
         switch (operation.type) {
           case 'update_status':
             await this.updateItemStatus(
-              operation.job_id,
-              operation.payload.itemId,
-              operation.payload.status,
-              operation.payload.userId
+              operation.payload.jobId,
+              operation.payload.itemId as string,
+              operation.payload.status as LoadListItem['status'],
+              operation.payload.userId as string
             );
             break;
           case 'manual_override':
             await this.applyManualOverride(
-              operation.job_id,
-              operation.payload.itemId,
-              operation.payload.overrideStatus,
-              operation.payload.reason,
-              operation.payload.userId
+              operation.payload.jobId,
+              operation.payload.itemId as string,
+              operation.payload.overrideStatus as LoadListItem['status'],
+              operation.payload.reason as string,
+              operation.payload.userId as string
             );
             break;
           case 'verify_load':
-            await this.verifyLoadWithVision(operation.payload);
+            await this.verifyLoadWithVision(operation.payload.request as LoadVerificationRequest);
             break;
         }
       } catch (error) {

@@ -99,8 +99,9 @@ export class AIInteractionLogRepository {
     try {
       const supabase = await createServerSupabaseClient();
       
-      const { data: log, error } = await supabase
-        .from('ai_interaction_logs')
+      const table = (supabase as any).from('ai_interaction_logs');
+
+      const { data: log, error } = await table
         .insert({
           tenant_id: tenantId,
           user_id: data.userId,
@@ -119,7 +120,7 @@ export class AIInteractionLogRepository {
 
       if (error) {
         // If offline or error, queue for later
-        if (navigator && !navigator.onLine) {
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
           await this.offlineDb.queueOperation({
             operation: 'create',
             entity: 'ai_interaction_logs',
@@ -145,17 +146,23 @@ export class AIInteractionLogRepository {
           };
         }
         
-        throw new AppError('Failed to create AI interaction log', {
+        throw createAppError({
           code: 'AI_LOG_CREATE_ERROR',
-          details: error
+          message: 'Failed to create AI interaction log',
+          severity: ErrorSeverity.HIGH,
+          category: ErrorCategory.DATABASE,
+          originalError: error as Error,
         });
       }
 
       return this.mapToModel(log);
     } catch (error) {
-      throw new AppError('Failed to create AI interaction log', {
+      throw createAppError({
         code: 'AI_LOG_CREATE_ERROR',
-        details: error
+        message: 'Failed to create AI interaction log',
+        severity: ErrorSeverity.HIGH,
+        category: ErrorCategory.DATABASE,
+        originalError: error as Error,
       });
     }
   }
@@ -177,7 +184,7 @@ export class AIInteractionLogRepository {
     try {
       const supabase = await createServerSupabaseClient();
       
-      let query = supabase
+      let query = (supabase as any)
         .from('ai_interaction_logs')
         .select('*')
         .eq('tenant_id', tenantId)
@@ -206,17 +213,23 @@ export class AIInteractionLogRepository {
       const { data: logs, error } = await query;
 
       if (error) {
-        throw new AppError('Failed to fetch AI interaction logs', {
+        throw createAppError({
           code: 'AI_LOG_FETCH_ERROR',
-          details: error
+          message: 'Failed to fetch AI interaction logs',
+          severity: ErrorSeverity.MEDIUM,
+          category: ErrorCategory.DATABASE,
+          originalError: error as Error,
         });
       }
 
-      return logs.map(this.mapToModel);
+      return (logs ?? []).map((log: any) => this.mapToModel(log));
     } catch (error) {
-      throw new AppError('Failed to fetch AI interaction logs', {
+      throw createAppError({
         code: 'AI_LOG_FETCH_ERROR',
-        details: error
+        message: 'Failed to fetch AI interaction logs',
+        severity: ErrorSeverity.MEDIUM,
+        category: ErrorCategory.DATABASE,
+        originalError: error as Error,
       });
     }
   }
@@ -289,7 +302,7 @@ export class AIInteractionLogRepository {
     try {
       const supabase = await createServerSupabaseClient();
       
-      const { data: logs, error } = await supabase
+      const { data: logs, error } = await (supabase as any)
         .from('ai_interaction_logs')
         .select('*')
         .eq('tenant_id', tenantId)
@@ -298,17 +311,23 @@ export class AIInteractionLogRepository {
         .limit(limit);
 
       if (error) {
-        throw new AppError('Failed to fetch recent logs', {
+        throw createAppError({
           code: 'AI_LOG_FETCH_ERROR',
-          details: error
+          message: 'Failed to fetch recent logs',
+          severity: ErrorSeverity.MEDIUM,
+          category: ErrorCategory.DATABASE,
+          originalError: error as Error,
         });
       }
 
-      return logs.map(this.mapToModel);
+      return (logs ?? []).map((log: any) => this.mapToModel(log));
     } catch (error) {
-      throw new AppError('Failed to fetch recent logs', {
+      throw createAppError({
         code: 'AI_LOG_FETCH_ERROR',
-        details: error
+        message: 'Failed to fetch recent logs',
+        severity: ErrorSeverity.MEDIUM,
+        category: ErrorCategory.DATABASE,
+        originalError: error as Error,
       });
     }
   }
@@ -338,9 +357,12 @@ export class AIInteractionLogRepository {
         currentSpend: summary.totalCost
       };
     } catch (error) {
-      throw new AppError('Failed to check budget', {
+      throw createAppError({
         code: 'AI_BUDGET_CHECK_ERROR',
-        details: error
+        message: 'Failed to check budget',
+        severity: ErrorSeverity.LOW,
+        category: ErrorCategory.BUSINESS_LOGIC,
+        originalError: error as Error,
       });
     }
   }

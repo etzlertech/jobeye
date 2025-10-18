@@ -64,7 +64,7 @@ export function createDefaultTimeTrackingDependencies(
 
   const overlapValidator =
     options.overlapValidator ??
-    createDefaultOverlapValidator(repository);
+    createDefaultOverlapValidator(repository ?? undefined);
 
   const auditLogger =
     options.auditLogger ??

@@ -9,6 +9,8 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+export type geography = unknown
+
 // Database Enums
 export type assignment_status = 'active' | 'completed' | 'cancelled'
 export type auth_event_type = 'login_success' | 'login_failed' | 'logout_success' | 'registration_success' | 'registration_failed' | 'refresh_success' | 'refresh_failed' | 'password_reset' | 'mfa_setup' | 'mfa_failed'
@@ -3315,6 +3317,21 @@ export interface Database {
           task_type?: string | null
           supervisor_id?: string | null
         }
+      }
+      vision_verifications: {
+        Row: Record<string, any>
+        Insert: Record<string, any>
+        Update: Record<string, any>
+      }
+      vision_cost_records: {
+        Row: Record<string, any>
+        Insert: Record<string, any>
+        Update: Record<string, any>
+      }
+      vision_detected_items: {
+        Row: Record<string, any>
+        Insert: Record<string, any>
+        Update: Record<string, any>
       }
     }
     Views: {}

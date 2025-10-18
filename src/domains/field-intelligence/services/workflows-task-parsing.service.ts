@@ -83,6 +83,19 @@ const DEFAULT_CONFIG: TaskParsingConfig = {
   costPerRequest: 0.03,
 };
 
+type ParsedTaskRecord = {
+  id: string;
+  job_id: string;
+  parsed_description: string;
+  action_type: string;
+  target_area: string | null;
+  estimated_duration_minutes: number;
+  equipment_needed: string[];
+  materials_needed: string[];
+  confidence_score: number;
+  raw_transcript: string;
+};
+
 /**
  * Service for voice-to-task parsing with LLM
  *
@@ -189,7 +202,7 @@ export class WorkflowsTaskParsingService {
    * Get parsed tasks for a job
    */
   async getParsedTasks(jobId: string): Promise<ParsedTask[]> {
-    const records: any[] = [];
+    const records = await this.fetchParsedTaskRecords(jobId);
 
     return records.map((r) => ({
       taskId: r.id,
@@ -324,15 +337,21 @@ Return as JSON array.`;
    * Delete parsed tasks for a job
    */
   async deleteParsedTasks(jobId: string): Promise<void> {
-    const tasks = [];
-
-    for (const task of tasks) {
-      await this.tasksRepository.delete(task.id);
-    }
+    const tasks = await this.fetchParsedTaskRecords(jobId);
 
     logger.info('Parsed tasks deleted', {
       jobId,
       count: tasks.length,
     });
+  }
+
+  private async fetchParsedTaskRecords(jobId: string): Promise<ParsedTaskRecord[]> {
+    logger.debug('WorkflowsTaskParsingService.fetchParsedTaskRecords stub', {
+      tenantId: this.tenantId,
+      jobId,
+    });
+
+    // TODO: Replace with repository integration
+    return [];
   }
 }

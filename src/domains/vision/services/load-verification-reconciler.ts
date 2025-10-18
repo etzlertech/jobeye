@@ -53,7 +53,10 @@ export class LoadVerificationReconciler {
     params: ReconciliationParams
   ): Promise<LoadVerificationReconciliationResult> {
     const { jobId, verificationId, analysis } = params;
-    const options = { ...defaultOptions, ...params.options };
+    const options: Required<ReconciliationOptions> = {
+      ...defaultOptions,
+      ...params.options,
+    } as Required<ReconciliationOptions>;
     const checklistItems = params.checklistItems ?? await this.checklistRepository.listByJob(jobId);
 
     const timestampIso = new Date().toISOString();

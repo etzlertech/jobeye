@@ -11,6 +11,7 @@
  */
 
 import { z } from 'zod';
+import type { Database } from '@/types/database';
 
 // =============================================================================
 // ENUMS
@@ -153,24 +154,9 @@ export interface InventoryImageFinalizePayload {
 // INVENTORY ITEMS
 // =============================================================================
 
-export interface InventoryItem {
-  id: string;
-  tenant_id: string;
-  type: ItemType;
-  name: string;
-  category: string | null;
-  status: ItemStatus;
-  current_location_id: string | null;
-  specifications: Record<string, any> | null;
-  attributes: Record<string, any> | null;
-  images: InventoryImageData[];
-  tracking_mode: TrackingMode;
-  current_quantity: number | null;
-  reorder_level: number | null;
-  created_at: string;
-  updated_at: string;
-  created_by: string | null;
-}
+export type InventoryItem = Database['public']['Tables']['items']['Row'];
+export type InventoryItemCreate = Database['public']['Tables']['items']['Insert'];
+export type InventoryItemUpdate = Database['public']['Tables']['items']['Update'];
 
 export interface InventoryImageData {
   url: string;
@@ -184,34 +170,6 @@ export interface InventoryImageData {
   is_primary: boolean;
   captured_at?: string;
   captured_by?: string;
-}
-
-export interface InventoryItemCreate {
-  tenant_id: string;
-  type: ItemType;
-  name: string;
-  category?: string;
-  status?: ItemStatus;
-  current_location_id?: string;
-  specifications?: Record<string, any>;
-  attributes?: Record<string, any>;
-  images: InventoryImageData[];
-  tracking_mode: TrackingMode;
-  current_quantity?: number;
-  reorder_level?: number;
-  created_by?: string;
-}
-
-export interface InventoryItemUpdate {
-  name?: string;
-  category?: string;
-  status?: ItemStatus;
-  current_location_id?: string;
-  specifications?: Record<string, any>;
-  attributes?: Record<string, any>;
-  images?: InventoryImageData[];
-  current_quantity?: number;
-  reorder_level?: number;
 }
 
 // =============================================================================
@@ -289,47 +247,8 @@ export interface ContainerAssignmentCreate {
 // INVENTORY TRANSACTIONS
 // =============================================================================
 
-export interface InventoryTransaction {
-  id: string;
-  tenant_id: string;
-  type: TransactionType;
-  item_ids: string[];
-  quantity: number | null;
-  source_container_id: string | null;
-  destination_container_id: string | null;
-  job_id: string | null;
-  performer_id: string;
-  verification_method: VerificationMethod;
-  photo_evidence_url: string | null;
-  voice_session_id: string | null;
-  voice_transcript: string | null;
-  notes: string | null;
-  cost_data: CostData | null;
-  created_at: string;
-}
-
-export interface CostData {
-  estimated_vlm_cost?: number;
-  estimated_llm_cost?: number;
-  actual_cost?: number;
-}
-
-export interface InventoryTransactionCreate {
-  tenant_id: string;
-  type: TransactionType;
-  item_ids: string[];
-  quantity?: number;
-  source_container_id?: string;
-  destination_container_id?: string;
-  job_id?: string;
-  performer_id: string;
-  verification_method: VerificationMethod;
-  photo_evidence_url?: string;
-  voice_session_id?: string;
-  voice_transcript?: string;
-  notes?: string;
-  cost_data?: CostData;
-}
+export type InventoryTransaction = Database['public']['Tables']['item_transactions']['Row'];
+export type InventoryTransactionCreate = Database['public']['Tables']['item_transactions']['Insert'];
 
 // =============================================================================
 // PURCHASE RECEIPTS

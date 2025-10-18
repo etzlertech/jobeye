@@ -206,9 +206,10 @@ export class JobFromVoiceService {
         voice_response: this.generateSuccessVoiceResponse(job, validation)
       };
     } catch (error) {
-      await this.logger.error('Failed to create job from voice', error as Error, {
+      await this.logger.error('Failed to create job from voice', {
+        error: error instanceof Error ? error : new Error(String(error)),
         command,
-        userId
+        userId,
       });
 
       return {

@@ -16,12 +16,13 @@
  * END AGENT DIRECTIVE BLOCK
  */
 
+import { PSM } from 'tesseract.js';
 import { extractText as extractTextWithTesseract } from '@/domains/vision/services/ocr-tesseract.service';
 import type { OcrTextExtraction } from './business-card-ocr.types';
 
 export interface TesseractBusinessCardOptions {
   language?: string;
-  psm?: number;
+  psm?: PSM;
   oem?: number;
 }
 
@@ -38,7 +39,10 @@ export function createTesseractBusinessCardClient(
 ): TesseractBusinessCardClient {
   return {
     async extractText(image, options) {
-      const merged = {
+      const merged: TesseractBusinessCardOptions = {
+        language: 'eng',
+        psm: PSM.AUTO,
+        oem: 3,
         ...config.defaults,
         ...options,
       };

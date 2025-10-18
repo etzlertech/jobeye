@@ -36,15 +36,8 @@ export class InventoryIntakeService {
     private readonly bucketName: string = config.storage.inventoryBucket,
   ) {}
 
-  private resolveTable(itemType: InventoryKind) {
-    switch (itemType) {
-      case 'equipment':
-        return 'equipment';
-      case 'material':
-        return 'materials';
-      default:
-        throw new Error(`Unsupported inventory type: ${itemType}`);
-    }
+  private resolveTable() {
+    return 'items';
   }
 
   async getItemDetail(
@@ -52,13 +45,14 @@ export class InventoryIntakeService {
     itemId: string,
     options: InventoryIntakeServiceOptions,
   ): Promise<InventoryItemDetail | null> {
-    const table = this.resolveTable(itemType);
+    const table = this.resolveTable();
 
     const { data: itemRow, error } = await this.supabase
       .from(table)
       .select('*')
       .eq('id', itemId)
       .eq('tenant_id', options.tenantId)
+      .eq('item_type', itemType)
       .single();
 
     if (error) {
@@ -73,9 +67,9 @@ export class InventoryIntakeService {
 
     return {
       ...summary,
-      description: itemRow.description ?? itemRow.notes ?? null,
-      notes: itemRow.notes ?? null,
-      metadata: itemRow.metadata ?? null,
+      description: itemRow.description ?? null,
+      notes: itemRow.custom_fields?.notes ?? null,
+      metadata: itemRow.custom_fields ?? null,
       images,
     };
   }
@@ -84,12 +78,13 @@ export class InventoryIntakeService {
     itemType: InventoryKind,
     options: InventoryIntakeServiceOptions,
   ): Promise<InventoryItemSummary[]> {
-    const table = this.resolveTable(itemType);
+    const table = this.resolveTable();
 
     const { data, error } = await this.supabase
       .from(table)
-      .select('id, name, tenant_id, sku, equipment_number, metadata')
+      .select('id, name, tenant_id, item_type, sku, barcode, primary_image_url, home_location_id')
       .eq('tenant_id', options.tenantId)
+      .eq('item_type', itemType)
       .order('name', { ascending: true });
 
     if (error) {
@@ -133,7 +128,7 @@ export class InventoryIntakeService {
 
     const { data, error } = await this.supabase.storage
       .from(this.bucketName)
-      .createSignedUploadUrl(objectName, { expiresIn, upsert: true });
+      .createSignedUploadUrl(objectName, { upsert: true });
 
     if (error || !data?.signedUrl) {
       serviceLogger.error('Failed to create signed upload URL for inventory image', {
@@ -206,7 +201,7 @@ export class InventoryIntakeService {
   }
 
   private async assertItemOwnership(params: InventoryImageParams) {
-    const table = this.resolveTable(params.itemType);
+    const table = this.resolveTable();
 
     const { error, data } = await this.supabase
       .from(table)
@@ -228,15 +223,15 @@ export class InventoryIntakeService {
     images: InventoryImage[],
   ): InventoryItemSummary {
     const primaryImage = images.find(image => image.isPrimary) ?? images[0];
-    const sku = itemRow.sku || itemRow.equipment_number || itemRow.inventory_code;
+    const sku = itemRow.sku || itemRow.barcode || null;
 
     return {
       id: itemRow.id,
       name: itemRow.name,
-      itemType,
+      itemType: (itemRow.item_type as InventoryKind) || itemType,
       skuOrIdentifier: sku ?? null,
-      defaultContainerId: itemRow.default_container_id ?? null,
-      primaryImageUrl: primaryImage?.imageUrl ?? null,
+      defaultContainerId: itemRow.home_location_id ?? null,
+      primaryImageUrl: primaryImage?.imageUrl ?? itemRow.primary_image_url ?? null,
     };
   }
 

@@ -15,13 +15,11 @@
 
 import * as inventoryItemsRepo from '../repositories/inventory-items.repository';
 import * as inventoryTransactionsRepo from '../repositories/inventory-transactions.repository';
-import { ContainerRepository } from '@/domains/equipment/repositories/container-repository-enhanced';
-import { createSupabaseClient } from '@/lib/supabase/client';
 import type {
   InventoryItem,
   InventoryTransaction,
+  ContainerAssignment,
 } from '../types/inventory-types';
-import type { ContainerAssignment } from '@/domains/equipment/repositories/container-repository-enhanced';
 import { getOfflineInventoryQueue } from './offline-queue.service';
 
 export interface TransferRequest {
@@ -94,10 +92,6 @@ export async function transfer(
     };
   }
 
-  // Initialize container repository
-  const supabase = createSupabaseClient();
-  const containerRepo = new ContainerRepository(supabase);
-
   const transactions: InventoryTransaction[] = [];
   const updatedItems: InventoryItem[] = [];
   const containerAssignments: ContainerAssignment[] = [];
@@ -148,18 +142,20 @@ export async function transfer(
       // Step 5: Create transfer transaction
       const transactionResult = await inventoryTransactionsRepo.create({
         tenant_id: tenantId,
+        transaction_type: 'transfer',
         item_id: itemId,
-        type: 'transfer',
         quantity,
         from_location_id: fromLocationId,
         to_location_id: toLocationId,
-        user_id: userId,
-        job_id: jobId,
-        notes,
-        voice_session_id: voiceSessionId,
+        from_user_id: userId,
+        to_user_id: userId,
+        job_id: jobId ?? null,
+        notes: notes ?? null,
+        voice_session_id: voiceSessionId ?? null,
         metadata: {
           previousLocation: item.current_location_id,
         },
+        created_by: userId,
       });
 
       if (transactionResult.error || !transactionResult.data) {
@@ -188,23 +184,7 @@ export async function transfer(
 
       updatedItems.push(updateResult.data);
 
-      // Step 7: Create new container assignment if transferring to a container
-      if (item.tracking_mode === 'individual') {
-        try {
-          const assignment = await containerRepo.createAssignment({
-            tenant_id: tenantId,
-            container_id: toLocationId,
-            item_id: itemId,
-            item_type: 'tool', // Assuming tools for inventory items
-            assigned_by: userId,
-          });
-
-          containerAssignments.push(assignment);
-        } catch (assignmentError) {
-          // Log assignment error but don't fail the entire transfer
-          console.error('Failed to create container assignment:', assignmentError);
-        }
-      }
+      // Container assignment support removed (container table not available).
     } catch (err: any) {
       errors.push(new Error(`Transfer failed for item ${itemId}: ${err.message}`));
     }

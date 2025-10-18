@@ -110,6 +110,17 @@ export interface LaborCostForecast {
   confidence: number; // 0-1
 }
 
+type TimeEntryRecord = {
+  id: string;
+  user_id: string;
+  job_id: string | null;
+  clock_in_time: string;
+  clock_out_time: string | null;
+  regular_hours?: number | null;
+  overtime_hours?: number | null;
+  labor_cost_rate?: number | null;
+};
+
 /**
  * Service for time tracking analytics and labor cost analysis
  *
@@ -152,7 +163,7 @@ export class TimeAnalyticsService {
     crewSize?: number
   ): Promise<LaborUtilizationMetrics> {
     // Get time entries for period
-    const entries = []; // TODO: [],
+    const entries: TimeEntryRecord[] = []; // TODO: [],
     //   clock_in_before: endDate.toISOString(),
     // });
 
@@ -231,7 +242,7 @@ export class TimeAnalyticsService {
     regularHourlyRate: number,
     overtimeMultiplier: number = 1.5
   ): Promise<OvertimeCostAnalysis> {
-    const entries = []; // TODO: [],
+    const entries: TimeEntryRecord[] = []; // TODO: [],
     //   clock_in_before: endDate.toISOString(),
     // });
 
@@ -297,12 +308,16 @@ export class TimeAnalyticsService {
     startDate: Date,
     endDate: Date
   ): Promise<ProductivityMetrics> {
-    const entries = []; // TODO: [],
+    const entries: TimeEntryRecord[] = []; // TODO: [],
     //   clock_in_before: endDate.toISOString(),
     // });
 
     // Count unique jobs
-    const uniqueJobs = new Set(entries.map((e) => e.job_id));
+    const uniqueJobs = new Set(
+      entries
+        .map((e) => e.job_id)
+        .filter((jobId): jobId is string => Boolean(jobId))
+    );
     const totalJobs = uniqueJobs.size;
 
     // Calculate total hours
@@ -324,7 +339,9 @@ export class TimeAnalyticsService {
           userStatsMap.set(entry.user_id, { jobs: new Set(), hours: 0 });
         }
         const userStats = userStatsMap.get(entry.user_id)!;
-        userStats.jobs.add(entry.job_id);
+        if (entry.job_id) {
+          userStats.jobs.add(entry.job_id);
+        }
         userStats.hours += hours;
       }
     }
@@ -383,7 +400,7 @@ export class TimeAnalyticsService {
     historicalStart.setDate(historicalStart.getDate() - historicalDays);
     const historicalEnd = forecastStartDate;
 
-    const historicalEntries = []; // TODO: [],
+    const historicalEntries: TimeEntryRecord[] = []; // TODO: [],
     //   clock_in_before: historicalEnd.toISOString(),
     // });
 

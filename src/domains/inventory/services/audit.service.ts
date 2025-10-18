@@ -140,27 +140,30 @@ export async function performAudit(
       }
 
       // Step 4: Determine adjustment type
-      const adjustmentType = record.discrepancy > 0 ? 'adjustment_in' : 'adjustment_out';
+      const adjustmentDirection = record.discrepancy > 0 ? 'increase' : 'decrease';
       const adjustmentQty = Math.abs(record.discrepancy);
 
       // Step 5: Create adjustment transaction
       const transactionResult = await inventoryTransactionsRepo.create({
         tenant_id: tenantId,
+        transaction_type: 'audit',
         item_id: record.itemId,
-        type: adjustmentType,
         quantity: adjustmentQty,
-        from_location_id: adjustmentType === 'adjustment_out' ? item.current_location_id : null,
-        to_location_id: adjustmentType === 'adjustment_in' ? item.current_location_id : null,
-        user_id: userId,
+        from_location_id: adjustmentDirection === 'decrease' ? item.current_location_id : null,
+        to_location_id: adjustmentDirection === 'increase' ? item.current_location_id : null,
+        from_user_id: userId,
+        to_user_id: userId,
         notes: `Audit adjustment: ${notes || ''} | ${record.notes || ''}`.trim(),
-        voice_session_id: voiceSessionId,
-        detection_session_id: detectionSessionId,
+        voice_session_id: voiceSessionId ?? null,
+        detection_session_id: detectionSessionId ?? null,
         metadata: {
           auditType: 'physical_count',
           expectedQuantity: record.expectedQuantity,
           actualQuantity: record.actualQuantity,
           discrepancy: record.discrepancy,
+          adjustmentDirection,
         },
+        created_by: userId,
       });
 
       if (transactionResult.error || !transactionResult.data) {
@@ -213,7 +216,7 @@ export async function getItemsForAudit(
 ): Promise<{ data: InventoryItem[]; error: Error | null }> {
   const result = await inventoryItemsRepo.findAll({
     tenantId,
-    locationId,
+    currentLocationId: locationId,
     trackingMode: 'quantity', // Only quantity-tracked items need auditing
   });
 
@@ -229,24 +232,17 @@ export async function getAuditHistory(
 ): Promise<{ data: InventoryTransaction[]; error: Error | null }> {
   const adjustmentInResult = await inventoryTransactionsRepo.findByCompany(
     tenantId,
-    'adjustment_in'
-  );
-  const adjustmentOutResult = await inventoryTransactionsRepo.findByCompany(
-    tenantId,
-    'adjustment_out'
+    'audit'
   );
 
-  if (adjustmentInResult.error || adjustmentOutResult.error) {
+  if (adjustmentInResult.error) {
     return {
       data: [],
-      error: adjustmentInResult.error || adjustmentOutResult.error,
+      error: adjustmentInResult.error,
     };
   }
 
-  const allAdjustments = [
-    ...adjustmentInResult.data,
-    ...adjustmentOutResult.data,
-  ];
+  const allAdjustments = adjustmentInResult.data;
 
   // Filter by location if specified
   if (locationId) {

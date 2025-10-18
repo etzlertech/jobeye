@@ -113,6 +113,60 @@ git push origin main
 - Document every MCP query (include dump/snippet + reasoning) in the relevant planning artifact before committing
 - If an MCP query would alter data, confirm with the user first and capture that confirmation in your notes
 
+## 📊 DATABASE DOCUMENTATION MAINTENANCE
+
+### Documentation System Overview
+- **Location**: `docs/database/`
+- **Primary Guide**: `docs/database/guides/agent-quickstart.md` (schema reference for agents without MCP)
+- **Patterns Guide**: `docs/database/guides/repository-patterns.md` (type safety patterns)
+- **Maintenance Guide**: `docs/database/MAINTENANCE.md` (update rules and automation)
+
+### Update Rules (CRITICAL - Follow These)
+
+**1. After ANY Migration:**
+```bash
+npm run generate:types              # Regenerate database.ts
+npm run db:refresh                  # Update documentation (when script exists)
+# Update CHANGELOG.md
+git add src/types/ docs/database/ CHANGELOG.md
+git commit -m "docs(database): update after migration [migration-name]"
+```
+
+**2. When Schema Changes:**
+- ✅ Types regenerated → Update agent-quickstart.md
+- ✅ New table added → Document in agent-quickstart.md (if active) or README (if experimental)
+- ✅ Enum changed → Update enum section in agent-quickstart.md
+- ✅ RLS policy changed → Document and test before production
+
+**3. When Repository Patterns Evolve:**
+- ✅ New type safety pattern → Add to repository-patterns.md
+- ✅ New reference implementation → Document in repository-patterns.md
+- ✅ Breaking pattern change → Update all docs + notify team
+
+### For Agents Without MCP Access (CODEX)
+**Always reference:** `docs/database/guides/agent-quickstart.md`
+- Complete schema for all tables
+- All enum types with values
+- Type safety patterns
+- Storage bucket configuration
+
+### For Agents With MCP Access (Claude Code)
+**Responsibilities:**
+- Query live database to verify accuracy
+- Update documentation after schema changes
+- Create snapshots for historical reference
+- Validate CODEX's work against live schema
+
+### Documentation Sync Verification
+```bash
+npm run db:verify                   # Check if docs are in sync
+npm run db:full-update              # Emergency full refresh
+```
+
+**See:** `docs/database/MAINTENANCE.md` for complete maintenance procedures
+
+---
+
 ## 🏢 TENANT MANAGEMENT CONTEXT (NEW)
 
 ### Context Resolution Pattern
