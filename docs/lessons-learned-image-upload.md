@@ -174,6 +174,232 @@ When implementing complex features:
 - **TypeScript** for catching type issues (when properly configured)
 - **Git history** to track what changes fixed issues
 
+### 7. User Profile Updates: Three-Layer Debugging Journey (October 2025)
+
+**Issue**: Supervisor couldn't update user profiles or upload user photos - getting 404 and 400 errors consistently.
+
+**What Made This Challenging**:
+This was a THREE-LAYER problem that required fixing issues at the authentication, RLS, and validation levels. Each fix revealed the next hidden issue.
+
+#### Layer 1: Missing Session Credentials (404 Errors - First Discovery)
+**Problem**: `credentials: 'include'` missing from fetch requests
+```typescript
+// ❌ WRONG - No session cookies sent
+fetch('/api/supervisor/users/[userId]', {
+  method: 'PATCH',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(payload)
+});
+
+// ✅ CORRECT - Session cookies included
+fetch('/api/supervisor/users/[userId]', {
+  method: 'PATCH',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',  // Critical!
+  body: JSON.stringify(payload)
+});
+```
+
+**Why This Failed**:
+- Without `credentials: 'include'`, session cookies aren't sent to the API
+- Backend `getRequestContext()` returns `tenantId: null`
+- Repository query: `WHERE tenant_id = NULL AND id = userId` → no match → 404
+
+**Red Herring**: We first thought the issue was missing `tenant_id` in JWT metadata, which led us down a path of updating `auth.users.raw_app_meta_data`. That was actually correct, but didn't solve the problem because credentials weren't being sent!
+
+#### Layer 2: RLS Policies Blocking Updates (404 Errors - Second Discovery)
+**Problem**: Even with credentials, RLS was still rejecting updates
+
+**Root Cause**:
+- API routes used `createClient()` which enforces RLS policies
+- RLS policy: "Users can update their own profile" ✅
+- **No policy for supervisors to update OTHER users** ❌
+- Result: Every supervisor update was blocked by RLS
+
+**Solution**: Switch to service role client to bypass RLS
+```typescript
+// ❌ WRONG - Uses user's JWT, hits RLS
+const supabase = await createClient();
+
+// ✅ CORRECT - Uses service role, bypasses RLS
+const supabase = createServiceClient();
+```
+
+**Security Consideration**:
+- API still enforces `context.isSupervisor` check
+- Tenant filtering still applied in application code
+- Service client bypasses RLS but NOT business logic
+
+**Files Changed**:
+- `src/app/api/supervisor/users/[userId]/route.ts` (GET & PATCH)
+- `src/app/api/supervisor/users/[userId]/image/route.ts` (POST)
+
+#### Layer 3: Zod Schema Validation (400 Errors - Final Discovery)
+**Problem**: Even after fixing credentials and RLS, still getting 400 Bad Request
+
+**Root Cause**: Schema didn't accept `null` values
+```typescript
+// ❌ WRONG - Only accepts string | undefined
+const updateSchema = z.object({
+  display_name: z.string().optional(),  // Rejects null!
+  phone: z.string().optional()
+});
+
+// Frontend sends:
+{ display_name: null, phone: null }  // ❌ Validation fails!
+
+// ✅ CORRECT - Accepts string | null | undefined
+const updateSchema = z.object({
+  display_name: z.string().nullable().optional(),
+  phone: z.string().nullable().optional()
+});
+```
+
+**Why This Happened**:
+- Frontend uses `formData.displayName || null` to convert empty strings to null
+- This is correct API design (null = explicitly empty)
+- But Zod's `.optional()` only means "can be undefined", not "can be null"
+- Must use `.nullable().optional()` to accept both
+
+#### Layer 4: Empty Image Payloads (Bonus Issue)
+**Problem**: Camera dismissal sent empty strings causing 400 errors
+
+**Solution**: Guard clause to ignore empty payloads
+```typescript
+const handleImageCapture = async (images: ProcessedImages) => {
+  // Early return for empty payloads
+  if (!images.thumbnail || !images.medium || !images.full) {
+    setShowImageUpload(false);
+    return;
+  }
+
+  // Only call API with real images
+  await fetch('/api/supervisor/users/[userId]/image', {
+    method: 'POST',
+    credentials: 'include',
+    body: JSON.stringify({ images })
+  });
+};
+```
+
+#### Diagnostic Logging That Saved Us
+Added comprehensive logging to see each layer:
+```typescript
+console.log('[PATCH /api/supervisor/users/[userId]] Request received', {
+  userId: params.userId,
+  tenantId: context.tenantId,        // ← Revealed NULL tenant
+  isSupervisor: context.isSupervisor,
+  roles: context.roles,
+  source: context.source
+});
+
+console.log('[PATCH /api/supervisor/users/[userId]] User lookup', {
+  userId: params.userId,
+  userFound: !!userCheck,
+  userTenantId: userCheck?.tenant_id,
+  contextTenantId: context.tenantId,
+  tenantMatch: userCheck?.tenant_id === context.tenantId,  // ← Revealed mismatch
+});
+
+console.log('[PATCH /api/supervisor/users/[userId]] Validation failed', {
+  error: parsed.error.flatten()  // ← Revealed null rejection
+});
+```
+
+#### The Debugging Journey
+1. **First Attempt**: Added diagnostic logging → revealed `tenantId: null`
+2. **Second Attempt**: Added `credentials: 'include'` to image upload → still failed
+3. **Third Attempt**: Updated JWT metadata in `auth.users` → still failed
+4. **Fourth Attempt**: Added `credentials: 'include'` to PATCH → still failed (403/404)
+5. **Fifth Attempt**: Switched to `createServiceClient()` → still failed (400)
+6. **Sixth Attempt**: Updated schema to `.nullable()` → **SUCCESS!** ✅
+
+#### Key Lessons Learned
+
+**1. Multi-Layer Problems Require Multi-Layer Debugging**
+- Don't stop at the first fix
+- Each layer can hide the next issue
+- Use diagnostic logging at EVERY layer
+
+**2. Credentials Are Critical for Session-Based Auth**
+```typescript
+// ALWAYS include credentials when calling authenticated APIs
+fetch('/api/...', {
+  credentials: 'include'  // Required for session cookies
+});
+```
+
+**3. RLS vs Service Client Trade-offs**
+- **User Client (`createClient`)**: Enforces RLS, limited by user permissions
+- **Service Client (`createServiceClient`)**: Bypasses RLS, requires application-level security
+- Use service client for admin operations, but ALWAYS check permissions in code
+
+**4. Zod Schema Design for Nullable Fields**
+```typescript
+// For optional fields that can be null:
+field: z.string().nullable().optional()  // string | null | undefined
+
+// For optional fields that should never be null:
+field: z.string().optional()  // string | undefined
+```
+
+**5. Empty Payload Guard Clauses**
+- Validate inputs before making API calls
+- Distinguish between "cancelled" and "submitted empty data"
+- Early returns prevent unnecessary API calls
+
+**6. Diagnostic Logging Best Practices**
+- Log at entry point (context, params)
+- Log before validation (payload structure)
+- Log before database operations (user lookup)
+- Log at decision points (tenant match, RLS results)
+- Log at exit (success or specific failure reason)
+
+**7. The "Credentials Include" Pattern**
+Apply this pattern to ALL authenticated API calls:
+```typescript
+// Standard fetch pattern for authenticated endpoints
+const response = await fetch('/api/...', {
+  method: 'POST',  // or GET, PATCH, DELETE
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',  // ← CRITICAL for session-based auth
+  body: JSON.stringify(payload)
+});
+```
+
+#### Common Multi-Tenant Gotchas
+
+1. **Null Tenant Context** → Check credentials are being sent
+2. **RLS Blocking Admin Operations** → Use service client with permission checks
+3. **Schema Rejecting Null** → Use `.nullable()` for fields that can be null
+4. **Empty vs Missing Values** → Guard against empty payloads
+5. **JWT Not Refreshing** → User must logout/login after metadata changes
+
+#### Prevention Checklist
+
+Before implementing authenticated endpoints:
+- [ ] Add `credentials: 'include'` to ALL fetch calls
+- [ ] Use `createServiceClient()` for admin operations
+- [ ] Add `context.isSupervisor` or similar permission checks
+- [ ] Use `.nullable().optional()` for fields that accept null
+- [ ] Add guard clauses for empty payloads
+- [ ] Add comprehensive diagnostic logging
+- [ ] Test with Railway logs before assuming success
+
+#### Time Investment vs Value
+
+**Total Iterations**: 6 attempts over multiple hours
+**Root Causes**: 4 separate issues (credentials, RLS, validation, empty payloads)
+**Value**: Deep understanding of:
+- Next.js session management
+- Supabase RLS patterns
+- Zod schema validation
+- Multi-tenant security models
+
+**Moral**: Complex bugs teach more than simple bugs. The pain is the lesson.
+
 ## Conclusion
 
 The main takeaway: when data seems to "disappear" between layers, it's often a naming/transformation issue. Always verify field names at each layer of the stack, and implement comprehensive logging before starting to debug complex data flow issues.
+
+**Additional takeaway from user profile debugging**: Modern web apps have many layers (client → network → auth → RLS → validation → business logic → database). A bug at ANY layer can manifest as the same symptom. Systematic debugging requires checking each layer independently with comprehensive logging.
