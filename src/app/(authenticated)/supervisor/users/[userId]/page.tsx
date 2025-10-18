@@ -15,6 +15,7 @@ import {
   Upload
 } from 'lucide-react';
 import { imageProcessor, type ProcessedImages } from '@/utils/image-processor';
+import { SimpleCameraCapture } from '@/components/camera/SimpleCameraCapture';
 
 interface UserDetail {
   id: string;
@@ -56,6 +57,7 @@ function UserDetailPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
@@ -171,7 +173,7 @@ function UserDetailPageContent() {
     }
   };
 
-  const handleImageUpload = async (file: File) => {
+  const handleImageUpload = async (file: Blob) => {
     setIsUploadingImage(true);
     setError(null);
 
@@ -232,6 +234,13 @@ function UserDetailPageContent() {
     await handleImageUpload(file);
   };
 
+  const handleCameraCapture = async ({ blob }: { blob: Blob }) => {
+    setIsCameraOpen(false);
+    const fileName = `user-${userId}-${Date.now()}.jpg`;
+    const cameraFile = new File([blob], fileName, { type: blob.type || 'image/jpeg' });
+    await handleImageUpload(cameraFile);
+  };
+
   if (isLoading) {
     return (
       <div className="mobile-container">
@@ -283,6 +292,15 @@ function UserDetailPageContent() {
         currentRole="supervisor"
         onLogout={() => router.push('/sign-in')}
       />
+
+      {isCameraOpen && (
+        <div className="camera-overlay">
+          <SimpleCameraCapture
+            onCapture={handleCameraCapture}
+            onCancel={() => setIsCameraOpen(false)}
+          />
+        </div>
+      )}
 
       {/* Header */}
       <div className="header-bar">
@@ -345,6 +363,15 @@ function UserDetailPageContent() {
                     Upload Photo
                   </>
                 )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsCameraOpen(true)}
+                disabled={isUploadingImage}
+                className="upload-btn"
+              >
+                <Camera className="w-4 h-4 mr-1" />
+                Capture Photo
               </button>
             </div>
 
@@ -629,6 +656,21 @@ function UserDetailPageContent() {
         .upload-btn:disabled {
           opacity: 0.5;
           cursor: not-allowed;
+        }
+
+        .camera-overlay {
+          position: fixed;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 100%;
+          max-width: 375px;
+          height: 100vh;
+          max-height: 812px;
+          background: #000;
+          z-index: 1000;
+          display: flex;
+          flex-direction: column;
         }
 
         .hidden {

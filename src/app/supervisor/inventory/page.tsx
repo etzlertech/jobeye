@@ -71,109 +71,9 @@ import {
 } from 'lucide-react';
 import { ButtonLimiter, useButtonActions } from '@/components/ui/ButtonLimiter';
 import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
+import { SimpleCameraCapture } from '@/components/camera/SimpleCameraCapture';
 
 // Simple camera component for capturing photos
-interface SimpleCameraCaptureProps {
-  onCapture: (imageUrl: string) => void;
-  onCancel: () => void;
-}
-
-function SimpleCameraCapture({ onCapture, onCancel }: SimpleCameraCaptureProps) {
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const videoRef = React.useRef<HTMLVideoElement>(null);
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    startCamera();
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, []);
-
-  const startCamera = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment', // Use back camera if available
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      });
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      alert('Could not access camera. Please check permissions.');
-    }
-  };
-
-  const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-    
-    setIsCapturing(true);
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-    
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    if (context) {
-      context.drawImage(video, 0, 0);
-      const imageUrl = canvas.toDataURL('image/jpeg', 0.8);
-      onCapture(imageUrl);
-    }
-    
-    setIsCapturing(false);
-  };
-
-  return (
-    <div className="flex-1 flex flex-col bg-black">
-      <div className="flex-1 relative overflow-hidden">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="w-full h-full object-cover"
-        />
-        <canvas ref={canvasRef} className="hidden" />
-        
-        {/* Camera overlay with capture button */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
-          <div className="flex items-center justify-center gap-6">
-            <button
-              onClick={onCancel}
-              className="w-12 h-12 bg-gray-600 text-white rounded-full flex items-center justify-center hover:bg-gray-700"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            
-            <button
-              onClick={capturePhoto}
-              disabled={isCapturing}
-              className="w-16 h-16 bg-white border-4 border-golden rounded-full flex items-center justify-center hover:bg-gray-100 disabled:opacity-50"
-            >
-              {isCapturing ? (
-                <Loader2 className="w-8 h-8 text-golden animate-spin" />
-              ) : (
-                <Camera className="w-8 h-8 text-golden" />
-              )}
-            </button>
-            
-            <div className="w-12 h-12" /> {/* Spacer for centering */}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 interface InventoryItem {
   id: string;
   name: string;
@@ -593,7 +493,7 @@ export default function SupervisorInventoryPage() {
         {/* Camera Content */}
         <div className="flex-1 flex flex-col">
           <SimpleCameraCapture
-            onCapture={(imageUrl) => {
+            onCapture={({ imageUrl }) => {
               setNewItem(prev => ({ ...prev, imageUrl }));
               setView('add_form');
             }}
