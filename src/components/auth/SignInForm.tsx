@@ -34,6 +34,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { resolveDashboardRoute } from '@/lib/auth/role-routing';
+import type { Database } from '@/types/database';
 
 interface SignInFormData {
   email: string;
@@ -66,15 +67,17 @@ export default function SignInForm() {
 
       if (data.user) {
         // Log auth event
+        const deviceType: Database['public']['Tables']['auth_audit_log']['Row']['device_type'] = /Mobile/.test(navigator.userAgent) ? 'mobile' : 'desktop';
+
         await supabase.from('auth_audit_log').insert({
-          event_type: 'sign_in',
+          event_type: 'login_success',
           user_id: data.user.id,
           user_email: data.user.email,
           tenant_id: null, // Will be set by RLS
           success: true,
           ip_address: null, // Would be set server-side
           user_agent: navigator.userAgent,
-          device_type: /Mobile/.test(navigator.userAgent) ? 'mobile' : 'desktop',
+          device_type: deviceType,
         });
 
         // Check if user has voice profile
@@ -82,9 +85,9 @@ export default function SignInForm() {
           .from('voice_profiles')
           .select('onboarding_completed')
           .eq('user_id', data.user.id)
-          .single();
+          .maybeSingle();
 
-        if (!voiceProfile?.onboarding_completed) {
+        if (voiceProfile && !voiceProfile.onboarding_completed) {
           router.push('/onboarding/voice');
         } else {
           const role =
@@ -99,14 +102,16 @@ export default function SignInForm() {
       
       // Log failed auth attempt
       if (formData.email) {
+        const deviceType: Database['public']['Tables']['auth_audit_log']['Row']['device_type'] = /Mobile/.test(navigator.userAgent) ? 'mobile' : 'desktop';
+
         const { error: auditError } = await supabase.from('auth_audit_log').insert({
-          event_type: 'sign_in',
+          event_type: 'login_failed',
           user_email: formData.email,
           success: false,
           reason: err.message,
           ip_address: null,
           user_agent: navigator.userAgent,
-          device_type: /Mobile/.test(navigator.userAgent) ? 'mobile' : 'desktop',
+          device_type: deviceType,
         });
 
         if (auditError) {

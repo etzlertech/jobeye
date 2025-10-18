@@ -1,5 +1,5 @@
 // Generated TypeScript types from Supabase database
-// Generated: 2025-10-16T21:46:33.677949
+// Generated: 2025-10-18T08:06:29.693017
 
 export type Json =
   | string
@@ -3011,9 +3011,6 @@ export interface Database {
           last_name: string | null
           phone: string | null
           avatar_url: string | null
-          primary_image_url: string | null
-          thumbnail_url: string | null
-          medium_url: string | null
           timezone: string | null
           preferred_language: string | null
           is_active: boolean
@@ -3030,6 +3027,9 @@ export interface Database {
           metadata: Json | null
           created_at: string
           updated_at: string
+          primary_image_url: string | null
+          thumbnail_url: string | null
+          medium_url: string | null
         }
         Insert: {
           id: string
@@ -3040,9 +3040,6 @@ export interface Database {
           last_name?: string | null
           phone?: string | null
           avatar_url?: string | null
-          primary_image_url?: string | null
-          thumbnail_url?: string | null
-          medium_url?: string | null
           timezone?: string | null
           preferred_language?: string | null
           is_active?: boolean
@@ -3059,6 +3056,9 @@ export interface Database {
           metadata?: Json | null
           created_at?: string
           updated_at?: string
+          primary_image_url?: string | null
+          thumbnail_url?: string | null
+          medium_url?: string | null
         }
         Update: {
           id?: string
@@ -3069,9 +3069,6 @@ export interface Database {
           last_name?: string | null
           phone?: string | null
           avatar_url?: string | null
-          primary_image_url?: string | null
-          thumbnail_url?: string | null
-          medium_url?: string | null
           timezone?: string | null
           preferred_language?: string | null
           is_active?: boolean
@@ -3088,6 +3085,9 @@ export interface Database {
           metadata?: Json | null
           created_at?: string
           updated_at?: string
+          primary_image_url?: string | null
+          thumbnail_url?: string | null
+          medium_url?: string | null
         }
       }
       vendor_aliases: {
