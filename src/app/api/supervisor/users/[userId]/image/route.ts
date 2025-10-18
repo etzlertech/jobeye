@@ -39,6 +39,14 @@ export async function POST(
 ) {
   try {
     const context = await getRequestContext(request);
+
+    console.log('[POST /api/supervisor/users/[userId]/image] Request received', {
+      userId: params.userId,
+      tenantId: context.tenantId,
+      isSupervisor: context.isSupervisor,
+      roles: context.roles
+    });
+
     if (!context.isSupervisor) {
       return NextResponse.json(
         {
@@ -113,6 +121,23 @@ export async function POST(
     }
 
     const supabase = await createClient();
+
+    // Debug: Check if user exists at all (without tenant filter)
+    const { data: userCheck, error: checkError } = await supabase
+      .from('users_extended')
+      .select('id, tenant_id, display_name')
+      .eq('id', params.userId)
+      .single();
+
+    console.log('[POST /api/supervisor/users/[userId]/image] User lookup', {
+      userId: params.userId,
+      userFound: !!userCheck,
+      userTenantId: userCheck?.tenant_id,
+      contextTenantId: context.tenantId,
+      tenantMatch: userCheck?.tenant_id === context.tenantId,
+      checkError: checkError?.message
+    });
+
     const service = new UserManagementService(supabase);
 
     const updatedUser = await service.updateUserImages(context, params.userId, {
@@ -125,12 +150,19 @@ export async function POST(
       console.error('[POST /api/supervisor/users/[userId]/image] User not found', {
         userId: params.userId,
         tenantId: context.tenantId,
-        isSupervisor: context.isSupervisor
+        isSupervisor: context.isSupervisor,
+        userExistsGlobally: !!userCheck,
+        userTenantId: userCheck?.tenant_id
       });
+
+      const message = userCheck && userCheck.tenant_id !== context.tenantId
+        ? 'User belongs to a different organization'
+        : 'User not found';
+
       return NextResponse.json(
         {
           error: 'Not found',
-          message: `User not found or does not belong to your organization`,
+          message,
           code: 'RESOURCE_NOT_FOUND'
         },
         { status: 404 }
