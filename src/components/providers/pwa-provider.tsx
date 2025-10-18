@@ -68,11 +68,12 @@ export function PWAProvider({ children }: PWAProviderProps) {
     
     const handleOnline = () => {
       setIsOnline(true);
+      // TODO: Enable when /api/sync/offline-operations endpoint is implemented
       // Trigger sync when back online
-      const syncManager = (registration as ServiceWorkerRegistration & { sync?: { register: (tag: string) => Promise<void> } })?.sync;
-      syncManager?.register('sync-offline-operations').catch((error) => {
-        console.warn('Background sync registration failed', error);
-      });
+      // const syncManager = (registration as ServiceWorkerRegistration & { sync?: { register: (tag: string) => Promise<void> } })?.sync;
+      // syncManager?.register('sync-offline-operations').catch((error) => {
+      //   console.warn('Background sync registration failed', error);
+      // });
     };
     
     const handleOffline = () => {

@@ -168,17 +168,25 @@ self.addEventListener('sync', (event) => {
 
 async function syncOfflineOperations() {
   try {
+    // Check if we're online first
+    if (!self.navigator.onLine) {
+      console.log('[Service Worker] Skipping sync - offline');
+      return;
+    }
+
     const response = await fetch('/api/sync/offline-operations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify({ services: ['all'] })
     });
 
     if (response.ok) {
       const result = await response.json();
-      
+      console.log('[Service Worker] Sync successful:', result);
+
       // Notify clients of sync status
       const clients = await self.clients.matchAll();
       clients.forEach(client => {
@@ -187,9 +195,20 @@ async function syncOfflineOperations() {
           data: result
         });
       });
+    } else if (response.status === 404) {
+      // Endpoint doesn't exist yet - silently skip
+      console.log('[Service Worker] Sync endpoint not implemented yet');
+    } else {
+      console.warn('[Service Worker] Sync failed with status:', response.status);
     }
   } catch (error) {
-    console.error('Background sync failed:', error);
+    // Network error or endpoint doesn't exist
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      console.log('[Service Worker] Sync endpoint unavailable');
+    } else {
+      console.error('[Service Worker] Background sync error:', error);
+    }
+    // Don't throw - let the sync fail gracefully
   }
 }
 
