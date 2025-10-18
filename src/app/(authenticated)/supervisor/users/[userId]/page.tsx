@@ -10,8 +10,11 @@ import {
   User as UserIcon,
   Loader2,
   Save,
-  X
+  X,
+  Camera,
+  Upload
 } from 'lucide-react';
+import { imageProcessor, type ProcessedImages } from '@/utils/image-processor';
 
 interface UserDetail {
   id: string;
@@ -52,9 +55,11 @@ function UserDetailPageContent() {
   const [user, setUser] = useState<UserDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -166,6 +171,67 @@ function UserDetailPageContent() {
     }
   };
 
+  const handleImageUpload = async (file: File) => {
+    setIsUploadingImage(true);
+    setError(null);
+
+    try {
+      // Process image to create 3 square crops
+      const processedImages: ProcessedImages = await imageProcessor.processImage(file);
+
+      // Upload to API
+      const response = await fetch(`/api/supervisor/users/${userId}/image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          images: {
+            thumbnail: processedImages.thumbnail,
+            medium: processedImages.medium,
+            full: processedImages.full
+          }
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to upload image');
+      }
+
+      setSuccess('Profile photo updated successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+
+      // Reload user data to get new image URLs
+      await loadUser();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload image');
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+
+    // Check for HEIC/HEIF format
+    if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic')) {
+      setError('HEIC format not supported. Please convert to JPEG or PNG first.');
+      return;
+    }
+
+    await handleImageUpload(file);
+  };
+
   if (isLoading) {
     return (
       <div className="mobile-container">
@@ -259,6 +325,37 @@ function UserDetailPageContent() {
                 <UserIcon className="profile-avatar-icon" />
               )}
             </div>
+
+            {/* Upload Buttons */}
+            <div className="upload-buttons">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingImage}
+                className="upload-btn"
+              >
+                {isUploadingImage ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-1" />
+                    Upload Photo
+                  </>
+                )}
+              </button>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+
             <p className="text-xs text-gray-500 text-center mt-2">
               {user.email || 'No email'}
             </p>
@@ -501,6 +598,41 @@ function UserDetailPageContent() {
           width: 3.5rem;
           height: 3.5rem;
           color: #FFD700;
+        }
+
+        .upload-buttons {
+          display: flex;
+          gap: 0.5rem;
+          margin-top: 0.75rem;
+        }
+
+        .upload-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.5rem 1rem;
+          background: rgba(255, 215, 0, 0.2);
+          color: #FFD700;
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          border-radius: 0.375rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .upload-btn:hover:not(:disabled) {
+          background: rgba(255, 215, 0, 0.3);
+          border-color: #FFD700;
+        }
+
+        .upload-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .hidden {
+          display: none;
         }
 
         .form-section {
