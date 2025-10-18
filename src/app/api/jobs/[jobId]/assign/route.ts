@@ -193,6 +193,19 @@ function mapError(error: unknown): { status: number; body: Record<string, unknow
   }
 
   if (error instanceof Error) {
+    // Check for Postgres errors (from database triggers/constraints)
+    const pgError = error as any;
+    if (pgError.code === 'P0001' || pgError.code === '23505') {
+      return {
+        status: 409,
+        body: {
+          error: 'Conflict',
+          message: error.message,
+          code: 'SCHEDULE_CONFLICT'
+        }
+      };
+    }
+
     return {
       status: 400,
       body: {
