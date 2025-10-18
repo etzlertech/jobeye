@@ -20,10 +20,10 @@ export const runtime = 'nodejs';
 
 const updateSchema = z
   .object({
-    display_name: z.string().optional(),
-    first_name: z.string().optional(),
-    last_name: z.string().optional(),
-    phone: z.string().optional(),
+    display_name: z.string().nullable().optional(),
+    first_name: z.string().nullable().optional(),
+    last_name: z.string().nullable().optional(),
+    phone: z.string().nullable().optional(),
     role: z.string().optional(),
     timezone: z.string().optional(),
     preferred_language: z.string().optional(),
