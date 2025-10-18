@@ -117,7 +117,13 @@ export async function POST(
     );
 
   } catch (error) {
-    console.error('[POST /api/jobs/[jobId]/assign] Error:', error);
+    console.error('============================================');
+    console.error('[POST /api/jobs/[jobId]/assign] CRITICAL ERROR');
+    console.error('[POST /api/jobs/[jobId]/assign] Error type:', error?.constructor?.name);
+    console.error('[POST /api/jobs/[jobId]/assign] Error message:', error instanceof Error ? error.message : String(error));
+    console.error('[POST /api/jobs/[jobId]/assign] Error stack:', error instanceof Error ? error.stack : 'N/A');
+    console.error('[POST /api/jobs/[jobId]/assign] Full error object:', JSON.stringify(error, null, 2));
+    console.error('============================================');
 
     const mapped = mapError(error);
     return NextResponse.json(mapped.body, { status: mapped.status });
