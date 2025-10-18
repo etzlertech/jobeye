@@ -81,7 +81,17 @@ export async function PATCH(
 ) {
   try {
     const context = await getRequestContext(request);
+
+    console.log('[PATCH /api/supervisor/users/[userId]] Request received', {
+      userId: params.userId,
+      tenantId: context.tenantId,
+      isSupervisor: context.isSupervisor,
+      roles: context.roles,
+      source: context.source
+    });
+
     if (!context.isSupervisor) {
+      console.log('[PATCH /api/supervisor/users/[userId]] Access denied - not supervisor');
       return NextResponse.json(
         {
           error: 'Forbidden',
@@ -93,8 +103,16 @@ export async function PATCH(
     }
 
     const payload = await request.json();
+    console.log('[PATCH /api/supervisor/users/[userId]] Payload received', {
+      keys: Object.keys(payload),
+      payload
+    });
+
     const parsed = updateSchema.safeParse(payload);
     if (!parsed.success) {
+      console.log('[PATCH /api/supervisor/users/[userId]] Validation failed', {
+        error: parsed.error.flatten()
+      });
       return NextResponse.json(
         {
           error: 'Invalid payload',
@@ -105,20 +123,51 @@ export async function PATCH(
       );
     }
 
+    // Debug: Check if user exists at all (without tenant filter)
     const supabase = await createClient();
+    const { data: userCheck, error: checkError } = await supabase
+      .from('users_extended')
+      .select('id, tenant_id, display_name, role')
+      .eq('id', params.userId)
+      .single();
+
+    console.log('[PATCH /api/supervisor/users/[userId]] User lookup', {
+      userId: params.userId,
+      userFound: !!userCheck,
+      userTenantId: userCheck?.tenant_id,
+      contextTenantId: context.tenantId,
+      tenantMatch: userCheck?.tenant_id === context.tenantId,
+      userRole: userCheck?.role,
+      checkError: checkError?.message
+    });
+
     const service = new UserManagementService(supabase);
     const user = await service.updateUser(context, params.userId, parsed.data);
 
     if (!user) {
+      const message = userCheck && userCheck.tenant_id !== context.tenantId
+        ? 'User belongs to a different organization'
+        : 'User not found or does not belong to your organization';
+
+      console.log('[PATCH /api/supervisor/users/[userId]] Update failed', {
+        userId: params.userId,
+        reason: message
+      });
+
       return NextResponse.json(
         {
           error: 'Not found',
-          message: 'User not found',
+          message,
           code: 'RESOURCE_NOT_FOUND'
         },
         { status: 404 }
       );
     }
+
+    console.log('[PATCH /api/supervisor/users/[userId]] Update successful', {
+      userId: params.userId,
+      updatedFields: Object.keys(parsed.data)
+    });
 
     return NextResponse.json({
       success: true,
