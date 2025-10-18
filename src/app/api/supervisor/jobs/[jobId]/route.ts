@@ -86,10 +86,13 @@ export async function GET(
     );
 
     // Fetch job assignments with user details
+    // Use service client to bypass RLS issues
+    const serviceClient = createServiceClient();
+
     console.log('============================================');
-    console.log('[GET /api/supervisor/jobs/[jobId]] COMMIT: 695992d - SERVICE CLIENT FIX');
+    console.log('[GET /api/supervisor/jobs/[jobId]] COMMIT: c2140b2 - USE SERVICE CLIENT FOR ASSIGNMENTS');
     console.log('[GET /api/supervisor/jobs/[jobId]] Fetching assignments for job:', jobId);
-    const { data: assignmentsData, error: assignmentsError } = await supabase
+    const { data: assignmentsData, error: assignmentsError } = await serviceClient
       .from('job_assignments')
       .select(`
         user_id,
@@ -109,14 +112,10 @@ export async function GET(
       console.error('Error fetching assignments:', assignmentsError);
     }
 
-    // Fetch user details for assignments
-    // Need service client for auth.admin calls
-    const serviceClient = createServiceClient();
-
     const assignments = await Promise.all(
       (assignmentsData || []).map(async (assignment: any) => {
-        // Get user_extended data
-        const { data: userData, error: userError } = await supabase
+        // Get user_extended data using service client
+        const { data: userData, error: userError } = await serviceClient
           .from('users_extended')
           .select('id, display_name, first_name, last_name')
           .eq('id', assignment.user_id)
