@@ -109,19 +109,33 @@ export async function GET(
     // Fetch user details for assignments
     const assignments = await Promise.all(
       (assignmentsData || []).map(async (assignment: any) => {
-        const { data: userData } = await supabase
+        // Get user_extended data
+        const { data: userData, error: userError } = await supabase
           .from('users_extended')
-          .select('id, email, display_name, first_name, last_name')
+          .select('id, display_name, first_name, last_name')
           .eq('id', assignment.user_id)
           .single();
+
+        // Get email from auth.users
+        const { data: authData } = await supabase.auth.admin.getUserById(assignment.user_id);
+
+        console.log('[GET /api/supervisor/jobs/[jobId]] User data fetch:', {
+          userId: assignment.user_id,
+          userData,
+          userError,
+          email: authData?.user?.email
+        });
 
         return {
           user_id: assignment.user_id,
           assigned_at: assignment.assigned_at,
           assigned_by: assignment.assigned_by,
-          user: userData || {
+          user: userData ? {
+            ...userData,
+            email: authData?.user?.email || 'Unknown'
+          } : {
             id: assignment.user_id,
-            email: 'Unknown',
+            email: authData?.user?.email || 'Unknown',
             display_name: 'Unknown User',
             first_name: 'Unknown',
             last_name: 'User'
