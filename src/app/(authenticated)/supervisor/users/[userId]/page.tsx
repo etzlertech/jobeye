@@ -11,11 +11,10 @@ import {
   Loader2,
   Save,
   X,
-  Camera,
   Upload
 } from 'lucide-react';
-import { imageProcessor, type ProcessedImages } from '@/utils/image-processor';
-import { SimpleCameraCapture } from '@/components/camera/SimpleCameraCapture';
+import type { ProcessedImages } from '@/utils/image-processor';
+import { ItemImageUpload } from '@/components/items/ItemImageUpload';
 
 interface UserDetail {
   id: string;
@@ -57,11 +56,10 @@ function UserDetailPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [showImageUpload, setShowImageUpload] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -173,25 +171,15 @@ function UserDetailPageContent() {
     }
   };
 
-  const handleImageUpload = async (file: Blob) => {
+  const handleImageCapture = async (images: ProcessedImages) => {
     setIsUploadingImage(true);
     setError(null);
 
     try {
-      // Process image to create 3 square crops
-      const processedImages: ProcessedImages = await imageProcessor.processImage(file);
-
-      // Upload to API
       const response = await fetch(`/api/supervisor/users/${userId}/image`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          images: {
-            thumbnail: processedImages.thumbnail,
-            medium: processedImages.medium,
-            full: processedImages.full
-          }
-        })
+        body: JSON.stringify({ images })
       });
 
       const data = await response.json();
@@ -203,42 +191,13 @@ function UserDetailPageContent() {
       setSuccess('Profile photo updated successfully!');
       setTimeout(() => setSuccess(null), 3000);
 
-      // Reload user data to get new image URLs
       await loadUser();
+      setShowImageUpload(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload image');
     } finally {
       setIsUploadingImage(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
-  };
-
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError('Please select an image file');
-      return;
-    }
-
-    // Check for HEIC/HEIF format
-    if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic')) {
-      setError('HEIC format not supported. Please convert to JPEG or PNG first.');
-      return;
-    }
-
-    await handleImageUpload(file);
-  };
-
-  const handleCameraCapture = async ({ blob }: { blob: Blob }) => {
-    setIsCameraOpen(false);
-    const fileName = `user-${userId}-${Date.now()}.jpg`;
-    const cameraFile = new File([blob], fileName, { type: blob.type || 'image/jpeg' });
-    await handleImageUpload(cameraFile);
   };
 
   if (isLoading) {
@@ -284,6 +243,7 @@ function UserDetailPageContent() {
   }
 
   const displayName = user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown User';
+  const hasProfileImage = Boolean(user.mediumImageUrl || user.primaryImageUrl);
 
   return (
     <div className="mobile-container">
@@ -292,15 +252,6 @@ function UserDetailPageContent() {
         currentRole="supervisor"
         onLogout={() => router.push('/sign-in')}
       />
-
-      {isCameraOpen && (
-        <div className="camera-overlay">
-          <SimpleCameraCapture
-            onCapture={handleCameraCapture}
-            onCancel={() => setIsCameraOpen(false)}
-          />
-        </div>
-      )}
 
       {/* Header */}
       <div className="header-bar">
@@ -344,44 +295,44 @@ function UserDetailPageContent() {
               )}
             </div>
 
-            {/* Upload Buttons */}
-            <div className="upload-buttons">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploadingImage}
-                className="upload-btn"
-              >
-                {isUploadingImage ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                    Uploading...
-                  </>
-                ) : (
-                  <>
+            <div className="upload-area">
+              {showImageUpload ? (
+                <div className="upload-panel">
+                  <ItemImageUpload
+                    onImageCapture={handleImageCapture}
+                    currentImageUrl={user.mediumImageUrl || user.primaryImageUrl || undefined}
+                    disabled={isUploadingImage}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowImageUpload(false)}
+                    className="upload-btn secondary"
+                    disabled={isUploadingImage}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowImageUpload(true)}
+                  disabled={isUploadingImage}
+                  className="upload-btn"
+                >
+                  {isUploadingImage ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
                     <Upload className="w-4 h-4 mr-1" />
-                    Upload Photo
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsCameraOpen(true)}
-                disabled={isUploadingImage}
-                className="upload-btn"
-              >
-                <Camera className="w-4 h-4 mr-1" />
-                Capture Photo
-              </button>
+                    {hasProfileImage ? 'Update Photo' : 'Add Photo'}
+                    </>
+                  )}
+                </button>
+              )}
             </div>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-              onChange={handleFileChange}
-              className="hidden"
-            />
 
             <p className="text-xs text-gray-500 text-center mt-2">
               {user.email || 'No email'}
@@ -633,6 +584,17 @@ function UserDetailPageContent() {
           margin-top: 0.75rem;
         }
 
+        .upload-area {
+          width: 100%;
+          margin-top: 0.75rem;
+        }
+
+        .upload-panel {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
         .upload-btn {
           display: flex;
           align-items: center;
@@ -658,19 +620,15 @@ function UserDetailPageContent() {
           cursor: not-allowed;
         }
 
-        .camera-overlay {
-          position: fixed;
-          top: 0;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 100%;
-          max-width: 375px;
-          height: 100vh;
-          max-height: 812px;
-          background: #000;
-          z-index: 1000;
-          display: flex;
-          flex-direction: column;
+        .upload-btn.secondary {
+          background: transparent;
+          border-color: rgba(148, 163, 184, 0.4);
+          color: #d1d5db;
+        }
+
+        .upload-btn.secondary:hover:not(:disabled) {
+          background: rgba(148, 163, 184, 0.15);
+          border-color: rgba(148, 163, 184, 0.6);
         }
 
         .hidden {

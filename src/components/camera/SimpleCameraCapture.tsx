@@ -58,10 +58,10 @@ export function SimpleCameraCapture({
   facingMode = 'environment',
   className = ''
 }: SimpleCameraCaptureProps) {
-  const [stream, setStream] = useState<MediaStream | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const startCamera = useCallback(async () => {
     try {
@@ -72,7 +72,7 @@ export function SimpleCameraCapture({
           height: { ideal: 720 }
         }
       });
-      setStream(mediaStream);
+      streamRef.current = mediaStream;
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
@@ -86,9 +86,12 @@ export function SimpleCameraCapture({
   useEffect(() => {
     startCamera();
     return () => {
-      stream?.getTracks().forEach(track => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
     };
-  }, [startCamera, stream]);
+  }, [startCamera]);
 
   const handleCapture = () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -115,7 +118,13 @@ export function SimpleCameraCapture({
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 text-white">
         <button
           type="button"
-          onClick={onCancel}
+          onClick={() => {
+            if (streamRef.current) {
+              streamRef.current.getTracks().forEach(track => track.stop());
+              streamRef.current = null;
+            }
+            onCancel();
+          }}
           className="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
         >
           <X className="w-4 h-4" />
