@@ -83,6 +83,7 @@ const navigationItems: NavigationItem[] = [
   // Supervisor screens
   { id: 'supervisor-dashboard', label: 'Supervisor Hub', path: '/supervisor', icon: Briefcase, roles: ['supervisor', 'admin'] },
   { id: 'jobs', label: 'Jobs', path: '/supervisor/jobs', icon: Calendar, roles: ['supervisor', 'admin'] },
+  { id: 'users', label: 'User Management', path: '/supervisor/users', icon: Users, roles: ['supervisor', 'admin'] },
   { id: 'customers', label: 'Customers', path: '/supervisor/customers', icon: Users, roles: ['supervisor', 'admin'] },
   { id: 'properties', label: 'Properties', path: '/supervisor/properties', icon: Building, roles: ['supervisor', 'admin'] },
   { id: 'inventory', label: 'Inventory', path: '/supervisor/inventory', icon: Package, roles: ['supervisor', 'admin'] },
