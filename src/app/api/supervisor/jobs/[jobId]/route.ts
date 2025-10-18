@@ -86,6 +86,8 @@ export async function GET(
     );
 
     // Fetch job assignments with user details
+    console.log('============================================');
+    console.log('[GET /api/supervisor/jobs/[jobId]] COMMIT: 695992d - SERVICE CLIENT FIX');
     console.log('[GET /api/supervisor/jobs/[jobId]] Fetching assignments for job:', jobId);
     const { data: assignmentsData, error: assignmentsError } = await supabase
       .from('job_assignments')
@@ -101,6 +103,7 @@ export async function GET(
       error: assignmentsError,
       data: assignmentsData
     });
+    console.log('============================================');
 
     if (assignmentsError) {
       console.error('Error fetching assignments:', assignmentsError);
