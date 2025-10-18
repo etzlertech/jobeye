@@ -47,10 +47,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const roleFilter = searchParams.get('role');
 
-    // Build query for users_extended
+    // Build query for users_extended (include image URLs)
     let query = supabase
       .from('users_extended')
-      .select('id, display_name, role')
+      .select('id, display_name, first_name, last_name, role, thumbnail_url, medium_url, primary_image_url')
       .eq('tenant_id', context.tenantId);
 
     // Apply role filter if provided
@@ -73,12 +73,18 @@ export async function GET(request: NextRequest) {
       authUsers?.map(u => [u.id, u.email]) || []
     );
 
-    // Combine the data
+    // Combine the data (include image URLs)
     const data = usersData?.map(u => ({
       id: u.id,
       email: emailMap.get(u.id) || '',
-      full_name: u.display_name || emailMap.get(u.id) || '',
-      role: u.role
+      display_name: u.display_name || null,
+      first_name: u.first_name || null,
+      last_name: u.last_name || null,
+      full_name: u.display_name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || emailMap.get(u.id) || '',
+      role: u.role,
+      thumbnail_url: u.thumbnail_url || null,
+      medium_url: u.medium_url || null,
+      primary_image_url: u.primary_image_url || null
     }));
 
     console.log('[GET /api/users] Returning data:', {

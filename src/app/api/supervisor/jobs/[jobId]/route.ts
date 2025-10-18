@@ -114,10 +114,10 @@ export async function GET(
 
     const assignments = await Promise.all(
       (assignmentsData || []).map(async (assignment: any) => {
-        // Get user_extended data using service client
+        // Get user_extended data using service client (include image URLs)
         const { data: userData, error: userError } = await serviceClient
           .from('users_extended')
-          .select('id, display_name, first_name, last_name')
+          .select('id, display_name, first_name, last_name, thumbnail_url, medium_url, primary_image_url')
           .eq('id', assignment.user_id)
           .single();
 

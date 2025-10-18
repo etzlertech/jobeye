@@ -13,7 +13,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Users, X, Plus, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Users, X, Plus, Loader2, CheckCircle, AlertCircle, User as UserIcon } from 'lucide-react';
 
 interface User {
   id: string;
@@ -21,6 +21,9 @@ interface User {
   display_name?: string;
   first_name?: string;
   last_name?: string;
+  thumbnail_url?: string | null;
+  medium_url?: string | null;
+  primary_image_url?: string | null;
 }
 
 interface Assignment {
@@ -208,6 +211,17 @@ export function CrewAssignmentSection({
                   disabled={isAssigning}
                   className="crew-checkbox"
                 />
+                <div className="crew-avatar">
+                  {user.thumbnail_url ? (
+                    <img
+                      src={user.thumbnail_url}
+                      alt={user.display_name || 'User'}
+                      className="crew-avatar-img"
+                    />
+                  ) : (
+                    <UserIcon className="crew-avatar-icon" />
+                  )}
+                </div>
                 <span className="crew-checkbox-label">
                   {user.display_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email}
                 </span>
@@ -252,6 +266,17 @@ export function CrewAssignmentSection({
         ) : (
           currentAssignments.map((assignment) => (
             <div key={assignment.user_id} className="assignment-item">
+              <div className="crew-avatar">
+                {assignment.user?.thumbnail_url ? (
+                  <img
+                    src={assignment.user.thumbnail_url}
+                    alt={assignment.user?.display_name || 'User'}
+                    className="crew-avatar-img"
+                  />
+                ) : (
+                  <UserIcon className="crew-avatar-icon" />
+                )}
+              </div>
               <div className="flex-1">
                 <p className="crew-name">
                   {assignment.user?.display_name ||
@@ -385,6 +410,32 @@ export function CrewAssignmentSection({
           margin-right: 0.75rem;
           cursor: pointer;
           accent-color: #FFD700;
+        }
+
+        .crew-avatar {
+          width: 2rem;
+          height: 2rem;
+          border-radius: 50%;
+          margin-right: 0.75rem;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 215, 0, 0.15);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          overflow: hidden;
+        }
+
+        .crew-avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .crew-avatar-icon {
+          width: 1.25rem;
+          height: 1.25rem;
+          color: #FFD700;
         }
 
         .crew-checkbox-label {
