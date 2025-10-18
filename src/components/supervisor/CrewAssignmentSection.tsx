@@ -18,7 +18,9 @@ import { Users, X, Plus, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 interface User {
   id: string;
   email: string;
-  full_name?: string;
+  display_name?: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 interface Assignment {
@@ -207,7 +209,7 @@ export function CrewAssignmentSection({
                   className="crew-checkbox"
                 />
                 <span className="crew-checkbox-label">
-                  {user.full_name || user.email}
+                  {user.display_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email}
                 </span>
               </label>
             ))}
@@ -252,9 +254,12 @@ export function CrewAssignmentSection({
             <div key={assignment.user_id} className="assignment-item">
               <div className="flex-1">
                 <p className="crew-name">
-                  {assignment.user?.full_name || assignment.user?.email || 'Unknown User'}
+                  {assignment.user?.display_name ||
+                   `${assignment.user?.first_name || ''} ${assignment.user?.last_name || ''}`.trim() ||
+                   assignment.user?.email ||
+                   'Unknown User'}
                 </p>
-                {assignment.user?.email && assignment.user?.full_name && (
+                {assignment.user?.email && (assignment.user?.display_name || assignment.user?.first_name) && (
                   <p className="crew-email">{assignment.user.email}</p>
                 )}
               </div>

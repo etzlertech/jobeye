@@ -90,7 +90,7 @@ export async function GET(
     const { data: assignmentsData, error: assignmentsError } = await supabase
       .from('job_assignments')
       .select(`
-        assigned_user_id,
+        user_id,
         assigned_at,
         assigned_by
       `)
@@ -111,18 +111,20 @@ export async function GET(
       (assignmentsData || []).map(async (assignment: any) => {
         const { data: userData } = await supabase
           .from('users_extended')
-          .select('id, email, full_name')
-          .eq('id', assignment.assigned_user_id)
+          .select('id, email, display_name, first_name, last_name')
+          .eq('id', assignment.user_id)
           .single();
 
         return {
-          user_id: assignment.assigned_user_id,
+          user_id: assignment.user_id,
           assigned_at: assignment.assigned_at,
           assigned_by: assignment.assigned_by,
           user: userData || {
-            id: assignment.assigned_user_id,
+            id: assignment.user_id,
             email: 'Unknown',
-            full_name: 'Unknown User'
+            display_name: 'Unknown User',
+            first_name: 'Unknown',
+            last_name: 'User'
           }
         };
       })
