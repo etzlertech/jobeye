@@ -173,6 +173,11 @@ function UserDetailPageContent() {
   };
 
   const handleImageCapture = async (images: ProcessedImages) => {
+    if (!images.thumbnail || !images.medium || !images.full) {
+      setShowImageUpload(false);
+      return;
+    }
+
     setIsUploadingImage(true);
     setError(null);
 

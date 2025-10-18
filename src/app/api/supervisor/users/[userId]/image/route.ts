@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestContext } from '@/lib/auth/context';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { UserManagementService } from '@/domains/user-management/services/user.service';
 
 export const dynamic = 'force-dynamic';
@@ -120,7 +120,7 @@ export async function POST(
       uploaded[target.key] = publicUrl;
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // Debug: Check if user exists at all (without tenant filter)
     const { data: userCheck, error: checkError } = await supabase

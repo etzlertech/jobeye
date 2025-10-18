@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getRequestContext } from '@/lib/auth/context';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { UserManagementService } from '@/domains/user-management/services/user.service';
 import { AppError, ErrorCode } from '@/core/errors/error-types';
 
@@ -51,7 +51,7 @@ export async function GET(
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
     const service = new UserManagementService(supabase);
     const user = await service.getUser(context, params.userId);
 
@@ -124,7 +124,7 @@ export async function PATCH(
     }
 
     // Debug: Check if user exists at all (without tenant filter)
-    const supabase = await createClient();
+    const supabase = createServiceClient();
     const { data: userCheck, error: checkError } = await supabase
       .from('users_extended')
       .select('id, tenant_id, display_name, role')
