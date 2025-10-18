@@ -3011,6 +3011,9 @@ export interface Database {
           last_name: string | null
           phone: string | null
           avatar_url: string | null
+          primary_image_url: string | null
+          thumbnail_url: string | null
+          medium_url: string | null
           timezone: string | null
           preferred_language: string | null
           is_active: boolean
@@ -3037,6 +3040,9 @@ export interface Database {
           last_name?: string | null
           phone?: string | null
           avatar_url?: string | null
+          primary_image_url?: string | null
+          thumbnail_url?: string | null
+          medium_url?: string | null
           timezone?: string | null
           preferred_language?: string | null
           is_active?: boolean
@@ -3063,6 +3069,9 @@ export interface Database {
           last_name?: string | null
           phone?: string | null
           avatar_url?: string | null
+          primary_image_url?: string | null
+          thumbnail_url?: string | null
+          medium_url?: string | null
           timezone?: string | null
           preferred_language?: string | null
           is_active?: boolean
