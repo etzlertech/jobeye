@@ -70,15 +70,34 @@ export async function DELETE(
       );
     }
 
-    // Create service and execute unassignment
-    const supabase = await createClient();
+    // Create service with service role client for write operations
+    // The supervisor permission check was already done above via context.isSupervisor
+    const {createClient: createServiceClient} = await import('@supabase/supabase-js');
+    const supabase = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
     const service = new JobAssignmentService(supabase);
+
+    console.log('[DELETE /api/jobs/[jobId]/unassign] Unassigning user', {
+      jobId: params.jobId,
+      userId,
+      supervisorId: context.userId
+    });
 
     const response = await service.unassignCrewFromJob(
       context,
       params.jobId,
       userId
     );
+
+    console.log('[DELETE /api/jobs/[jobId]/unassign] Unassignment successful');
 
     return NextResponse.json(
       {
@@ -90,7 +109,12 @@ export async function DELETE(
     );
 
   } catch (error) {
-    console.error('[DELETE /api/jobs/[jobId]/unassign] Error:', error);
+    console.error('============================================');
+    console.error('[DELETE /api/jobs/[jobId]/unassign] CRITICAL ERROR');
+    console.error('[DELETE /api/jobs/[jobId]/unassign] Error type:', error?.constructor?.name);
+    console.error('[DELETE /api/jobs/[jobId]/unassign] Error message:', error instanceof Error ? error.message : String(error));
+    console.error('[DELETE /api/jobs/[jobId]/unassign] Error stack:', error instanceof Error ? error.stack : 'N/A');
+    console.error('============================================');
 
     const mapped = mapError(error);
     return NextResponse.json(mapped.body, { status: mapped.status });
