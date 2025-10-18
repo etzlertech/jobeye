@@ -133,6 +133,7 @@ function UserDetailPageContent() {
       const response = await fetch(`/api/supervisor/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(payload)
       });
 
