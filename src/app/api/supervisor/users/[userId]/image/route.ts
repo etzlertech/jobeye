@@ -11,7 +11,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestContext } from '@/lib/auth/context';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { ItemImageProcessor } from '@/utils/image-processor';
 import { UserManagementService } from '@/domains/user-management/services/user.service';
 
 export const dynamic = 'force-dynamic';
@@ -26,6 +25,13 @@ interface ImagePayload {
 }
 
 const BUCKET = 'equipment-images';
+
+function dataUrlToBuffer(dataUrl: string): Buffer {
+  const [header, base64] = dataUrl.split(',');
+  const match = header.match(/data:(.*);base64/);
+  if (!match) throw new Error('Invalid data URL');
+  return Buffer.from(base64, 'base64');
+}
 
 export async function POST(
   request: NextRequest,
@@ -78,12 +84,12 @@ export async function POST(
     };
 
     for (const target of uploadTargets) {
-      const blob = ItemImageProcessor.dataUrlToBlob(target.dataUrl);
+      const fileBuffer = dataUrlToBuffer(target.dataUrl);
       const path = `user-avatars/${params.userId}/${timestamp}-${target.suffix}.jpg`;
 
       const { error: uploadError } = await serviceClient.storage
         .from(BUCKET)
-        .upload(path, blob, {
+        .upload(path, fileBuffer, {
           contentType: 'image/jpeg',
           upsert: true
         });
@@ -116,10 +122,15 @@ export async function POST(
     });
 
     if (!updatedUser) {
+      console.error('[POST /api/supervisor/users/[userId]/image] User not found', {
+        userId: params.userId,
+        tenantId: context.tenantId,
+        isSupervisor: context.isSupervisor
+      });
       return NextResponse.json(
         {
           error: 'Not found',
-          message: 'User not found',
+          message: `User not found or does not belong to your organization`,
           code: 'RESOURCE_NOT_FOUND'
         },
         { status: 404 }
