@@ -179,6 +179,7 @@ function UserDetailPageContent() {
       const response = await fetch(`/api/supervisor/users/${userId}/image`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ images })
       });
 
