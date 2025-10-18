@@ -107,6 +107,9 @@ export async function GET(
     }
 
     // Fetch user details for assignments
+    // Need service client for auth.admin calls
+    const serviceClient = createServiceClient();
+
     const assignments = await Promise.all(
       (assignmentsData || []).map(async (assignment: any) => {
         // Get user_extended data
@@ -116,8 +119,8 @@ export async function GET(
           .eq('id', assignment.user_id)
           .single();
 
-        // Get email from auth.users
-        const { data: authData } = await supabase.auth.admin.getUserById(assignment.user_id);
+        // Get email from auth.users using service client
+        const { data: authData } = await serviceClient.auth.admin.getUserById(assignment.user_id);
 
         console.log('[GET /api/supervisor/jobs/[jobId]] User data fetch:', {
           userId: assignment.user_id,
