@@ -86,6 +86,7 @@ export async function GET(
     );
 
     // Fetch job assignments with user details
+    console.log('[GET /api/supervisor/jobs/[jobId]] Fetching assignments for job:', jobId);
     const { data: assignmentsData, error: assignmentsError } = await supabase
       .from('job_assignments')
       .select(`
@@ -94,6 +95,12 @@ export async function GET(
         assigned_by
       `)
       .eq('job_id', jobId);
+
+    console.log('[GET /api/supervisor/jobs/[jobId]] Assignments query result:', {
+      assignmentsCount: assignmentsData?.length || 0,
+      error: assignmentsError,
+      data: assignmentsData
+    });
 
     if (assignmentsError) {
       console.error('Error fetching assignments:', assignmentsError);
@@ -153,6 +160,11 @@ export async function GET(
       completion_percentage: totalItems > 0 ? Math.round((loadedItems / totalItems) * 100) : 0,
       assignments: assignments
     };
+
+    console.log('[GET /api/supervisor/jobs/[jobId]] Returning job with assignments:', {
+      jobId: job.id,
+      assignmentsCount: job.assignments.length
+    });
 
     return NextResponse.json({ job });
 
