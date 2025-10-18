@@ -100,3 +100,11 @@ logs/
 *.njsproj
 *.sln
 *.sw?
+
+# Diagnostic scripts (contain database queries)
+check_users_extended.py
+check_tenant_mismatch.py
+fix_supervisor_tenant.py
+fix_auth_metadata.py
+USER_IMAGE_UPLOAD_FIX_SUMMARY.md
+
