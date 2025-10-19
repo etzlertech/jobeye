@@ -1,10 +1,10 @@
 // --- AGENT DIRECTIVE BLOCK ---
 // file: /src/domains/task-template/types/task-template-types.ts
-// phase: 3.2
+// phase: 3.4
 // domain: task-template
 // purpose: Task template types and Zod schemas for reusable task templates
-// spec_ref: specs/011-making-task-lists/spec.md
-// version: 2025-10-18
+// spec_ref: specs/013-lets-plan-to/spec.md
+// version: 2025-10-20
 // complexity_budget: 300 LoC
 // offline_capability: NOT_REQUIRED
 //
@@ -46,6 +46,9 @@ export interface TaskTemplate {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  thumbnail_url: string | null;
+  medium_url: string | null;
+  primary_image_url: string | null;
 }
 
 // Task Template Item Entity
@@ -64,6 +67,12 @@ export interface TaskTemplateItem {
 // Template with nested items
 export interface TemplateWithItems extends TaskTemplate {
   items: TaskTemplateItem[];
+}
+// Template image URL bundle used for repository/service updates
+export interface TemplateImageUrls {
+  thumbnail_url: string | null;
+  medium_url: string | null;
+  primary_image_url: string | null;
 }
 
 // Zod Schemas
@@ -101,6 +110,7 @@ export type CreateTemplateInput = z.infer<typeof CreateTemplateSchema>;
 export type CreateTemplateItemInput = z.infer<typeof CreateTemplateItemSchema>;
 export type CreateTemplateWithItemsInput = z.infer<typeof CreateTemplateWithItemsSchema>;
 export type UpdateTemplateInput = z.infer<typeof UpdateTemplateSchema>;
+export type TemplateImageUrlsInput = TemplateImageUrls;
 
 // Validation helpers
 export const validateTemplateItems = (items: CreateTemplateItemInput[]): { valid: boolean; errors: string[] } => {

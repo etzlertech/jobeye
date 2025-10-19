@@ -10,10 +10,16 @@ import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/Wor
 import { TaskStatus, VerificationMethod } from '@/domains/workflow-task/types/workflow-task-types';
 import type { TaskTemplate, TemplateWithItems } from '@/domains/task-template/types/task-template-types';
 import type { WorkflowTask } from '@/domains/workflow-task/types/workflow-task-types';
+import type { ProcessedImages } from '@/utils/image-processor';
+import { uploadImagesToStorage, deleteImagesFromStorage } from '@/lib/supabase/storage';
 
 // Mock the repositories
 jest.mock('@/domains/task-template/repositories/TaskTemplateRepository');
 jest.mock('@/domains/workflow-task/repositories/WorkflowTaskRepository');
+jest.mock('@/lib/supabase/storage', () => ({
+  uploadImagesToStorage: jest.fn(),
+  deleteImagesFromStorage: jest.fn(),
+}));
 
 describe('TaskTemplateService', () => {
   let service: TaskTemplateService;
@@ -66,6 +72,9 @@ const createTemplateWithItemsMock = (overrides?: Partial<TemplateWithItems>): Te
   created_by: 'supervisor-1',
   created_at: baseTimestamp,
   updated_at: baseTimestamp,
+  thumbnail_url: null,
+  medium_url: null,
+  primary_image_url: null,
   items: [
         {
           id: 'item-1',
@@ -99,8 +108,23 @@ const createTaskTemplateMock = (overrides?: Partial<TemplateWithItems>): TaskTem
   return taskTemplate;
 };
 
+const processedImages: ProcessedImages = {
+  thumbnail: 'data:image/jpeg;base64,AAA',
+  medium: 'data:image/jpeg;base64,BBB',
+  full: 'data:image/jpeg;base64,CCC',
+};
+
+const uploadImagesToStorageMock = uploadImagesToStorage as jest.Mock;
+const deleteImagesFromStorageMock = deleteImagesFromStorage as jest.Mock;
+
+const supabaseClientMock = {} as any;
+
   describe('instantiateTemplate', () => {
-    const mockTemplate = createTemplateWithItemsMock();
+    const mockTemplate = createTemplateWithItemsMock({
+      thumbnail_url: 'https://cdn.supabase.co/storage/v1/object/public/task-template-images/tenant-1/template-1/thumb.jpg',
+      medium_url: 'https://cdn.supabase.co/storage/v1/object/public/task-template-images/tenant-1/template-1/medium.jpg',
+      primary_image_url: 'https://cdn.supabase.co/storage/v1/object/public/task-template-images/tenant-1/template-1/full.jpg',
+    });
 
     it('should successfully instantiate template into job', async () => {
       mockTemplateRepo.findByIdWithItems = jest.fn().mockResolvedValue({
@@ -153,15 +177,24 @@ const createTaskTemplateMock = (overrides?: Partial<TemplateWithItems>): TaskTem
       }
 
       expect(mockTemplateRepo.findByIdWithItems).toHaveBeenCalledWith('template-1');
-      expect(mockTaskRepo.createFromTemplate).toHaveBeenCalledWith('job-1', mockTemplate.items);
+      expect(mockTaskRepo.createFromTemplate).toHaveBeenCalledWith(
+        'job-1',
+        mockTemplate.items,
+        {
+          thumbnail_url: mockTemplate.thumbnail_url,
+          medium_url: mockTemplate.medium_url,
+          primary_image_url: mockTemplate.primary_image_url,
+        }
+      );
     });
 
     it('should warn but proceed when job already has tasks', async () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const template = createTemplateWithItemsMock();
 
       mockTemplateRepo.findByIdWithItems = jest.fn().mockResolvedValue({
         ok: true,
-        value: mockTemplate,
+        value: template,
       });
 
       // Job already has 3 tasks
@@ -295,6 +328,316 @@ const createTaskTemplateMock = (overrides?: Partial<TemplateWithItems>): TaskTem
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.error.code).toBe('UNEXPECTED_ERROR');
+      }
+    });
+  });
+
+  describe('uploadTemplateImage', () => {
+    beforeEach(() => {
+      uploadImagesToStorageMock.mockReset();
+      deleteImagesFromStorageMock.mockReset();
+    });
+
+    it('should upload images and update template URLs', async () => {
+      const template = createTemplateWithItemsMock();
+
+      mockTemplateRepo.findByIdWithItems = jest.fn().mockResolvedValue({
+        ok: true,
+        value: template,
+      });
+
+      uploadImagesToStorageMock.mockResolvedValue({
+        urls: {
+          thumbnail_url: 'thumb-url',
+          medium_url: 'medium-url',
+          primary_image_url: 'primary-url',
+        },
+        paths: {
+          thumbnail: 'tenant-1/template-1/thumb.jpg',
+          medium: 'tenant-1/template-1/medium.jpg',
+          full: 'tenant-1/template-1/full.jpg',
+        },
+      });
+
+      const updatedTemplate = createTaskTemplateMock({
+        thumbnail_url: 'thumb-url',
+        medium_url: 'medium-url',
+        primary_image_url: 'primary-url',
+      });
+
+      mockTemplateRepo.updateImageUrls = jest.fn().mockResolvedValue({
+        ok: true,
+        value: updatedTemplate,
+      });
+
+      const result = await service.uploadTemplateImage(
+        supabaseClientMock,
+        'template-1',
+        'tenant-1',
+        processedImages
+      );
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.primary_image_url).toBe('primary-url');
+      }
+
+      expect(uploadImagesToStorageMock).toHaveBeenCalledWith(
+        supabaseClientMock,
+        'task-template-images',
+        'template-1',
+        'tenant-1',
+        processedImages
+      );
+      expect(mockTemplateRepo.updateImageUrls).toHaveBeenCalledWith('template-1', {
+        thumbnail_url: 'thumb-url',
+        medium_url: 'medium-url',
+        primary_image_url: 'primary-url',
+      });
+      expect(deleteImagesFromStorageMock).not.toHaveBeenCalled();
+    });
+
+    it('should return error when template not found', async () => {
+      mockTemplateRepo.findByIdWithItems = jest.fn().mockResolvedValue({
+        ok: true,
+        value: null,
+      });
+
+      const result = await service.uploadTemplateImage(
+        supabaseClientMock,
+        'missing-template',
+        'tenant-1',
+        processedImages
+      );
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('TEMPLATE_NOT_FOUND');
+      }
+      expect(uploadImagesToStorageMock).not.toHaveBeenCalled();
+    });
+
+    it('should prevent cross-tenant access', async () => {
+      const template = createTemplateWithItemsMock({ tenant_id: 'other-tenant' });
+
+      mockTemplateRepo.findByIdWithItems = jest.fn().mockResolvedValue({
+        ok: true,
+        value: template,
+      });
+
+      const result = await service.uploadTemplateImage(
+        supabaseClientMock,
+        'template-1',
+        'tenant-1',
+        processedImages
+      );
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('FORBIDDEN');
+      }
+      expect(uploadImagesToStorageMock).not.toHaveBeenCalled();
+    });
+
+    it('should handle upload failures gracefully', async () => {
+      const template = createTemplateWithItemsMock();
+
+      mockTemplateRepo.findByIdWithItems = jest.fn().mockResolvedValue({
+        ok: true,
+        value: template,
+      });
+
+      uploadImagesToStorageMock.mockRejectedValue(new Error('Upload failed'));
+
+      const result = await service.uploadTemplateImage(
+        supabaseClientMock,
+        'template-1',
+        'tenant-1',
+        processedImages
+      );
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('IMAGE_UPLOAD_FAILED');
+        expect(result.error.message).toContain('Upload failed');
+      }
+
+      expect(deleteImagesFromStorageMock).not.toHaveBeenCalled();
+    });
+
+    it('should cleanup uploaded files when DB update fails', async () => {
+      const template = createTemplateWithItemsMock();
+
+      mockTemplateRepo.findByIdWithItems = jest.fn().mockResolvedValue({
+        ok: true,
+        value: template,
+      });
+
+      uploadImagesToStorageMock.mockResolvedValue({
+        urls: {
+          thumbnail_url: 'thumb-url',
+          medium_url: 'medium-url',
+          primary_image_url: 'primary-url',
+        },
+        paths: {
+          thumbnail: 'tenant-1/template-1/thumb.jpg',
+          medium: 'tenant-1/template-1/medium.jpg',
+          full: 'tenant-1/template-1/full.jpg',
+        },
+      });
+
+      const repoError = { code: 'UPDATE_FAILED', message: 'DB error' };
+
+      mockTemplateRepo.updateImageUrls = jest.fn().mockResolvedValue({
+        ok: false,
+        error: repoError,
+      });
+
+      deleteImagesFromStorageMock.mockResolvedValue(undefined);
+
+      const result = await service.uploadTemplateImage(
+        supabaseClientMock,
+        'template-1',
+        'tenant-1',
+        processedImages
+      );
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('IMAGE_UPDATE_FAILED');
+        expect(result.error.details).toBe(repoError);
+      }
+
+      expect(deleteImagesFromStorageMock).toHaveBeenCalledWith(
+        supabaseClientMock,
+        'task-template-images',
+        [
+          'tenant-1/template-1/thumb.jpg',
+          'tenant-1/template-1/medium.jpg',
+          'tenant-1/template-1/full.jpg',
+        ]
+      );
+    });
+  });
+
+  describe('removeTemplateImage', () => {
+    it('should clear template image URLs and delete storage objects', async () => {
+      const template = createTemplateWithItemsMock({
+        tenant_id: 'tenant-1',
+        thumbnail_url: 'https://cdn.supabase.co/storage/v1/object/public/task-template-images/tenant-1/template-1/thumb.jpg',
+        medium_url: 'https://cdn.supabase.co/storage/v1/object/public/task-template-images/tenant-1/template-1/medium.jpg',
+        primary_image_url: 'https://cdn.supabase.co/storage/v1/object/public/task-template-images/tenant-1/template-1/full.jpg',
+      });
+
+      mockTemplateRepo.findByIdWithItems = jest.fn().mockResolvedValue({
+        ok: true,
+        value: template,
+      });
+
+      const updated = createTaskTemplateMock({
+        thumbnail_url: null,
+        medium_url: null,
+        primary_image_url: null,
+      });
+
+      mockTemplateRepo.updateImageUrls = jest.fn().mockResolvedValue({
+        ok: true,
+        value: updated,
+      });
+
+      const result = await service.removeTemplateImage(
+        supabaseClientMock,
+        'template-1',
+        'tenant-1'
+      );
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.thumbnail_url).toBeNull();
+      }
+
+      expect(deleteImagesFromStorageMock).toHaveBeenCalledWith(
+        supabaseClientMock,
+        'task-template-images',
+        [
+          'tenant-1/template-1/thumb.jpg',
+          'tenant-1/template-1/medium.jpg',
+          'tenant-1/template-1/full.jpg',
+        ]
+      );
+      expect(mockTemplateRepo.updateImageUrls).toHaveBeenCalledWith('template-1', {
+        thumbnail_url: null,
+        medium_url: null,
+        primary_image_url: null,
+      });
+    });
+
+    it('should return error when template not found', async () => {
+      mockTemplateRepo.findByIdWithItems = jest.fn().mockResolvedValue({
+        ok: true,
+        value: null,
+      });
+
+      const result = await service.removeTemplateImage(
+        supabaseClientMock,
+        'missing',
+        'tenant-1'
+      );
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('TEMPLATE_NOT_FOUND');
+      }
+    });
+
+    it('should prevent cross-tenant removal', async () => {
+      const template = createTemplateWithItemsMock({ tenant_id: 'other-tenant' });
+
+      mockTemplateRepo.findByIdWithItems = jest.fn().mockResolvedValue({
+        ok: true,
+        value: template,
+      });
+
+      const result = await service.removeTemplateImage(
+        supabaseClientMock,
+        'template-1',
+        'tenant-1'
+      );
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('FORBIDDEN');
+      }
+
+      expect(deleteImagesFromStorageMock).not.toHaveBeenCalled();
+    });
+
+    it('should handle update failures', async () => {
+      const template = createTemplateWithItemsMock({
+        thumbnail_url: 'https://cdn.supabase.co/storage/v1/object/public/task-template-images/tenant-1/template-1/thumb.jpg',
+      });
+
+      mockTemplateRepo.findByIdWithItems = jest.fn().mockResolvedValue({
+        ok: true,
+        value: template,
+      });
+
+      const repoError = { code: 'UPDATE_FAILED', message: 'DB error' };
+
+      mockTemplateRepo.updateImageUrls = jest.fn().mockResolvedValue({
+        ok: false,
+        error: repoError,
+      });
+
+      const result = await service.removeTemplateImage(
+        supabaseClientMock,
+        'template-1',
+        'tenant-1'
+      );
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('IMAGE_UPDATE_FAILED');
       }
     });
   });

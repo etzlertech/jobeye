@@ -5,7 +5,7 @@
  */
 
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
-import { TaskStatus } from '@/domains/workflow-task/types/workflow-task-types';
+import { TaskStatus, VerificationMethod } from '@/domains/workflow-task/types/workflow-task-types';
 import type { TaskTemplateItem } from '@/domains/task-template/types/task-template-types';
 
 // Mock Supabase client
@@ -34,6 +34,7 @@ const mockSupabaseClient = () => {
 
   mockSelect.mockReturnValue({
     eq: mockEq,
+    single: mockSingle,
   });
 
   mockInsert.mockReturnValue({
@@ -319,7 +320,13 @@ describe('WorkflowTaskRepository', () => {
         Promise.resolve({ data: createdTasks, error: null })
       );
 
-      const result = await repo.createFromTemplate('job-1', templateItems);
+      const templateImages = {
+        thumbnail_url: 'thumb-url',
+        medium_url: 'medium-url',
+        primary_image_url: 'primary-url',
+      };
+
+      const result = await repo.createFromTemplate('job-1', templateItems, templateImages);
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -341,6 +348,9 @@ describe('WorkflowTaskRepository', () => {
             template_id: 'template-1',
             status: TaskStatus.PENDING,
             is_deleted: false,
+            thumbnail_url: templateImages.thumbnail_url,
+            medium_url: templateImages.medium_url,
+            primary_image_url: templateImages.primary_image_url,
           }),
         ])
       );
@@ -391,6 +401,103 @@ describe('WorkflowTaskRepository', () => {
       if (!result.ok) {
         expect(result.error.code).toBe('INSERT_FAILED');
         expect(result.error.message).toContain('Failed to create tasks from template');
+      }
+    });
+  });
+
+  describe('updateImageUrls', () => {
+    it('should update task image URLs', async () => {
+      const client = mockSupabaseClient();
+      const repo = new WorkflowTaskRepository(client as any);
+
+      const imageUrls = {
+        thumbnail_url: 'https://cdn.example.com/thumb.jpg',
+        medium_url: 'https://cdn.example.com/medium.jpg',
+        primary_image_url: 'https://cdn.example.com/full.jpg',
+      };
+
+      const updatedTask = {
+        id: 'task-1',
+        tenant_id: 'tenant-1',
+        job_id: 'job-1',
+        task_description: 'Test task',
+        task_order: 0,
+        status: TaskStatus.PENDING,
+        is_required: true,
+        is_deleted: false,
+        template_id: null,
+        requires_photo_verification: false,
+        requires_supervisor_approval: false,
+        verification_photo_url: null,
+        ai_confidence: null,
+        verification_method: VerificationMethod.MANUAL,
+        verification_data: null,
+        acceptance_criteria: null,
+        requires_supervisor_review: null,
+        supervisor_approved: null,
+        supervisor_notes: null,
+        completed_by: null,
+        completed_at: null,
+        user_id: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...imageUrls,
+      };
+
+      client._mocks.single.mockReturnValueOnce(
+        Promise.resolve({ data: updatedTask, error: null })
+      );
+
+      const result = await repo.updateImageUrls('task-1', imageUrls);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.primary_image_url).toBe(imageUrls.primary_image_url);
+      }
+
+      expect(client._mocks.update).toHaveBeenCalledWith(expect.objectContaining(imageUrls));
+      expect(client._mocks.eq).toHaveBeenCalledWith('id', 'task-1');
+    });
+
+    it('should return NOT_FOUND when task is missing', async () => {
+      const client = mockSupabaseClient();
+      const repo = new WorkflowTaskRepository(client as any);
+
+      client._mocks.single.mockReturnValueOnce(
+        Promise.resolve({ data: null, error: { code: 'PGRST116', message: 'No rows' } })
+      );
+
+      const result = await repo.updateImageUrls('missing-task', {
+        thumbnail_url: null,
+        medium_url: null,
+        primary_image_url: null,
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('NOT_FOUND');
+      }
+    });
+
+    it('should handle update errors', async () => {
+      const client = mockSupabaseClient();
+      const repo = new WorkflowTaskRepository(client as any);
+
+      const dbError = { code: '23514', message: 'constraint violation' };
+      client._mocks.single.mockReturnValueOnce(
+        Promise.resolve({ data: null, error: dbError })
+      );
+
+      const result = await repo.updateImageUrls('task-1', {
+        thumbnail_url: null,
+        medium_url: null,
+        primary_image_url: null,
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('UPDATE_FAILED');
+        expect(result.error.message).toContain('Failed to update task images');
       }
     });
   });

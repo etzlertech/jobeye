@@ -1,10 +1,10 @@
 // --- AGENT DIRECTIVE BLOCK ---
 // file: /src/domains/task-template/repositories/TaskTemplateRepository.ts
-// phase: 3.3
+// phase: 3.4
 // domain: task-template
 // purpose: Task template data access with tenant isolation and template management
-// spec_ref: specs/011-making-task-lists/spec.md
-// version: 2025-10-18
+// spec_ref: specs/013-lets-plan-to/spec.md
+// version: 2025-10-20
 // complexity_budget: 300 LoC
 // offline_capability: NOT_REQUIRED
 //
@@ -46,6 +46,7 @@ import {
   CreateTemplateSchema,
   CreateTemplateItemSchema,
   UpdateTemplateSchema,
+  TemplateImageUrls,
   RepositoryError,
   Result,
   Ok,
@@ -218,6 +219,51 @@ export class TaskTemplateRepository {
           details: err.errors,
         });
       }
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Update image URLs for a template
+   */
+  async updateImageUrls(
+    templateId: string,
+    imageUrls: TemplateImageUrls
+  ): Promise<Result<TaskTemplate, RepositoryError>> {
+    try {
+      const { data, error } = await this.client
+        .from('task_templates')
+        .update({
+          thumbnail_url: imageUrls.thumbnail_url,
+          medium_url: imageUrls.medium_url,
+          primary_image_url: imageUrls.primary_image_url,
+        })
+        .eq('id', templateId)
+        .select('*')
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return Err({
+            code: 'NOT_FOUND',
+            message: 'Template not found',
+            details: error,
+          });
+        }
+
+        return Err({
+          code: 'UPDATE_FAILED',
+          message: `Failed to update template images: ${error.message}`,
+          details: error,
+        });
+      }
+
+      return Ok(data as TaskTemplate);
+    } catch (err: any) {
       return Err({
         code: 'UNEXPECTED_ERROR',
         message: err.message,

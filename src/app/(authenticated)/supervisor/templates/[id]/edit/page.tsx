@@ -9,6 +9,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
+import { TaskImageUpload } from '@/components/tasks/TaskImageUpload';
+import type { ProcessedImages } from '@/utils/image-processor';
 import {
   ArrowLeft,
   Plus,
@@ -17,7 +19,9 @@ import {
   AlertCircle,
   X,
   Loader2,
-  Save
+  Save,
+  Camera,
+  Image as ImageIcon
 } from 'lucide-react';
 
 interface TemplateItemInput {
@@ -39,6 +43,7 @@ export default function EditTemplatePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // Form state
   const [name, setName] = useState('');
@@ -46,6 +51,13 @@ export default function EditTemplatePage() {
   const [jobType, setJobType] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [items, setItems] = useState<TemplateItemInput[]>([]);
+
+  // Image upload state
+  const [showImageUpload, setShowImageUpload] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [mediumUrl, setMediumUrl] = useState<string | null>(null);
+  const [primaryImageUrl, setPrimaryImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (templateId) {
@@ -68,6 +80,11 @@ export default function EditTemplatePage() {
       setDescription(template.description || '');
       setJobType(template.job_type || '');
       setIsActive(template.is_active ?? true);
+
+      // Load image URLs
+      setThumbnailUrl(template.thumbnail_url || null);
+      setMediumUrl(template.medium_url || null);
+      setPrimaryImageUrl(template.primary_image_url || null);
 
       // Load items with tempId for React keys
       const loadedItems: TemplateItemInput[] = (template.items || []).map((item: any) => ({
@@ -136,6 +153,76 @@ export default function EditTemplatePage() {
     });
 
     setItems(newItems);
+  };
+
+  const handleImageCapture = async (images: ProcessedImages) => {
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/task-templates/${templateId}/image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ images })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload image');
+      }
+
+      // Update image URLs from response
+      if (data.template) {
+        setThumbnailUrl(data.template.thumbnail_url || null);
+        setMediumUrl(data.template.medium_url || null);
+        setPrimaryImageUrl(data.template.primary_image_url || null);
+      }
+
+      setSuccess('Image uploaded successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+      setShowImageUpload(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload image');
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleImageRemove = async () => {
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/task-templates/${templateId}/image`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || 'Failed to remove image');
+      }
+
+      const template = data.template;
+      setThumbnailUrl(template?.thumbnail_url || null);
+      setMediumUrl(template?.medium_url || null);
+      setPrimaryImageUrl(template?.primary_image_url || null);
+
+      setSuccess('Image removed successfully');
+      setTimeout(() => setSuccess(null), 3000);
+      setShowImageUpload(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove image');
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -253,9 +340,68 @@ export default function EditTemplatePage() {
         </div>
       )}
 
+      {/* Success Notification */}
+      {success && (
+        <div className="notification-bar success">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{success}</span>
+        </div>
+      )}
+
       {/* Form Content */}
       <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
         <div className="p-4 space-y-6">
+          {/* Template Image */}
+          <div className="form-section">
+            <h2 className="section-title">Template Image</h2>
+
+            <div className="image-container">
+              {mediumUrl || primaryImageUrl ? (
+                <img
+                  src={mediumUrl || primaryImageUrl || ''}
+                  alt={name || 'Template'}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <ImageIcon className="w-16 h-16 text-gray-600" />
+                </div>
+              )}
+            </div>
+
+            {/* Image Upload Toggle */}
+            {showImageUpload ? (
+              <div className="mt-4 space-y-3">
+                <TaskImageUpload
+                  onImageCapture={handleImageCapture}
+                  currentImageUrl={mediumUrl || primaryImageUrl || undefined}
+                  disabled={isUploading}
+                  label="Upload Template Image"
+                  helperText="Capture a photo or upload a JPEG/PNG. Images are stored for this template only."
+                  onRemove={primaryImageUrl || mediumUrl ? handleImageRemove : undefined}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowImageUpload(false)}
+                  disabled={isUploading}
+                  className="btn-secondary w-full"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowImageUpload(true)}
+                className="btn-primary w-full mt-3"
+                disabled={isSubmitting}
+              >
+                <Camera className="w-5 h-5 mr-2" />
+                {primaryImageUrl ? 'Change Image' : 'Add Image'}
+              </button>
+            )}
+          </div>
+
           {/* Template Metadata */}
           <div className="form-section">
             <h2 className="section-title">Template Details</h2>
@@ -531,6 +677,21 @@ export default function EditTemplatePage() {
           background: rgba(239, 68, 68, 0.1);
           border: 1px solid rgba(239, 68, 68, 0.3);
           color: #fca5a5;
+        }
+
+        .notification-bar.success {
+          background: rgba(255, 215, 0, 0.1);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          color: #FFD700;
+        }
+
+        .image-container {
+          width: 100%;
+          height: 300px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.75rem;
+          overflow: hidden;
         }
 
         .form-section {

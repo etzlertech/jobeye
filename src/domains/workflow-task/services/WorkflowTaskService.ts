@@ -1,10 +1,10 @@
 // --- AGENT DIRECTIVE BLOCK ---
 // file: /src/domains/workflow-task/services/WorkflowTaskService.ts
-// phase: 3.4
+// phase: 3.5
 // domain: workflow-task
 // purpose: Business logic for workflow task operations and job completion validation
-// spec_ref: specs/011-making-task-lists/spec.md
-// version: 2025-10-18
+// spec_ref: specs/013-lets-plan-to/spec.md
+// version: 2025-10-20
 // complexity_budget: 300 LoC
 // offline_capability: REQUIRED
 //
@@ -34,6 +34,7 @@
 //   3. Add error handling and validation
 // --- END DIRECTIVE BLOCK ---
 
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { WorkflowTaskRepository } from '../repositories/WorkflowTaskRepository';
 import {
   WorkflowTask,
@@ -45,7 +46,22 @@ import {
   Ok,
   Err,
   validateTaskCompletion,
+  WorkflowTaskImageUrls,
 } from '../types/workflow-task-types';
+import type { ProcessedImages } from '@/utils/image-processor';
+import {
+  uploadImagesToStorage,
+  deleteImagesFromStorage,
+} from '@/lib/supabase/storage';
+
+const TASK_IMAGE_BUCKET = 'task-images';
+const getStoragePath = (url: string | null | undefined, bucket: string): string | null => {
+  if (!url) return null;
+  const marker = `${bucket}/`;
+  const index = url.indexOf(marker);
+  if (index === -1) return null;
+  return url.substring(index + marker.length);
+};
 
 export interface VerificationInput {
   photoUrl?: string;
@@ -207,6 +223,165 @@ export class WorkflowTaskService {
       }
 
       return Ok(result.value);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Upload and persist workflow task images
+   */
+  async uploadTaskImage(
+    supabaseClient: SupabaseClient,
+    taskId: string,
+    tenantId: string,
+    processedImages: ProcessedImages,
+    bucketName = TASK_IMAGE_BUCKET
+  ): Promise<Result<WorkflowTask, ServiceError>> {
+    try {
+      const taskResult = await this.repo.findById(taskId);
+
+      if (!taskResult.ok) {
+        return Err({
+          code: 'TASK_FETCH_FAILED',
+          message: 'Failed to fetch task',
+          details: taskResult.error,
+        });
+      }
+
+      const task = taskResult.value;
+
+      if (!task) {
+        return Err({
+          code: 'TASK_NOT_FOUND',
+          message: 'Task not found',
+        });
+      }
+
+      if (task.tenant_id !== tenantId) {
+        return Err({
+          code: 'FORBIDDEN',
+          message: 'Task does not belong to the current tenant',
+        });
+      }
+
+      let uploadResult: { urls: WorkflowTaskImageUrls; paths: { thumbnail: string; medium: string; full: string } };
+
+      try {
+        uploadResult = await uploadImagesToStorage(
+          supabaseClient,
+          bucketName,
+          taskId,
+          tenantId,
+          processedImages
+        );
+      } catch (uploadError: any) {
+        return Err({
+          code: 'IMAGE_UPLOAD_FAILED',
+          message: uploadError.message || 'Failed to upload task images',
+          details: uploadError,
+        });
+      }
+
+      const updateResult = await this.repo.updateImageUrls(taskId, uploadResult.urls);
+
+      if (!updateResult.ok) {
+        try {
+          await deleteImagesFromStorage(
+            supabaseClient,
+            bucketName,
+            Object.values(uploadResult.paths)
+          );
+        } catch (cleanupError) {
+          console.error('Failed to cleanup uploaded task images', cleanupError);
+        }
+
+        return Err({
+          code: 'IMAGE_UPDATE_FAILED',
+          message: 'Failed to persist task image URLs',
+          details: updateResult.error,
+        });
+      }
+
+      return Ok(updateResult.value);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Remove task image (clear URLs and delete stored files when possible)
+   */
+  async removeTaskImage(
+    supabaseClient: SupabaseClient,
+    taskId: string,
+    tenantId: string,
+    bucketName = TASK_IMAGE_BUCKET
+  ): Promise<Result<WorkflowTask, ServiceError>> {
+    try {
+      const taskResult = await this.repo.findById(taskId);
+
+      if (!taskResult.ok) {
+        return Err({
+          code: 'TASK_FETCH_FAILED',
+          message: 'Failed to fetch task',
+          details: taskResult.error,
+        });
+      }
+
+      const task = taskResult.value;
+
+      if (!task) {
+        return Err({
+          code: 'TASK_NOT_FOUND',
+          message: 'Task not found',
+        });
+      }
+
+      if (task.tenant_id !== tenantId) {
+        return Err({
+          code: 'FORBIDDEN',
+          message: 'Task does not belong to the current tenant',
+        });
+      }
+
+      const storagePaths = [
+        getStoragePath(task.thumbnail_url, bucketName),
+        getStoragePath(task.medium_url, bucketName),
+        getStoragePath(task.primary_image_url, bucketName),
+      ].filter((path): path is string => Boolean(path));
+
+      if (storagePaths.length > 0) {
+        try {
+          await deleteImagesFromStorage(supabaseClient, bucketName, storagePaths);
+        } catch (cleanupError) {
+          console.error('Failed to delete task images from storage', cleanupError);
+        }
+      }
+
+      const updateResult = await this.repo.updateImageUrls(taskId, {
+        thumbnail_url: null,
+        medium_url: null,
+        primary_image_url: null,
+      });
+
+      if (!updateResult.ok) {
+        return Err({
+          code: 'IMAGE_UPDATE_FAILED',
+          message: 'Failed to clear task image URLs',
+          details: updateResult.error,
+        });
+      }
+
+      return Ok(updateResult.value);
     } catch (err: any) {
       return Err({
         code: 'UNEXPECTED_ERROR',

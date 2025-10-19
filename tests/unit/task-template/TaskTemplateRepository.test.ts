@@ -635,6 +635,88 @@ describe('TaskTemplateRepository', () => {
     });
   });
 
+  describe('updateImageUrls', () => {
+    it('should update template image URLs', async () => {
+      const client = mockSupabaseClient();
+      const repo = new TaskTemplateRepository(client as any);
+
+      const imageUrls = {
+        thumbnail_url: 'https://cdn.example.com/thumb.jpg',
+        medium_url: 'https://cdn.example.com/medium.jpg',
+        primary_image_url: 'https://cdn.example.com/full.jpg',
+      };
+
+      const updatedTemplate = {
+        id: 'template-1',
+        tenant_id: 'tenant-1',
+        name: 'Template',
+        description: null,
+        job_type: null,
+        is_active: true,
+        created_by: 'user-1',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...imageUrls,
+      };
+
+      client._mocks.single.mockReturnValueOnce(
+        Promise.resolve({ data: updatedTemplate, error: null })
+      );
+
+      const result = await repo.updateImageUrls('template-1', imageUrls);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.primary_image_url).toBe(imageUrls.primary_image_url);
+      }
+
+      expect(client._mocks.update).toHaveBeenCalledWith(expect.objectContaining(imageUrls));
+      expect(client._mocks.eq).toHaveBeenCalledWith('id', 'template-1');
+    });
+
+    it('should return NOT_FOUND when template is missing', async () => {
+      const client = mockSupabaseClient();
+      const repo = new TaskTemplateRepository(client as any);
+
+      client._mocks.single.mockReturnValueOnce(
+        Promise.resolve({ data: null, error: { code: 'PGRST116', message: 'No rows' } })
+      );
+
+      const result = await repo.updateImageUrls('missing-template', {
+        thumbnail_url: null,
+        medium_url: null,
+        primary_image_url: null,
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('NOT_FOUND');
+      }
+    });
+
+    it('should handle update errors', async () => {
+      const client = mockSupabaseClient();
+      const repo = new TaskTemplateRepository(client as any);
+
+      const dbError = { code: '23514', message: 'constraint violation' };
+      client._mocks.single.mockReturnValueOnce(
+        Promise.resolve({ data: null, error: dbError })
+      );
+
+      const result = await repo.updateImageUrls('template-1', {
+        thumbnail_url: null,
+        medium_url: null,
+        primary_image_url: null,
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('UPDATE_FAILED');
+        expect(result.error.message).toContain('Failed to update template images');
+      }
+    });
+  });
+
   describe('isTemplateInUse', () => {
     it('should return true when template is referenced by tasks', async () => {
       const client = mockSupabaseClient();

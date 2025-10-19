@@ -1,3 +1,5 @@
+'use client';
+
 /*
 AGENT DIRECTIVE BLOCK
 file: /src/app/(authenticated)/supervisor/jobs/_components/TaskList.tsx
@@ -28,6 +30,7 @@ export interface TaskListProps {
   onDelete?: (taskId: string) => void;
   onReorder?: (taskId: string, direction: 'up' | 'down') => void;
   onStatusChange?: (taskId: string, status: TaskStatus) => void;
+  onViewDetails?: (task: WorkflowTask) => void;
 }
 
 export function TaskList({
@@ -36,7 +39,8 @@ export function TaskList({
   onEdit,
   onDelete,
   onReorder,
-  onStatusChange
+  onStatusChange,
+  onViewDetails,
 }: TaskListProps) {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
@@ -165,6 +169,15 @@ export function TaskList({
                 {/* Actions (only if editable) */}
                 {editable && (
                   <div className="task-actions">
+                    {onViewDetails && (
+                      <button
+                        type="button"
+                        onClick={() => onViewDetails(task)}
+                        className="action-btn"
+                      >
+                        View
+                      </button>
+                    )}
                     {onReorder && (
                       <div className="task-reorder-buttons">
                         <button

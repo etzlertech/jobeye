@@ -21,7 +21,8 @@ import {
   AlertCircle,
   X,
   ArrowLeft,
-  ListChecks
+  ListChecks,
+  Image as ImageIcon
 } from 'lucide-react';
 
 interface TaskTemplate {
@@ -32,6 +33,9 @@ interface TaskTemplate {
   is_active: boolean;
   created_at: string;
   items?: Array<{ id: string }>;
+  thumbnail_url?: string | null;
+  medium_url?: string | null;
+  primary_image_url?: string | null;
 }
 
 export default function TemplatesPage() {
@@ -214,6 +218,24 @@ export default function TemplatesPage() {
                   <div className="space-y-3">
                     {activeTemplates.map((template) => (
                       <div key={template.id} className="template-card">
+                        {/* Template Thumbnail */}
+                        <div
+                          className="template-thumbnail cursor-pointer"
+                          onClick={() => router.push(`/supervisor/templates/${template.id}/edit`)}
+                        >
+                          {template.thumbnail_url ? (
+                            <img
+                              src={template.thumbnail_url}
+                              alt={template.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-full">
+                              <ImageIcon className="w-6 h-6 text-gray-600" />
+                            </div>
+                          )}
+                        </div>
+
                         <div
                           className="flex-1 cursor-pointer"
                           onClick={() => router.push(`/supervisor/templates/${template.id}/edit`)}
@@ -281,6 +303,24 @@ export default function TemplatesPage() {
                   <div className="space-y-3">
                     {inactiveTemplates.map((template) => (
                       <div key={template.id} className="template-card inactive">
+                        {/* Template Thumbnail */}
+                        <div
+                          className="template-thumbnail cursor-pointer"
+                          onClick={() => router.push(`/supervisor/templates/${template.id}/edit`)}
+                        >
+                          {template.thumbnail_url ? (
+                            <img
+                              src={template.thumbnail_url}
+                              alt={template.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-full">
+                              <ImageIcon className="w-6 h-6 text-gray-600" />
+                            </div>
+                          )}
+                        </div>
+
                         <div
                           className="flex-1 cursor-pointer"
                           onClick={() => router.push(`/supervisor/templates/${template.id}/edit`)}
@@ -483,6 +523,16 @@ export default function TemplatesPage() {
 
         .template-card.inactive {
           opacity: 0.6;
+        }
+
+        .template-thumbnail {
+          width: 60px;
+          height: 60px;
+          flex-shrink: 0;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.375rem;
+          overflow: hidden;
         }
 
         .status-badge {

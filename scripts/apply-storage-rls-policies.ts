@@ -1,97 +1,110 @@
-#!/usr/bin/env npx tsx
-/**
- * @file apply-storage-rls-policies.ts
- * @purpose Apply RLS policies for verification-photos bucket
- * @usage: npx tsx scripts/apply-storage-rls-policies.ts
- */
+#!/usr/bin/env node
 
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
+import * as fs from 'fs';
+import * as path from 'path';
 
-dotenv.config({ path: '.env.local' });
+const DATABASE_URL = process.env.SUPABASE_DB_URL || 'postgresql://postgres.rtwigjwqufozqfwozpvo:Duke-neepo-oliver-ttq5@aws-0-us-east-1.pooler.supabase.com:6543/postgres';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+async function checkPolicyExists(client: any, policyName: string): Promise<boolean> {
+  const result = await client.query(`
+    SELECT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE policyname = $1
+      AND schemaname = 'storage'
+      AND tablename = 'objects'
+    );
+  `, [policyName]);
 
-async function applyRLSPolicies() {
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-  console.log('🔧 Applying RLS policies for verification-photos bucket...\n');
-
-  const policies = [
-    {
-      name: 'Upload policy',
-      sql: `
-        CREATE POLICY "Users can upload verification photos to their company folder"
-        ON storage.objects
-        FOR INSERT
-        TO authenticated
-        WITH CHECK (
-          bucket_id = 'verification-photos'
-          AND (storage.foldername(name))[1] IN (
-            SELECT tenant_id::text
-            FROM tenant_assignments
-            WHERE user_id = auth.uid()
-              AND is_active = true
-          )
-        );
-      `,
-    },
-    {
-      name: 'Select policy',
-      sql: `
-        CREATE POLICY "Users can view verification photos from their company"
-        ON storage.objects
-        FOR SELECT
-        TO authenticated
-        USING (
-          bucket_id = 'verification-photos'
-          AND (storage.foldername(name))[1] IN (
-            SELECT tenant_id::text
-            FROM tenant_assignments
-            WHERE user_id = auth.uid()
-              AND is_active = true
-          )
-        );
-      `,
-    },
-    {
-      name: 'Delete policy',
-      sql: `
-        CREATE POLICY "Users can delete their own verification photos within 24h"
-        ON storage.objects
-        FOR DELETE
-        TO authenticated
-        USING (
-          bucket_id = 'verification-photos'
-          AND owner = auth.uid()
-          AND created_at > NOW() - INTERVAL '24 hours'
-        );
-      `,
-    },
-  ];
-
-  for (const policy of policies) {
-    try {
-      console.log(`📝 Applying ${policy.name}...`);
-      const { error } = await supabase.rpc('exec_sql', { sql: policy.sql });
-
-      if (error) {
-        // Policy might already exist
-        if (error.message.includes('already exists')) {
-          console.log(`   ⚠️  Policy already exists, skipping`);
-        } else {
-          throw error;
-        }
-      } else {
-        console.log(`   ✅ Applied successfully`);
-      }
-    } catch (error: any) {
-      console.error(`   ❌ Error:`, error.message);
-    }
-  }
-
-  console.log('\n✅ RLS policies application complete!');
+  return result.rows[0].exists;
 }
 
-applyRLSPolicies().catch(console.error);
+async function applyStorageRLSPolicies() {
+  console.log('='.repeat(60));
+  console.log('Applying Storage RLS Policies for Image Buckets');
+  console.log('Migration: 20251019000001_storage_rls_policies_for_images.sql');
+  console.log('='.repeat(60));
+
+  const { default: pg } = await import('pg');
+  const { Client } = pg;
+
+  const client = new Client({
+    connectionString: DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
+
+  try {
+    await client.connect();
+    console.log('✓ Connected to database\n');
+
+    const policies = [
+      'Users can upload template images in their tenant',
+      'Public can view template images',
+      'Users can update template images in their tenant',
+      'Users can delete template images in their tenant',
+      'Users can upload task images in their tenant',
+      'Public can view task images',
+      'Users can update task images in their tenant',
+      'Users can delete task images in their tenant'
+    ];
+
+    console.log('Current policy status:');
+    for (const policy of policies) {
+      const exists = await checkPolicyExists(client, policy);
+      console.log(`  ${policy}: ${exists ? '✓ exists' : '✗ does not exist'}`);
+    }
+
+    const migrationPath = path.join(process.cwd(), 'supabase', 'migrations', '20251019000001_storage_rls_policies_for_images.sql');
+
+    if (!fs.existsSync(migrationPath)) {
+      console.error(`✗ Migration file not found: ${migrationPath}`);
+      process.exit(1);
+    }
+
+    console.log('\nApplying RLS policies migration...');
+    const sql = fs.readFileSync(migrationPath, 'utf-8');
+
+    try {
+      await client.query(sql);
+      console.log('✓ Migration applied successfully\n');
+    } catch (error: any) {
+      if (error.message.includes('already exists')) {
+        console.log('⚠ Migration applied with warnings (some policies already exist)\n');
+      } else {
+        console.error('✗ Migration failed:', error.message);
+        throw error;
+      }
+    }
+
+    console.log('='.repeat(60));
+    console.log('Final policy status:');
+    for (const policy of policies) {
+      const exists = await checkPolicyExists(client, policy);
+      console.log(`  ${policy}: ${exists ? '✓ exists' : '✗ MISSING'}`);
+    }
+
+    const allPoliciesExist = await Promise.all(
+      policies.map(p => checkPolicyExists(client, p))
+    ).then(results => results.every(exists => exists));
+
+    console.log('\n' + '='.repeat(60));
+    if (allPoliciesExist) {
+      console.log('✓ RLS policies migration completed successfully!');
+      console.log('✓ All 8 storage policies applied (4 per bucket)');
+      console.log('\nNext steps:');
+      console.log('  1. CODEX will handle T004-T006 (Domain Layer)');
+      console.log('  2. Then continue with T007-T008 (Service Layer)');
+    } else {
+      console.error('✗ Migration incomplete - some policies missing');
+      process.exit(1);
+    }
+    console.log('='.repeat(60));
+
+  } catch (error) {
+    console.error('\n✗ Migration failed:', error);
+    process.exit(1);
+  } finally {
+    await client.end();
+  }
+}
+
+applyStorageRLSPolicies();

@@ -295,9 +295,23 @@ export function TaskList({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">
-                        {task.task_description}
-                      </h4>
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">
+                            {task.task_description}
+                          </h4>
+                        </div>
+                        {/* Template Thumbnail */}
+                        {task.thumbnail_url && (
+                          <div className="flex-shrink-0">
+                            <img
+                              src={task.thumbnail_url}
+                              alt="Task reference"
+                              className="w-12 h-12 rounded border border-gray-300 object-cover"
+                            />
+                          </div>
+                        )}
+                      </div>
 
                       {/* Badges */}
                       <div className="flex items-center gap-2 mt-1">

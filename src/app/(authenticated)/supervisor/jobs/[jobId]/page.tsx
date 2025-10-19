@@ -584,6 +584,7 @@ export default function JobDetailPage() {
                 onEdit={handleTaskEdit}
                 onDelete={handleTaskDelete}
                 onReorder={handleTaskReorder}
+                onViewDetails={(selectedTask) => router.push(`/supervisor/tasks/${selectedTask.id}`)}
               />
             )}
           </div>

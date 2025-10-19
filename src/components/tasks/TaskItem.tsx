@@ -169,6 +169,26 @@ export function TaskItem({
               </span>
             </div>
 
+            {/* Template Thumbnail */}
+            {task.thumbnail_url && (
+              <div className="mb-2">
+                <button
+                  onClick={() => onPhotoClick?.(task.primary_image_url || task.medium_url || task.thumbnail_url)}
+                  className="relative group w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-300 bg-gray-100"
+                  title="View task image"
+                >
+                  <img
+                    src={task.thumbnail_url}
+                    alt="Task reference"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
+                    <Eye className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </button>
+              </div>
+            )}
+
             {/* Badges */}
             <div className="flex flex-wrap items-center gap-1.5 mb-2">
               {task.is_required && (

@@ -1,10 +1,10 @@
 // --- AGENT DIRECTIVE BLOCK ---
 // file: /src/domains/workflow-task/repositories/WorkflowTaskRepository.ts
-// phase: 3.3
+// phase: 3.4
 // domain: workflow-task
 // purpose: Workflow task data access with tenant isolation and task management
-// spec_ref: specs/011-making-task-lists/spec.md
-// version: 2025-10-18
+// spec_ref: specs/013-lets-plan-to/spec.md
+// version: 2025-10-20
 // complexity_budget: 300 LoC
 // offline_capability: REQUIRED
 //
@@ -49,6 +49,7 @@ import {
   UpdateTaskSchema,
   TaskStatus,
   VerificationMethod,
+  WorkflowTaskImageUrls,
   RepositoryError,
   Result,
   Ok,
@@ -80,6 +81,51 @@ export class WorkflowTaskRepository {
       }
 
       return Ok(data as WorkflowTask[]);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Update image URLs for a task
+   */
+  async updateImageUrls(
+    taskId: string,
+    imageUrls: WorkflowTaskImageUrls
+  ): Promise<Result<WorkflowTask, RepositoryError>> {
+    try {
+      const { data, error } = await this.client
+        .from('workflow_tasks')
+        .update({
+          thumbnail_url: imageUrls.thumbnail_url,
+          medium_url: imageUrls.medium_url,
+          primary_image_url: imageUrls.primary_image_url,
+        })
+        .eq('id', taskId)
+        .select('*')
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return Err({
+            code: 'NOT_FOUND',
+            message: 'Task not found',
+            details: error,
+          });
+        }
+
+        return Err({
+          code: 'UPDATE_FAILED',
+          message: `Failed to update task images: ${error.message}`,
+          details: error,
+        });
+      }
+
+      return Ok(data as WorkflowTask);
     } catch (err: any) {
       return Err({
         code: 'UNEXPECTED_ERROR',
@@ -291,10 +337,12 @@ export class WorkflowTaskRepository {
 
   /**
    * Create tasks from template items
+   * Images are inherited from template as a snapshot (won't update if template changes later)
    */
   async createFromTemplate(
     jobId: string,
-    templateItems: TaskTemplateItem[]
+    templateItems: TaskTemplateItem[],
+    templateImageUrls?: WorkflowTaskImageUrls
   ): Promise<Result<WorkflowTask[], RepositoryError>> {
     try {
       const tasks = templateItems.map(item => ({
@@ -310,6 +358,10 @@ export class WorkflowTaskRepository {
         is_deleted: false,
         verification_method: VerificationMethod.MANUAL,
         task_type: 'verification',
+        // Inherit template images (snapshot approach - won't update if template changes)
+        thumbnail_url: templateImageUrls?.thumbnail_url || null,
+        medium_url: templateImageUrls?.medium_url || null,
+        primary_image_url: templateImageUrls?.primary_image_url || null,
       }));
 
       const { data, error } = await this.client

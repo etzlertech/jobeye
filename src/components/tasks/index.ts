@@ -12,3 +12,5 @@ export type { TaskItemProps } from './TaskItem';
 
 export { TaskTemplateSelector } from './TaskTemplateSelector';
 export type { TaskTemplateSelectorProps } from './TaskTemplateSelector';
+
+export { TaskImageUpload } from './TaskImageUpload';

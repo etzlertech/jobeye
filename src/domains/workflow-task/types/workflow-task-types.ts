@@ -1,10 +1,10 @@
 // --- AGENT DIRECTIVE BLOCK ---
 // file: /src/domains/workflow-task/types/workflow-task-types.ts
-// phase: 3.2
+// phase: 3.4
 // domain: workflow-task
 // purpose: Workflow task types and Zod schemas for task list feature
-// spec_ref: specs/011-making-task-lists/spec.md
-// version: 2025-10-18
+// spec_ref: specs/013-lets-plan-to/spec.md
+// version: 2025-10-20
 // complexity_budget: 300 LoC
 // offline_capability: REQUIRED
 //
@@ -87,9 +87,21 @@ export interface WorkflowTask {
   completed_at: string | null;
   user_id: string | null;
 
+  // Image references
+  thumbnail_url: string | null;
+  medium_url: string | null;
+  primary_image_url: string | null;
+
   // Timestamps
   created_at: string;
   updated_at: string;
+}
+
+// Bundle type for task image URLs
+export interface WorkflowTaskImageUrls {
+  thumbnail_url: string | null;
+  medium_url: string | null;
+  primary_image_url: string | null;
 }
 
 // Zod Schemas
@@ -123,6 +135,7 @@ export const UpdateTaskSchema = z.object({
 // Type Exports
 export type CreateTaskInput = z.infer<typeof CreateTaskSchema>;
 export type UpdateTaskInput = z.infer<typeof UpdateTaskSchema>;
+export type WorkflowTaskImageUrlsInput = WorkflowTaskImageUrls;
 
 // Type Guards
 export const isTaskStatus = (value: string): value is TaskStatus => {

@@ -1,10 +1,10 @@
 // --- AGENT DIRECTIVE BLOCK ---
 // file: /src/domains/task-template/services/TaskTemplateService.ts
-// phase: 3.4
+// phase: 3.5
 // domain: task-template
 // purpose: Business logic for task template operations and instantiation
-// spec_ref: specs/011-making-task-lists/spec.md
-// version: 2025-10-18
+// spec_ref: specs/013-lets-plan-to/spec.md
+// version: 2025-10-20
 // complexity_budget: 300 LoC
 // offline_capability: NOT_REQUIRED
 //
@@ -30,16 +30,34 @@
 //   3. Add error handling
 // --- END DIRECTIVE BLOCK ---
 
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { TaskTemplateRepository } from '../repositories/TaskTemplateRepository';
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
 import {
   TemplateWithItems,
+  TaskTemplate,
   ServiceError,
   Result,
   Ok,
   Err,
+  TemplateImageUrls,
 } from '../types/task-template-types';
 import type { WorkflowTask } from '@/domains/workflow-task/types/workflow-task-types';
+import type { ProcessedImages } from '@/utils/image-processor';
+import {
+  uploadImagesToStorage,
+  deleteImagesFromStorage,
+} from '@/lib/supabase/storage';
+
+const TEMPLATE_IMAGE_BUCKET = 'task-template-images';
+
+const getStoragePath = (url: string | null | undefined, bucket: string): string | null => {
+  if (!url) return null;
+  const marker = `${bucket}/`;
+  const index = url.indexOf(marker);
+  if (index === -1) return null;
+  return url.substring(index + marker.length);
+};
 
 export class TaskTemplateService {
   constructor(
@@ -96,8 +114,18 @@ export class TaskTemplateService {
         console.warn(`Job ${jobId} already has ${existingTasksResult.value.length} tasks. Adding template tasks.`);
       }
 
-      // Create tasks from template
-      const createResult = await this.taskRepo.createFromTemplate(jobId, template.items);
+      // Create tasks from template (with image inheritance)
+      const templateImageUrls = {
+        thumbnail_url: template.thumbnail_url,
+        medium_url: template.medium_url,
+        primary_image_url: template.primary_image_url,
+      };
+
+      const createResult = await this.taskRepo.createFromTemplate(
+        jobId,
+        template.items,
+        templateImageUrls
+      );
 
       if (!createResult.ok) {
         return Err({
@@ -195,6 +223,165 @@ export class TaskTemplateService {
       }
 
       return Ok(result.value);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Upload and persist template images
+   */
+  async uploadTemplateImage(
+    supabaseClient: SupabaseClient,
+    templateId: string,
+    tenantId: string,
+    processedImages: ProcessedImages,
+    bucketName = TEMPLATE_IMAGE_BUCKET
+  ): Promise<Result<TaskTemplate, ServiceError>> {
+    try {
+      const templateResult = await this.templateRepo.findByIdWithItems(templateId);
+
+      if (!templateResult.ok) {
+        return Err({
+          code: 'TEMPLATE_FETCH_FAILED',
+          message: 'Failed to fetch template',
+          details: templateResult.error,
+        });
+      }
+
+      const template = templateResult.value;
+
+      if (!template) {
+        return Err({
+          code: 'TEMPLATE_NOT_FOUND',
+          message: 'Template not found',
+        });
+      }
+
+      if (template.tenant_id !== tenantId) {
+        return Err({
+          code: 'FORBIDDEN',
+          message: 'Template does not belong to the current tenant',
+        });
+      }
+
+      let uploadResult: { urls: TemplateImageUrls; paths: { thumbnail: string; medium: string; full: string } };
+
+      try {
+        uploadResult = await uploadImagesToStorage(
+          supabaseClient,
+          bucketName,
+          templateId,
+          tenantId,
+          processedImages
+        );
+      } catch (uploadError: any) {
+        return Err({
+          code: 'IMAGE_UPLOAD_FAILED',
+          message: uploadError.message || 'Failed to upload template images',
+          details: uploadError,
+        });
+      }
+
+      const updateResult = await this.templateRepo.updateImageUrls(templateId, uploadResult.urls);
+
+      if (!updateResult.ok) {
+        try {
+          await deleteImagesFromStorage(
+            supabaseClient,
+            bucketName,
+            Object.values(uploadResult.paths)
+          );
+        } catch (cleanupError) {
+          console.error('Failed to cleanup uploaded template images', cleanupError);
+        }
+
+        return Err({
+          code: 'IMAGE_UPDATE_FAILED',
+          message: 'Failed to persist template image URLs',
+          details: updateResult.error,
+        });
+      }
+
+      return Ok(updateResult.value);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Remove template images (set URLs to null and delete stored files when possible)
+   */
+  async removeTemplateImage(
+    supabaseClient: SupabaseClient,
+    templateId: string,
+    tenantId: string,
+    bucketName = TEMPLATE_IMAGE_BUCKET
+  ): Promise<Result<TaskTemplate, ServiceError>> {
+    try {
+      const templateResult = await this.templateRepo.findByIdWithItems(templateId);
+
+      if (!templateResult.ok) {
+        return Err({
+          code: 'TEMPLATE_FETCH_FAILED',
+          message: 'Failed to fetch template',
+          details: templateResult.error,
+        });
+      }
+
+      const template = templateResult.value;
+
+      if (!template) {
+        return Err({
+          code: 'TEMPLATE_NOT_FOUND',
+          message: 'Template not found',
+        });
+      }
+
+      if (template.tenant_id !== tenantId) {
+        return Err({
+          code: 'FORBIDDEN',
+          message: 'Template does not belong to the current tenant',
+        });
+      }
+
+      const storagePaths = [
+        getStoragePath(template.thumbnail_url, bucketName),
+        getStoragePath(template.medium_url, bucketName),
+        getStoragePath(template.primary_image_url, bucketName),
+      ].filter((path): path is string => Boolean(path));
+
+      if (storagePaths.length > 0) {
+        try {
+          await deleteImagesFromStorage(supabaseClient, bucketName, storagePaths);
+        } catch (cleanupError) {
+          console.error('Failed to delete template images from storage', cleanupError);
+        }
+      }
+
+      const updateResult = await this.templateRepo.updateImageUrls(templateId, {
+        thumbnail_url: null,
+        medium_url: null,
+        primary_image_url: null,
+      });
+
+      if (!updateResult.ok) {
+        return Err({
+          code: 'IMAGE_UPDATE_FAILED',
+          message: 'Failed to clear template image URLs',
+          details: updateResult.error,
+        });
+      }
+
+      return Ok(updateResult.value);
     } catch (err: any) {
       return Err({
         code: 'UNEXPECTED_ERROR',
