@@ -28,7 +28,7 @@ import {
   Plus
 } from 'lucide-react';
 
-interface ChecklistItem {
+interface AssignedItem {
   id: string;
   item_id: string;
   status: string;
@@ -49,7 +49,7 @@ interface Assignment {
   };
 }
 
-interface JobDetails {
+interface WorkOrderDetails {
   id: string;
   job_number: string;
   title: string;
@@ -65,7 +65,7 @@ interface JobDetails {
   property?: { name: string; address?: any };
   created_at: string;
   updated_at?: string;
-  checklist_items?: ChecklistItem[];
+  checklist_items?: AssignedItem[]; // Returned from API as checklist_items, represents assigned tools/materials
   total_items?: number;
   loaded_items?: number;
   verified_items?: number;
@@ -92,7 +92,7 @@ export default function JobDetailPage() {
   const params = useParams();
   const jobId = params?.jobId as string;
 
-  const [job, setJob] = useState<JobDetails | null>(null);
+  const [job, setJob] = useState<WorkOrderDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -339,7 +339,7 @@ export default function JobDetailPage() {
       {/* Header */}
       <div className="header-bar">
         <div>
-          <h1 className="text-xl font-semibold">Job Details</h1>
+          <h1 className="text-xl font-semibold">Work Order Details</h1>
           <p className="text-xs text-gray-500">#{job.job_number}</p>
         </div>
       </div>
@@ -589,23 +589,23 @@ export default function JobDetailPage() {
             )}
           </div>
 
-          {/* Load List Items */}
+          {/* Required Tools & Materials */}
           {job.checklist_items && job.checklist_items.length > 0 && (
             <div className="detail-section">
-              <h3 className="detail-section-title">Load List ({job.loaded_items || 0}/{job.total_items || 0})</h3>
+              <h3 className="detail-section-title">Required Tools & Materials ({job.loaded_items || 0}/{job.total_items || 0})</h3>
               <div className="load-items-grid">
                 {job.checklist_items
                   .filter(item => item.status !== 'missing')
-                  .map((checklistItem) => (
+                  .map((assignedItem) => (
                   <div
-                    key={checklistItem.id}
-                    className={`load-item-card ${checklistItem.status}`}
+                    key={assignedItem.id}
+                    className={`load-item-card ${assignedItem.status}`}
                   >
-                    {checklistItem.item.primary_image_url ? (
+                    {assignedItem.item.primary_image_url ? (
                       <div className="load-item-image">
                         <img
-                          src={checklistItem.item.primary_image_url}
-                          alt={checklistItem.item.name}
+                          src={assignedItem.item.primary_image_url}
+                          alt={assignedItem.item.name}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -615,12 +615,12 @@ export default function JobDetailPage() {
                       </div>
                     )}
                     <div className="load-item-content">
-                      <div className="load-item-name">{checklistItem.item.name}</div>
-                      <div className="load-item-category">{checklistItem.item.category}</div>
-                      <div className={`load-item-status status-${checklistItem.status}`}>
-                        {checklistItem.status === 'verified' && '✓ Verified'}
-                        {checklistItem.status === 'loaded' && '✓ Loaded'}
-                        {checklistItem.status === 'pending' && '○ Pending'}
+                      <div className="load-item-name">{assignedItem.item.name}</div>
+                      <div className="load-item-category">{assignedItem.item.category}</div>
+                      <div className={`load-item-status status-${assignedItem.status}`}>
+                        {assignedItem.status === 'verified' && '✓ Verified'}
+                        {assignedItem.status === 'loaded' && '✓ Assigned'}
+                        {assignedItem.status === 'pending' && '○ Pending'}
                       </div>
                     </div>
                   </div>

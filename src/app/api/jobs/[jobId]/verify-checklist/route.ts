@@ -3,7 +3,7 @@
  * file: src/app/api/jobs/[jobId]/verify-checklist/route.ts
  * phase: 4
  * domain: job
- * purpose: API endpoint for verifying job checklist with vision
+ * purpose: API endpoint for verifying required tools/materials with vision
  * spec_ref: v4-vision-blueprint-extended.md
  * complexity_budget: 150
  * dependencies:
@@ -17,6 +17,7 @@
  * test_requirements:
  *   - coverage: 90%
  *   - test_file: src/app/api/jobs/[jobId]/verify-checklist/__tests__/route.test.ts
+ * note: Route name preserved for backward compatibility; verifies required tools/materials for work orders
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -44,9 +45,9 @@ export async function POST(
     
     if (authError || !user) {
       return NextResponse.json(
-        { 
+        {
           error: 'Unauthorized',
-          voice_response: 'Please sign in to verify checklist'
+          voice_response: 'Please sign in to verify required items'
         },
         { status: 401 }
       );
@@ -120,7 +121,7 @@ export async function POST(
     });
 
     // Log verification
-    await logger.info('Checklist verification completed', {
+    await logger.info('Required items verification completed', {
       jobId,
       verificationId: result.verification_id,
       completionPercentage: result.completion_percentage,
@@ -141,12 +142,12 @@ export async function POST(
     });
 
   } catch (error) {
-    await logger.error('Failed to verify checklist', error as Error, { jobId });
-    
+    await logger.error('Failed to verify required items', error as Error, { jobId });
+
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
-        message: 'Failed to verify checklist',
+        message: 'Failed to verify required items',
         voice_response: 'Sorry, verification failed. Please try again.'
       },
       { status: 500 }

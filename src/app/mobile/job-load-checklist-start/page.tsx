@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import TenantBadge from '@/components/tenant/TenantBadge';
 
-interface ChecklistItem {
+interface RequiredItem {
   id: string;
   name: string;
   icon: string;
@@ -28,7 +28,7 @@ export default function JobLoadChecklistStartPage() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [detectionStatus, setDetectionStatus] = useState<string>('Waiting to start...');
-  const [checklist, setChecklist] = useState<ChecklistItem[]>([
+  const [requiredItems, setRequiredItems] = useState<RequiredItem[]>([
     { id: '1', name: 'Plastic Water Bottle', icon: '💧', checked: false },
     { id: '2', name: 'Computer Mouse', icon: '🖱️', checked: false },
     { id: '3', name: 'Book with Blue and Yellow Cover', icon: '📘', checked: false },
@@ -44,7 +44,7 @@ export default function JobLoadChecklistStartPage() {
   const [mounted, setMounted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [editableItems, setEditableItems] = useState(
-    checklist.map(item => item.name)
+    requiredItems.map(item => item.name)
   );
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -120,7 +120,7 @@ export default function JobLoadChecklistStartPage() {
 
     try {
       // Only look for unchecked items
-      const uncheckedItems = checklist.filter(item => !item.checked);
+      const uncheckedItems = requiredItems.filter(item => !item.checked);
 
       // If all items found, stop analysis and camera
       if (uncheckedItems.length === 0) {
@@ -150,7 +150,7 @@ export default function JobLoadChecklistStartPage() {
 
       setDetectionStatus(`🔍 Analyzing (${uncheckedItems.length} remaining, ${analysisQueue.current.size} frames processing, ~$${estimatedCost})...`);
       console.log(`[VLM] Unchecked items remaining (${uncheckedItems.length}):`, expectedItems);
-      console.log(`[VLM] Already detected (${checklist.length - uncheckedItems.length}):`, checklist.filter(item => item.checked).map(item => item.name));
+      console.log(`[VLM] Already detected (${requiredItems.length - uncheckedItems.length}):`, requiredItems.filter(item => item.checked).map(item => item.name));
 
       // Call VLM API
       const requestStart = performance.now();
@@ -197,7 +197,7 @@ export default function JobLoadChecklistStartPage() {
         setDetectionStatus(`${winnerEmoji} (${timeMs}ms): ${detectedLabels}`);
 
         // Auto-check matching items
-        setChecklist(prev => {
+        setRequiredItems(prev => {
           let hasChanges = false;
           const updated = prev.map(item => {
             // Skip if already checked
@@ -307,8 +307,8 @@ export default function JobLoadChecklistStartPage() {
     analysisQueue.current.clear();
   };
 
-  const toggleChecklistItem = (id: string) => {
-    setChecklist(prev =>
+  const toggleRequiredItem = (id: string) => {
+    setRequiredItems(prev =>
       prev.map(item =>
         item.id === id ? { ...item, checked: !item.checked } : item
       )
@@ -446,7 +446,7 @@ export default function JobLoadChecklistStartPage() {
   };
 
   const openSettings = () => {
-    setEditableItems(checklist.map(item => item.name));
+    setEditableItems(requiredItems.map(item => item.name));
     setShowSettings(true);
   };
 
@@ -456,14 +456,14 @@ export default function JobLoadChecklistStartPage() {
 
   const saveSettings = () => {
     const icons = ['💧', '🖱️', '📘', '🥤', '🧽', '⌨️', '💻', '🍿']; // Default icons
-    const updatedChecklist = editableItems.map((name, index) => ({
+    const updatedList = editableItems.map((name, index) => ({
       id: (index + 1).toString(),
       name: name.trim() || `Item ${index + 1}`,
       icon: icons[index] || '📦',
       checked: false
     }));
-    
-    setChecklist(updatedChecklist);
+
+    setRequiredItems(updatedList);
     setShowSettings(false);
   };
 
@@ -516,25 +516,25 @@ export default function JobLoadChecklistStartPage() {
 
   // Watch for all items being checked
   useEffect(() => {
-    const allChecked = checklist.every(item => item.checked);
-    if (allChecked && checklist.length > 0 && isAnalyzing) {
+    const allChecked = requiredItems.every(item => item.checked);
+    if (allChecked && requiredItems.length > 0 && isAnalyzing) {
       console.log('[AUTO-STOP] All items checked! Stopping...');
       setDetectionStatus('✅ LIST COMPLETED!');
       setIsAnalyzing(false);
-      
+
       // Play success sound and show confetti
       playSuccessSound();
       setShowConfetti(true);
-      
+
       // Stop confetti after 8 seconds
       setTimeout(() => setShowConfetti(false), 8000);
-      
+
       // Stop the interval immediately
       if (analysisIntervalRef.current) {
         clearInterval(analysisIntervalRef.current);
         analysisIntervalRef.current = null;
       }
-      
+
       // Stop camera after delay
       setTimeout(() => {
         if (stream) {
@@ -543,9 +543,9 @@ export default function JobLoadChecklistStartPage() {
         }
       }, 1500);
     }
-  }, [checklist, isAnalyzing, stream]);
+  }, [requiredItems, isAnalyzing, stream]);
 
-  const allChecked = checklist.every(item => item.checked);
+  const allChecked = requiredItems.every(item => item.checked);
 
   return (
     <>
@@ -652,7 +652,7 @@ export default function JobLoadChecklistStartPage() {
           flex: 1;
         }
 
-        .checklist-title {
+        .required-items-title {
           color: #0066FF;
           font-size: 18px;
           font-weight: bold;
@@ -660,13 +660,13 @@ export default function JobLoadChecklistStartPage() {
           padding: 0 15px;
         }
 
-        .checklist-items {
+        .required-items-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 10px;
         }
 
-        .checklist-item {
+        .required-item {
           display: flex;
           align-items: center;
           background: rgba(0, 100, 255, 0.1);
@@ -678,16 +678,16 @@ export default function JobLoadChecklistStartPage() {
           min-height: 44px;
         }
 
-        .checklist-item:hover {
+        .required-item:hover {
           background: rgba(0, 100, 255, 0.2);
           transform: scale(1.02);
         }
 
-        .checklist-item:active {
+        .required-item:active {
           transform: scale(0.98);
         }
 
-        .checklist-item.checked {
+        .required-item.checked {
           background: rgba(34, 139, 34, 0.2);
           border-color: #228B22;
         }
@@ -705,7 +705,7 @@ export default function JobLoadChecklistStartPage() {
           flex-shrink: 0;
         }
 
-        .checklist-item.checked .item-checkbox {
+        .required-item.checked .item-checkbox {
           background: #228B22;
           border-color: #228B22;
         }
@@ -1193,7 +1193,7 @@ export default function JobLoadChecklistStartPage() {
                   <div style={{
                     fontSize: '14px',
                     opacity: 0.7
-                  }}>All {checklist.length} items verified</div>
+                  }}>All {requiredItems.length} items verified</div>
                 </>
               ) : (
                 <>
@@ -1219,13 +1219,13 @@ export default function JobLoadChecklistStartPage() {
 
         <div className="container-3">
           <div className="details-content">
-            <div className="checklist-title">Equipment Checklist:</div>
-            <div className="checklist-items">
-              {checklist.map((item) => (
+            <div className="required-items-title">Required Tools & Materials:</div>
+            <div className="required-items-grid">
+              {requiredItems.map((item) => (
                 <div
                   key={item.id}
-                  className={`checklist-item ${item.checked ? 'checked' : ''}`}
-                  onClick={() => toggleChecklistItem(item.id)}
+                  className={`required-item ${item.checked ? 'checked' : ''}`}
+                  onClick={() => toggleRequiredItem(item.id)}
                 >
                   <div className="item-checkbox">
                     {item.checked && <span className="checkmark">✓</span>}
@@ -1281,7 +1281,7 @@ export default function JobLoadChecklistStartPage() {
       {showSettings && (
         <div className="modal-overlay" onClick={closeSettings}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">Edit Checklist Items</div>
+            <div className="modal-header">Edit Required Items</div>
             {editableItems.map((item, index) => (
               <div key={index} className="input-group">
                 <label className="input-label">Item {index + 1}:</label>

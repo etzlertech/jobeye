@@ -1,10 +1,10 @@
 /**
  * AGENT DIRECTIVE BLOCK
- * 
+ *
  * file: /src/app/api/crew/jobs/[jobId]/equipment/route.ts
  * phase: 3
  * domain: crew
- * purpose: API endpoint for job equipment management using jobs.checklist_items
+ * purpose: API endpoint for managing required tools/materials (stored in jobs.checklist_items for compatibility)
  * spec_ref: 007-mvp-intent-driven/contracts/crew-api.md
  * complexity_budget: 200
  * migrations_touched: []
@@ -26,9 +26,10 @@
  *   unit_tests: 'tests/api/crew/job-equipment.test.ts'
  * }
  * tasks: [
- *   'Get equipment list from job checklist_items',
- *   'Update equipment checklist items',
+ *   'Get required tools/materials from job (stored in checklist_items field)',
+ *   'Update required tools/materials for job',
  * ]
+ * note: API field name "checklist_items" preserved for backward compatibility
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -52,7 +53,7 @@ export async function GET(
     const supabase = await createServerClient();
     const { jobId } = params;
 
-    // Get job with checklist_items
+    // Get job with required tools/materials (stored in checklist_items field for compatibility)
     const { data: job, error } = await supabase
       .from('jobs')
       .select('id, checklist_items')
@@ -61,7 +62,7 @@ export async function GET(
 
     if (error) throw error;
 
-    // checklist_items is a JSONB array of equipment items
+    // checklist_items is a JSONB array representing required tools/materials
     const equipment = job?.checklist_items || [];
 
     return NextResponse.json({
@@ -92,7 +93,7 @@ export async function PUT(
       );
     }
 
-    // Update the job's checklist_items
+    // Update the job's required tools/materials (stored in checklist_items field)
     const { data, error } = await supabase
       .from('jobs')
       .update({ checklist_items: equipment })
@@ -104,7 +105,7 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      equipment: data.checklist_items
+      equipment: data.checklist_items // Field name preserved for API compatibility
     });
 
   } catch (error) {
@@ -112,4 +113,4 @@ export async function PUT(
   }
 }
 
-// Note: POST and DELETE are not needed since we update the entire checklist array with PUT
+// Note: POST and DELETE are not needed since we update the entire required items array with PUT

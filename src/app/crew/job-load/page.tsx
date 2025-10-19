@@ -57,7 +57,7 @@ interface Job {
   verified_items: string[];
 }
 
-interface ChecklistItem {
+interface RequiredItem {
   id: string;
   name: string;
   icon?: string;
@@ -79,12 +79,12 @@ interface Detection {
 
 export default function CrewJobLoadPage() {
   const router = useRouter();
-  
+
   // State
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [detectionStatus, setDetectionStatus] = useState<string>('Waiting to start...');
-  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [requiredItems, setRequiredItems] = useState<RequiredItem[]>([]);
   const [detections, setDetections] = useState<Detection[]>([]);
   const [showFlash, setShowFlash] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -184,16 +184,16 @@ export default function CrewJobLoadPage() {
 
   const selectJob = (job: Job) => {
     setSelectedJob(job);
-    // Initialize checklist from job equipment
+    // Initialize required items from job equipment
     const icons = ['🪜', '🪔', '🌳', '🛡️', '⛽', '🔧', '🚧', '🎲', '🚨', '💊', '💧', '🌿'];
-    const jobChecklist = (job.kit_items || []).map((item, index) => ({
+    const jobRequiredItems = (job.kit_items || []).map((item, index) => ({
       id: (index + 1).toString(),
       name: item,
       icon: icons[index] || '📦',
       checked: job.verified_items?.includes(item) || false,
       detectedBy: undefined
     }));
-    setChecklist(jobChecklist);
+    setRequiredItems(jobRequiredItems);
     setEditableItems(job.kit_items || []);
     setView('camera');
   };
@@ -275,7 +275,7 @@ export default function CrewJobLoadPage() {
 
     try {
       // Only look for unchecked items
-      const uncheckedItems = checklist.filter(item => !item.checked);
+      const uncheckedItems = requiredItems.filter(item => !item.checked);
 
       // If all items found, stop analysis and camera
       if (uncheckedItems.length === 0) {
@@ -305,7 +305,7 @@ export default function CrewJobLoadPage() {
 
       setDetectionStatus(`🔍 Analyzing (${uncheckedItems.length} remaining, ${analysisQueue.current.size} frames processing, ~$${estimatedCost})...`);
       console.log(`[VLM] Unchecked items remaining (${uncheckedItems.length}):`, expectedItems);
-      console.log(`[VLM] Already detected (${checklist.length - uncheckedItems.length}):`, checklist.filter(item => item.checked).map(item => item.name));
+      console.log(`[VLM] Already detected (${requiredItems.length - uncheckedItems.length}):`, requiredItems.filter(item => item.checked).map(item => item.name));
 
       // Call VLM API
       const requestStart = performance.now();
@@ -352,7 +352,7 @@ export default function CrewJobLoadPage() {
         setDetectionStatus(`${winnerEmoji} (${timeMs}ms): ${detectedLabels}`);
 
         // Auto-check matching items
-        setChecklist(prev => {
+        setRequiredItems(prev => {
           let hasChanges = false;
           const updated = prev.map(item => {
             // Skip if already checked
@@ -362,7 +362,7 @@ export default function CrewJobLoadPage() {
             const matchingDetection = result.detections.find((d: Detection) => {
               const itemLower = item.name.toLowerCase().replace(/[\s-_()]/g, '');
               const detectedLower = d.label.toLowerCase().replace(/[\s-_()]/g, '');
-              
+
               return (
                 detectedLower.includes(itemLower) ||
                 itemLower.includes(detectedLower) ||
@@ -592,8 +592,8 @@ export default function CrewJobLoadPage() {
     if (!selectedJob) return;
 
     try {
-      const verifiedItems = checklist.filter(item => item.checked).map(item => item.name);
-      
+      const verifiedItems = requiredItems.filter(item => item.checked).map(item => item.name);
+
       // Save verification to job
       const response = await fetch(`/api/crew/jobs/${selectedJob.id}/verify-load`, {
         method: 'POST',
@@ -614,24 +614,24 @@ export default function CrewJobLoadPage() {
     }
   };
 
-  const toggleChecklistItem = async (id: string) => {
+  const toggleRequiredItem = async (id: string) => {
     // Update local state first for immediate UI feedback
-    setChecklist(prev =>
+    setRequiredItems(prev =>
       prev.map(item =>
         item.id === id ? { ...item, checked: !item.checked } : item
       )
     );
-    
-    // Save the updated checklist to the database
+
+    // Save the updated list to the database
     if (selectedJob) {
       try {
-        // Get the updated checklist with the toggled item
-        const updatedChecklist = checklist.map(item =>
+        // Get the updated list with the toggled item
+        const updatedList = requiredItems.map(item =>
           item.id === id ? { ...item, checked: !item.checked } : item
         );
         
         // Convert to the format expected by the API
-        const updatedEquipment = updatedChecklist.map(item => ({
+        const updatedEquipment = updatedList.map(item => ({
           name: item.name,
           checked: item.checked,
           icon: item.icon,
@@ -639,10 +639,10 @@ export default function CrewJobLoadPage() {
                     item.name.toLowerCase().includes('safety') || item.name.toLowerCase().includes('glasses') || item.name.toLowerCase().includes('protection') || item.name.toLowerCase().includes('first aid') ? 'safety' :
                     item.name.toLowerCase().includes('gas') || item.name.toLowerCase().includes('oil') || item.name.toLowerCase().includes('fuel') || item.name.toLowerCase().includes('water') || item.name.toLowerCase().includes('tools') ? 'support' : 'materials'
         }));
-        
+
         const response = await fetch(`/api/crew/jobs/${selectedJob.id}/equipment`, {
           method: 'PUT',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -651,25 +651,25 @@ export default function CrewJobLoadPage() {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to save checklist item');
+          throw new Error('Failed to save required item');
         }
 
-        console.log('[Checklist] Saved item toggle to database:', updatedEquipment.find(eq => eq.name === checklist.find(item => item.id === id)?.name));
+        console.log('[RequiredItems] Saved item toggle to database:', updatedEquipment.find(eq => eq.name === requiredItems.find(item => item.id === id)?.name));
       } catch (err) {
-        console.error('Failed to save checklist item:', err);
+        console.error('Failed to save required item:', err);
         // Revert the local state change if the save failed
-        setChecklist(prev =>
+        setRequiredItems(prev =>
           prev.map(item =>
             item.id === id ? { ...item, checked: !item.checked } : item
           )
         );
-        alert('Failed to save checklist item. Please try again.');
+        alert('Failed to save required item. Please try again.');
       }
     }
   };
 
   const openSettings = () => {
-    setEditableItems(checklist.map(item => item.name));
+    setEditableItems(requiredItems.map(item => item.name));
     setShowSettings(true);
   };
 
@@ -685,11 +685,11 @@ export default function CrewJobLoadPage() {
 
     try {
       const icons = ['🪜', '🪔', '🌳', '🛡️', '⛽', '🔧', '🚧', '🎲']; // Default icons
-      
-      // Preserve checked status from current checklist
-      const checkedItems = new Set(checklist.filter(item => item.checked).map(item => item.name));
-      
-      const updatedChecklist = editableItems
+
+      // Preserve checked status from current list
+      const checkedItems = new Set(requiredItems.filter(item => item.checked).map(item => item.name));
+
+      const updatedList = editableItems
         .filter(name => name.trim()) // Remove empty items
         .map((name, index) => ({
           id: (index + 1).toString(),
@@ -698,11 +698,12 @@ export default function CrewJobLoadPage() {
           checked: checkedItems.has(name.trim()),
           detectedBy: undefined
         }));
-      
-      setChecklist(updatedChecklist);
-      
+
+      setRequiredItems(updatedList);
+
+
       // Update the equipment list in the database
-      const updatedEquipment = updatedChecklist.map(item => ({
+      const updatedEquipment = updatedList.map(item => ({
         name: item.name,
         checked: item.checked,
         icon: item.icon,
@@ -710,10 +711,10 @@ export default function CrewJobLoadPage() {
                   item.name.toLowerCase().includes('safety') || item.name.toLowerCase().includes('glasses') || item.name.toLowerCase().includes('protection') || item.name.toLowerCase().includes('first aid') ? 'safety' :
                   item.name.toLowerCase().includes('gas') || item.name.toLowerCase().includes('oil') || item.name.toLowerCase().includes('fuel') || item.name.toLowerCase().includes('water') || item.name.toLowerCase().includes('tools') ? 'support' : 'materials'
       }));
-      
+
       const response = await fetch(`/api/crew/jobs/${selectedJob.id}/equipment`, {
         method: 'PUT',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -728,13 +729,13 @@ export default function CrewJobLoadPage() {
       // Update the job in the local state
       const updatedJob = {
         ...selectedJob,
-        kit_items: updatedChecklist.map(item => item.name)
+        kit_items: updatedList.map(item => item.name)
       };
       setJobs(jobs.map(j => j.id === selectedJob.id ? updatedJob : j));
       setSelectedJob(updatedJob);
-      
+
       setShowSettings(false);
-      console.log('[Settings] Saved checklist items to database:', updatedEquipment);
+      console.log('[Settings] Saved required items to database:', updatedEquipment);
     } catch (err) {
       console.error('Failed to save equipment changes:', err);
       alert('Failed to save changes. Please try again.');
@@ -774,25 +775,25 @@ export default function CrewJobLoadPage() {
 
   // Watch for all items being checked
   useEffect(() => {
-    const allChecked = checklist.every(item => item.checked);
-    if (allChecked && checklist.length > 0 && isAnalyzing) {
+    const allChecked = requiredItems.every(item => item.checked);
+    if (allChecked && requiredItems.length > 0 && isAnalyzing) {
       console.log('[AUTO-STOP] All items checked! Stopping...');
       setDetectionStatus('✅ LIST COMPLETED!');
       setIsAnalyzing(false);
-      
+
       // Play success sound and show confetti
       playSuccessSound();
       setShowConfetti(true);
-      
+
       // Stop confetti after 8 seconds
       setTimeout(() => setShowConfetti(false), 8000);
-      
+
       // Stop the interval immediately
       if (analysisIntervalRef.current) {
         clearInterval(analysisIntervalRef.current);
         analysisIntervalRef.current = null;
       }
-      
+
       // Stop camera after delay
       setTimeout(() => {
         if (stream) {
@@ -801,9 +802,9 @@ export default function CrewJobLoadPage() {
         }
       }, 1500);
     }
-  }, [checklist, isAnalyzing, stream]);
+  }, [requiredItems, isAnalyzing, stream]);
 
-  const allChecked = checklist.every(item => item.checked);
+  const allChecked = requiredItems.every(item => item.checked);
 
   // Job selection view
   if (view === 'job_select') {
@@ -1008,7 +1009,7 @@ export default function CrewJobLoadPage() {
           flex: 1;
         }
 
-        .checklist-title {
+        .required-items-title {
           color: #0066FF;
           font-size: 18px;
           font-weight: bold;
@@ -1016,13 +1017,13 @@ export default function CrewJobLoadPage() {
           padding: 0 15px;
         }
 
-        .checklist-items {
+        .required-items-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 10px;
         }
 
-        .checklist-item {
+        .required-item {
           display: flex;
           align-items: center;
           background: rgba(0, 100, 255, 0.1);
@@ -1034,16 +1035,16 @@ export default function CrewJobLoadPage() {
           min-height: 44px;
         }
 
-        .checklist-item:hover {
+        .required-item:hover {
           background: rgba(0, 100, 255, 0.2);
           transform: scale(1.02);
         }
 
-        .checklist-item:active {
+        .required-item:active {
           transform: scale(0.98);
         }
 
-        .checklist-item.checked {
+        .required-item.checked {
           background: rgba(34, 139, 34, 0.2);
           border-color: #228B22;
         }
@@ -1061,7 +1062,7 @@ export default function CrewJobLoadPage() {
           flex-shrink: 0;
         }
 
-        .checklist-item.checked .item-checkbox {
+        .required-item.checked .item-checkbox {
           background: #228B22;
           border-color: #228B22;
         }
@@ -1546,7 +1547,7 @@ export default function CrewJobLoadPage() {
                   <div style={{
                     fontSize: '14px',
                     opacity: 0.7
-                  }}>All {checklist.length} items verified</div>
+                  }}>All {requiredItems.length} items verified</div>
                 </>
               ) : (
                 <>
@@ -1572,15 +1573,15 @@ export default function CrewJobLoadPage() {
 
         <div className="container-3">
           <div className="details-content">
-            <div className="checklist-title">Equipment Checklist:</div>
-            <div className="checklist-items">
-              {checklist.map((item, index) => {
+            <div className="required-items-title">Required Tools & Materials:</div>
+            <div className="required-items-grid">
+              {requiredItems.map((item, index) => {
                 const icons = ['🪜', '🪔', '🌳', '🛡️', '⛽', '🔧', '🚧', '🎲'];
                 return (
                   <div
                     key={item.id}
-                    className={`checklist-item ${item.checked ? 'checked' : ''}`}
-                    onClick={() => toggleChecklistItem(item.id)}
+                    className={`required-item ${item.checked ? 'checked' : ''}`}
+                    onClick={() => toggleRequiredItem(item.id)}
                   >
                     <div className="item-checkbox">
                       {item.checked && <span className="checkmark">✓</span>}
@@ -1637,7 +1638,7 @@ export default function CrewJobLoadPage() {
       {showSettings && (
         <div className="modal-overlay" onClick={closeSettings}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">Edit Checklist Items</div>
+            <div className="modal-header">Edit Required Items</div>
             {editableItems.map((item, index) => (
               <div key={index} className="input-group">
                 <label className="input-label">Item {index + 1}:</label>

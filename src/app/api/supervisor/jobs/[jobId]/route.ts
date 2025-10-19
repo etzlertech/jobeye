@@ -80,7 +80,7 @@ export async function GET(
     });
 
     // Filter to only show currently assigned items (not returned)
-    const enrichedChecklistItems = Array.from(itemsMap.values())
+    const assignedToolsAndMaterials = Array.from(itemsMap.values())
       .filter(item => item.status === 'loaded');
 
     // Fetch job assignments with user details
@@ -147,29 +147,29 @@ export async function GET(
       })
     );
 
-    // Calculate load statistics from transactions
-    const totalItems = enrichedChecklistItems.length;
-    const loadedItems = enrichedChecklistItems.filter(
+    // Calculate statistics for assigned tools/materials
+    const totalItems = assignedToolsAndMaterials.length;
+    const loadedItems = assignedToolsAndMaterials.filter(
       (item: any) => item.status === 'loaded'
     ).length;
     const verifiedItems = 0; // No verification tracking yet in item_transactions
 
-    console.log('Job checklist stats:', {
+    console.log('Work order item stats:', {
       jobId,
-      totalChecklistItems: enrichedChecklistItems.length,
+      totalAssignedItems: assignedToolsAndMaterials.length,
       activeItems: totalItems,
       loadedItems,
       verifiedItems,
       assignmentsCount: assignments.length
     });
 
-    // Map field names for frontend
+    // Map field names for frontend (API field names preserved for compatibility)
     const job = {
       ...data,
       primaryImageUrl: data.primary_image_url,
       mediumUrl: data.medium_url,
       thumbnailUrl: data.thumbnail_url,
-      checklist_items: enrichedChecklistItems,
+      checklist_items: assignedToolsAndMaterials, // API field name preserved; represents assigned tools/materials
       total_items: totalItems,
       loaded_items: loadedItems,
       verified_items: verifiedItems,
