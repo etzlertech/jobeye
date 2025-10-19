@@ -5,7 +5,11 @@ import { useRouter, useParams } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import { ItemImageUpload } from '@/components/items/ItemImageUpload';
 import { CrewAssignmentSection } from '@/components/supervisor/CrewAssignmentSection';
+import { TaskList } from '@/app/(authenticated)/supervisor/jobs/_components/TaskList';
+import { TaskTemplateSelector } from '@/app/(authenticated)/supervisor/jobs/_components/TaskTemplateSelector';
+import { TaskEditor } from '@/app/(authenticated)/supervisor/jobs/_components/TaskEditor';
 import type { ProcessedImages } from '@/utils/image-processor';
+import type { WorkflowTask } from '@/domains/workflow-task/types/workflow-task-types';
 import {
   ArrowLeft,
   Briefcase,
@@ -19,7 +23,9 @@ import {
   MapPin,
   Calendar,
   Clock,
-  FileText
+  FileText,
+  ListChecks,
+  Plus
 } from 'lucide-react';
 
 interface ChecklistItem {
@@ -93,6 +99,13 @@ export default function JobDetailPage() {
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Task management state
+  const [tasks, setTasks] = useState<WorkflowTask[]>([]);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [showTaskEditor, setShowTaskEditor] = useState(false);
+  const [editingTask, setEditingTask] = useState<WorkflowTask | null>(null);
+
   // Load job details
   const loadJob = async () => {
     try {
@@ -116,11 +129,113 @@ export default function JobDetailPage() {
     }
   };
 
+  // Load tasks for job
+  const loadTasks = async () => {
+    try {
+      setIsLoadingTasks(true);
+      const response = await fetch(`/api/supervisor/jobs/${jobId}/tasks`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to load tasks');
+      }
+
+      setTasks(data.tasks || []);
+    } catch (err) {
+      console.error('Failed to load tasks:', err);
+      // Don't show error to user, just log it
+    } finally {
+      setIsLoadingTasks(false);
+    }
+  };
+
   useEffect(() => {
     if (jobId) {
       loadJob();
+      loadTasks();
     }
   }, [jobId]);
+
+  const handleTaskEdit = (task: WorkflowTask) => {
+    setEditingTask(task);
+    setShowTaskEditor(true);
+  };
+
+  const handleTaskDelete = async (taskId: string) => {
+    if (!confirm('Are you sure you want to delete this task?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/supervisor/jobs/${jobId}/tasks/${taskId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to delete task');
+      }
+
+      setSuccess('Task deleted successfully');
+      await loadTasks();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete task');
+    }
+  };
+
+  const handleTaskReorder = async (taskId: string, direction: 'up' | 'down') => {
+    // Find current task index
+    const currentIndex = tasks.findIndex(t => t.id === taskId);
+    if (currentIndex === -1) return;
+
+    const newTasks = [...tasks];
+    const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+
+    if (swapIndex < 0 || swapIndex >= newTasks.length) return;
+
+    // Swap tasks
+    [newTasks[currentIndex], newTasks[swapIndex]] = [newTasks[swapIndex], newTasks[currentIndex]];
+
+    // Update task_order for both tasks
+    try {
+      await Promise.all([
+        fetch(`/api/supervisor/jobs/${jobId}/tasks/${newTasks[currentIndex].id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ task_order: currentIndex })
+        }),
+        fetch(`/api/supervisor/jobs/${jobId}/tasks/${newTasks[swapIndex].id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ task_order: swapIndex })
+        })
+      ]);
+
+      // Reload tasks to get fresh data
+      await loadTasks();
+    } catch (err) {
+      setError('Failed to reorder tasks');
+      console.error('Reorder error:', err);
+    }
+  };
+
+  const handleTemplateSuccess = async () => {
+    setShowTemplateSelector(false);
+    setSuccess('Tasks added from template successfully');
+    await loadTasks();
+  };
+
+  const handleTaskEditorSuccess = async () => {
+    setShowTaskEditor(false);
+    setEditingTask(null);
+    setSuccess(editingTask ? 'Task updated successfully' : 'Task created successfully');
+    await loadTasks();
+  };
 
   const handleImageCapture = async (images: ProcessedImages) => {
     setIsUploading(true);
@@ -394,6 +509,84 @@ export default function JobDetailPage() {
             currentAssignments={job.assignments || []}
             onAssignmentChange={loadJob}
           />
+
+          {/* Task Management Section */}
+          <div className="detail-section">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <ListChecks className="w-5 h-5" style={{ color: '#FFD700' }} />
+                <h3 className="detail-section-title" style={{ margin: 0 }}>Tasks ({tasks.length})</h3>
+              </div>
+            </div>
+
+            {/* Template Selector (if active) */}
+            {showTemplateSelector && (
+              <div style={{ marginBottom: '1rem' }}>
+                <TaskTemplateSelector
+                  jobId={jobId}
+                  onSuccess={handleTemplateSuccess}
+                  onCancel={() => setShowTemplateSelector(false)}
+                />
+              </div>
+            )}
+
+            {/* Task Editor (if active) */}
+            {showTaskEditor && (
+              <div style={{ marginBottom: '1rem' }}>
+                <TaskEditor
+                  jobId={jobId}
+                  task={editingTask}
+                  mode={editingTask ? 'edit' : 'create'}
+                  onSuccess={handleTaskEditorSuccess}
+                  onCancel={() => {
+                    setShowTaskEditor(false);
+                    setEditingTask(null);
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Add Task Buttons */}
+            {!showTemplateSelector && !showTaskEditor && (
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowTemplateSelector(true)}
+                  className="task-action-btn template-btn"
+                >
+                  <ListChecks className="w-4 h-4" />
+                  From Template
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingTask(null);
+                    setShowTaskEditor(true);
+                  }}
+                  className="task-action-btn custom-btn"
+                >
+                  <Plus className="w-4 h-4" />
+                  Custom Task
+                </button>
+              </div>
+            )}
+
+            {/* Task List */}
+            {isLoadingTasks ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#9CA3AF' }}>
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                <p>Loading tasks...</p>
+              </div>
+            ) : (
+              <TaskList
+                tasks={tasks}
+                editable={true}
+                onEdit={handleTaskEdit}
+                onDelete={handleTaskDelete}
+                onReorder={handleTaskReorder}
+              />
+            )}
+          </div>
 
           {/* Load List Items */}
           {job.checklist_items && job.checklist_items.length > 0 && (
@@ -699,6 +892,41 @@ export default function JobDetailPage() {
 
         .status-pending {
           color: #f97316;
+        }
+
+        .task-action-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          flex: 1;
+          padding: 0.75rem 1rem;
+          font-size: 0.875rem;
+          font-weight: 600;
+          border-radius: 0.5rem;
+          cursor: pointer;
+          transition: all 0.2s;
+          border: 1px solid transparent;
+        }
+
+        .template-btn {
+          background: rgba(255, 215, 0, 0.1);
+          color: #FFD700;
+          border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        .template-btn:hover {
+          background: rgba(255, 215, 0, 0.2);
+        }
+
+        .custom-btn {
+          background: rgba(59, 130, 246, 0.1);
+          color: #60a5fa;
+          border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .custom-btn:hover {
+          background: rgba(59, 130, 246, 0.2);
         }
       `}</style>
     </div>
