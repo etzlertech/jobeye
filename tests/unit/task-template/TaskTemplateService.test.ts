@@ -59,6 +59,9 @@ describe('TaskTemplateService', () => {
     user_id: null,
     created_at: baseTimestamp,
     updated_at: baseTimestamp,
+    thumbnail_url: null,
+    medium_url: null,
+    primary_image_url: null,
     ...overrides,
   });
 

@@ -87,8 +87,8 @@ describe('Integration: TaskTemplateService image management', () => {
     };
 
     taskRepo = {
-      findByJobId: jest.fn(async () => Ok<WorkflowTask[], ServiceError>([])),
-      createFromTemplate: jest.fn(async () => Ok<WorkflowTask[], ServiceError>([])),
+      findByJobId: jest.fn(async () => Ok<WorkflowTask[]>([])),
+      createFromTemplate: jest.fn(async () => Ok<WorkflowTask[]>([])),
     };
 
     service = new TaskTemplateService(templateRepo, taskRepo);

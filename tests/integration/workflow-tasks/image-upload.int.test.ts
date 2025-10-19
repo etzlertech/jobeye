@@ -63,7 +63,7 @@ describe('Integration: WorkflowTaskService image management', () => {
     taskRepo = {
       findById: jest.fn(async (id: string) => {
         const task = taskStore.get(id);
-        return task ? Ok(task) : Ok<WorkflowTask | null, ServiceError>(null);
+        return task ? Ok(task) : Ok<WorkflowTask | null>(null);
       }),
       updateImageUrls: jest.fn(async (id: string, urls: WorkflowTaskImageUrls) => {
         const existing = taskStore.get(id);
@@ -81,7 +81,7 @@ describe('Integration: WorkflowTaskService image management', () => {
         taskStore.set(id, updated);
         return Ok(updated);
       }),
-      findByJobId: jest.fn(async () => Ok<WorkflowTask[], ServiceError>(Array.from(taskStore.values()))),
+      findByJobId: jest.fn(async () => Ok(Array.from(taskStore.values()))),
       create: jest.fn(),
       softDelete: jest.fn(),
     };

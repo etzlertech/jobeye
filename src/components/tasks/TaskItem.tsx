@@ -173,7 +173,12 @@ export function TaskItem({
             {task.thumbnail_url && (
               <div className="mb-2">
                 <button
-                  onClick={() => onPhotoClick?.(task.primary_image_url || task.medium_url || task.thumbnail_url)}
+                  onClick={() => {
+                    const fullImageUrl = task.primary_image_url || task.medium_url || task.thumbnail_url;
+                    if (fullImageUrl) {
+                      onPhotoClick?.(fullImageUrl);
+                    }
+                  }}
                   className="relative group w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-300 bg-gray-100"
                   title="View task image"
                 >
