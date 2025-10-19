@@ -1321,56 +1321,6 @@ export interface Database {
           updated_at?: string | null
         }
       }
-      job_checklist_items: {
-        Row: {
-          id: string
-          job_id: string
-          sequence_number: number
-          item_type: string | null
-          item_id: string
-          item_name: string
-          quantity: number | null
-          container_id: string | null
-          status: string | null
-          vlm_prompt: string | null
-          acceptance_criteria: string | null
-          notes: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          job_id: string
-          sequence_number: number
-          item_type?: string | null
-          item_id: string
-          item_name: string
-          quantity?: number | null
-          container_id?: string | null
-          status?: string | null
-          vlm_prompt?: string | null
-          acceptance_criteria?: string | null
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          job_id?: string
-          sequence_number?: number
-          item_type?: string | null
-          item_id?: string
-          item_name?: string
-          quantity?: number | null
-          container_id?: string | null
-          status?: string | null
-          vlm_prompt?: string | null
-          acceptance_criteria?: string | null
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
       job_reschedules: {
         Row: {
           id: string
