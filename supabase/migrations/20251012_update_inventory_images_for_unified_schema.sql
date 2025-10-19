@@ -47,26 +47,6 @@ BEGIN
     END IF;
 END $$;
 
--- If the table doesn't exist at all, create it with the correct schema
-CREATE TABLE IF NOT EXISTS inventory_images (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID NOT NULL,
-  item_type TEXT NOT NULL CHECK (item_type IN ('equipment', 'material')),
-  item_id UUID NOT NULL,
-  image_url TEXT NOT NULL,
-  thumbnail_url TEXT,
-  is_primary BOOLEAN DEFAULT false,
-  angle TEXT,
-  aspect_ratio NUMERIC(5,2) DEFAULT 1.0,
-  original_width INT,
-  original_height INT,
-  crop_box JSONB,
-  metadata JSONB DEFAULT '{}'::jsonb,
-  captured_by UUID,
-  captured_at TIMESTAMPTZ DEFAULT NOW(),
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
 -- Ensure crop_box constraint exists
 DO $$
 BEGIN
