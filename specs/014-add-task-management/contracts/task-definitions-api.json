@@ -1,0 +1,280 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Task Definitions API",
+    "version": "1.0.0",
+    "description": "API for managing reusable task definitions in the task library"
+  },
+  "paths": {
+    "/api/task-definitions": {
+      "get": {
+        "summary": "List all task definitions",
+        "description": "Returns all active (not deleted) task definitions for the authenticated user's tenant",
+        "parameters": [
+          {
+            "name": "include_deleted",
+            "in": "query",
+            "schema": { "type": "boolean", "default": false },
+            "description": "Include soft-deleted definitions (admin only)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of task definitions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/TaskDefinition" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "500": { "description": "Internal server error" }
+        }
+      },
+      "post": {
+        "summary": "Create new task definition",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateTaskDefinitionInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task definition created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/TaskDefinition" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation error" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden (non-supervisor)" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/task-definitions/{id}": {
+      "get": {
+        "summary": "Get task definition details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task definition details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/TaskDefinition" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Not found" },
+          "401": { "description": "Unauthorized" },
+          "500": { "description": "Internal server error" }
+        }
+      },
+      "patch": {
+        "summary": "Update task definition",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateTaskDefinitionInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task definition updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/TaskDefinition" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation error" },
+          "404": { "description": "Not found" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "500": { "description": "Internal server error" }
+        }
+      },
+      "delete": {
+        "summary": "Delete task definition (soft delete with usage check)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task definition deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - definition in use",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string" },
+                    "code": { "type": "string", "enum": ["IN_USE"] },
+                    "details": {
+                      "type": "object",
+                      "properties": {
+                        "templateCount": { "type": "number" },
+                        "templateNames": { "type": "array", "items": { "type": "string" } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Not found" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/api/task-definitions/{id}/usage": {
+      "get": {
+        "summary": "Check template usage",
+        "description": "Returns list of templates using this task definition",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usage information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/TaskDefinitionUsage" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Not found" },
+          "401": { "description": "Unauthorized" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TaskDefinition": {
+        "type": "object",
+        "required": ["id", "tenant_id", "name", "description", "requires_photo_verification", "requires_supervisor_approval", "is_required", "created_at", "updated_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "tenant_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+          "acceptance_criteria": { "type": "string", "maxLength": 2000, "nullable": true },
+          "requires_photo_verification": { "type": "boolean" },
+          "requires_supervisor_approval": { "type": "boolean" },
+          "is_required": { "type": "boolean" },
+          "created_by": { "type": "string", "format": "uuid", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "deleted_at": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "CreateTaskDefinitionInput": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+          "acceptance_criteria": { "type": "string", "maxLength": 2000, "nullable": true },
+          "requires_photo_verification": { "type": "boolean", "default": false },
+          "requires_supervisor_approval": { "type": "boolean", "default": false },
+          "is_required": { "type": "boolean", "default": true }
+        }
+      },
+      "UpdateTaskDefinitionInput": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+          "acceptance_criteria": { "type": "string", "maxLength": 2000, "nullable": true },
+          "requires_photo_verification": { "type": "boolean" },
+          "requires_supervisor_approval": { "type": "boolean" },
+          "is_required": { "type": "boolean" }
+        }
+      },
+      "TaskDefinitionUsage": {
+        "type": "object",
+        "properties": {
+          "templateCount": { "type": "number" },
+          "templateIds": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+          "templateNames": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}
