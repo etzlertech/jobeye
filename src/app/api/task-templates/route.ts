@@ -99,11 +99,14 @@ export async function POST(request: NextRequest) {
 
     // Validate template data
     try {
-      CreateTemplateSchema.parse({
+      // Convert empty strings to undefined for optional fields
+      const templateData = {
         name: body.name,
-        description: body.description,
-        job_type: body.job_type,
-      });
+        description: body.description || undefined,
+        job_type: body.job_type || undefined,
+      };
+
+      CreateTemplateSchema.parse(templateData);
 
       // Validate items array exists and has at least one item
       if (!Array.isArray(body.items) || body.items.length === 0) {
@@ -118,7 +121,14 @@ export async function POST(request: NextRequest) {
       }
 
       // Validate each item
-      body.items.forEach((item: any) => CreateTemplateItemSchema.parse(item));
+      body.items.forEach((item: any) => {
+        // Convert empty acceptance_criteria to undefined
+        const itemData = {
+          ...item,
+          acceptance_criteria: item.acceptance_criteria || undefined,
+        };
+        CreateTemplateItemSchema.parse(itemData);
+      });
 
     } catch (err) {
       if (err instanceof ZodError) {
