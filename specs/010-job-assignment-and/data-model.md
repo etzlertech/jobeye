@@ -4,6 +4,8 @@
 **Date**: 2025-10-16
 **Status**: Phase 1 Design
 
+> **⚠️ DEPRECATION NOTICE (2025-10-19)**: References to `job_checklist_items` in this document are now **RETIRED**. The table has been dropped from the schema. Load status tracking now uses `item_transactions` (check_out/check_in) as the single source of truth. See migration `20251019_drop_job_checklist_items.sql` for details.
+
 ---
 
 ## Overview
