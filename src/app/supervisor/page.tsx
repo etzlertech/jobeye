@@ -25,7 +25,8 @@ import {
   WifiOff,
   Home,
   UserPlus,
-  Building2
+  Building2,
+  ListChecks
 } from 'lucide-react';
 import { TenantBadge } from '@/components/tenant';
 import { supabase } from '@/lib/supabase/client';
@@ -274,7 +275,16 @@ export default function SupervisorDashboard() {
               onClick={() => router.push('/supervisor/jobs')}
               className="action-button primary"
             >
+              <Calendar className="w-6 h-6" />
               <span className="text-sm">Jobs</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/supervisor/templates')}
+              className="action-button secondary"
+            >
+              <ListChecks className="w-6 h-6" />
+              <span className="text-sm">Task Templates</span>
             </button>
             <button
               type="button"
@@ -299,6 +309,14 @@ export default function SupervisorDashboard() {
             >
               <Package className="w-6 h-6" />
               <span className="text-sm">Inventory</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/supervisor/users')}
+              className="action-button secondary"
+            >
+              <Users className="w-6 h-6" />
+              <span className="text-sm">Users</span>
             </button>
           </div>
 
