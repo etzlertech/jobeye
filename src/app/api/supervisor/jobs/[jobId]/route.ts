@@ -34,56 +34,54 @@ export async function GET(
 
     if (error) throw error;
 
-    // Fetch checklist items separately to avoid nested query issues
-    const { data: checklistData, error: checklistError } = await supabase
-      .from('job_checklist_items')
+    // Fetch item transactions to get assigned items
+    const { data: transactions, error: txError } = await supabase
+      .from('item_transactions')
       .select(`
         id,
         item_id,
-        item_name,
-        item_type,
-        status,
-        quantity
+        transaction_type,
+        quantity,
+        created_at,
+        items!inner(
+          id,
+          name,
+          item_type,
+          category,
+          primary_image_url
+        )
       `)
-      .eq('job_id', jobId);
+      .eq('job_id', jobId)
+      .order('created_at', { ascending: false });
 
-    if (checklistError) {
-      console.error('Error fetching checklist items:', checklistError);
+    if (txError) {
+      console.error('Error fetching transactions:', txError);
     }
 
-    // For each checklist item, fetch the related item details if item_id exists
-    const enrichedChecklistItems = await Promise.all(
-      (checklistData || []).map(async (checklistItem: any) => {
-        if (checklistItem.item_id) {
-          const { data: itemData } = await supabase
-            .from('items')
-            .select('id, name, category, primary_image_url')
-            .eq('id', checklistItem.item_id)
-            .single();
-
-          return {
-            ...checklistItem,
-            item: itemData || {
-              id: checklistItem.item_id,
-              name: checklistItem.item_name || 'Unknown Item',
-              category: checklistItem.item_type || 'material',
-              primary_image_url: null
-            }
-          };
-        }
-
-        // If no item_id, use the stored item_name
-        return {
-          ...checklistItem,
+    // Group by item_id to get latest status per item
+    const itemsMap = new Map();
+    (transactions || []).forEach((tx: any) => {
+      if (!itemsMap.has(tx.item_id)) {
+        itemsMap.set(tx.item_id, {
+          id: tx.id,
+          item_id: tx.item_id,
+          item_name: tx.items.name,
+          item_type: tx.items.item_type,
+          status: tx.transaction_type === 'check_in' ? 'returned' : 'loaded',
+          quantity: tx.quantity,
           item: {
-            id: null,
-            name: checklistItem.item_name || 'Unknown Item',
-            category: checklistItem.item_type || 'material',
-            primary_image_url: null
+            id: tx.items.id,
+            name: tx.items.name,
+            category: tx.items.category,
+            primary_image_url: tx.items.primary_image_url
           }
-        };
-      })
-    );
+        });
+      }
+    });
+
+    // Filter to only show currently assigned items (not returned)
+    const enrichedChecklistItems = Array.from(itemsMap.values())
+      .filter(item => item.status === 'loaded');
 
     // Fetch job assignments with user details
     // Use service client to bypass RLS issues
@@ -149,15 +147,12 @@ export async function GET(
       })
     );
 
-    // Calculate load statistics using enriched items
-    const activeItems = enrichedChecklistItems.filter((item: any) => item.status !== 'missing');
-    const totalItems = activeItems.length;
-    const loadedItems = activeItems.filter(
-      (item: any) => item.status === 'loaded' || item.status === 'verified'
+    // Calculate load statistics from transactions
+    const totalItems = enrichedChecklistItems.length;
+    const loadedItems = enrichedChecklistItems.filter(
+      (item: any) => item.status === 'loaded'
     ).length;
-    const verifiedItems = activeItems.filter(
-      (item: any) => item.status === 'verified'
-    ).length;
+    const verifiedItems = 0; // No verification tracking yet in item_transactions
 
     console.log('Job checklist stats:', {
       jobId,

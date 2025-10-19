@@ -103,41 +103,46 @@ export async function GET(request: NextRequest) {
 
         if (error) throw error;
 
-        // Fetch all checklist items for all jobs in one query
+        // Fetch all item transactions for all jobs in one query
         const jobIds = (jobs || []).map(job => job.id);
-        const { data: allChecklistItems } = await supabase
-          .from('job_checklist_items')
-          .select('id, job_id, status')
-          .in('job_id', jobIds);
+        const { data: allTransactions } = await supabase
+          .from('item_transactions')
+          .select('id, job_id, item_id, transaction_type, quantity')
+          .in('job_id', jobIds)
+          .order('created_at', { ascending: false });
 
-        // Group checklist items by job_id
-        const checklistByJob = new Map();
-        (allChecklistItems || []).forEach((item: any) => {
-          if (!checklistByJob.has(item.job_id)) {
-            checklistByJob.set(item.job_id, []);
+        // Group transactions by job_id and item_id to get latest status per item
+        const itemsByJob = new Map();
+        (allTransactions || []).forEach((tx: any) => {
+          if (!itemsByJob.has(tx.job_id)) {
+            itemsByJob.set(tx.job_id, new Map());
           }
-          checklistByJob.get(item.job_id).push(item);
+          const jobItems = itemsByJob.get(tx.job_id);
+          // Only keep the first (most recent) transaction per item
+          if (!jobItems.has(tx.item_id)) {
+            jobItems.set(tx.item_id, tx);
+          }
         });
 
-        // Add load status to each job
+        // Add load status to each job based on item_transactions
         const jobsWithLoadStatus = (jobs || []).map((job: any) => {
-          const checklistItems = checklistByJob.get(job.id) || [];
-          // Only count items that aren't marked as 'missing'
-          const activeItems = checklistItems.filter((item: any) => item.status !== 'missing');
-          const totalItems = activeItems.length;
-          const loadedItems = activeItems.filter(
-            (item: any) => item.status === 'loaded' || item.status === 'verified'
-          ).length;
-          const verifiedItems = activeItems.filter(
-            (item: any) => item.status === 'verified'
-          ).length;
+          const jobItems = itemsByJob.get(job.id);
+          // Count items that are currently checked out (assigned)
+          const assignedItems = jobItems ?
+            Array.from(jobItems.values()).filter((tx: any) => tx.transaction_type === 'check_out') : [];
+          const totalItems = assignedItems.length;
+
+          // For now, all checked-out items are considered "loaded"
+          // In the future, we could add a status field to track loaded vs verified
+          const loadedItems = totalItems;
+          const verifiedItems = 0; // No verification tracking yet in item_transactions
 
           return {
             ...job,
             total_items: totalItems,
             loaded_items: loadedItems,
             verified_items: verifiedItems,
-            completion_percentage: totalItems > 0 ? Math.round((loadedItems / totalItems) * 100) : 0
+            completion_percentage: totalItems > 0 ? 100 : 0
           };
         });
 
