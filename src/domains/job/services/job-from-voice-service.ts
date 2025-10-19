@@ -173,23 +173,8 @@ export class JobFromVoiceService {
 
       if (error) throw error;
 
-      // Create checklist items from template
-      if (validation.checklist_items && validation.checklist_items.length > 0) {
-        const checklistData = validation.checklist_items.map((item: any, index: number) => ({
-          job_id: job.id,
-          sequence_number: index + 1,
-          item_type: item.type,
-          item_id: item.id,
-          item_name: item.name,
-          quantity: item.quantity || 1,
-          container_id: validation.default_container_id,
-          status: 'pending' as const
-        }));
-
-        await this.supabase
-          .from('job_checklist_items')
-          .insert(checklistData);
-      }
+      // Note: Template-based task creation would happen via TaskTemplateService.instantiateTemplate
+      // if template_id is provided. Voice service creates minimal job only.
 
       await this.logger.info('Job created from voice', {
         jobId: job.id,
@@ -234,8 +219,6 @@ export class JobFromVoiceService {
     scheduled_start?: string;
     scheduled_end?: string;
     duration?: number;
-    checklist_items?: any[];
-    default_container_id?: string;
   }> {
     // Find matching job template
     const template = await this.findJobTemplate(command.entities.job_type);
@@ -326,18 +309,7 @@ export class JobFromVoiceService {
     const scheduled_start = this.combineDateTime(scheduledDate, scheduledTime);
     const scheduled_end = addHours(parseISO(scheduled_start), duration / 60);
 
-    // Get default container
-    const { data: defaultContainer } = await this.supabase
-      .from('containers')
-      .select('id')
-      .eq('is_default', true)
-      .eq('is_active', true)
-      .limit(1)
-      .single();
-
-    // Get template checklist items
-    let checklist_items: any[] = [];
-    // TODO: Fetch from template configuration
+    // Template items and containers would be handled by TaskTemplateService if needed
 
     return {
       isValid: true,
@@ -349,8 +321,6 @@ export class JobFromVoiceService {
       scheduled_start,
       scheduled_end: scheduled_end.toISOString(),
       duration,
-      checklist_items,
-      default_container_id: defaultContainer?.id
     };
   }
 

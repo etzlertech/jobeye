@@ -217,7 +217,7 @@ describe('T012: Multiple crew assigned to same job', () => {
     expect(crew2Assignments![0].job_id).toBe(testJobId);
   });
 
-  it('should handle concurrent checklist item updates without conflict', async () => {
+  it('should handle concurrent item transactions without conflict', async () => {
     // Get or create a test item first
     const { data: items } = await supabase
       .from('items')
@@ -231,58 +231,66 @@ describe('T012: Multiple crew assigned to same job', () => {
       throw new Error('No items found for tenant. Create test item first.');
     }
 
-    // Create a checklist item for the job
-    const { data: checklistItem, error: createError } = await supabase
-      .from('job_checklist_items')
+    // Simulate crew1 creating a check_out transaction
+    const { data: transaction1, error: error1 } = await supabase
+      .from('item_transactions')
       .insert({
+        tenant_id: tenantId,
         job_id: testJobId,
         item_id: item.id,
-        item_name: item.name,
-        sequence_number: 1,
-        quantity: 10,
+        transaction_type: 'check_out',
+        quantity: 5,
+        notes: 'Crew 1 checking out item',
       })
       .select()
       .single();
 
-    expect(createError).toBeNull();
-    expect(checklistItem).toBeDefined();
-
-    const itemId = checklistItem!.id;
-
-    // Simulate crew1 updating quantity
-    const { data: update1, error: error1 } = await supabase
-      .from('job_checklist_items')
-      .update({ quantity: 5 })
-      .eq('id', itemId)
-      .select()
-      .single();
-
     expect(error1).toBeNull();
-    expect(update1?.quantity).toBe(5);
+    expect(transaction1).toBeDefined();
+    expect(transaction1?.quantity).toBe(5);
 
-    // Simulate crew2 updating quantity (should succeed)
-    const { data: update2, error: error2 } = await supabase
-      .from('job_checklist_items')
-      .update({ quantity: 8 })
-      .eq('id', itemId)
+    // Simulate crew2 creating another check_out transaction for same item (should succeed)
+    const { data: transaction2, error: error2 } = await supabase
+      .from('item_transactions')
+      .insert({
+        tenant_id: tenantId,
+        job_id: testJobId,
+        item_id: item.id,
+        transaction_type: 'check_out',
+        quantity: 3,
+        notes: 'Crew 2 checking out same item',
+      })
       .select()
       .single();
 
     expect(error2).toBeNull();
-    expect(update2?.quantity).toBe(8);
+    expect(transaction2).toBeDefined();
+    expect(transaction2?.quantity).toBe(3);
 
-    // Verify final state
-    const { data: finalItem, error: queryError } = await supabase
-      .from('job_checklist_items')
+    // Verify both transactions exist
+    const { data: allTransactions, error: queryError } = await supabase
+      .from('item_transactions')
       .select('*')
-      .eq('id', itemId)
-      .single();
+      .eq('job_id', testJobId)
+      .eq('item_id', item.id);
 
     expect(queryError).toBeNull();
-    expect(finalItem?.quantity).toBe(8);
+    expect(allTransactions).toBeDefined();
+    expect(allTransactions!.length).toBeGreaterThanOrEqual(2);
+
+    // Verify total quantity checked out
+    const totalQuantity = allTransactions!
+      .filter(t => t.transaction_type === 'check_out')
+      .reduce((sum, t) => sum + (t.quantity || 0), 0);
+    expect(totalQuantity).toBeGreaterThanOrEqual(8);
 
     // Cleanup
-    await supabase.from('job_checklist_items').delete().eq('id', itemId);
+    if (transaction1) {
+      await supabase.from('item_transactions').delete().eq('id', transaction1.id);
+    }
+    if (transaction2) {
+      await supabase.from('item_transactions').delete().eq('id', transaction2.id);
+    }
   });
 
   it('should prevent duplicate assignments with UNIQUE constraint', async () => {

@@ -391,32 +391,42 @@ export class JobAssignmentService {
   }
 
   /**
-   * Enrich job with load status from checklist items
+   * Enrich job with load status from item transactions
    */
   private async enrichWithLoadStatus(
     context: RequestContext,
     job: any
   ): Promise<JobWithAssignment> {
-    // Query checklist items for this job
-    type ChecklistItemRow = Pick<Database['public']['Tables']['job_checklist_items']['Row'], 'quantity'>;
-    const { data: items, error } = await this.supabase
-      .from('job_checklist_items')
-      .select('quantity')
-      .eq('job_id', job.id);
+    // Query item transactions for this job
+    const { data: transactions, error } = await this.supabase
+      .from('item_transactions')
+      .select('item_id, transaction_type, quantity')
+      .eq('job_id', job.id)
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Failed to fetch checklist items:', error);
+      console.error('Failed to fetch item transactions:', error);
     }
 
-    // Calculate total items (loaded tracking not yet implemented)
-    const checklistItems = (items || []) as ChecklistItemRow[];
-    const totalItems = checklistItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    // Group by item_id to get latest transaction status per item
+    const itemsMap = new Map();
+    (transactions || []).forEach((tx: any) => {
+      if (!itemsMap.has(tx.item_id)) {
+        itemsMap.set(tx.item_id, tx);
+      }
+    });
+
+    // Count currently assigned items (latest transaction is check_out)
+    const assignedItems = Array.from(itemsMap.values())
+      .filter((tx: any) => tx.transaction_type === 'check_out');
+
+    const totalItems = assignedItems.reduce((sum, tx: any) => sum + (tx.quantity || 0), 0);
 
     return {
       ...job,
       total_items: totalItems,
-      loaded_items: 0, // TODO: Implement loaded tracking in future feature
-      load_percentage: 0,
+      loaded_items: totalItems, // All assigned items are considered loaded
+      load_percentage: totalItems > 0 ? 100 : 0,
     };
   }
 }

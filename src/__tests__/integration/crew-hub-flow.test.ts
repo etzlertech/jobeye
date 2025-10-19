@@ -272,9 +272,9 @@ describe('T011: Crew views assigned jobs flow', () => {
     });
   });
 
-  it('should compute load status for jobs with checklist items', async () => {
-    // This test verifies we can query job_checklist_items to compute load status
-    // First, create a checklist item for one of our test jobs
+  it('should compute load status for jobs with item transactions', async () => {
+    // This test verifies we can query item_transactions to compute load status
+    // First, create a transaction (check_out) for one of our test jobs
     const testJobId = testJobIds[0];
 
     // Get or create a test item first
@@ -290,52 +290,51 @@ describe('T011: Crew views assigned jobs flow', () => {
       throw new Error('No items found for tenant. Create test item first.');
     }
 
-    const { data: checklistItem, error: insertError } = await supabase
-      .from('job_checklist_items')
+    const { data: transaction, error: insertError } = await supabase
+      .from('item_transactions')
       .insert({
+        tenant_id: tenantId,
         job_id: testJobId,
         item_id: item.id,
-        item_name: item.name,
-        sequence_number: 1,
+        transaction_type: 'check_out',
         quantity: 5,
+        notes: 'Test transaction for crew hub flow test',
       })
       .select('id')
       .single();
 
     expect(insertError).toBeNull();
-    expect(checklistItem).toBeDefined();
+    expect(transaction).toBeDefined();
 
-    // Query the job with checklist items
-    const { data: assignment, error } = await supabase
-      .from('job_assignments')
-      .select(`
-        *,
-        jobs (
-          id,
-          job_number,
-          job_checklist_items (
-            quantity
-          )
-        )
-      `)
-      .eq('user_id', crewId)
+    // Query the job with item transactions
+    const { data: transactions, error } = await supabase
+      .from('item_transactions')
+      .select('item_id, transaction_type, quantity')
       .eq('job_id', testJobId)
-      .single();
+      .order('created_at', { ascending: false });
 
     expect(error).toBeNull();
-    expect(assignment).toBeDefined();
-    expect(assignment?.jobs.job_checklist_items).toBeDefined();
+    expect(transactions).toBeDefined();
 
-    // Compute load status (loaded tracking not yet implemented)
-    const checklistItems = assignment?.jobs.job_checklist_items || [];
-    const totalItems = checklistItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    // Group by item_id to get latest transaction status per item
+    const itemsMap = new Map();
+    (transactions || []).forEach((tx: any) => {
+      if (!itemsMap.has(tx.item_id)) {
+        itemsMap.set(tx.item_id, tx);
+      }
+    });
+
+    // Count currently assigned items (latest transaction is check_out)
+    const assignedItems = Array.from(itemsMap.values())
+      .filter((tx: any) => tx.transaction_type === 'check_out');
+
+    const totalItems = assignedItems.reduce((sum, tx: any) => sum + (tx.quantity || 0), 0);
 
     expect(totalItems).toBe(5);
-    // TODO: Loaded tracking will be implemented in future feature
 
-    // Cleanup checklist item
-    if (checklistItem) {
-      await supabase.from('job_checklist_items').delete().eq('id', checklistItem.id);
+    // Cleanup transaction
+    if (transaction) {
+      await supabase.from('item_transactions').delete().eq('id', transaction.id);
     }
   });
 });
