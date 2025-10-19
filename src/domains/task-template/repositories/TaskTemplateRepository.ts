@@ -158,6 +158,7 @@ export class TaskTemplateRepository {
           name: validatedTemplate.name,
           description: validatedTemplate.description || null,
           job_type: validatedTemplate.job_type || null,
+          tenant_id: (templateInput as any).tenant_id, // tenant_id passed from API
           is_active: true,
         })
         .select()

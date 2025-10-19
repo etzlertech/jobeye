@@ -164,6 +164,7 @@ export async function POST(request: NextRequest) {
         name: body.name,
         description: body.description,
         job_type: body.job_type,
+        tenant_id: context.tenantId, // Add tenant_id from context
       },
       body.items
     );
