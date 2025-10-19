@@ -39,6 +39,8 @@ interface TaskDetailResponse {
     thumbnail_url: string | null;
     primary_image_url: string | null;
   } | null;
+  message?: string;
+  error?: string;
 }
 
 const statusLabels: Record<string, { label: string; color: string }> = {

@@ -75,13 +75,14 @@ export class TenantService {
         // Find user by email using admin client
         const adminClient = this.getAdminClient();
         // TODO: Replace with getUserByEmail when available in SDK
-        const { data: { users }, error } = await adminClient.auth.admin.listUsers({
+        const { data, error } = await adminClient.auth.admin.listUsers({
           page: 1,
           perPage: 1000
         });
         
-        if (!error && users) {
-          const user = users.find(u => u.email === dto.adminEmail);
+        if (!error) {
+          const users = data?.users ?? [];
+          const user = users.find((u): u is typeof u & { email: string } => Boolean(u.email) && u.email === dto.adminEmail);
           
           if (user) {
             member = await this.memberRepo.create(
@@ -268,12 +269,13 @@ export class TenantService {
         // TODO: Improve performance - replace listUsers with getUserById batch calls
         // Current implementation fetches all users and filters locally, which won't scale
         // Consider: 1) Batch getUserById calls, 2) Add pagination, 3) Cache user lookups
-        const { data: { users }, error } = await adminClient.auth.admin.listUsers({
+        const { data, error } = await adminClient.auth.admin.listUsers({
           page: 1,
           perPage: 1000 // WARNING: This will break at scale
         });
         
-        if (!error && users) {
+        if (!error) {
+          const users = data?.users ?? [];
           // Create a map of user data
           const userMap = new Map(
             users
@@ -380,13 +382,14 @@ export class TenantService {
     try {
       const adminClient = this.getAdminClient();
       // TODO: Replace with getUserByEmail when available in SDK
-      const { data: { users }, error } = await adminClient.auth.admin.listUsers({
+      const { data, error } = await adminClient.auth.admin.listUsers({
         page: 1,
         perPage: 1000
       });
       
-      if (!error && users) {
-        const user = users.find(u => u.email === dto.email);
+      if (!error) {
+        const users = data?.users ?? [];
+        const user = users.find((u): u is typeof u & { email: string } => Boolean(u.email) && u.email === dto.email);
         
         if (user) {
           const existingMember = await this.memberRepo.findByTenantAndUser(
@@ -477,12 +480,13 @@ export class TenantService {
         
         // Fetch users
         // TODO: Replace with batch getUserById calls for better performance
-        const { data: { users }, error } = await adminClient.auth.admin.listUsers({
+        const { data, error } = await adminClient.auth.admin.listUsers({
           page: 1,
           perPage: 1000
         });
         
-        if (!error && users) {
+        if (!error) {
+          const users = data?.users ?? [];
           // Create user map
           const userMap = new Map(
             users

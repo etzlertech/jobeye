@@ -5,7 +5,7 @@ import type {
   TemplateImageUrls,
   ServiceError,
 } from '@/domains/task-template/types/task-template-types';
-import { Ok, Err } from '@/domains/task-template/types/task-template-types';
+import { Ok, Err, isErr } from '@/domains/task-template/types/task-template-types';
 import type { WorkflowTask } from '@/domains/workflow-task/types/workflow-task-types';
 import { TaskStatus, VerificationMethod } from '@/domains/workflow-task/types/workflow-task-types';
 import type { ProcessedImages } from '@/utils/image-processor';
@@ -169,10 +169,11 @@ describe('Integration: TaskTemplateService image management', () => {
       processedImages
     );
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.code).toBe('IMAGE_UPDATE_FAILED');
+    expect(isErr(result)).toBe(true);
+    if (!isErr(result)) {
+      throw new Error('Expected image update to fail');
     }
+    expect(result.error.code).toBe('IMAGE_UPDATE_FAILED');
 
     expect(deleteImagesFromStorageMock).toHaveBeenCalledWith(
       expect.any(Object),
@@ -191,10 +192,11 @@ describe('Integration: TaskTemplateService image management', () => {
       processedImages
     );
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.code).toBe('FORBIDDEN');
+    expect(isErr(result)).toBe(true);
+    if (!isErr(result)) {
+      throw new Error('Expected cross-tenant guard to reject');
     }
+    expect(result.error.code).toBe('FORBIDDEN');
     expect(uploadImagesToStorageMock).not.toHaveBeenCalled();
   });
 

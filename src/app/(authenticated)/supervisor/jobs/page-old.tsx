@@ -19,7 +19,8 @@ function SupervisorJobsPage() {
     description: '',
     scheduledDate: new Date().toISOString().split('T')[0],
     scheduledTime: '',
-    priority: 'normal'
+    priority: 'normal',
+    templateId: '',
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
@@ -121,7 +122,8 @@ function SupervisorJobsPage() {
       description: '',
       scheduledDate: new Date().toISOString().split('T')[0],
       scheduledTime: '',
-      priority: 'normal'
+      priority: 'normal',
+      templateId: '',
     }));
   }, [customers]);
 

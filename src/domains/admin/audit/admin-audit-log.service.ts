@@ -16,7 +16,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/lib/supabase/types';
+import type { Database } from '@/types/database';
 import { AdminAuditLogRepository } from './admin-audit-log.repository';
 import type {
   AdminAuditAction,

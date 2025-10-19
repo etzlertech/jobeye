@@ -53,20 +53,21 @@ export async function setupTestDatabase() {
 
   try {
     // 0. Ensure tenant exists (required for FK constraints)
+    const tenantPayload: Database['public']['Tables']['tenants']['Insert'] = {
+      id: TEST_IDS.company,
+      name: 'Test Tenant',
+      slug: 'test-tenant',
+      plan: 'trial',
+      status: 'active',
+      settings: {},
+    };
+
     const { error: tenantError } = await supabase
       .from('tenants')
-      .upsert(
-        {
-          id: TEST_IDS.company,
-          name: 'Test Tenant',
-          settings: {},
-          active: true
-        },
-        {
-          onConflict: 'id',
-          ignoreDuplicates: false
-        }
-      );
+      .upsert<Database['public']['Tables']['tenants']['Insert']>(tenantPayload, {
+        onConflict: 'id',
+        ignoreDuplicates: false,
+      });
 
     if (tenantError && tenantError.code !== '23505') {
       console.error('Tenant creation error:', tenantError);
@@ -74,15 +75,19 @@ export async function setupTestDatabase() {
     }
 
     // 1. Create test company
+    const companyPayload: Database['public']['Tables']['companies']['Insert'] = {
+      id: TEST_IDS.company,
+      tenant_id: TEST_IDS.company,
+      name: 'Test Company',
+      domain: null,
+      is_active: true,
+    };
+
     const { error: companyError } = await supabase
       .from('companies')
-      .upsert({
-        id: TEST_IDS.company,
-        tenant_id: TEST_IDS.company, // Use same ID for tenant
-        name: 'Test Company'
-      }, {
+      .upsert<Database['public']['Tables']['companies']['Insert']>(companyPayload, {
         onConflict: 'id',
-        ignoreDuplicates: false
+        ignoreDuplicates: false,
       });
 
     if (companyError && companyError.code !== '23505') { // Ignore duplicate key errors
@@ -111,13 +116,7 @@ export async function cleanupTestDatabase() {
   try {
     // Delete in reverse dependency order
 
-    // 1. Delete schedule events
-    await supabase
-      .from('schedule_events')
-      .delete()
-      .eq('tenant_id', TEST_IDS.company);
-
-    // 2. Delete day plans
+    // Delete day plans
     await supabase
       .from('day_plans')
       .delete()
@@ -146,44 +145,21 @@ export async function cleanupTestDatabase() {
  * Creates a test day plan
  */
 export async function createTestDayPlan(overrides: Partial<Database['public']['Tables']['day_plans']['Insert']> = {}) {
+  const payload: Database['public']['Tables']['day_plans']['Insert'] = {
+    tenant_id: TEST_IDS.company,
+    user_id: TEST_IDS.user1,
+    plan_date: '2024-01-15',
+    status: 'draft',
+    route_data: {} as Database['public']['Tables']['day_plans']['Insert']['route_data'],
+    total_distance_miles: 0,
+    estimated_duration_minutes: 0,
+    metadata: {} as Database['public']['Tables']['day_plans']['Insert']['metadata'],
+    ...overrides,
+  };
+
   const { data, error } = await supabase
     .from('day_plans')
-    .insert({
-      tenant_id: TEST_IDS.company,
-      user_id: TEST_IDS.user1,
-      plan_date: '2024-01-15',
-      status: 'draft',
-      route_data: {},
-      total_distance_miles: 0,
-      estimated_duration_minutes: 0,
-      ...overrides
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-/**
- * Creates a test schedule event
- */
-export async function createTestScheduleEvent(
-  dayPlanId: string,
-  overrides: Partial<Database['public']['Tables']['schedule_events']['Insert']> = {}
-) {
-  const { data, error } = await supabase
-    .from('schedule_events')
-    .insert({
-      tenant_id: TEST_IDS.company,
-      day_plan_id: dayPlanId,
-      event_type: 'job',
-      sequence_order: 1,
-      scheduled_start: new Date().toISOString(),
-      scheduled_duration_minutes: 60,
-      status: 'pending',
-      ...overrides
-    })
+    .insert<Database['public']['Tables']['day_plans']['Insert']>(payload)
     .select()
     .single();
 
@@ -214,6 +190,5 @@ export function useTestDatabase() {
     testIds: TEST_IDS,
     supabase,
     createTestDayPlan,
-    createTestScheduleEvent
   };
 }

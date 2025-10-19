@@ -37,7 +37,7 @@ import {
   getStatusBadgeClass,
   getPlanBadgeClass
 } from '../_constants/admin-ui-constants';
-import { TenantDetailModal } from '@/components/admin/TenantDetailModal';
+import { TenantDetailModal, type TenantDetail } from '@/components/admin/TenantDetailModal';
 
 type TenantStatus = 'pending' | 'active' | 'suspended' | 'expired' | 'cancelled';
 
@@ -91,7 +91,7 @@ export default function TenantManagementPage() {
     action: null,
     reason: ''
   });
-  const [selectedTenant, setSelectedTenant] = useState<TenantSummary | null>(null);
+  const [selectedTenant, setSelectedTenant] = useState<TenantDetail | null>(null);
 
   const filteredTenants = useMemo(() => {
     return tenants.filter((tenant) => {
@@ -222,16 +222,23 @@ export default function TenantManagementPage() {
   };
 
   const handleViewDetails = (tenant: TenantSummary) => {
-    // Convert TenantSummary to the format expected by TenantDetailModal
-    const tenantDetail = {
+    // Convert TenantSummary to the format expected by TenantDetailModal.
+    // Until the backend surfaces full usage metrics, provide conservative defaults.
+    const tenantDetail: TenantDetail = {
       ...tenant,
+      lastActiveAt: tenant.lastActiveAt ?? null,
+      plan: tenant.plan,
       usage: {
-        ...tenant.usage,
-        totalJobs: tenant.usage.jobsLast30d * 2, // Mock total jobs
-        storageUsedMB: 2048 // Mock storage
-      }
+        activeUsers: tenant.usage.activeUsers,
+        jobsLast30d: tenant.usage.jobsLast30d,
+        totalJobs: tenant.usage.jobsLast30d,
+        storageUsedMB: 0,
+      },
+      contact: undefined,
+      billing: undefined,
+      integrations: undefined,
     };
-    setSelectedTenant(tenantDetail as any);
+    setSelectedTenant(tenantDetail);
   };
 
   return (

@@ -37,6 +37,7 @@ export interface TemplateOption {
   description: string | null;
   job_type: string | null;
   items?: Array<{ id: string }>;
+  is_active?: boolean;
 }
 
 export interface JobFormProps {

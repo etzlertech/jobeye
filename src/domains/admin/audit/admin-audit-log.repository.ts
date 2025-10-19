@@ -14,11 +14,38 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/lib/supabase/types';
-import type { AdminAuditLogInsert, AdminAuditLogEntry } from './admin-audit-log.types';
+import type { Database } from '@/types/database';
+import type { AdminAuditLogInsert, AdminAuditLogEntry, AdminAuditAction } from './admin-audit-log.types';
 
 const TABLE_NAME = 'admin_audit_log';
 type AdminAuditRow = Database['public']['Tables']['admin_audit_log']['Row'];
+
+const normalizeMetadata = (
+  metadata: Database['public']['Tables']['admin_audit_log']['Row']['metadata']
+): Record<string, unknown> | null | undefined => {
+  if (metadata === null) return null;
+  if (typeof metadata === 'object' && metadata !== null && !Array.isArray(metadata)) {
+    return metadata as Record<string, unknown>;
+  }
+  return undefined;
+};
+
+const mapRowToEntry = (row: AdminAuditRow): AdminAuditLogEntry => ({
+  id: row.id,
+  tenantId: row.tenant_id ?? undefined,
+  targetId: row.target_id,
+  targetType: (row.target_type ?? 'system') as AdminAuditLogEntry['targetType'],
+  action: (row.action ?? 'tenant.updated') as AdminAuditAction,
+  actor: {
+    id: row.actor_id ?? undefined,
+    email: row.actor_email ?? undefined,
+    roles: Array.isArray(row.actor_roles) ? row.actor_roles : []
+  },
+  reason: row.reason ?? undefined,
+  comment: row.comment ?? undefined,
+  metadata: normalizeMetadata(row.metadata),
+  createdAt: row.created_at
+});
 
 export class AdminAuditLogRepository {
   constructor(private readonly supabase: SupabaseClient<Database>) {}
@@ -34,7 +61,7 @@ export class AdminAuditLogRepository {
       actor_roles: entry.actor.roles?.length ? entry.actor.roles : null,
       reason: entry.reason ?? null,
       comment: entry.comment ?? null,
-      metadata: entry.metadata ?? null
+      metadata: (entry.metadata ?? null) as Database['public']['Tables']['admin_audit_log']['Insert']['metadata']
     };
 
     const { data, error } = await (this.supabase as any)
@@ -48,22 +75,7 @@ export class AdminAuditLogRepository {
       return null;
     }
 
-    return {
-      id: data.id,
-      tenantId: data.tenant_id,
-      targetId: data.target_id,
-      targetType: data.target_type,
-      action: data.action,
-      actor: {
-        id: data.actor_id ?? undefined,
-        email: data.actor_email ?? undefined,
-        roles: data.actor_roles ?? []
-      },
-      reason: data.reason ?? undefined,
-      comment: data.comment ?? undefined,
-      metadata: data.metadata ?? undefined,
-      createdAt: data.created_at
-    };
+    return mapRowToEntry(data);
   }
 
   async findByTenant(tenantId: string, limit = 100): Promise<AdminAuditLogEntry[]> {
@@ -79,21 +91,6 @@ export class AdminAuditLogRepository {
       return [];
     }
 
-    return (data || []).map((row: any) => ({
-      id: row.id,
-      tenantId: row.tenant_id,
-      targetId: row.target_id,
-      targetType: row.target_type,
-      action: row.action,
-      actor: {
-        id: row.actor_id ?? undefined,
-        email: row.actor_email ?? undefined,
-        roles: row.actor_roles ?? []
-      },
-      reason: row.reason ?? undefined,
-      comment: row.comment ?? undefined,
-      metadata: row.metadata ?? undefined,
-      createdAt: row.created_at
-    }));
+    return (data ?? []).map(mapRowToEntry);
   }
 }

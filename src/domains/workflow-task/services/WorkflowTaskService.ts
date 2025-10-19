@@ -45,6 +45,7 @@ import {
   Result,
   Ok,
   Err,
+  isErr,
   validateTaskCompletion,
   WorkflowTaskImageUrls,
 } from '../types/workflow-task-types';
@@ -80,11 +81,12 @@ export class WorkflowTaskService {
     try {
       const result = await this.repo.findIncompleteRequired(jobId);
 
-      if (!result.ok) {
+      if (isErr(result)) {
+        const { error: repositoryError } = result;
         return Err({
           code: 'VALIDATION_FAILED',
           message: 'Failed to validate job completion',
-          details: result.error,
+          details: repositoryError,
         });
       }
 
@@ -126,11 +128,12 @@ export class WorkflowTaskService {
       // Get current task
       const taskResult = await this.repo.findById(taskId);
 
-      if (!taskResult.ok) {
+      if (isErr(taskResult)) {
+        const { error: repositoryError } = taskResult;
         return Err({
           code: 'TASK_FETCH_FAILED',
           message: 'Failed to fetch task',
-          details: taskResult.error,
+          details: repositoryError,
         });
       }
 
@@ -189,11 +192,12 @@ export class WorkflowTaskService {
       // Update task
       const updateResult = await this.repo.update(taskId, updateData);
 
-      if (!updateResult.ok) {
+      if (isErr(updateResult)) {
+        const { error: repositoryError } = updateResult;
         return Err({
           code: 'TASK_UPDATE_FAILED',
           message: 'Failed to complete task',
-          details: updateResult.error,
+          details: repositoryError,
         });
       }
 
@@ -214,11 +218,12 @@ export class WorkflowTaskService {
     try {
       const result = await this.repo.findByJobId(jobId);
 
-      if (!result.ok) {
+      if (isErr(result)) {
+        const { error: repositoryError } = result;
         return Err({
           code: 'TASK_FETCH_FAILED',
           message: 'Failed to fetch task list',
-          details: result.error,
+          details: repositoryError,
         });
       }
 
@@ -245,11 +250,12 @@ export class WorkflowTaskService {
     try {
       const taskResult = await this.repo.findById(taskId);
 
-      if (!taskResult.ok) {
+      if (isErr(taskResult)) {
+        const { error: repositoryError } = taskResult;
         return Err({
           code: 'TASK_FETCH_FAILED',
           message: 'Failed to fetch task',
-          details: taskResult.error,
+          details: repositoryError,
         });
       }
 
@@ -289,7 +295,7 @@ export class WorkflowTaskService {
 
       const updateResult = await this.repo.updateImageUrls(taskId, uploadResult.urls);
 
-      if (!updateResult.ok) {
+      if (isErr(updateResult)) {
         try {
           await deleteImagesFromStorage(
             supabaseClient,
@@ -300,10 +306,11 @@ export class WorkflowTaskService {
           console.error('Failed to cleanup uploaded task images', cleanupError);
         }
 
+        const { error: repositoryError } = updateResult;
         return Err({
           code: 'IMAGE_UPDATE_FAILED',
           message: 'Failed to persist task image URLs',
-          details: updateResult.error,
+          details: repositoryError,
         });
       }
 
@@ -329,11 +336,12 @@ export class WorkflowTaskService {
     try {
       const taskResult = await this.repo.findById(taskId);
 
-      if (!taskResult.ok) {
+      if (isErr(taskResult)) {
+        const { error: repositoryError } = taskResult;
         return Err({
           code: 'TASK_FETCH_FAILED',
           message: 'Failed to fetch task',
-          details: taskResult.error,
+          details: repositoryError,
         });
       }
 
@@ -373,11 +381,12 @@ export class WorkflowTaskService {
         primary_image_url: null,
       });
 
-      if (!updateResult.ok) {
+      if (isErr(updateResult)) {
+        const { error: repositoryError } = updateResult;
         return Err({
           code: 'IMAGE_UPDATE_FAILED',
           message: 'Failed to clear task image URLs',
-          details: updateResult.error,
+          details: repositoryError,
         });
       }
 

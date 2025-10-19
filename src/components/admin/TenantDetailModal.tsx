@@ -31,7 +31,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-interface TenantDetail {
+export interface TenantDetail {
   id: string;
   name: string;
   slug: string;

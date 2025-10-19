@@ -25,6 +25,7 @@ export interface TemplateOption {
   description: string | null;
   job_type: string | null;
   items?: Array<{ id: string; task_description: string }>;
+  is_active?: boolean;
 }
 
 export interface TaskTemplateSelectorProps {

@@ -7,8 +7,8 @@ import { TextEncoder, TextDecoder } from 'util';
 import { Request, Response, Headers } from 'node-fetch';
 
 // Polyfill for Node.js environment
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder as any;
+(global as any).TextEncoder = TextEncoder;
+(global as any).TextDecoder = TextDecoder;
 
 // Polyfill for Next.js web APIs
 if (!global.Request) {

@@ -11,13 +11,24 @@
     "useUnknownInCatchVariables": false,
     "alwaysStrict": false
   },
-  "exclude": [
-    "node_modules",
-    "scripts/**/*",
-    "experimental/**/*",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx"
+  "include": [
+    "src/app/api/admin/**/*",
+    "src/app/api/supervisor/**/*",
+    "src/app/api/task-templates/**/*",
+    "src/app/api/workflow-tasks/**/*",
+    "src/app/(authenticated)/supervisor/**/*",
+    "src/components/tasks/**/*",
+    "src/components/admin/**/*",
+    "src/domains/tenant/**/*",
+    "src/domains/admin/**/*",
+    "src/domains/task-template/**/*",
+    "src/domains/workflow-task/**/*",
+    "src/lib/**/*",
+    "src/types/**/*",
+    "src/__tests__/helpers/**/*",
+    "tests/integration/task-templates/**/*",
+    "tests/integration/workflow-tasks/**/*",
+    "tests/api/task-template-image.contract.test.ts",
+    "tests/api/workflow-task-image.contract.test.ts"
   ]
 }

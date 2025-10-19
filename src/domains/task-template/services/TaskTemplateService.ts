@@ -41,6 +41,7 @@ import {
   Ok,
   Err,
   TemplateImageUrls,
+  isErr,
 } from '../types/task-template-types';
 import type { WorkflowTask } from '@/domains/workflow-task/types/workflow-task-types';
 import type { ProcessedImages } from '@/utils/image-processor';
@@ -76,11 +77,12 @@ export class TaskTemplateService {
       // Load template with items
       const templateResult = await this.templateRepo.findByIdWithItems(templateId);
 
-      if (!templateResult.ok) {
+      if (isErr(templateResult)) {
+        const { error: repositoryError } = templateResult;
         return Err({
           code: 'TEMPLATE_FETCH_FAILED',
           message: 'Failed to fetch template',
-          details: templateResult.error,
+          details: repositoryError,
         });
       }
 
@@ -109,7 +111,7 @@ export class TaskTemplateService {
 
       // Check if job already has tasks (optional warning)
       const existingTasksResult = await this.taskRepo.findByJobId(jobId);
-      if (existingTasksResult.ok && existingTasksResult.value.length > 0) {
+      if (!isErr(existingTasksResult) && existingTasksResult.value.length > 0) {
         // This is just a warning - we'll still proceed
         console.warn(`Job ${jobId} already has ${existingTasksResult.value.length} tasks. Adding template tasks.`);
       }
@@ -127,11 +129,12 @@ export class TaskTemplateService {
         templateImageUrls
       );
 
-      if (!createResult.ok) {
+      if (isErr(createResult)) {
+        const { error: repositoryError } = createResult;
         return Err({
           code: 'TASK_CREATION_FAILED',
           message: 'Failed to create tasks from template',
-          details: createResult.error,
+          details: repositoryError,
         });
       }
 
@@ -152,11 +155,12 @@ export class TaskTemplateService {
     try {
       const usageResult = await this.templateRepo.isTemplateInUse(templateId);
 
-      if (!usageResult.ok) {
+      if (isErr(usageResult)) {
+        const { error: repositoryError } = usageResult;
         return Err({
           code: 'VALIDATION_FAILED',
           message: 'Failed to check template usage',
-          details: usageResult.error,
+          details: repositoryError,
         });
       }
 
@@ -182,11 +186,12 @@ export class TaskTemplateService {
     try {
       const result = await this.templateRepo.findAll(includeInactive);
 
-      if (!result.ok) {
+      if (isErr(result)) {
+        const { error: repositoryError } = result;
         return Err({
           code: 'TEMPLATE_FETCH_FAILED',
           message: 'Failed to fetch templates',
-          details: result.error,
+          details: repositoryError,
         });
       }
 
@@ -214,11 +219,12 @@ export class TaskTemplateService {
     try {
       const result = await this.templateRepo.findByIdWithItems(templateId);
 
-      if (!result.ok) {
+      if (isErr(result)) {
+        const { error: repositoryError } = result;
         return Err({
           code: 'TEMPLATE_FETCH_FAILED',
           message: 'Failed to fetch template',
-          details: result.error,
+          details: repositoryError,
         });
       }
 
@@ -245,11 +251,12 @@ export class TaskTemplateService {
     try {
       const templateResult = await this.templateRepo.findByIdWithItems(templateId);
 
-      if (!templateResult.ok) {
+      if (isErr(templateResult)) {
+        const { error: repositoryError } = templateResult;
         return Err({
           code: 'TEMPLATE_FETCH_FAILED',
           message: 'Failed to fetch template',
-          details: templateResult.error,
+          details: repositoryError,
         });
       }
 
@@ -289,7 +296,8 @@ export class TaskTemplateService {
 
       const updateResult = await this.templateRepo.updateImageUrls(templateId, uploadResult.urls);
 
-      if (!updateResult.ok) {
+      if (isErr(updateResult)) {
+        const { error: repositoryError } = updateResult;
         try {
           await deleteImagesFromStorage(
             supabaseClient,
@@ -303,7 +311,7 @@ export class TaskTemplateService {
         return Err({
           code: 'IMAGE_UPDATE_FAILED',
           message: 'Failed to persist template image URLs',
-          details: updateResult.error,
+          details: repositoryError,
         });
       }
 
@@ -329,11 +337,12 @@ export class TaskTemplateService {
     try {
       const templateResult = await this.templateRepo.findByIdWithItems(templateId);
 
-      if (!templateResult.ok) {
+      if (isErr(templateResult)) {
+        const { error: repositoryError } = templateResult;
         return Err({
           code: 'TEMPLATE_FETCH_FAILED',
           message: 'Failed to fetch template',
-          details: templateResult.error,
+          details: repositoryError,
         });
       }
 
@@ -373,11 +382,12 @@ export class TaskTemplateService {
         primary_image_url: null,
       });
 
-      if (!updateResult.ok) {
+      if (isErr(updateResult)) {
+        const { error: repositoryError } = updateResult;
         return Err({
           code: 'IMAGE_UPDATE_FAILED',
           message: 'Failed to clear template image URLs',
-          details: updateResult.error,
+          details: repositoryError,
         });
       }
 
