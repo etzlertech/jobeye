@@ -117,9 +117,12 @@ export async function POST(request: NextRequest) {
     const service = new TaskDefinitionService(repository);
 
     // Create definition
-    // Note: userId from context, but we'll use a placeholder for now
     const userId = context.userId || 'system';
-    const result = await service.createTaskDefinition(validation.data, userId);
+    const result = await service.createTaskDefinition(
+      validation.data,
+      context.tenantId,
+      userId
+    );
 
     if (!result.ok) {
       if (result.error.code === 'VALIDATION_ERROR') {

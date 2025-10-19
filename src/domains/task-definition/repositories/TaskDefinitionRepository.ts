@@ -113,10 +113,10 @@ export class TaskDefinitionRepository {
 
   /**
    * Create new task definition
-   * @param input - Task definition data
+   * @param input - Task definition data (with tenant_id and created_by added by service)
    * @returns Result with created task definition
    */
-  async create(input: CreateTaskDefinitionInput): Promise<Result<TaskDefinition, RepositoryError>> {
+  async create(input: CreateTaskDefinitionInput & { tenant_id: string; created_by: string }): Promise<Result<TaskDefinition, RepositoryError>> {
     try {
       // Validate input
       const validated = CreateTaskDefinitionSchema.parse(input);
@@ -124,12 +124,14 @@ export class TaskDefinitionRepository {
       const { data, error } = await this.client
         .from('task_definitions')
         .insert({
+          tenant_id: input.tenant_id,
           name: validated.name,
           description: validated.description,
           acceptance_criteria: validated.acceptance_criteria || null,
           requires_photo_verification: validated.requires_photo_verification ?? false,
           requires_supervisor_approval: validated.requires_supervisor_approval ?? false,
           is_required: validated.is_required ?? true,
+          created_by: input.created_by,
         } as any) // Type assertion needed due to generated types
         .select()
         .single();

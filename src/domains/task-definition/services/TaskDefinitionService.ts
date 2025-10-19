@@ -83,20 +83,23 @@ export class TaskDefinitionService {
   /**
    * Create new task definition
    * @param input - Task definition data
+   * @param tenantId - Tenant ID for the definition
    * @param userId - ID of user creating the definition
    * @returns Result with created task definition
    */
   async createTaskDefinition(
     input: CreateTaskDefinitionInput,
+    tenantId: string,
     userId: string
   ): Promise<Result<TaskDefinition, ServiceError>> {
-    // Add created_by to input
-    const inputWithUser = {
+    // Add tenant_id and created_by to input
+    const inputWithMetadata = {
       ...input,
+      tenant_id: tenantId,
       created_by: userId,
     };
 
-    const result = await this.repository.create(inputWithUser as any);
+    const result = await this.repository.create(inputWithMetadata);
 
     if (!result.ok) {
       if (result.error.code === 'VALIDATION_ERROR') {
