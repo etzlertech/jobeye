@@ -71,6 +71,9 @@ export interface WorkflowTaskItemAssociationWithDetails extends WorkflowTaskItem
   kit_description?: string | null;
   loaded_by_name?: string | null;
   loaded_by_email?: string | null;
+  // Joined item/kit objects for dual-write sync
+  item?: { id: string; name: string; description?: string | null; item_type?: string } | undefined;
+  kit?: { id: string; name: string; description?: string | null } | undefined;
 }
 
 // Zod Schemas

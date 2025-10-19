@@ -183,6 +183,27 @@ export class TaskTemplateService {
         }
       }
 
+      // T021: Dual-write to job_checklist_items for backward compatibility
+      // Sync workflow task item associations to legacy job checklist
+      try {
+        const syncResult = await this.workflowAssocRepo.syncToJobChecklist(jobId);
+        if (isErr(syncResult)) {
+          console.error(
+            `[TaskTemplateService] Failed to sync associations to job_checklist_items for job ${jobId}:`,
+            syncResult.error.message
+          );
+          // Don't fail template instantiation if sync fails - log and continue
+        } else {
+          console.log(`[TaskTemplateService] Successfully synced associations to job_checklist_items for job ${jobId}`);
+        }
+      } catch (syncError: any) {
+        console.error(
+          `[TaskTemplateService] Unexpected error syncing to job_checklist_items for job ${jobId}:`,
+          syncError.message
+        );
+        // Don't fail template instantiation if sync fails
+      }
+
       return Ok(createdTasks);
     } catch (err: any) {
       return Err({

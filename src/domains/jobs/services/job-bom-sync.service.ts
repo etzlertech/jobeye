@@ -66,9 +66,9 @@ export async function syncWorkflowAssociationsToJobChecklist(
         checklistItems.push({
           job_id: jobId,
           sequence_number: sequenceNumber++,
-          item_type: assoc.item.item_type === 'equipment' ? 'equipment' : 'material',
+          item_type: (assoc.item as any).item_type === 'equipment' ? 'equipment' : 'material',
           item_id: assoc.item_id,
-          item_name: assoc.item.name,
+          item_name: (assoc.item as any).name,
           quantity: Number(assoc.quantity),
           status: mapAssociationStatusToChecklistStatus(assoc.status),
           notes: assoc.notes || undefined,
@@ -85,10 +85,10 @@ export async function syncWorkflowAssociationsToJobChecklist(
           sequence_number: sequenceNumber++,
           item_type: 'equipment', // Kits are typically equipment
           item_id: assoc.kit_id,
-          item_name: `${assoc.kit.name} (Kit)`,
+          item_name: `${(assoc.kit as any).name} (Kit)`,
           quantity: Number(assoc.quantity),
           status: mapAssociationStatusToChecklistStatus(assoc.status),
-          notes: assoc.notes || `Kit: ${assoc.kit.description || ''}`,
+          notes: assoc.notes || `Kit: ${(assoc.kit as any).description || ''}`,
         });
       }
     }
@@ -133,14 +133,19 @@ export async function syncWorkflowAssociationsToJobChecklist(
 /**
  * Map workflow association status to job_checklist_items status
  *
- * workflow_task_item_associations uses: pending, loaded, verified, missing
+ * workflow_task_item_associations uses: pending, loaded, verified, missing, returned
  * job_checklist_items uses: pending, loaded, verified, missing
- * (Fortunately these align!)
+ * Note: 'returned' status is not supported in job_checklist_items, map to 'pending'
  */
 function mapAssociationStatusToChecklistStatus(
-  status: 'pending' | 'loaded' | 'verified' | 'missing'
+  status: string
 ): 'pending' | 'loaded' | 'verified' | 'missing' {
-  return status;
+  // Handle the returned status by mapping it back to pending
+  if (status === 'returned') {
+    return 'pending';
+  }
+  // All other statuses align (pending, loaded, verified, missing)
+  return status as 'pending' | 'loaded' | 'verified' | 'missing';
 }
 
 /**

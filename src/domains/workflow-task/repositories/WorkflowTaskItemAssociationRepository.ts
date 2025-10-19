@@ -49,6 +49,7 @@ import {
   Result,
   Ok,
   Err,
+  isErr,
 } from '../types/workflow-task-association-types';
 
 export class WorkflowTaskItemAssociationRepository {
@@ -464,6 +465,113 @@ export class WorkflowTaskItemAssociationRepository {
       return Err({
         code: 'UNEXPECTED_ERROR',
         message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Find all associations for a job (across all workflow tasks in the job)
+   * Used for dual-write sync to job_checklist_items
+   */
+  async findByJobIdWithDetails(
+    jobId: string
+  ): Promise<Result<WorkflowTaskItemAssociationWithDetails[], WorkflowTaskAssociationRepositoryError>> {
+    try {
+      const { data, error } = await this.client
+        .from('workflow_task_item_associations')
+        .select(`
+          *,
+          item:items!item_id (
+            id,
+            name,
+            description,
+            item_type
+          ),
+          kit:kits!kit_id (
+            id,
+            name,
+            description
+          ),
+          workflow_task:workflow_tasks!workflow_task_id (
+            id,
+            job_id
+          ),
+          loaded_by_user:loaded_by (
+            id,
+            email
+          )
+        `)
+        .eq('workflow_tasks.job_id', jobId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        return Err({
+          code: 'QUERY_FAILED',
+          message: `Failed to fetch job associations with details: ${error.message}`,
+          details: error,
+        });
+      }
+
+      // Filter out rows where the join didn't match (job_id mismatch)
+      const filtered = (data || []).filter((row: any) => row.workflow_task?.job_id === jobId);
+
+      // Transform the joined data structure
+      const transformed = filtered.map((row: any) => ({
+        ...row,
+        item: row.item || undefined,
+        kit: row.kit || undefined,
+        workflow_task: undefined,
+        loaded_by_user: undefined,
+      }));
+
+      return Ok(transformed as WorkflowTaskItemAssociationWithDetails[]);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Sync workflow task item associations to job_checklist_items
+   * Maintains backward compatibility with legacy BOM system
+   *
+   * This is a dual-write operation that should be called after
+   * associations are created/updated to keep job_checklist_items in sync.
+   */
+  async syncToJobChecklist(
+    jobId: string
+  ): Promise<Result<void, WorkflowTaskAssociationRepositoryError>> {
+    try {
+      // Import the sync helper function
+      const { syncWorkflowAssociationsToJobChecklist } = await import('@/domains/jobs/services/job-bom-sync.service');
+
+      // Fetch all associations for this job
+      const associationsResult = await this.findByJobIdWithDetails(jobId);
+
+      if (isErr(associationsResult)) {
+        return Err({
+          code: 'SYNC_FAILED',
+          message: `Failed to fetch associations for sync: ${associationsResult.error.message}`,
+          details: associationsResult.error,
+        });
+      }
+
+      // Perform the sync
+      await syncWorkflowAssociationsToJobChecklist(
+        this.client,
+        jobId,
+        associationsResult.value
+      );
+
+      return Ok(undefined);
+    } catch (err: any) {
+      return Err({
+        code: 'SYNC_FAILED',
+        message: `Failed to sync to job checklist: ${err.message}`,
         details: err,
       });
     }
