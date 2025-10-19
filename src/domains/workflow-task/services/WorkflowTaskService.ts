@@ -39,6 +39,7 @@ import {
   WorkflowTask,
   TaskStatus,
   UpdateTaskInput,
+  VerificationMethod,
   ServiceError,
   Result,
   Ok,
@@ -49,7 +50,7 @@ import {
 export interface VerificationInput {
   photoUrl?: string;
   aiConfidence?: number;
-  verificationMethod?: 'manual' | 'vlm' | 'yolo';
+  verificationMethod?: VerificationMethod;
   verificationData?: Record<string, any>;
 }
 

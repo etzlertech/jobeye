@@ -6,11 +6,41 @@
 
 import { WorkflowTaskService } from '@/domains/workflow-task/services/WorkflowTaskService';
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
-import { TaskStatus } from '@/domains/workflow-task/types/workflow-task-types';
+import { TaskStatus, VerificationMethod } from '@/domains/workflow-task/types/workflow-task-types';
 import type { WorkflowTask } from '@/domains/workflow-task/types/workflow-task-types';
 
 // Mock the repository
 jest.mock('@/domains/workflow-task/repositories/WorkflowTaskRepository');
+
+const baseTimestamp = new Date().toISOString();
+
+const createWorkflowTaskMock = (overrides: Partial<WorkflowTask>): WorkflowTask => ({
+  id: 'task-base',
+  tenant_id: 'tenant-1',
+  job_id: 'job-1',
+  task_description: 'Base task',
+  task_order: 0,
+  status: TaskStatus.PENDING,
+  is_required: true,
+  is_deleted: false,
+  template_id: null,
+  requires_photo_verification: false,
+  requires_supervisor_approval: false,
+  verification_photo_url: null,
+  ai_confidence: null,
+  verification_method: VerificationMethod.MANUAL,
+  verification_data: null,
+  acceptance_criteria: null,
+  requires_supervisor_review: null,
+  supervisor_approved: null,
+  supervisor_notes: null,
+  completed_by: null,
+  completed_at: null,
+  user_id: null,
+  created_at: baseTimestamp,
+  updated_at: baseTimestamp,
+  ...overrides,
+});
 
 describe('WorkflowTaskService', () => {
   let service: WorkflowTaskService;
@@ -40,32 +70,18 @@ describe('WorkflowTaskService', () => {
 
     it('should return error when required tasks are incomplete', async () => {
       const incompleteTasks: WorkflowTask[] = [
-        {
+        createWorkflowTaskMock({
           id: 'task-1',
-          job_id: 'job-1',
           task_description: 'Incomplete required task',
           task_order: 0,
-          is_required: true,
-          is_deleted: false,
           status: TaskStatus.PENDING,
-          requires_photo_verification: false,
-          requires_supervisor_approval: false,
-          created_at: new Date().toISOString(),
-          tenant_id: 'tenant-1',
-        },
-        {
+        }),
+        createWorkflowTaskMock({
           id: 'task-2',
-          job_id: 'job-1',
           task_description: 'Another incomplete',
           task_order: 1,
-          is_required: true,
-          is_deleted: false,
           status: TaskStatus.IN_PROGRESS,
-          requires_photo_verification: false,
-          requires_supervisor_approval: false,
-          created_at: new Date().toISOString(),
-          tenant_id: 'tenant-1',
-        },
+        }),
       ];
 
       mockRepo.findIncompleteRequired = jest.fn().mockResolvedValue({
@@ -116,19 +132,13 @@ describe('WorkflowTaskService', () => {
   });
 
   describe('completeTask', () => {
-    const mockTask: WorkflowTask = {
+    const mockTask: WorkflowTask = createWorkflowTaskMock({
       id: 'task-1',
-      job_id: 'job-1',
       task_description: 'Task to complete',
-      task_order: 0,
-      is_required: true,
-      is_deleted: false,
       status: TaskStatus.IN_PROGRESS,
       requires_photo_verification: true,
       requires_supervisor_approval: false,
-      created_at: new Date().toISOString(),
-      tenant_id: 'tenant-1',
-    };
+    });
 
     it('should successfully complete task with verification data', async () => {
       mockRepo.findById = jest.fn().mockResolvedValue({
@@ -136,13 +146,13 @@ describe('WorkflowTaskService', () => {
         value: mockTask,
       });
 
-      const completedTask = {
+      const completedTask: WorkflowTask = {
         ...mockTask,
         status: TaskStatus.COMPLETE,
-        completed_at: new Date().toISOString(),
+        completed_at: baseTimestamp,
         verification_photo_url: 'https://storage.example.com/photo.jpg',
         ai_confidence: 0.95,
-        verification_method: 'vlm',
+        verification_method: VerificationMethod.VLM,
       };
 
       mockRepo.update = jest.fn().mockResolvedValue({
@@ -153,7 +163,7 @@ describe('WorkflowTaskService', () => {
       const result = await service.completeTask('task-1', 'user-1', {
         photoUrl: 'https://storage.example.com/photo.jpg',
         aiConfidence: 0.95,
-        verificationMethod: 'vlm',
+        verificationMethod: VerificationMethod.VLM,
       });
 
       expect(result.ok).toBe(true);
@@ -169,7 +179,7 @@ describe('WorkflowTaskService', () => {
           status: TaskStatus.COMPLETE,
           verification_photo_url: 'https://storage.example.com/photo.jpg',
           ai_confidence: 0.95,
-          verification_method: 'vlm',
+          verification_method: VerificationMethod.VLM,
         })
       );
     });
@@ -311,32 +321,22 @@ describe('WorkflowTaskService', () => {
   describe('getTaskList', () => {
     it('should return task list for a job', async () => {
       const mockTasks: WorkflowTask[] = [
-        {
+        createWorkflowTaskMock({
           id: 'task-1',
-          job_id: 'job-1',
           task_description: 'Task 1',
           task_order: 0,
           is_required: true,
-          is_deleted: false,
           status: TaskStatus.PENDING,
           requires_photo_verification: false,
-          requires_supervisor_approval: false,
-          created_at: new Date().toISOString(),
-          tenant_id: 'tenant-1',
-        },
-        {
+        }),
+        createWorkflowTaskMock({
           id: 'task-2',
-          job_id: 'job-1',
           task_description: 'Task 2',
           task_order: 1,
           is_required: false,
-          is_deleted: false,
           status: TaskStatus.COMPLETE,
           requires_photo_verification: true,
-          requires_supervisor_approval: false,
-          created_at: new Date().toISOString(),
-          tenant_id: 'tenant-1',
-        },
+        }),
       ];
 
       mockRepo.findByJobId = jest.fn().mockResolvedValue({

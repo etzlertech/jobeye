@@ -7,8 +7,8 @@
 import { TaskTemplateService } from '@/domains/task-template/services/TaskTemplateService';
 import { TaskTemplateRepository } from '@/domains/task-template/repositories/TaskTemplateRepository';
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
-import { TaskStatus } from '@/domains/workflow-task/types/workflow-task-types';
-import type { TemplateWithItems } from '@/domains/task-template/types/task-template-types';
+import { TaskStatus, VerificationMethod } from '@/domains/workflow-task/types/workflow-task-types';
+import type { TaskTemplate, TemplateWithItems } from '@/domains/task-template/types/task-template-types';
 import type { WorkflowTask } from '@/domains/workflow-task/types/workflow-task-types';
 
 // Mock the repositories
@@ -26,16 +26,47 @@ describe('TaskTemplateService', () => {
     service = new TaskTemplateService(mockTemplateRepo, mockTaskRepo);
   });
 
-  describe('instantiateTemplate', () => {
-    const mockTemplate: TemplateWithItems = {
-      id: 'template-1',
-      name: 'Standard Inspection',
-      description: 'Standard inspection template',
-      job_type: 'inspection',
-      is_active: true,
-      created_at: new Date().toISOString(),
-      tenant_id: 'tenant-1',
-      items: [
+  const baseTimestamp = new Date().toISOString();
+
+  const createWorkflowTaskMock = (overrides: Partial<WorkflowTask>): WorkflowTask => ({
+    id: 'task-base',
+    tenant_id: 'tenant-1',
+    job_id: 'job-1',
+    task_description: 'Base task',
+    task_order: 0,
+    status: TaskStatus.PENDING,
+    is_required: true,
+    is_deleted: false,
+    template_id: null,
+    requires_photo_verification: false,
+    requires_supervisor_approval: false,
+    verification_photo_url: null,
+    ai_confidence: null,
+    verification_method: VerificationMethod.MANUAL,
+    verification_data: null,
+    acceptance_criteria: null,
+    requires_supervisor_review: null,
+    supervisor_approved: null,
+    supervisor_notes: null,
+    completed_by: null,
+    completed_at: null,
+    user_id: null,
+    created_at: baseTimestamp,
+    updated_at: baseTimestamp,
+    ...overrides,
+  });
+
+const createTemplateWithItemsMock = (overrides?: Partial<TemplateWithItems>): TemplateWithItems => ({
+  id: 'template-1',
+  tenant_id: 'tenant-1',
+  name: 'Standard Inspection',
+  description: 'Standard inspection template',
+  job_type: 'inspection',
+  is_active: true,
+  created_by: 'supervisor-1',
+  created_at: baseTimestamp,
+  updated_at: baseTimestamp,
+  items: [
         {
           id: 'item-1',
           template_id: 'template-1',
@@ -45,7 +76,7 @@ describe('TaskTemplateService', () => {
           requires_photo_verification: true,
           requires_supervisor_approval: false,
           acceptance_criteria: 'All equipment operational',
-          created_at: new Date().toISOString(),
+          created_at: baseTimestamp,
         },
         {
           id: 'item-2',
@@ -56,10 +87,20 @@ describe('TaskTemplateService', () => {
           requires_photo_verification: false,
           requires_supervisor_approval: false,
           acceptance_criteria: null,
-          created_at: new Date().toISOString(),
+          created_at: baseTimestamp,
         },
-      ],
-    };
+  ],
+  ...overrides,
+});
+
+const createTaskTemplateMock = (overrides?: Partial<TemplateWithItems>): TaskTemplate => {
+  const template = createTemplateWithItemsMock(overrides);
+  const { items, ...taskTemplate } = template;
+  return taskTemplate;
+};
+
+  describe('instantiateTemplate', () => {
+    const mockTemplate = createTemplateWithItemsMock();
 
     it('should successfully instantiate template into job', async () => {
       mockTemplateRepo.findByIdWithItems = jest.fn().mockResolvedValue({
@@ -73,36 +114,26 @@ describe('TaskTemplateService', () => {
       });
 
       const createdTasks: WorkflowTask[] = [
-        {
+        createWorkflowTaskMock({
           id: 'task-1',
           job_id: 'job-1',
           task_description: 'Check equipment',
           task_order: 0,
           is_required: true,
-          is_deleted: false,
-          status: TaskStatus.PENDING,
           requires_photo_verification: true,
-          requires_supervisor_approval: false,
           acceptance_criteria: 'All equipment operational',
           template_id: 'template-1',
-          created_at: new Date().toISOString(),
-          tenant_id: 'tenant-1',
-        },
-        {
+        }),
+        createWorkflowTaskMock({
           id: 'task-2',
           job_id: 'job-1',
           task_description: 'Document findings',
           task_order: 1,
           is_required: false,
-          is_deleted: false,
-          status: TaskStatus.PENDING,
           requires_photo_verification: false,
-          requires_supervisor_approval: false,
           acceptance_criteria: null,
           template_id: 'template-1',
-          created_at: new Date().toISOString(),
-          tenant_id: 'tenant-1',
-        },
+        }),
       ];
 
       mockTaskRepo.createFromTemplate = jest.fn().mockResolvedValue({
@@ -331,25 +362,21 @@ describe('TaskTemplateService', () => {
   });
 
   describe('getAllTemplates', () => {
-    const mockTemplates = [
-      {
+    const mockTemplates: TaskTemplate[] = [
+      createTaskTemplateMock({
         id: 'template-1',
         name: 'Template 1',
         description: 'First template',
         job_type: 'inspection',
         is_active: true,
-        created_at: new Date().toISOString(),
-        tenant_id: 'tenant-1',
-      },
-      {
+      }),
+      createTaskTemplateMock({
         id: 'template-2',
         name: 'Template 2',
         description: 'Second template',
         job_type: 'maintenance',
         is_active: true,
-        created_at: new Date().toISOString(),
-        tenant_id: 'tenant-1',
-      },
+      }),
     ];
 
     it('should return all active templates by default', async () => {
@@ -375,15 +402,13 @@ describe('TaskTemplateService', () => {
         ok: true,
         value: [
           ...mockTemplates,
-          {
+          createTaskTemplateMock({
             id: 'template-3',
             name: 'Inactive Template',
             description: null,
             job_type: null,
             is_active: false,
-            created_at: new Date().toISOString(),
-            tenant_id: 'tenant-1',
-          },
+          }),
         ],
       });
 
@@ -443,14 +468,7 @@ describe('TaskTemplateService', () => {
   });
 
   describe('getTemplateDetails', () => {
-    const mockTemplateWithItems: TemplateWithItems = {
-      id: 'template-1',
-      name: 'Standard Inspection',
-      description: 'Standard inspection template',
-      job_type: 'inspection',
-      is_active: true,
-      created_at: new Date().toISOString(),
-      tenant_id: 'tenant-1',
+    const mockTemplateWithItems = createTemplateWithItemsMock({
       items: [
         {
           id: 'item-1',
@@ -461,10 +479,10 @@ describe('TaskTemplateService', () => {
           requires_photo_verification: true,
           requires_supervisor_approval: false,
           acceptance_criteria: 'All equipment operational',
-          created_at: new Date().toISOString(),
+          created_at: baseTimestamp,
         },
       ],
-    };
+    });
 
     it('should return template with items', async () => {
       mockTemplateRepo.findByIdWithItems = jest.fn().mockResolvedValue({

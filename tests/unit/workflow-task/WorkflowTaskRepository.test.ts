@@ -407,6 +407,7 @@ describe('WorkflowTaskRepository', () => {
         is_required: true,
         requires_photo_verification: false,
         requires_supervisor_approval: false,
+        task_type: 'verification',
       };
 
       const createdTask = {

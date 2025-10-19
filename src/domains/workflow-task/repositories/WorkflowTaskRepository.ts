@@ -48,6 +48,7 @@ import {
   CreateTaskSchema,
   UpdateTaskSchema,
   TaskStatus,
+  VerificationMethod,
   RepositoryError,
   Result,
   Ok,
@@ -170,9 +171,10 @@ export class WorkflowTaskRepository {
         requires_photo_verification: validated.requires_photo_verification,
         requires_supervisor_approval: validated.requires_supervisor_approval,
         acceptance_criteria: validated.acceptance_criteria || null,
+        task_type: validated.task_type,
         status: TaskStatus.PENDING,
         is_deleted: false,
-        verification_method: 'manual',
+        verification_method: VerificationMethod.MANUAL,
       };
 
       const { data, error } = await this.client
@@ -306,7 +308,8 @@ export class WorkflowTaskRepository {
         template_id: item.template_id,
         status: TaskStatus.PENDING,
         is_deleted: false,
-        verification_method: 'manual',
+        verification_method: VerificationMethod.MANUAL,
+        task_type: 'verification',
       }));
 
       const { data, error } = await this.client
