@@ -32,7 +32,9 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TaskTemplateRepository } from '../repositories/TaskTemplateRepository';
+import { TaskTemplateItemAssociationRepository } from '../repositories/TaskTemplateItemAssociationRepository';
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
+import { WorkflowTaskItemAssociationRepository } from '@/domains/workflow-task/repositories/WorkflowTaskItemAssociationRepository';
 import {
   TemplateWithItems,
   TaskTemplate,
@@ -43,6 +45,13 @@ import {
   TemplateImageUrls,
   isErr,
 } from '../types/task-template-types';
+import {
+  TaskTemplateItemAssociation,
+  TaskTemplateItemAssociationWithDetails,
+  CreateTaskTemplateItemAssociationInput,
+  UpdateTaskTemplateItemAssociationInput,
+} from '../types/task-template-association-types';
+import { TaskItemStatus } from '@/domains/workflow-task/types/workflow-task-association-types';
 import type { WorkflowTask } from '@/domains/workflow-task/types/workflow-task-types';
 import type { ProcessedImages } from '@/utils/image-processor';
 import {
@@ -63,7 +72,9 @@ const getStoragePath = (url: string | null | undefined, bucket: string): string 
 export class TaskTemplateService {
   constructor(
     private templateRepo: TaskTemplateRepository,
-    private taskRepo: WorkflowTaskRepository
+    private taskRepo: WorkflowTaskRepository,
+    private associationRepo: TaskTemplateItemAssociationRepository,
+    private workflowAssocRepo: WorkflowTaskItemAssociationRepository
   ) {}
 
   /**
@@ -138,7 +149,41 @@ export class TaskTemplateService {
         });
       }
 
-      return Ok(createResult.value);
+      const createdTasks = createResult.value;
+
+      // T018: Copy item associations from template items to workflow tasks
+      // Map template items to created workflow tasks by task_order
+      const templateItemToTaskMap = new Map<string, string>();
+      for (let i = 0; i < template.items.length; i++) {
+        const templateItem = template.items[i];
+        const workflowTask = createdTasks[i];
+        if (workflowTask) {
+          templateItemToTaskMap.set(templateItem.id, workflowTask.id);
+        }
+      }
+
+      // For each template item, copy its associations to the corresponding workflow task
+      for (const [templateItemId, workflowTaskId] of templateItemToTaskMap.entries()) {
+        const associationsResult = await this.associationRepo.findByTemplateItemId(templateItemId);
+
+        if (!isErr(associationsResult) && associationsResult.value.length > 0) {
+          // Copy each association to the workflow task
+          for (const assoc of associationsResult.value) {
+            await this.workflowAssocRepo.create(workflowTaskId, template.tenant_id, {
+              item_id: assoc.item_id || undefined,
+              kit_id: assoc.kit_id || undefined,
+              quantity: assoc.quantity,
+              is_required: assoc.is_required,
+              status: TaskItemStatus.PENDING,
+              notes: assoc.notes || undefined,
+              source_template_association_id: assoc.id,
+            });
+            // Note: Errors in association copying are logged but don't fail the whole operation
+          }
+        }
+      }
+
+      return Ok(createdTasks);
     } catch (err: any) {
       return Err({
         code: 'UNEXPECTED_ERROR',
@@ -433,12 +478,133 @@ export class TaskTemplateService {
       source_definition_id: definitionId,
     };
   }
+
+  // ============================================================================
+  // Template Item Association Methods (T016)
+  // ============================================================================
+
+  /**
+   * Add item or kit association to a template item
+   */
+  async addItemAssociation(
+    templateItemId: string,
+    tenantId: string,
+    input: CreateTaskTemplateItemAssociationInput
+  ): Promise<Result<TaskTemplateItemAssociation, ServiceError>> {
+    try {
+      const result = await this.associationRepo.create(templateItemId, tenantId, input);
+
+      if (isErr(result)) {
+        const { error: repositoryError } = result;
+        return Err({
+          code: repositoryError.code,
+          message: `Failed to add item association: ${repositoryError.message}`,
+          details: repositoryError,
+        });
+      }
+
+      return Ok(result.value);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Remove item association from a template item
+   */
+  async removeItemAssociation(
+    associationId: string
+  ): Promise<Result<void, ServiceError>> {
+    try {
+      const result = await this.associationRepo.delete(associationId);
+
+      if (isErr(result)) {
+        const { error: repositoryError } = result;
+        return Err({
+          code: repositoryError.code,
+          message: `Failed to remove item association: ${repositoryError.message}`,
+          details: repositoryError,
+        });
+      }
+
+      return Ok(undefined);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Get all item associations for a template item
+   */
+  async getItemAssociations(
+    templateItemId: string
+  ): Promise<Result<TaskTemplateItemAssociationWithDetails[], ServiceError>> {
+    try {
+      const result = await this.associationRepo.findByTemplateItemIdWithDetails(templateItemId);
+
+      if (isErr(result)) {
+        const { error: repositoryError } = result;
+        return Err({
+          code: repositoryError.code,
+          message: `Failed to fetch item associations: ${repositoryError.message}`,
+          details: repositoryError,
+        });
+      }
+
+      return Ok(result.value);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Update an existing item association
+   */
+  async updateItemAssociation(
+    associationId: string,
+    input: UpdateTaskTemplateItemAssociationInput
+  ): Promise<Result<TaskTemplateItemAssociation, ServiceError>> {
+    try {
+      const result = await this.associationRepo.update(associationId, input);
+
+      if (isErr(result)) {
+        const { error: repositoryError } = result;
+        return Err({
+          code: repositoryError.code,
+          message: `Failed to update item association: ${repositoryError.message}`,
+          details: repositoryError,
+        });
+      }
+
+      return Ok(result.value);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
 }
 
 // Convenience export
 export const createTaskTemplateService = (
   templateRepo: TaskTemplateRepository,
-  taskRepo: WorkflowTaskRepository
+  taskRepo: WorkflowTaskRepository,
+  associationRepo: TaskTemplateItemAssociationRepository,
+  workflowAssocRepo: WorkflowTaskItemAssociationRepository
 ): TaskTemplateService => {
-  return new TaskTemplateService(templateRepo, taskRepo);
+  return new TaskTemplateService(templateRepo, taskRepo, associationRepo, workflowAssocRepo);
 };

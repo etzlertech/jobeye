@@ -36,6 +36,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { WorkflowTaskRepository } from '../repositories/WorkflowTaskRepository';
+import { WorkflowTaskItemAssociationRepository } from '../repositories/WorkflowTaskItemAssociationRepository';
 import {
   WorkflowTask,
   TaskStatus,
@@ -49,6 +50,13 @@ import {
   validateTaskCompletion,
   WorkflowTaskImageUrls,
 } from '../types/workflow-task-types';
+import {
+  TaskItemStatus,
+  WorkflowTaskItemAssociation,
+  WorkflowTaskItemAssociationWithDetails,
+  CreateWorkflowTaskItemAssociationInput,
+  UpdateWorkflowTaskItemAssociationInput,
+} from '../types/workflow-task-association-types';
 import type { ProcessedImages } from '@/utils/image-processor';
 import {
   uploadImagesToStorage,
@@ -72,7 +80,10 @@ export interface VerificationInput {
 }
 
 export class WorkflowTaskService {
-  constructor(private repo: WorkflowTaskRepository) {}
+  constructor(
+    private repo: WorkflowTaskRepository,
+    private associationRepo: WorkflowTaskItemAssociationRepository
+  ) {}
 
   /**
    * Validate if job can be completed (all required tasks complete)
@@ -151,6 +162,18 @@ export class WorkflowTaskService {
         return Err({
           code: 'PHOTO_VERIFICATION_REQUIRED',
           message: 'Cannot complete task: photo verification required but not provided',
+        });
+      }
+
+      // T019: Validate required items are loaded before allowing task completion
+      const pendingCountResult = await this.associationRepo.countPendingRequiredItems(taskId);
+      if (!isErr(pendingCountResult) && pendingCountResult.value > 0) {
+        return Err({
+          code: 'REQUIRED_ITEMS_NOT_LOADED',
+          message: `Cannot complete task: ${pendingCountResult.value} required item(s) not loaded`,
+          details: {
+            pendingRequiredCount: pendingCountResult.value,
+          },
         });
       }
 
@@ -399,9 +422,164 @@ export class WorkflowTaskService {
       });
     }
   }
+
+  // ============================================================================
+  // Workflow Task Item Association Methods (T017)
+  // ============================================================================
+
+  /**
+   * Add item or kit association to a workflow task
+   */
+  async addItemAssociation(
+    workflowTaskId: string,
+    tenantId: string,
+    input: CreateWorkflowTaskItemAssociationInput
+  ): Promise<Result<WorkflowTaskItemAssociation, ServiceError>> {
+    try {
+      const result = await this.associationRepo.create(workflowTaskId, tenantId, input);
+
+      if (isErr(result)) {
+        const { error: repositoryError } = result;
+        return Err({
+          code: repositoryError.code,
+          message: `Failed to add item association: ${repositoryError.message}`,
+          details: repositoryError,
+        });
+      }
+
+      return Ok(result.value);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Remove item association from a workflow task
+   */
+  async removeItemAssociation(
+    associationId: string
+  ): Promise<Result<void, ServiceError>> {
+    try {
+      const result = await this.associationRepo.delete(associationId);
+
+      if (isErr(result)) {
+        const { error: repositoryError } = result;
+        return Err({
+          code: repositoryError.code,
+          message: `Failed to remove item association: ${repositoryError.message}`,
+          details: repositoryError,
+        });
+      }
+
+      return Ok(undefined);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Mark item as loaded by worker
+   */
+  async markItemAsLoaded(
+    associationId: string,
+    userId: string
+  ): Promise<Result<WorkflowTaskItemAssociation, ServiceError>> {
+    try {
+      const result = await this.associationRepo.markAsLoaded(associationId, userId);
+
+      if (isErr(result)) {
+        const { error: repositoryError } = result;
+        return Err({
+          code: repositoryError.code,
+          message: `Failed to mark item as loaded: ${repositoryError.message}`,
+          details: repositoryError,
+        });
+      }
+
+      return Ok(result.value);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Get all item associations for a workflow task
+   */
+  async getItemAssociations(
+    workflowTaskId: string,
+    status?: TaskItemStatus
+  ): Promise<Result<WorkflowTaskItemAssociationWithDetails[], ServiceError>> {
+    try {
+      const result = await this.associationRepo.findByWorkflowTaskIdWithDetails(
+        workflowTaskId,
+        status
+      );
+
+      if (isErr(result)) {
+        const { error: repositoryError } = result;
+        return Err({
+          code: repositoryError.code,
+          message: `Failed to fetch item associations: ${repositoryError.message}`,
+          details: repositoryError,
+        });
+      }
+
+      return Ok(result.value);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
+
+  /**
+   * Update an existing item association
+   */
+  async updateItemAssociation(
+    associationId: string,
+    input: UpdateWorkflowTaskItemAssociationInput
+  ): Promise<Result<WorkflowTaskItemAssociation, ServiceError>> {
+    try {
+      const result = await this.associationRepo.update(associationId, input);
+
+      if (isErr(result)) {
+        const { error: repositoryError } = result;
+        return Err({
+          code: repositoryError.code,
+          message: `Failed to update item association: ${repositoryError.message}`,
+          details: repositoryError,
+        });
+      }
+
+      return Ok(result.value);
+    } catch (err: any) {
+      return Err({
+        code: 'UNEXPECTED_ERROR',
+        message: err.message,
+        details: err,
+      });
+    }
+  }
 }
 
 // Convenience export
-export const createWorkflowTaskService = (repo: WorkflowTaskRepository): WorkflowTaskService => {
-  return new WorkflowTaskService(repo);
+export const createWorkflowTaskService = (
+  repo: WorkflowTaskRepository,
+  associationRepo: WorkflowTaskItemAssociationRepository
+): WorkflowTaskService => {
+  return new WorkflowTaskService(repo, associationRepo);
 };
