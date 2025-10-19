@@ -360,6 +360,52 @@ export class VoiceProcessor {
     // In production, this would call an LLM API
     const lowerTranscript = transcript.toLowerCase();
 
+    // Task management intents (NEW - highest priority for task pages)
+    if (lowerTranscript.includes('task')) {
+      if (lowerTranscript.match(/(?:show|list|what\s+are)\s+.*tasks/i)) {
+        return {
+          action: 'list_tasks',
+          entity: 'tasks',
+          confidence: 0.9
+        };
+      }
+      if (lowerTranscript.match(/(?:mark\s+)?task\s+\d+\s+(?:complete|done)|complete\s+task\s+\d+/i)) {
+        return {
+          action: 'complete_task',
+          entity: 'task',
+          confidence: 0.9
+        };
+      }
+      if (lowerTranscript.match(/next\s+task/i)) {
+        return {
+          action: 'navigate_next',
+          entity: 'task',
+          confidence: 0.9
+        };
+      }
+      if (lowerTranscript.match(/previous\s+task/i)) {
+        return {
+          action: 'navigate_prev',
+          entity: 'task',
+          confidence: 0.9
+        };
+      }
+      if (lowerTranscript.match(/(?:what'?s|describe|tell\s+me\s+about)\s+task\s+\d+/i)) {
+        return {
+          action: 'query_task',
+          entity: 'task',
+          confidence: 0.9
+        };
+      }
+      if (lowerTranscript.match(/(?:add|create|new)\s+task/i)) {
+        return {
+          action: 'add_task',
+          entity: 'task',
+          confidence: 0.9
+        };
+      }
+    }
+
     // Navigation intents
     if (lowerTranscript.includes('show') || lowerTranscript.includes('go to') || lowerTranscript.includes('open')) {
       if (lowerTranscript.includes('job') || lowerTranscript.includes('jobs')) {
@@ -447,6 +493,16 @@ export class VoiceProcessor {
       };
     }
 
+    // Try task-specific commands first (delegate to taskCommands module)
+    if (intent.entity === 'task' || intent.entity === 'tasks') {
+      // Import dynamically to avoid circular dependencies
+      const { processTaskCommand } = await import('./taskCommands');
+      const taskResponse = await processTaskCommand(command);
+      if (taskResponse) {
+        return taskResponse;
+      }
+    }
+
     switch (intent.action) {
       case 'navigate':
         return {
@@ -506,7 +562,7 @@ export class VoiceProcessor {
 
       default:
         return {
-          text: 'I can help you navigate, manage jobs, or work with equipment. What would you like to do?',
+          text: 'I can help you navigate, manage jobs, tasks, or equipment. What would you like to do?',
           shouldSpeak: true
         };
     }
