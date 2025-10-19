@@ -101,9 +101,10 @@ Every file in this project must begin with a standardized Agent Directive Block:
 
 ### Phase 4: Job Execution & Verification (18 tables, ~280 files)
 - **Job Templates**: job_templates, template_tasks, template_materials
-- **Job Execution**: jobs, job_tasks, job_materials, job_photos
+- **Job Execution**: jobs, workflow_tasks, job_materials, job_photos
 - **AI Verification**: verification_checklists, verification_items, ai_vision_logs
 - **Irrigation**: irrigation_systems, zones, valves, controllers
+- **Note**: workflow_tasks is the canonical job task table (job_tasks never existed in production)
 
 ### Phase 5: UI Integration (15 tables, ~180 files)
 - **Shared Components**: design system, voice button, chat interface

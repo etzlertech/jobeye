@@ -435,7 +435,7 @@ tests/
 10. `property_candidates` - Pending properties
 
 **Extended Tables (5)**:
-- `job_tasks` - NEW: Task management (links to jobs)
+- `workflow_tasks` - Task management (links to jobs) - NOTE: This is the canonical table (job_tasks never existed in production)
 - `task_templates` - NEW: Reusable task lists
 - `instruction_documents` - NEW: PDF/video guidance
 - `job_instructions` - NEW: Instruction assignments
@@ -589,7 +589,7 @@ Will run `.specify/scripts/bash/update-agent-context.sh claude` to incrementally
    - Task: Create migration for `intake_extractions` table
    - Task: Create migration for `contact_candidates` table
    - Task: Create migration for `property_candidates` table
-   - Task: Create migration for `job_tasks` table
+   - Task: ~~Create migration for `job_tasks` table~~ OBSOLETE (workflow_tasks already exists)
    - Task: Create migration for `task_templates` table
    - Task: Create migration for `instruction_documents` table
    - Task: Create migration for `job_instructions` table

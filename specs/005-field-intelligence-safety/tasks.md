@@ -83,7 +83,8 @@
 - [ ] **T009** Create data model documentation
   - Create: `specs/005-field-intelligence-safety/data-model.md`
   - Document: 10 new tables with full schema, 5 table extensions, relationships, RLS policies
-  - Include: `safety_checklists`, `safety_checklist_completions`, `daily_routes`, `route_waypoints`, `route_events`, `route_optimizations`, `intake_sessions`, `intake_extractions`, `contact_candidates`, `property_candidates`, `job_tasks`, `task_templates`, `instruction_documents`, `job_instructions`, `job_history_insights`
+  - Include: `safety_checklists`, `safety_checklist_completions`, `daily_routes`, `route_waypoints`, `route_events`, `route_optimizations`, `intake_sessions`, `intake_extractions`, `contact_candidates`, `property_candidates`, `workflow_tasks`, `task_templates`, `instruction_documents`, `job_instructions`, `job_history_insights`
+  - Note: `workflow_tasks` is the canonical job task table (job_tasks never existed in production)
 
 - [ ] **T010** Create API contracts
   - Create directory: `specs/005-field-intelligence-safety/contracts/`
@@ -147,10 +148,9 @@
   - Schema: `id UUID, intake_session_id UUID REFERENCES intake_sessions(id), extracted_data JSONB, match_confidence NUMERIC, existing_property_id UUID REFERENCES properties(id), status TEXT DEFAULT 'pending', approved_by UUID REFERENCES users(id), approved_at TIMESTAMPTZ, created_property_id UUID REFERENCES properties(id)`
   - RLS Policy: Tenant isolation via session_id
 
-- [ ] **T021** Create migration script for `job_tasks` table
-  - Create: `scripts/migrations/005-job-tasks.ts`
-  - Schema: `id UUID, job_id UUID REFERENCES jobs(id) ON DELETE CASCADE, template_task_id UUID, task_name TEXT, description TEXT, assigned_to UUID REFERENCES users(id), status TEXT DEFAULT 'pending', sequence_order INT, required BOOLEAN DEFAULT TRUE, depends_on_task_id UUID REFERENCES job_tasks(id), estimated_duration_min INT, actual_duration_min INT, completion_method TEXT, completion_photo_id UUID REFERENCES media_assets(id), completion_evidence JSONB, completed_at TIMESTAMPTZ, completed_by UUID REFERENCES users(id), voice_transcript_id UUID REFERENCES voice_transcripts(id), created_from TEXT, created_at TIMESTAMPTZ DEFAULT NOW()`
-  - RLS Policy: Tenant isolation via job_id
+- [x] **T021** ~~Create migration script for `job_tasks` table~~ **OBSOLETE**
+  - Note: `workflow_tasks` is the canonical table (already exists in production)
+  - Note: `job_tasks` never existed in production - this task is not needed
 
 - [ ] **T022** Create migration script for `task_templates` table
   - Create: `scripts/migrations/005-task-templates.ts`

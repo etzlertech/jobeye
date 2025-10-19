@@ -314,7 +314,8 @@ CREATE TABLE job_instructions (
 
 **Required**:
 ```sql
-CREATE TABLE job_tasks (
+-- Note: workflow_tasks is the canonical job task table (job_tasks never existed in production)
+CREATE TABLE workflow_tasks (
   id UUID PRIMARY KEY,
   job_id UUID REFERENCES jobs(id),
   template_task_id UUID, -- Link to reusable task templates
@@ -537,7 +538,7 @@ Based on gap analysis, **Feature 005** should focus on:
 2. `safety_checklist_completions` - Completion records
 3. `instruction_documents` - PDF/video guidance
 4. `job_instructions` - Link instructions to jobs
-5. `job_tasks` - Task tracking per job
+5. `workflow_tasks` - Task tracking per job (NOTE: This is the canonical table, job_tasks never existed)
 6. `task_templates` - Reusable task lists
 7. `job_history_insights` - Historical patterns (P2)
 

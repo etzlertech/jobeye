@@ -133,8 +133,9 @@
 ---
 
 ### **Domain 4: Job Execution Workflows** ✅
-**Tables**: `job_tasks`, `task_templates`, `instruction_documents`, `job_instructions`
+**Tables**: `workflow_tasks`, `task_templates`, `instruction_documents`, `job_instructions`
 **Integration**: Existing `jobs`, `time_entries`, `travel_logs`, `quality_audits`
+**Note**: `workflow_tasks` is the canonical job task table (job_tasks never existed in production)
 
 **Capabilities**:
 
@@ -409,7 +410,8 @@ CREATE TABLE property_candidates (
 
 ### **Job Workflows**
 ```sql
-CREATE TABLE job_tasks (
+-- Note: workflow_tasks is the canonical job task table (job_tasks never existed in production)
+CREATE TABLE workflow_tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   job_id UUID REFERENCES jobs(id) ON DELETE CASCADE,
   template_task_id UUID, -- Link to reusable templates
@@ -419,7 +421,7 @@ CREATE TABLE job_tasks (
   status TEXT DEFAULT 'pending', -- 'pending', 'in_progress', 'completed', 'skipped', 'blocked'
   sequence_order INT,
   required BOOLEAN DEFAULT TRUE,
-  depends_on_task_id UUID REFERENCES job_tasks(id), -- Task dependencies
+  depends_on_task_id UUID REFERENCES workflow_tasks(id), -- Task dependencies
   estimated_duration_min INT,
   actual_duration_min INT,
   completion_method TEXT, -- 'voice', 'photo', 'manual', 'auto'
