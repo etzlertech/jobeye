@@ -77,6 +77,7 @@ import { ButtonLimiter, useButtonActions } from '@/components/ui/ButtonLimiter';
 import { CameraCapture } from '@/components/camera/CameraCapture';
 import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
 import { TenantBadge } from '@/components/tenant';
+import { TaskList } from '@/components/tasks';
 
 interface JobDetail {
   id: string;
@@ -293,7 +294,7 @@ export default function CrewJobDetailPage() {
     }
 
     setIsCompleting(true);
-    
+
     try {
       const response = await fetch(`/api/crew/jobs/${jobId}/complete`, {
         method: 'POST'
@@ -307,7 +308,7 @@ export default function CrewJobDetailPage() {
           status: 'completed',
           actualEndTime: new Date().toISOString()
         } : null);
-        
+
         // Navigate back to dashboard after completion
         setTimeout(() => router.push('/crew'), 2000);
       } else {
@@ -317,6 +318,27 @@ export default function CrewJobDetailPage() {
       setError('Failed to complete job');
     } finally {
       setIsCompleting(false);
+    }
+  };
+
+  const handleTaskComplete = async (taskId: string) => {
+    try {
+      const response = await fetch(`/api/jobs/${jobId}/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'complete',
+          completed_at: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        setError(result.message || 'Failed to complete task');
+      }
+    } catch (error) {
+      setError('Failed to complete task');
+      console.error('Task completion error:', error);
     }
   };
 
@@ -673,6 +695,16 @@ export default function CrewJobDetailPage() {
                   </button>
                 </div>
               )}
+            </div>
+
+            {/* Task List */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Job Tasks</h2>
+              <TaskList
+                jobId={jobId}
+                editable={job.status === 'in_progress'}
+                onTaskComplete={handleTaskComplete}
+              />
             </div>
 
             {/* Photos */}
