@@ -37,6 +37,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError, validationError } from '@/core/errors/error-handler';
 import { JobsRepository } from '@/domains/jobs/repositories/jobs.repository';
+import { TaskTemplateRepository } from '@/domains/task-template/repositories/TaskTemplateRepository';
+import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
+import { TaskTemplateService } from '@/domains/task-template/services/TaskTemplateService';
 import { getRequestContext } from '@/lib/auth/context';
 import type { Database } from '@/types/database';
 
@@ -252,11 +255,37 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to create job');
     }
 
-    // Skip fetching with relations for now due to production issue
-    // Just return the created job
-    return NextResponse.json({ 
+    // If template_id provided, instantiate template tasks
+    let tasks = [];
+    if (body.template_id) {
+      try {
+        const templateRepo = new TaskTemplateRepository(supabase);
+        const taskRepo = new WorkflowTaskRepository(supabase);
+        const templateService = new TaskTemplateService(templateRepo, taskRepo);
+
+        const result = await templateService.instantiateTemplate(body.template_id, job.id);
+
+        if (result.ok) {
+          tasks = result.value;
+          console.log(`Successfully created ${tasks.length} tasks from template for job ${job.id}`);
+        } else {
+          console.error('Failed to instantiate template:', result.error);
+          // Don't fail the job creation if template instantiation fails
+          // Just log the error
+        }
+      } catch (templateError) {
+        console.error('Template instantiation error:', templateError);
+        // Don't fail the job creation if template instantiation fails
+      }
+    }
+
+    // Return the created job with tasks
+    return NextResponse.json({
       job: job,
-      message: 'Job created successfully'
+      tasks: tasks,
+      message: tasks.length > 0
+        ? `Job created successfully with ${tasks.length} tasks`
+        : 'Job created successfully'
     }, { status: 201 });
 
   } catch (error) {

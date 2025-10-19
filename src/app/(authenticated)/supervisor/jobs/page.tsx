@@ -66,7 +66,8 @@ function JobsPageContent() {
     description: '',
     scheduledDate: new Date().toISOString().split('T')[0],
     scheduledTime: '09:00',
-    priority: 'normal'
+    priority: 'normal',
+    templateId: ''
   });
 
   // Load jobs on mount
@@ -187,7 +188,8 @@ function JobsPageContent() {
         description: '',
         scheduledDate: new Date().toISOString().split('T')[0],
         scheduledTime: '09:00',
-        priority: 'normal'
+        priority: 'normal',
+        templateId: ''
       });
       updateCreateParam(false);
 
@@ -212,7 +214,8 @@ function JobsPageContent() {
       description: '',
       scheduledDate: new Date().toISOString().split('T')[0],
       scheduledTime: '09:00',
-      priority: 'normal'
+      priority: 'normal',
+      templateId: ''
     });
   };
 

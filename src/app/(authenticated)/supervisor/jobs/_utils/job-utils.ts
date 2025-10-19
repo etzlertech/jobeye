@@ -21,6 +21,7 @@ export interface JobFormState {
   scheduledDate: string;
   scheduledTime: string;
   priority: 'low' | 'normal' | 'high' | 'urgent';
+  templateId: string; // Optional task template ID
 }
 
 export function buildJobPayload(form: JobFormState) {
@@ -39,7 +40,8 @@ export function buildJobPayload(form: JobFormState) {
     description: form.description.trim() || null,
     scheduled_start: scheduled_start,
     priority: form.priority,
-    status: 'scheduled'
+    status: 'scheduled',
+    template_id: form.templateId || null // Include template ID if selected
   };
 }
 

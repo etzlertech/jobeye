@@ -16,7 +16,8 @@ voice_considerations:
   - Form fields optimized for voice input
 */
 
-import { Calendar, Clock, FileText, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, Clock, FileText, AlertCircle, ListChecks } from 'lucide-react';
 import type { JobFormState } from '@/app/(authenticated)/supervisor/jobs/_utils/job-utils';
 
 export interface CustomerOption {
@@ -28,6 +29,14 @@ export interface PropertyOption {
   id: string;
   name: string;
   address?: string;
+}
+
+export interface TemplateOption {
+  id: string;
+  name: string;
+  description: string | null;
+  job_type: string | null;
+  items?: Array<{ id: string }>;
 }
 
 export interface JobFormProps {
@@ -49,10 +58,39 @@ export function JobForm({
   onClear,
   disabled
 }: JobFormProps) {
+  const [templates, setTemplates] = useState<TemplateOption[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+
+  // Load templates on mount
+  useEffect(() => {
+    loadTemplates();
+  }, []);
+
+  const loadTemplates = async () => {
+    try {
+      setIsLoadingTemplates(true);
+      const response = await fetch('/api/task-templates');
+      const data = await response.json();
+
+      if (response.ok) {
+        // Only show active templates
+        const activeTemplates = (data.templates || []).filter((t: TemplateOption) => t.is_active !== false);
+        setTemplates(activeTemplates);
+      }
+    } catch (error) {
+      console.error('Failed to load templates:', error);
+    } finally {
+      setIsLoadingTemplates(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit();
   };
+
+  // Get selected template details
+  const selectedTemplate = templates.find(t => t.id === draft.templateId);
 
   // Get today's date in YYYY-MM-DD format
   const today = new Date().toISOString().split('T')[0];
@@ -186,6 +224,60 @@ export function JobForm({
           <option value="high">High</option>
           <option value="urgent">Urgent</option>
         </select>
+      </div>
+
+      {/* Task Template Selection */}
+      <div style={{
+        background: 'rgba(255, 215, 0, 0.05)',
+        border: '1px solid rgba(255, 215, 0, 0.2)',
+        borderRadius: '0.5rem',
+        padding: '1rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <ListChecks style={{ width: '1.25rem', height: '1.25rem', color: '#FFD700' }} />
+          <label htmlFor="template" className="form-label" style={{ marginBottom: 0 }}>
+            Task Template (optional)
+          </label>
+        </div>
+        <select
+          id="template"
+          value={draft.templateId}
+          onChange={(e) => onDraftChange('templateId', e.target.value)}
+          className="input-field"
+          disabled={disabled || isLoadingTemplates}
+        >
+          <option value="">No template - add tasks later</option>
+          {isLoadingTemplates ? (
+            <option value="" disabled>Loading templates...</option>
+          ) : (
+            templates.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.name} ({template.items?.length || 0} tasks)
+              </option>
+            ))
+          )}
+        </select>
+        {selectedTemplate && (
+          <div style={{
+            marginTop: '0.75rem',
+            padding: '0.75rem',
+            background: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '0.375rem',
+            fontSize: '0.875rem'
+          }}>
+            <div style={{ color: '#FFD700', fontWeight: 600, marginBottom: '0.25rem' }}>
+              Preview
+            </div>
+            <div style={{ color: '#9CA3AF' }}>
+              {selectedTemplate.items?.length || 0} tasks will be automatically added to this job
+            </div>
+            {selectedTemplate.description && (
+              <div style={{ color: '#6b7280', marginTop: '0.5rem', fontSize: '0.8125rem' }}>
+                {selectedTemplate.description}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Actions */}
