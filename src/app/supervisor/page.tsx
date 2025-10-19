@@ -26,7 +26,8 @@ import {
   Home,
   UserPlus,
   Building2,
-  ListChecks
+  ListChecks,
+  CheckSquare
 } from 'lucide-react';
 import { TenantBadge } from '@/components/tenant';
 import { supabase } from '@/lib/supabase/client';
@@ -285,6 +286,14 @@ export default function SupervisorDashboard() {
             >
               <ListChecks className="w-6 h-6" />
               <span className="text-sm">Task Templates</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/supervisor/task-definitions')}
+              className="action-button secondary"
+            >
+              <CheckSquare className="w-6 h-6" />
+              <span className="text-sm">Task Definitions</span>
             </button>
             <button
               type="button"

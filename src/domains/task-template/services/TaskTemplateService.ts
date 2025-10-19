@@ -400,6 +400,39 @@ export class TaskTemplateService {
       });
     }
   }
+
+  /**
+   * Create template item from task definition (library support)
+   * Converts a task definition into a template item format with source reference
+   */
+  createItemFromDefinition(
+    definitionId: string,
+    definitionName: string,
+    definitionDescription: string,
+    definitionCriteria: string | null,
+    requiresPhoto: boolean,
+    requiresApproval: boolean,
+    isRequired: boolean,
+    taskOrder: number
+  ): {
+    task_order: number;
+    task_description: string;
+    is_required: boolean;
+    requires_photo_verification: boolean;
+    requires_supervisor_approval: boolean;
+    acceptance_criteria: string | null;
+    source_definition_id: string;
+  } {
+    return {
+      task_order: taskOrder,
+      task_description: `${definitionName}: ${definitionDescription}`,
+      is_required: isRequired,
+      requires_photo_verification: requiresPhoto,
+      requires_supervisor_approval: requiresApproval,
+      acceptance_criteria: definitionCriteria,
+      source_definition_id: definitionId,
+    };
+  }
 }
 
 // Convenience export

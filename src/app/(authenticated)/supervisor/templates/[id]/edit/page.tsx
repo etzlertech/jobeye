@@ -21,8 +21,11 @@ import {
   Loader2,
   Save,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  BookOpen
 } from 'lucide-react';
+import { TaskDefinitionLibraryModal } from '@/components/task-definitions/TaskDefinitionLibraryModal';
+import type { TaskDefinition } from '@/domains/task-definition/types/task-definition-types';
 
 interface TemplateItemInput {
   id?: string; // Existing item ID
@@ -33,6 +36,7 @@ interface TemplateItemInput {
   requires_photo_verification: boolean;
   requires_supervisor_approval: boolean;
   acceptance_criteria: string;
+  source_definition_id?: string; // Reference to task_definition if created from library
 }
 
 export default function EditTemplatePage() {
@@ -58,6 +62,9 @@ export default function EditTemplatePage() {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [mediumUrl, setMediumUrl] = useState<string | null>(null);
   const [primaryImageUrl, setPrimaryImageUrl] = useState<string | null>(null);
+
+  // Library modal state
+  const [showLibrary, setShowLibrary] = useState(false);
 
   useEffect(() => {
     if (templateId) {
@@ -96,6 +103,7 @@ export default function EditTemplatePage() {
         requires_photo_verification: item.requires_photo_verification ?? false,
         requires_supervisor_approval: item.requires_supervisor_approval ?? false,
         acceptance_criteria: item.acceptance_criteria || '',
+        source_definition_id: item.source_definition_id || undefined,
       }));
 
       setItems(loadedItems);
@@ -153,6 +161,21 @@ export default function EditTemplatePage() {
     });
 
     setItems(newItems);
+  };
+
+  const handleSelectDefinition = (definition: TaskDefinition) => {
+    const newItem: TemplateItemInput = {
+      tempId: `temp-${Date.now()}`,
+      task_order: items.length,
+      task_description: `${definition.name}: ${definition.description}`,
+      is_required: definition.is_required,
+      requires_photo_verification: definition.requires_photo_verification,
+      requires_supervisor_approval: definition.requires_supervisor_approval,
+      acceptance_criteria: definition.acceptance_criteria || '',
+      source_definition_id: definition.id,
+    };
+    setItems([...items, newItem]);
+    setShowLibrary(false);
   };
 
   const handleImageCapture = async (images: ProcessedImages) => {
@@ -263,6 +286,7 @@ export default function EditTemplatePage() {
           requires_photo_verification: item.requires_photo_verification,
           requires_supervisor_approval: item.requires_supervisor_approval,
           acceptance_criteria: item.acceptance_criteria.trim() || null,
+          source_definition_id: item.source_definition_id || null,
         })),
       };
 
@@ -476,15 +500,27 @@ export default function EditTemplatePage() {
           <div className="form-section">
             <div className="flex items-center justify-between mb-4">
               <h2 className="section-title mb-0">Task Items</h2>
-              <button
-                type="button"
-                onClick={addItem}
-                className="btn-add-item"
-                disabled={isSubmitting}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add Task
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowLibrary(true)}
+                  className="btn-add-item"
+                  disabled={isSubmitting}
+                  title="Add task from library"
+                >
+                  <BookOpen className="w-4 h-4 mr-1" />
+                  Library
+                </button>
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="btn-add-item"
+                  disabled={isSubmitting}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Task
+                </button>
+              </div>
             </div>
 
             {items.length === 0 ? (
@@ -638,6 +674,13 @@ export default function EditTemplatePage() {
           )}
         </button>
       </div>
+
+      {/* Task Definition Library Modal */}
+      <TaskDefinitionLibraryModal
+        isOpen={showLibrary}
+        onClose={() => setShowLibrary(false)}
+        onSelect={handleSelectDefinition}
+      />
 
       <style jsx>{`
         .mobile-container {

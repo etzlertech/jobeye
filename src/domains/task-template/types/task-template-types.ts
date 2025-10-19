@@ -61,6 +61,7 @@ export interface TaskTemplateItem {
   requires_photo_verification: boolean;
   requires_supervisor_approval: boolean;
   acceptance_criteria: string | null;
+  source_definition_id?: string | null; // Reference to task_definition if created from library (optional for backward compatibility)
   created_at: string;
 }
 
@@ -89,6 +90,7 @@ export const CreateTemplateItemSchema = z.object({
   requires_photo_verification: z.boolean().default(false),
   requires_supervisor_approval: z.boolean().default(false),
   acceptance_criteria: z.string().max(1000, 'Acceptance criteria must be 1000 characters or less').optional(),
+  source_definition_id: z.string().uuid().nullable().optional(), // Link to task_definition if from library
 });
 
 export const CreateTemplateWithItemsSchema = z.object({

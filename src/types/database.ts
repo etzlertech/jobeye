@@ -255,6 +255,38 @@ export interface Database {
           is_active?: boolean
         }
       }
+      company_settings: {
+        Row: {
+          id: string
+          tenant_id: string
+          vision_thresholds: Json | null
+          voice_preferences: Json | null
+          budget_limits: Json | null
+          features: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          vision_thresholds?: Json | null
+          voice_preferences?: Json | null
+          budget_limits?: Json | null
+          features?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          vision_thresholds?: Json | null
+          voice_preferences?: Json | null
+          budget_limits?: Json | null
+          features?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       conflict_logs: {
         Row: {
           id: string
@@ -2531,6 +2563,50 @@ export interface Database {
           proj4text?: string | null
         }
       }
+      task_definitions: {
+        Row: {
+          id: string
+          tenant_id: string
+          name: string
+          description: string
+          acceptance_criteria: string | null
+          requires_photo_verification: boolean
+          requires_supervisor_approval: boolean
+          is_required: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          name: string
+          description: string
+          acceptance_criteria?: string | null
+          requires_photo_verification?: boolean
+          requires_supervisor_approval?: boolean
+          is_required?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          name?: string
+          description?: string
+          acceptance_criteria?: string | null
+          requires_photo_verification?: boolean
+          requires_supervisor_approval?: boolean
+          is_required?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+      }
       tenant_assignments: {
         Row: {
           id: string
@@ -3336,6 +3412,37 @@ export interface Database {
     }
     Views: {}
     Functions: {}
-    Enums: {}
+    Enums: {
+      assignment_status: assignment_status
+      auth_event_type: auth_event_type
+      container_color: container_color
+      container_type: container_type
+      device_type: device_type
+      equipment_status: equipment_status
+      filter_action: filter_action
+      intent_type: intent_type
+      irrigation_controller_type: irrigation_controller_type
+      item_status: item_status
+      item_type: item_type
+      job_priority: job_priority
+      job_status: job_status
+      material_unit: material_unit
+      media_type: media_type
+      mfa_method: mfa_method
+      ocr_method: ocr_method
+      relationship_type: relationship_type
+      schedule_type: schedule_type
+      session_status: session_status
+      tracking_mode: tracking_mode
+      transaction_type: transaction_type
+      transcription_status: transcription_status
+      user_role: user_role
+      valve_status: valve_status
+      verification_method: verification_method
+      vision_verification_type: vision_verification_type
+      zone_type: zone_type
+      contact_role: 'primary' | 'billing' | 'emergency' | 'technical' | 'other'
+      contact_preferred_method: 'email' | 'phone' | 'sms' | 'mail'
+    }
   }
 }
