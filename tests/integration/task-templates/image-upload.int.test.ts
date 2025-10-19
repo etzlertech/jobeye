@@ -56,6 +56,8 @@ describe('Integration: TaskTemplateService image management', () => {
   let templates: TemplateMap;
   let templateRepo: any;
   let taskRepo: any;
+  let associationRepo: any;
+  let workflowAssocRepo: any;
   let service: TaskTemplateService;
 
   beforeEach(() => {
@@ -91,7 +93,15 @@ describe('Integration: TaskTemplateService image management', () => {
       createFromTemplate: jest.fn(async () => Ok<WorkflowTask[]>([])),
     };
 
-    service = new TaskTemplateService(templateRepo, taskRepo);
+    associationRepo = {
+      findByTemplateItemId: jest.fn(async () => Ok([])),
+    };
+
+    workflowAssocRepo = {
+      findByWorkflowTaskId: jest.fn(async () => Ok([])),
+    };
+
+    service = new TaskTemplateService(templateRepo, taskRepo, associationRepo, workflowAssocRepo);
     uploadImagesToStorageMock.mockReset();
     deleteImagesFromStorageMock.mockReset();
   });

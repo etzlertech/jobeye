@@ -38,8 +38,10 @@ import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError, validationError } from '@/core/errors/error-handler';
 import { JobsRepository } from '@/domains/jobs/repositories/jobs.repository';
 import { TaskTemplateRepository } from '@/domains/task-template/repositories/TaskTemplateRepository';
+import { TaskTemplateItemAssociationRepository } from '@/domains/task-template/repositories/TaskTemplateItemAssociationRepository';
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
-import { TaskTemplateService } from '@/domains/task-template/services/TaskTemplateService';
+import { WorkflowTaskItemAssociationRepository } from '@/domains/workflow-task/repositories/WorkflowTaskItemAssociationRepository';
+import { createTaskTemplateService } from '@/domains/task-template/services/TaskTemplateService';
 import { getRequestContext } from '@/lib/auth/context';
 import type { Database } from '@/types/database';
 
@@ -261,7 +263,9 @@ export async function POST(request: NextRequest) {
       try {
         const templateRepo = new TaskTemplateRepository(supabase);
         const taskRepo = new WorkflowTaskRepository(supabase);
-        const templateService = new TaskTemplateService(templateRepo, taskRepo);
+        const associationRepo = new TaskTemplateItemAssociationRepository(supabase);
+        const workflowAssocRepo = new WorkflowTaskItemAssociationRepository(supabase);
+        const templateService = createTaskTemplateService(templateRepo, taskRepo, associationRepo, workflowAssocRepo);
 
         const result = await templateService.instantiateTemplate(body.template_id, job.id);
 

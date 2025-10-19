@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getRequestContext } from '@/lib/auth/context';
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
 import { WorkflowTaskItemAssociationRepository } from '@/domains/workflow-task/repositories/WorkflowTaskItemAssociationRepository';
-import { WorkflowTaskService } from '@/domains/workflow-task/services/WorkflowTaskService';
+import { createWorkflowTaskService } from '@/domains/workflow-task/services/WorkflowTaskService';
 import {
   TaskItemStatus,
   CreateWorkflowTaskItemAssociationSchema,
@@ -55,7 +55,7 @@ export async function GET(
     const supabase = await createClient();
     const taskRepo = new WorkflowTaskRepository(supabase);
     const associationRepo = new WorkflowTaskItemAssociationRepository(supabase);
-    const service = new WorkflowTaskService(taskRepo, associationRepo);
+    const service = createWorkflowTaskService(taskRepo, associationRepo);
 
     // Get associations for workflow task
     const result = await service.getItemAssociations(params.taskId, status);
@@ -159,7 +159,7 @@ export async function POST(
 
     const taskRepo = new WorkflowTaskRepository(supabase);
     const associationRepo = new WorkflowTaskItemAssociationRepository(supabase);
-    const service = new WorkflowTaskService(taskRepo, associationRepo);
+    const service = createWorkflowTaskService(taskRepo, associationRepo);
 
     // Create association
     const result = await service.addItemAssociation(params.taskId, context.tenantId, body);

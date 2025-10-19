@@ -54,6 +54,7 @@ function createTask(overrides: Partial<WorkflowTask> = {}): WorkflowTask {
 describe('Integration: WorkflowTaskService image management', () => {
   let taskStore: Map<string, WorkflowTask>;
   let taskRepo: any;
+  let associationRepo: any;
   let service: WorkflowTaskService;
 
   beforeEach(() => {
@@ -86,7 +87,11 @@ describe('Integration: WorkflowTaskService image management', () => {
       softDelete: jest.fn(),
     };
 
-    service = new WorkflowTaskService(taskRepo);
+    associationRepo = {
+      findByWorkflowTaskId: jest.fn(async () => Ok([])),
+    };
+
+    service = new WorkflowTaskService(taskRepo, associationRepo);
     uploadImagesToStorageMock.mockReset();
     deleteImagesFromStorageMock.mockReset();
   });

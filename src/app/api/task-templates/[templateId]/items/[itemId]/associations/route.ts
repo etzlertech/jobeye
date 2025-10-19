@@ -13,7 +13,7 @@ import { TaskTemplateRepository } from '@/domains/task-template/repositories/Tas
 import { TaskTemplateItemAssociationRepository } from '@/domains/task-template/repositories/TaskTemplateItemAssociationRepository';
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
 import { WorkflowTaskItemAssociationRepository } from '@/domains/workflow-task/repositories/WorkflowTaskItemAssociationRepository';
-import { TaskTemplateService } from '@/domains/task-template/services/TaskTemplateService';
+import { createTaskTemplateService } from '@/domains/task-template/services/TaskTemplateService';
 import { CreateTaskTemplateItemAssociationSchema } from '@/domains/task-template/types/task-template-association-types';
 import { ZodError } from 'zod';
 
@@ -39,7 +39,7 @@ export async function GET(
     const taskRepo = new WorkflowTaskRepository(supabase);
     const associationRepo = new TaskTemplateItemAssociationRepository(supabase);
     const workflowAssocRepo = new WorkflowTaskItemAssociationRepository(supabase);
-    const service = new TaskTemplateService(templateRepo, taskRepo, associationRepo, workflowAssocRepo);
+    const service = createTaskTemplateService(templateRepo, taskRepo, associationRepo, workflowAssocRepo);
 
     // Get associations for template item
     const result = await service.getItemAssociations(params.itemId);
@@ -145,7 +145,7 @@ export async function POST(
     const taskRepo = new WorkflowTaskRepository(supabase);
     const associationRepo = new TaskTemplateItemAssociationRepository(supabase);
     const workflowAssocRepo = new WorkflowTaskItemAssociationRepository(supabase);
-    const service = new TaskTemplateService(templateRepo, taskRepo, associationRepo, workflowAssocRepo);
+    const service = createTaskTemplateService(templateRepo, taskRepo, associationRepo, workflowAssocRepo);
 
     // Create association
     const result = await service.addItemAssociation(params.itemId, context.tenantId, body);

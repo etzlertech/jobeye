@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getRequestContext } from '@/lib/auth/context';
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
 import { WorkflowTaskItemAssociationRepository } from '@/domains/workflow-task/repositories/WorkflowTaskItemAssociationRepository';
-import { WorkflowTaskService } from '@/domains/workflow-task/services/WorkflowTaskService';
+import { createWorkflowTaskService } from '@/domains/workflow-task/services/WorkflowTaskService';
 import { UpdateWorkflowTaskItemAssociationSchema } from '@/domains/workflow-task/types/workflow-task-association-types';
 import { ZodError } from 'zod';
 
@@ -137,7 +137,7 @@ export async function PATCH(
 
     const taskRepo = new WorkflowTaskRepository(supabase);
     const associationRepo = new WorkflowTaskItemAssociationRepository(supabase);
-    const service = new WorkflowTaskService(taskRepo, associationRepo);
+    const service = createWorkflowTaskService(taskRepo, associationRepo);
 
     // Update association
     const result = await service.updateItemAssociation(params.associationId, body);
@@ -232,7 +232,7 @@ export async function DELETE(
 
     const taskRepo = new WorkflowTaskRepository(supabase);
     const associationRepo = new WorkflowTaskItemAssociationRepository(supabase);
-    const service = new WorkflowTaskService(taskRepo, associationRepo);
+    const service = createWorkflowTaskService(taskRepo, associationRepo);
 
     // Delete association
     const result = await service.removeItemAssociation(params.associationId);

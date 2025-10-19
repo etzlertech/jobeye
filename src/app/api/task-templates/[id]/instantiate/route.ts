@@ -10,8 +10,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getRequestContext } from '@/lib/auth/context';
 import { TaskTemplateRepository } from '@/domains/task-template/repositories/TaskTemplateRepository';
-import { TaskTemplateService } from '@/domains/task-template/services/TaskTemplateService';
+import { TaskTemplateItemAssociationRepository } from '@/domains/task-template/repositories/TaskTemplateItemAssociationRepository';
+import { createTaskTemplateService } from '@/domains/task-template/services/TaskTemplateService';
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
+import { WorkflowTaskItemAssociationRepository } from '@/domains/workflow-task/repositories/WorkflowTaskItemAssociationRepository';
 
 // CRITICAL: Force dynamic rendering for server-side execution
 export const dynamic = 'force-dynamic';
@@ -84,7 +86,9 @@ export async function POST(
 
     const templateRepo = new TaskTemplateRepository(supabase);
     const taskRepo = new WorkflowTaskRepository(supabase);
-    const service = new TaskTemplateService(templateRepo, taskRepo);
+    const associationRepo = new TaskTemplateItemAssociationRepository(supabase);
+    const workflowAssocRepo = new WorkflowTaskItemAssociationRepository(supabase);
+    const service = createTaskTemplateService(templateRepo, taskRepo, associationRepo, workflowAssocRepo);
 
     // Instantiate template
     const result = await service.instantiateTemplate(params.id, body.job_id);

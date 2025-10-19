@@ -10,7 +10,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getRequestContext } from '@/lib/auth/context';
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
-import { WorkflowTaskService } from '@/domains/workflow-task/services/WorkflowTaskService';
+import { WorkflowTaskItemAssociationRepository } from '@/domains/workflow-task/repositories/WorkflowTaskItemAssociationRepository';
+import { createWorkflowTaskService } from '@/domains/workflow-task/services/WorkflowTaskService';
 import { UpdateTaskSchema } from '@/domains/workflow-task/types/workflow-task-types';
 import { ZodError } from 'zod';
 
@@ -65,10 +66,11 @@ export async function PATCH(
     );
 
     const repo = new WorkflowTaskRepository(supabase);
+    const associationRepo = new WorkflowTaskItemAssociationRepository(supabase);
 
     // Check if this is a task completion request
     if (body.status === 'complete') {
-      const service = new WorkflowTaskService(repo);
+      const service = createWorkflowTaskService(repo, associationRepo);
 
       // Extract verification data if present
       const verificationData = body.verification_photo_url ? {

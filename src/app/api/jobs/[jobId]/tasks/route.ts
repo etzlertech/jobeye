@@ -10,7 +10,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getRequestContext } from '@/lib/auth/context';
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
-import { WorkflowTaskService } from '@/domains/workflow-task/services/WorkflowTaskService';
+import { WorkflowTaskItemAssociationRepository } from '@/domains/workflow-task/repositories/WorkflowTaskItemAssociationRepository';
+import { createWorkflowTaskService } from '@/domains/workflow-task/services/WorkflowTaskService';
 import { CreateTaskSchema } from '@/domains/workflow-task/types/workflow-task-types';
 import { ZodError } from 'zod';
 
@@ -33,7 +34,8 @@ export async function GET(
     // Create Supabase client with user context
     const supabase = await createClient();
     const repo = new WorkflowTaskRepository(supabase);
-    const service = new WorkflowTaskService(repo);
+    const associationRepo = new WorkflowTaskItemAssociationRepository(supabase);
+    const service = createWorkflowTaskService(repo, associationRepo);
 
     // Get task list
     const result = await service.getTaskList(params.jobId);

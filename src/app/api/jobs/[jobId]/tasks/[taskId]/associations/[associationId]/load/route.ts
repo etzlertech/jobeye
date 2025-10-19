@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getRequestContext } from '@/lib/auth/context';
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
 import { WorkflowTaskItemAssociationRepository } from '@/domains/workflow-task/repositories/WorkflowTaskItemAssociationRepository';
-import { WorkflowTaskService } from '@/domains/workflow-task/services/WorkflowTaskService';
+import { createWorkflowTaskService } from '@/domains/workflow-task/services/WorkflowTaskService';
 
 // CRITICAL: Force dynamic rendering for server-side execution
 export const dynamic = 'force-dynamic';
@@ -76,7 +76,7 @@ export async function POST(
 
     const taskRepo = new WorkflowTaskRepository(serviceSupabase);
     const associationRepo = new WorkflowTaskItemAssociationRepository(serviceSupabase);
-    const service = new WorkflowTaskService(taskRepo, associationRepo);
+    const service = createWorkflowTaskService(taskRepo, associationRepo);
 
     // Mark item as loaded
     const result = await service.markItemAsLoaded(params.associationId, user.id);

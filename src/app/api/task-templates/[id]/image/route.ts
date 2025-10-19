@@ -11,8 +11,10 @@ import { z } from 'zod';
 import { getRequestContext } from '@/lib/auth/context';
 import { createServiceClient } from '@/lib/supabase/server';
 import { TaskTemplateRepository } from '@/domains/task-template/repositories/TaskTemplateRepository';
+import { TaskTemplateItemAssociationRepository } from '@/domains/task-template/repositories/TaskTemplateItemAssociationRepository';
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
-import { TaskTemplateService } from '@/domains/task-template/services/TaskTemplateService';
+import { WorkflowTaskItemAssociationRepository } from '@/domains/workflow-task/repositories/WorkflowTaskItemAssociationRepository';
+import { createTaskTemplateService } from '@/domains/task-template/services/TaskTemplateService';
 import type { ProcessedImages } from '@/utils/image-processor';
 
 export const dynamic = 'force-dynamic';
@@ -66,7 +68,9 @@ export async function POST(
     const supabase = createServiceClient();
     const templateRepo = new TaskTemplateRepository(supabase);
     const taskRepo = new WorkflowTaskRepository(supabase);
-    const service = new TaskTemplateService(templateRepo, taskRepo);
+    const associationRepo = new TaskTemplateItemAssociationRepository(supabase);
+    const workflowAssocRepo = new WorkflowTaskItemAssociationRepository(supabase);
+    const service = createTaskTemplateService(templateRepo, taskRepo, associationRepo, workflowAssocRepo);
 
     const result = await service.uploadTemplateImage(
       supabase,
@@ -138,7 +142,9 @@ export async function DELETE(
     const supabase = createServiceClient();
     const templateRepo = new TaskTemplateRepository(supabase);
     const taskRepo = new WorkflowTaskRepository(supabase);
-    const service = new TaskTemplateService(templateRepo, taskRepo);
+    const associationRepo = new TaskTemplateItemAssociationRepository(supabase);
+    const workflowAssocRepo = new WorkflowTaskItemAssociationRepository(supabase);
+    const service = createTaskTemplateService(templateRepo, taskRepo, associationRepo, workflowAssocRepo);
 
     const result = await service.removeTemplateImage(
       supabase,

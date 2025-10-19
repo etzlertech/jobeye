@@ -11,7 +11,8 @@ import { z } from 'zod';
 import { getRequestContext } from '@/lib/auth/context';
 import { createServiceClient } from '@/lib/supabase/server';
 import { WorkflowTaskRepository } from '@/domains/workflow-task/repositories/WorkflowTaskRepository';
-import { WorkflowTaskService } from '@/domains/workflow-task/services/WorkflowTaskService';
+import { WorkflowTaskItemAssociationRepository } from '@/domains/workflow-task/repositories/WorkflowTaskItemAssociationRepository';
+import { createWorkflowTaskService } from '@/domains/workflow-task/services/WorkflowTaskService';
 import type { ProcessedImages } from '@/utils/image-processor';
 
 export const dynamic = 'force-dynamic';
@@ -64,7 +65,8 @@ export async function POST(
 
     const supabase = createServiceClient();
     const taskRepo = new WorkflowTaskRepository(supabase);
-    const service = new WorkflowTaskService(taskRepo);
+    const associationRepo = new WorkflowTaskItemAssociationRepository(supabase);
+    const service = createWorkflowTaskService(taskRepo, associationRepo);
 
     const result = await service.uploadTaskImage(
       supabase,
@@ -135,7 +137,8 @@ export async function DELETE(
 
     const supabase = createServiceClient();
     const taskRepo = new WorkflowTaskRepository(supabase);
-    const service = new WorkflowTaskService(taskRepo);
+    const associationRepo = new WorkflowTaskItemAssociationRepository(supabase);
+    const service = createWorkflowTaskService(taskRepo, associationRepo);
 
     const result = await service.removeTaskImage(
       supabase,
