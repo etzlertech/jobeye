@@ -1,0 +1,454 @@
+openapi: 3.0.3
+info:
+  title: Workflow Task Item Associations API
+  description: API for managing item/kit associations with workflow tasks (job instances)
+  version: 1.0.0
+
+paths:
+  /api/jobs/{jobId}/tasks/{taskId}/associations:
+    get:
+      summary: List all item associations for a workflow task
+      operationId: listWorkflowTaskItemAssociations
+      tags:
+        - Workflow Task Item Associations
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/TaskItemStatus'
+          description: Filter by status
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkflowTaskItemAssociation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Create a new item association for a workflow task
+      operationId: createWorkflowTaskItemAssociation
+      tags:
+        - Workflow Task Item Associations
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkflowTaskItemAssociationInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WorkflowTaskItemAssociation'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/jobs/{jobId}/tasks/{taskId}/associations/{associationId}:
+    get:
+      summary: Get a specific workflow task item association
+      operationId: getWorkflowTaskItemAssociation
+      tags:
+        - Workflow Task Item Associations
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: associationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WorkflowTaskItemAssociation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update a workflow task item association
+      operationId: updateWorkflowTaskItemAssociation
+      tags:
+        - Workflow Task Item Associations
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: associationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkflowTaskItemAssociationInput'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WorkflowTaskItemAssociation'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete a workflow task item association
+      operationId: deleteWorkflowTaskItemAssociation
+      tags:
+        - Workflow Task Item Associations
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: associationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/jobs/{jobId}/tasks/{taskId}/associations/{associationId}/load:
+    post:
+      summary: Mark an item association as loaded
+      operationId: markItemLoaded
+      tags:
+        - Workflow Task Item Associations
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: associationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WorkflowTaskItemAssociation'
+        '400':
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Cannot mark as loaded - already returned
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    TaskItemStatus:
+      type: string
+      enum:
+        - pending
+        - loaded
+        - verified
+        - missing
+        - returned
+
+    WorkflowTaskItemAssociation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        workflow_task_id:
+          type: string
+          format: uuid
+        item_id:
+          type: string
+          format: uuid
+          nullable: true
+        kit_id:
+          type: string
+          format: uuid
+          nullable: true
+        quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          exclusiveMinimum: true
+        is_required:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/TaskItemStatus'
+        loaded_at:
+          type: string
+          format: date-time
+          nullable: true
+        loaded_by:
+          type: string
+          format: uuid
+          nullable: true
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+        source_template_association_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - workflow_task_id
+        - quantity
+        - is_required
+        - status
+        - created_at
+        - updated_at
+
+    CreateWorkflowTaskItemAssociationInput:
+      type: object
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        kit_id:
+          type: string
+          format: uuid
+        quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          exclusiveMinimum: true
+          default: 1
+        is_required:
+          type: boolean
+          default: true
+        status:
+          $ref: '#/components/schemas/TaskItemStatus'
+          default: pending
+        notes:
+          type: string
+          maxLength: 2000
+        source_template_association_id:
+          type: string
+          format: uuid
+      oneOf:
+        - required: [item_id]
+          properties:
+            kit_id:
+              not: {}
+        - required: [kit_id]
+          properties:
+            item_id:
+              not: {}
+
+    UpdateWorkflowTaskItemAssociationInput:
+      type: object
+      properties:
+        quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          exclusiveMinimum: true
+        is_required:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/TaskItemStatus'
+        loaded_by:
+          type: string
+          format: uuid
+          nullable: true
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+      minProperties: 1
+
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    field:
+                      type: string
+                    message:
+                      type: string
+
+    Unauthorized:
+      description: Unauthorized - missing or invalid authentication
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: No tenant context
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Worker or supervisor role required
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Workflow task item association not found

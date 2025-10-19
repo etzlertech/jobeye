@@ -1,0 +1,360 @@
+openapi: 3.0.3
+info:
+  title: Task Template Item Associations API
+  description: API for managing item/kit associations with task template items
+  version: 1.0.0
+
+paths:
+  /api/task-templates/{templateId}/items/{itemId}/associations:
+    get:
+      summary: List all item associations for a template item
+      operationId: listTemplateItemAssociations
+      tags:
+        - Template Item Associations
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TaskTemplateItemAssociation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Create a new item association for a template item
+      operationId: createTemplateItemAssociation
+      tags:
+        - Template Item Associations
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateItemAssociationInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TaskTemplateItemAssociation'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/task-templates/{templateId}/items/{itemId}/associations/{associationId}:
+    get:
+      summary: Get a specific template item association
+      operationId: getTemplateItemAssociation
+      tags:
+        - Template Item Associations
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: associationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TaskTemplateItemAssociation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update a template item association
+      operationId: updateTemplateItemAssociation
+      tags:
+        - Template Item Associations
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: associationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTemplateItemAssociationInput'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TaskTemplateItemAssociation'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete a template item association
+      operationId: deleteTemplateItemAssociation
+      tags:
+        - Template Item Associations
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: associationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    TaskTemplateItemAssociation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        template_item_id:
+          type: string
+          format: uuid
+        item_id:
+          type: string
+          format: uuid
+          nullable: true
+        kit_id:
+          type: string
+          format: uuid
+          nullable: true
+        quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          exclusiveMinimum: true
+        is_required:
+          type: boolean
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenant_id
+        - template_item_id
+        - quantity
+        - is_required
+        - created_at
+        - updated_at
+
+    CreateTemplateItemAssociationInput:
+      type: object
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        kit_id:
+          type: string
+          format: uuid
+        quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          exclusiveMinimum: true
+          default: 1
+        is_required:
+          type: boolean
+          default: true
+        notes:
+          type: string
+          maxLength: 2000
+      oneOf:
+        - required: [item_id]
+          properties:
+            kit_id:
+              not: {}
+        - required: [kit_id]
+          properties:
+            item_id:
+              not: {}
+
+    UpdateTemplateItemAssociationInput:
+      type: object
+      properties:
+        quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          exclusiveMinimum: true
+        is_required:
+          type: boolean
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+      minProperties: 1
+
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    field:
+                      type: string
+                    message:
+                      type: string
+
+    Unauthorized:
+      description: Unauthorized - missing or invalid authentication
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: No tenant context
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Supervisor role required
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Template item association not found
