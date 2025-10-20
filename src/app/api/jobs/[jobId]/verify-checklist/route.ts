@@ -22,8 +22,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
-import { ChecklistVerificationService } from '@/domains/job/services/checklist-verification-service';
-import { VoiceLogger } from '@/core/logger/voice-logger';
+// NOTE: ChecklistVerificationService was part of retired job_checklist_items system
+// This route is preserved for backward compatibility but deprecated
+// Use item_transactions pattern via /api/crew/jobs/[jobId]/equipment instead
 
 interface RouteContext {
   params: {
@@ -35,14 +36,13 @@ export async function POST(
   request: NextRequest,
   { params }: RouteContext
 ) {
-  const logger = new VoiceLogger();
   const { jobId } = params;
 
   try {
     // Get authenticated user
     const supabase = await createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user) {
       return NextResponse.json(
         {
@@ -53,102 +53,26 @@ export async function POST(
       );
     }
 
-    const body = await request.json();
-    
-    // Create verification service
-    const verificationService = new ChecklistVerificationService(
-      supabase,
-      undefined,
-      undefined,
-      undefined,
-      logger
+    // This endpoint is deprecated - the job_checklist_items table was retired 2025-10-19
+    // Clients should migrate to the new item_transactions pattern
+    return NextResponse.json(
+      {
+        error: 'Endpoint deprecated',
+        message: 'This endpoint is deprecated. Please use /api/crew/jobs/[jobId]/equipment for tools and materials verification.',
+        deprecated_since: '2025-10-19',
+        migration_guide: 'See RETIRED_CHECKLIST_SYSTEM.md for migration details',
+        replacement_endpoint: `/api/crew/jobs/${jobId}/equipment`,
+        voice_response: 'This verification method is no longer supported. Please update your app to use the new equipment tracking system.'
+      },
+      { status: 410 } // 410 Gone - indicates the resource is permanently unavailable
     );
 
-    // Handle manual override
-    if (body.action === 'manual_override') {
-      const { checklist_item_id, new_status, reason } = body;
-      
-      if (!checklist_item_id || !new_status || !reason) {
-        return NextResponse.json(
-          { 
-            error: 'Missing required fields',
-            message: 'checklist_item_id, new_status, and reason are required',
-            voice_response: 'Please provide all required information for the override'
-          },
-          { status: 400 }
-        );
-      }
-
-      const success = await verificationService.applyManualOverride({
-        job_id: jobId,
-        checklist_item_id,
-        new_status,
-        reason,
-        user_id: user.id
-      });
-
-      return NextResponse.json({
-        success,
-        message: success ? 'Manual override applied' : 'Failed to apply override',
-        voice_response: success 
-          ? `Override applied successfully`
-          : 'Unable to apply override'
-      });
-    }
-
-    // Handle verification request
-    const { media_id, frame_data, verification_mode = 'auto', confidence_threshold } = body;
-    
-    if (!media_id && !frame_data) {
-      return NextResponse.json(
-        { 
-          error: 'Missing media',
-          message: 'Either media_id or frame_data is required',
-          voice_response: 'Please provide an image for verification'
-        },
-        { status: 400 }
-      );
-    }
-
-    // Run verification
-    const result = await verificationService.verifyChecklist({
-      job_id: jobId,
-      media_id,
-      frame_data,
-      verification_mode,
-      confidence_threshold,
-      user_id: user.id
-    });
-
-    // Log verification
-    await logger.info('Required items verification completed', {
-      jobId,
-      verificationId: result.verification_id,
-      completionPercentage: result.completion_percentage,
-      userId: user.id
-    });
-
-    return NextResponse.json({
-      verification_id: result.verification_id,
-      job_id: result.job_id,
-      overall_status: result.overall_status,
-      completion_percentage: result.completion_percentage,
-      voice_summary: result.voice_summary,
-      verified_items: result.verified_items,
-      missing_items: result.missing_items,
-      unexpected_items: result.unexpected_items,
-      containers_detected: result.containers_detected,
-      suggestions: result.suggestions
-    });
-
   } catch (error) {
-    await logger.error('Failed to verify required items', error as Error, { jobId });
-
     return NextResponse.json(
       {
         error: 'Internal server error',
-        message: 'Failed to verify required items',
-        voice_response: 'Sorry, verification failed. Please try again.'
+        message: 'Failed to process request',
+        voice_response: 'Sorry, an error occurred. Please try again.'
       },
       { status: 500 }
     );
