@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     const { data: assignments, error: jobError } = await supabase
       .from('job_assignments')
       .select('job_id, jobs(status, scheduled_date)')
-      .eq('crew_id', userId)
+      .eq('user_id', userId)
       .eq('jobs.scheduled_date', today);
 
     if (jobError) throw jobError;
