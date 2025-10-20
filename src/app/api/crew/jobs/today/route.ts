@@ -61,8 +61,7 @@ export async function GET(request: NextRequest) {
         assigned_at,
         jobs (
           id,
-          scheduled_date,
-          scheduled_time,
+          scheduled_start,
           status,
           special_instructions,
           template_id,
@@ -83,20 +82,20 @@ export async function GET(request: NextRequest) {
       `)
       .eq('user_id', userId)
       .eq('tenant_id', tenantId)
-      .eq('jobs.scheduled_date', today)
-      .order('jobs.scheduled_time', { ascending: true });
+      .gte('jobs.scheduled_start', today)
+      .lt('jobs.scheduled_start', `${today}T23:59:59`);
 
     if (error) throw error;
 
     // Transform the data
     const jobs = (assignments || []).map(assignment => {
       const job = assignment.jobs;
+      const scheduledStart = job.scheduled_start ? new Date(job.scheduled_start) : null;
       return {
         id: job.id,
         customer_name: job.customers?.name || 'Unknown Customer',
         property_address: job.properties?.address || 'Unknown Address',
-        scheduled_date: job.scheduled_date,
-        scheduled_time: job.scheduled_time,
+        scheduled_time: scheduledStart?.toISOString() || '',
         status: job.status,
         special_instructions: job.special_instructions,
         template_name: job.job_templates?.name || 'Custom Job',

@@ -101,8 +101,7 @@ export class CrewWorkflowService {
           job_id,
           jobs!inner (
             id,
-            scheduled_date,
-            scheduled_time,
+            scheduled_start,
             status,
             special_instructions,
             voice_instructions,
@@ -117,8 +116,9 @@ export class CrewWorkflowService {
         `)
         .eq('user_id', crewId)
         .eq('tenant_id', tenantId)
-        .eq('jobs.scheduled_date', targetDate)
-        .order('jobs.scheduled_time');
+        .gte('jobs.scheduled_start', targetDate)
+        .lt('jobs.scheduled_start', `${targetDate}T23:59:59`)
+        .order('jobs.scheduled_start');
 
       if (error) {
         throw new AppError('Failed to fetch jobs');
@@ -134,7 +134,7 @@ export class CrewWorkflowService {
             id: assignment.jobs.id,
             customerName: assignment.jobs.customers?.name ?? 'Unknown customer',
             propertyAddress: assignment.jobs.properties?.address ?? 'Unknown address',
-            scheduledTime: assignment.jobs.scheduled_time,
+            scheduledTime: assignment.jobs.scheduled_start || '',
             status: assignment.jobs.status,
             specialInstructions: assignment.jobs.special_instructions ||
               assignment.jobs.voice_instructions,

@@ -57,9 +57,10 @@ export async function GET(request: NextRequest) {
 
     const { data: assignments } = await supabase
       .from('job_assignments')
-      .select('job_id, jobs!inner(status, scheduled_date)')
+      .select('job_id, jobs!inner(status, scheduled_start)')
       .eq('user_id', userId)
-      .eq('jobs.scheduled_date', today);
+      .gte('jobs.scheduled_start', today)
+      .lt('jobs.scheduled_start', `${today}T23:59:59`);
 
     const totalJobs = assignments?.length || 0;
     const completedJobs = assignments?.filter(
