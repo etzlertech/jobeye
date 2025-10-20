@@ -3,6 +3,8 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
+import { EntityTile } from '@/components/ui/EntityTile';
+import { EntityTileGrid } from '@/components/ui/EntityTileGrid';
 import {
   Users,
   Search,
@@ -68,15 +70,6 @@ function UsersPageContent() {
     return displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
            (user.email && user.email.toLowerCase().includes(searchQuery.toLowerCase()));
   });
-
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'manager': return '#3b82f6';
-      case 'technician': return '#FFD700';
-      case 'supervisor': return '#22c55e';
-      default: return '#6b7280';
-    }
-  };
 
   if (isLoading) {
     return (
@@ -162,63 +155,41 @@ function UsersPageContent() {
 
         {/* User Grid */}
         <div className="px-4 pb-4">
-          {filteredUsers.length === 0 ? (
-            <div className="empty-state">
-              <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400">
-                {searchQuery ? 'No users match your search' : 'No users found'}
-              </p>
-            </div>
-          ) : (
-            <div className="user-grid">
-              {filteredUsers.map((user) => {
-                const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-                const displayName = user.displayName || fullName || user.email || 'Unknown User';
+          <EntityTileGrid
+            emptyState={{
+              icon: <Users className="w-12 h-12" />,
+              message: searchQuery ? 'No users match your search' : 'No users found'
+            }}
+          >
+            {filteredUsers.map((user) => {
+              const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+              const displayName = user.displayName || fullName || user.email || 'Unknown User';
 
-                return (
-                  <div
-                    key={user.id}
-                    className="user-tile"
-                    onClick={() => router.push(`/supervisor/users/${user.id}`)}
-                  >
-                    {/* Avatar */}
-                    <div className="user-avatar">
-                      {user.thumbnailImageUrl ? (
-                        <img
-                          src={user.thumbnailImageUrl}
-                          alt={displayName}
-                          className="user-avatar-img"
-                        />
-                      ) : (
-                        <UserIcon className="user-avatar-icon" />
-                      )}
-                    </div>
+              // Determine role color
+              const roleColor = user.role === 'manager' ? 'blue' as const
+                : user.role === 'technician' ? 'gold' as const
+                : user.role === 'supervisor' ? 'green' as const
+                : 'gray' as const;
 
-                    {/* User Info */}
-                    <div className="user-info">
-                      <h3 className="user-name">{displayName}</h3>
-                      <p className="user-email">{user.email || 'No email'}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span
-                          className="role-badge"
-                          style={{
-                            background: `${getRoleBadgeColor(user.role)}20`,
-                            color: getRoleBadgeColor(user.role),
-                            border: `1px solid ${getRoleBadgeColor(user.role)}40`
-                          }}
-                        >
-                          {user.role}
-                        </span>
-                        <span className={`status-indicator ${user.isActive ? 'active' : 'inactive'}`}>
-                          {user.isActive ? '● Active' : '○ Inactive'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+              return (
+                <EntityTile
+                  key={user.id}
+                  image={user.thumbnailImageUrl}
+                  fallbackIcon={<UserIcon />}
+                  title={displayName}
+                  subtitle={user.email || 'No email'}
+                  tags={[
+                    { label: user.role, color: roleColor },
+                    {
+                      label: user.isActive ? '● Active' : '○ Inactive',
+                      color: user.isActive ? 'green' as const : 'gray' as const
+                    }
+                  ]}
+                  onClick={() => router.push(`/supervisor/users/${user.id}`)}
+                />
+              );
+            })}
+          </EntityTileGrid>
         </div>
       </div>
 
@@ -297,110 +268,6 @@ function UsersPageContent() {
         .input-field option {
           background: #1a1a1a;
           color: white;
-        }
-
-        .empty-state {
-          text-align: center;
-          padding: 3rem 1rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 215, 0, 0.2);
-          border-radius: 0.75rem;
-        }
-
-        .user-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 0.75rem;
-        }
-
-        .user-tile {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 215, 0, 0.2);
-          border-radius: 0.75rem;
-          padding: 1rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .user-tile:hover {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: rgba(255, 215, 0, 0.4);
-          transform: translateY(-2px);
-        }
-
-        .user-avatar {
-          width: 5rem;
-          height: 5rem;
-          border-radius: 50%;
-          margin-bottom: 0.75rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(255, 215, 0, 0.15);
-          border: 2px solid rgba(255, 215, 0, 0.3);
-          overflow: hidden;
-        }
-
-        .user-avatar-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .user-avatar-icon {
-          width: 2.5rem;
-          height: 2.5rem;
-          color: #FFD700;
-        }
-
-        .user-info {
-          width: 100%;
-          text-align: center;
-        }
-
-        .user-name {
-          font-size: 0.875rem;
-          font-weight: 600;
-          color: white;
-          margin: 0 0 0.25rem 0;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .user-email {
-          font-size: 0.75rem;
-          color: #9CA3AF;
-          margin: 0 0 0.5rem 0;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .role-badge {
-          display: inline-flex;
-          align-items: center;
-          padding: 0.125rem 0.5rem;
-          font-size: 0.625rem;
-          font-weight: 600;
-          border-radius: 0.25rem;
-          text-transform: capitalize;
-        }
-
-        .status-indicator {
-          font-size: 0.625rem;
-          font-weight: 600;
-        }
-
-        .status-indicator.active {
-          color: #22c55e;
-        }
-
-        .status-indicator.inactive {
-          color: #6b7280;
         }
 
         .bottom-actions {
