@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import { SimpleCameraModal } from '@/components/camera/SimpleCameraModal';
+import { imageProcessor } from '@/utils/image-processor';
 import {
   ArrowLeft,
   AlertCircle,
@@ -59,6 +60,7 @@ export default function CreateMaterialPage() {
     setError(null);
 
     try {
+      // Step 1: Create the item
       const payload = {
         item_type: 'material',
         category: category,
@@ -83,6 +85,28 @@ export default function CreateMaterialPage() {
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to create material');
+      }
+
+      const itemId = data.item.id;
+
+      // Step 2: Upload image if captured
+      if (imageBlob) {
+        try {
+          const processedImages = await imageProcessor.processImage(imageBlob);
+
+          const imageResponse = await fetch(`/api/supervisor/items/${itemId}/image`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ images: processedImages }),
+          });
+
+          if (!imageResponse.ok) {
+            console.error('Failed to upload image, but item was created');
+          }
+        } catch (imageError) {
+          console.error('Error uploading image:', imageError);
+          // Continue anyway - item was created successfully
+        }
       }
 
       // Success - navigate back to materials list
