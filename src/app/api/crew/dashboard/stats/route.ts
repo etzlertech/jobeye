@@ -33,6 +33,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/core/errors/error-handler';
 import { createServerClient } from '@/lib/supabase/server';
+import { getRequestContext } from '@/lib/auth/context';
 
 // Force dynamic rendering - prevents static analysis during build
 export const dynamic = 'force-dynamic';
@@ -40,13 +41,14 @@ export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
-    const userId = request.headers.get('x-user-id');
+    const context = await getRequestContext(request);
+    const userId = context.userId;
 
     if (!userId) {
       return NextResponse.json({ error: 'Missing user context' }, { status: 400 });
     }
 
+    const supabase = await createServerClient();
     const today = new Date().toISOString().split('T')[0];
 
     const { data: assignments, error: jobError } = await supabase

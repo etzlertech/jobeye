@@ -13,43 +13,31 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Calendar,
   Clock,
-  MapPin,
   Package,
   CheckCircle,
-  Play,
-  AlertCircle,
   Camera,
   RefreshCw,
   WifiOff,
-  Battery,
-  ChevronRight,
-  Loader2
+  Users,
+  Battery
 } from 'lucide-react';
-import { MobileContainer, MobileHeader, MobileCard, MobileFAB } from '@/components/mobile';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
+import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import { TenantBadge } from '@/components/tenant';
+import { supabase } from '@/lib/supabase/client';
 
 interface Job {
   id: string;
-  customerName: string;
-  propertyAddress: string;
-  scheduledTime: string;
+  customer_name: string;
+  property_address: string;
+  scheduled_time: string;
   status: 'assigned' | 'in_progress' | 'completed' | 'on_hold';
-  templateName?: string;
-  specialInstructions?: string;
-  voiceInstructionsUrl?: string;
-  loadVerified: boolean;
-  estimatedDuration: number;
-  requiredEquipment: string[];
-  priority: 'high' | 'medium' | 'low';
-  thumbnailUrl?: string;
+  template_name?: string;
+  special_instructions?: string;
+  estimated_duration?: string;
 }
 
 interface CrewStatus {
@@ -73,7 +61,7 @@ interface DashboardStats {
     issuesReported: number;
   };
   vehicle: {
-    fuelLevel: number;
+    fuelLevel: number | null;
     maintenanceAlerts: number;
   };
 }
@@ -87,7 +75,7 @@ export default function CrewDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [transcript, setTranscript] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ name?: string | null; email?: string | null } | null>(null);
 
   // Update current time every minute
   useEffect(() => {
@@ -118,7 +106,7 @@ export default function CrewDashboardPage() {
   const loadDashboardData = useCallback(async () => {
     try {
       const [jobsRes, statusRes, statsRes] = await Promise.all([
-        fetch('/api/crew/jobs'),
+        fetch('/api/crew/jobs/today'),
         fetch('/api/crew/status'),
         fetch('/api/crew/dashboard/stats')
       ]);
@@ -164,269 +152,148 @@ export default function CrewDashboardPage() {
     loadDashboardData();
   }, [loadDashboardData]);
 
-  const handleStartJob = async (jobId: string) => {
-    try {
-      const response = await fetch(`/api/crew/jobs/${jobId}/start`, {
-        method: 'POST'
-      });
+  // Resolve authenticated user for header display
+  useEffect(() => {
+    let isMounted = true;
 
-      const result = await response.json();
-
-      if (result.success) {
-        setJobs(prev => prev.map(job =>
-          job.id === jobId
-            ? { ...job, status: 'in_progress' as const }
-            : job
-        ));
-        router.push(`/crew/jobs/${jobId}`);
+    supabase.auth.getUser().then(({ data, error }) => {
+      if (!isMounted || error || !data.user) {
+        return;
       }
-    } catch (error) {
-      console.error('Failed to start job:', error);
-    }
-  };
 
-  const handleCompleteJob = async (jobId: string) => {
-    try {
-      const response = await fetch(`/api/crew/jobs/${jobId}/complete`, {
-        method: 'POST'
+      const rawName =
+        (data.user.user_metadata as Record<string, unknown> | undefined)?.full_name;
+
+      setCurrentUser({
+        name: typeof rawName === 'string' ? rawName : null,
+        email: data.user.email
       });
+    });
 
-      const result = await response.json();
-
-      if (result.success) {
-        setJobs(prev => prev.map(job =>
-          job.id === jobId
-            ? { ...job, status: 'completed' as const }
-            : job
-        ));
-      }
-    } catch (error) {
-      console.error('Failed to complete job:', error);
-    }
-  };
-
-  const handleVoiceCommand = async (transcript: string, confidence: number) => {
-    setTranscript(transcript);
-    setTimeout(() => setTranscript(null), 3000);
-
-    try {
-      const response = await fetch('/api/crew/voice/command', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transcript,
-          context: {
-            currentPage: 'dashboard',
-            jobCount: jobs.length,
-            currentJob: jobs.find(j => j.status === 'in_progress')?.id
-          }
-        })
-      });
-
-      const result = await response.json();
-
-      if (result.response.actions) {
-        for (const action of result.response.actions) {
-          if (action.type === 'navigate' && action.target) {
-            router.push(action.target);
-          } else if (action.type === 'start_job' && action.jobId) {
-            handleStartJob(action.jobId);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Voice command error:', error);
-    }
-  };
-
-  const getTodayJobs = () => {
-    const today = new Date().toDateString();
-    return jobs.filter(job =>
-      new Date(job.scheduledTime).toDateString() === today
-    );
-  };
-
-  const getCurrentJob = () => {
-    return jobs.find(job => job.status === 'in_progress');
-  };
-
-  const getNextJob = () => {
-    const todayJobs = getTodayJobs();
-    return todayJobs.find(job => job.status === 'assigned');
-  };
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const getStatusVariant = (status: Job['status']) => {
-    switch (status) {
-      case 'in_progress': return 'default';
-      case 'completed': return 'secondary';
-      case 'assigned': return 'outline';
-      default: return 'secondary';
-    }
-  };
-
   if (isLoading) {
     return (
-      <MobileContainer className="items-center justify-center">
+      <div className="mobile-container">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
+          className="flex items-center justify-center h-full"
         >
-          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground text-lg">Loading dashboard...</p>
+          <div className="text-center">
+            <RefreshCw className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: '#FFD700' }} />
+            <p className="text-gray-400 text-lg">Loading dashboard...</p>
+          </div>
         </motion.div>
-      </MobileContainer>
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 0 0.5rem;
+            box-sizing: border-box;
+          }
+        `}</style>
+      </div>
     );
   }
 
-  const currentJob = getCurrentJob();
-  const nextJob = getNextJob();
-  const todayJobs = getTodayJobs();
+  const todayJobs = jobs.filter(job => {
+    const today = new Date().toDateString();
+    return new Date(job.scheduled_time).toDateString() === today;
+  });
 
   return (
-    <MobileContainer>
-      {/* Header */}
-      <MobileHeader
-        title={currentJob ? 'Job in Progress' : 'Crew Dashboard'}
-        subtitle={`${formatTime(currentTime)} • ${todayJobs.length} jobs today`}
-        isOffline={isOffline}
-        rightContent={
-          <>
-            <TenantBadge />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={loadDashboardData}
-              className="ml-2"
-            >
-              <RefreshCw className="w-5 h-5" />
-            </Button>
-          </>
-        }
+    <div className="mobile-container">
+      {/* Mobile Navigation */}
+      <MobileNavigation
+        currentRole="crew"
+        onLogout={() => router.push('/')}
       />
 
-      {/* Voice Transcript Overlay */}
-      <AnimatePresence>
-        {transcript && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-sm"
-          >
-            <Card className="border-primary bg-primary/10">
-              <CardContent className="p-3">
-                <p className="text-sm text-primary text-center">{transcript}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 py-4 space-y-4">
-          {/* Current Job Banner */}
-          {currentJob && (
-            <MobileCard variant="primary" animate>
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-sm font-medium">Active Job</span>
-                  </div>
-                  <h3 className="font-semibold text-lg truncate">{currentJob.customerName}</h3>
-                  <p className="text-sm text-muted-foreground truncate">{currentJob.propertyAddress}</p>
-                </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => router.push(`/crew/jobs/${currentJob.id}`)}
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </Button>
-              </div>
-            </MobileCard>
+      {/* Header */}
+      <div className="header-bar">
+        <div>
+          <h1 className="text-xl font-semibold">Crew Dashboard</h1>
+          <p className="text-xs text-gray-500">{formatTime(currentTime)} • {todayJobs.length} jobs today</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <TenantBadge />
+          {currentUser?.email && (
+            <div className="user-badge">
+              <Users className="w-3 h-3 mr-1" />
+              <span className="text-xs">{currentUser.name || currentUser.email.split('@')[0]}</span>
+            </div>
           )}
+          <button
+            type="button"
+            onClick={loadDashboardData}
+            className="icon-button"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-2 gap-3">
-            {currentJob ? (
-              <>
-                <Button
-                  size="lg"
-                  onClick={() => router.push(`/crew/jobs/${currentJob.id}`)}
-                  className="h-20 flex-col gap-2"
-                >
-                  <Play className="w-6 h-6" />
-                  <span className="text-sm">View Job</span>
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => handleCompleteJob(currentJob.id)}
-                  className="h-20 flex-col gap-2"
-                >
-                  <CheckCircle className="w-6 h-6" />
-                  <span className="text-sm">Complete</span>
-                </Button>
-              </>
-            ) : (
-              <>
-                {nextJob && (
-                  <Button
-                    size="lg"
-                    onClick={() => handleStartJob(nextJob.id)}
-                    className="h-20 flex-col gap-2"
-                  >
-                    <Play className="w-6 h-6" />
-                    <span className="text-sm">Start Next</span>
-                  </Button>
-                )}
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => router.push('/crew/job-load')}
-                  className="h-20 flex-col gap-2"
-                >
-                  <Camera className="w-6 h-6" />
-                  <span className="text-sm">Verify Load</span>
-                </Button>
-              </>
-            )}
+      {/* Offline indicator */}
+      {isOffline && (
+        <div className="notification-bar error">
+          <WifiOff className="w-4 h-4" />
+          <span className="text-sm">You are offline. Showing cached data.</span>
+        </div>
+      )}
+
+      {/* Main content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 space-y-4">
+          {/* Quick Action */}
+          <div className="grid grid-cols-1 gap-3">
+            <button
+              type="button"
+              onClick={() => router.push('/crew/job-load')}
+              className="action-button primary"
+            >
+              <Camera className="w-6 h-6" />
+              <span className="text-sm">Verify Load</span>
+            </button>
           </div>
 
           {/* Stats */}
           {stats && (
             <div className="grid grid-cols-3 gap-3">
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <Package className={`w-6 h-6 mx-auto mb-2 ${stats.equipment.verified ? 'text-primary' : 'text-orange-500'}`} />
-                  <p className="text-2xl font-bold">{stats.equipment.verified ? '✓' : '!'}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {stats.equipment.verified ? 'Verified' : 'Check'}
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="stat-card">
+                <Package className={`w-6 h-6 mx-auto mb-2 ${stats.equipment.verified ? 'text-green-500' : 'text-orange-500'}`} />
+                <p className="text-2xl font-bold">{stats.equipment.verified ? '✓' : '!'}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {stats.equipment.verified ? 'Verified' : 'Check'}
+                </p>
+              </div>
 
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <CheckCircle className="w-6 h-6 text-primary mx-auto mb-2" />
-                  <p className="text-2xl font-bold">{stats.todayJobs.completed}/{stats.todayJobs.total}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Jobs Done</p>
-                </CardContent>
-              </Card>
+              <div className="stat-card">
+                <CheckCircle className="w-6 h-6 mx-auto mb-2" style={{ color: '#FFD700' }} />
+                <p className="text-2xl font-bold">{stats.todayJobs.completed}/{stats.todayJobs.total}</p>
+                <p className="text-xs text-gray-500 mt-1">Jobs Done</p>
+              </div>
 
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <Battery className={`w-6 h-6 mx-auto mb-2 ${stats.vehicle.fuelLevel > 25 ? 'text-primary' : 'text-orange-500'}`} />
-                  <p className="text-2xl font-bold">{stats.vehicle.fuelLevel}%</p>
-                  <p className="text-xs text-muted-foreground mt-1">Fuel</p>
-                </CardContent>
-              </Card>
+              <div className="stat-card">
+                <Battery className={`w-6 h-6 mx-auto mb-2 ${(stats.vehicle.fuelLevel || 0) > 25 ? 'text-green-500' : 'text-orange-500'}`} />
+                <p className="text-2xl font-bold">{stats.vehicle.fuelLevel || '--'}%</p>
+                <p className="text-xs text-gray-500 mt-1">Fuel</p>
+              </div>
             </div>
           )}
 
@@ -434,7 +301,7 @@ export default function CrewDashboardPage() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold">Today's Jobs</h2>
-              <Badge variant="secondary">{todayJobs.length}</Badge>
+              <span className="count-badge">{todayJobs.length}</span>
             </div>
 
             <div className="space-y-3">
@@ -446,83 +313,204 @@ export default function CrewDashboardPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Card
-                      className="cursor-pointer hover:border-primary/50 transition-colors"
+                    <div
+                      className="job-card"
                       onClick={() => router.push(`/crew/jobs/${job.id}`)}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Badge variant={getStatusVariant(job.status)}>
-                                {job.status.replace('_', ' ')}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {formatTime(new Date(job.scheduledTime))}
-                              </span>
-                            </div>
-                            <h3 className="font-semibold truncate">{job.customerName}</h3>
-                            <p className="text-sm text-muted-foreground truncate mt-1">
-                              {job.propertyAddress}
-                            </p>
-                            {job.templateName && (
-                              <p className="text-xs text-muted-foreground mt-2">
-                                {job.templateName} • {job.estimatedDuration} mins
-                              </p>
-                            )}
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`status-badge ${job.status}`}>
+                              {job.status.replace('_', ' ')}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {new Date(job.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
                           </div>
-                          <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 ml-2" />
+                          <h3 className="font-semibold truncate">{job.customer_name}</h3>
+                          <p className="text-sm text-gray-400 truncate mt-1">
+                            {job.property_address}
+                          </p>
+                          {job.template_name && (
+                            <p className="text-xs text-gray-500 mt-2">
+                              {job.template_name} • {job.estimated_duration || 'N/A'}
+                            </p>
+                          )}
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   </motion.div>
                 ))
               ) : (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">No jobs scheduled for today</p>
-                  </CardContent>
-                </Card>
+                <div className="empty-state">
+                  <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-400">No jobs scheduled for today</p>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Next Job Preview */}
-          {nextJob && !currentJob && (
-            <MobileCard variant="success" animate>
-              <h3 className="text-sm font-semibold text-green-500 mb-2">Next Job</h3>
-              <p className="font-medium">{nextJob.customerName}</p>
-              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  <span>{formatTime(new Date(nextJob.scheduledTime))}</span>
-                </div>
-                {!nextJob.loadVerified && (
-                  <div className="flex items-center gap-1 text-orange-500">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>Verify load</span>
-                  </div>
-                )}
-              </div>
-            </MobileCard>
-          )}
-
-          {/* Bottom padding for FAB */}
-          <div className="h-24" />
+          {/* Bottom padding */}
+          <div className="h-4" />
         </div>
       </div>
 
-      {/* Voice Command FAB */}
-      <MobileFAB
-        icon={() => <VoiceCommandButton
-          onTranscript={(text) => setTranscript(text)}
-          onCommand={handleVoiceCommand}
-          size="lg"
-          autoSpeak={true}
-        />}
-        position="bottom-center"
-      />
-    </MobileContainer>
+      <style jsx>{`
+        .mobile-container {
+          width: 100%;
+          max-width: 375px;
+          height: 100vh;
+          max-height: 812px;
+          margin: 0 auto;
+          background: #000;
+          color: white;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          padding: 0 0.5rem;
+          box-sizing: border-box;
+        }
+
+        .header-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem;
+          border-bottom: 1px solid #333;
+          background: rgba(0, 0, 0, 0.9);
+        }
+
+        .user-badge {
+          display: flex;
+          align-items: center;
+          padding: 0.25rem 0.5rem;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          border-radius: 0.375rem;
+          color: white;
+        }
+
+        .icon-button {
+          padding: 0.375rem;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.375rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .icon-button:hover {
+          background: rgba(255, 215, 0, 0.2);
+          border-color: #FFD700;
+        }
+
+        .notification-bar {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1rem;
+          margin: 0.5rem 1rem;
+          border-radius: 0.5rem;
+        }
+
+        .notification-bar.error {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #fca5a5;
+        }
+
+        .stat-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.75rem;
+          padding: 1rem;
+          text-align: center;
+        }
+
+        .action-button {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem;
+          height: 5rem;
+          gap: 0.5rem;
+          border-radius: 0.5rem;
+          border: none;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .action-button.primary {
+          background: #FFD700;
+          color: #000;
+        }
+
+        .action-button.primary:hover {
+          background: #FFC700;
+        }
+
+        .count-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.25rem 0.5rem;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          border-radius: 0.375rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .job-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.75rem;
+          padding: 1rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .job-card:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 215, 0, 0.4);
+          transform: translateX(2px);
+        }
+
+        .status-badge {
+          display: inline-block;
+          padding: 0.25rem 0.5rem;
+          border-radius: 0.375rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .status-badge.assigned {
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .status-badge.in_progress {
+          background: rgba(59, 130, 246, 0.2);
+          color: #93c5fd;
+        }
+
+        .status-badge.completed {
+          background: rgba(34, 197, 94, 0.2);
+          color: #86efac;
+        }
+
+        .empty-state {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.75rem;
+          padding: 2rem 1rem;
+          text-align: center;
+        }
+      `}</style>
+    </div>
   );
 }
