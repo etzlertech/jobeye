@@ -71,19 +71,25 @@ export function TaskEditor({
 
       if (mode === 'create') {
         // Create new task
+        const payload: Record<string, any> = {
+          task_description: taskDescription.trim(),
+          is_required: isRequired,
+          requires_photo_verification: requiresPhoto,
+          requires_supervisor_approval: requiresSupervisorApproval,
+        };
+
+        // Only include acceptance_criteria if not empty (Zod schema expects undefined or string, not null)
+        if (acceptanceCriteria.trim()) {
+          payload.acceptance_criteria = acceptanceCriteria.trim();
+        }
+
         const response = await fetch(`/api/supervisor/jobs/${jobId}/tasks`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           credentials: 'include',
-          body: JSON.stringify({
-            task_description: taskDescription.trim(),
-            acceptance_criteria: acceptanceCriteria.trim() || null,
-            is_required: isRequired,
-            requires_photo_verification: requiresPhoto,
-            requires_supervisor_approval: requiresSupervisorApproval,
-          })
+          body: JSON.stringify(payload)
         });
 
         const data = await response.json();
@@ -95,19 +101,25 @@ export function TaskEditor({
         setSuccess('Task created successfully');
       } else if (mode === 'edit' && task) {
         // Update existing task
+        const payload: Record<string, any> = {
+          task_description: taskDescription.trim(),
+          is_required: isRequired,
+          requires_photo_verification: requiresPhoto,
+          requires_supervisor_approval: requiresSupervisorApproval,
+        };
+
+        // Only include acceptance_criteria if not empty (Zod schema expects undefined or string, not null)
+        if (acceptanceCriteria.trim()) {
+          payload.acceptance_criteria = acceptanceCriteria.trim();
+        }
+
         const response = await fetch(`/api/supervisor/jobs/${jobId}/tasks/${task.id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json'
           },
           credentials: 'include',
-          body: JSON.stringify({
-            task_description: taskDescription.trim(),
-            acceptance_criteria: acceptanceCriteria.trim() || null,
-            is_required: isRequired,
-            requires_photo_verification: requiresPhoto,
-            requires_supervisor_approval: requiresSupervisorApproval,
-          })
+          body: JSON.stringify(payload)
         });
 
         const data = await response.json();
