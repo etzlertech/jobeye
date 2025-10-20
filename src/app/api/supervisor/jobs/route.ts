@@ -268,7 +268,7 @@ export async function POST(request: NextRequest) {
         const taskRepo = new WorkflowTaskRepository(supabase);
         const templateService = new TaskTemplateService(templateRepo, taskRepo);
 
-        const result = await templateService.instantiateTemplate(body.template_id, job.id);
+        const result = await templateService.instantiateTemplate(body.template_id, job.id, tenantId);
 
         if (result.ok) {
           tasks = result.value;

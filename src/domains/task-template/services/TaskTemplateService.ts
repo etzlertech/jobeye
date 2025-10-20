@@ -71,7 +71,8 @@ export class TaskTemplateService {
    */
   async instantiateTemplate(
     templateId: string,
-    jobId: string
+    jobId: string,
+    tenantId: string
   ): Promise<Result<WorkflowTask[], ServiceError>> {
     try {
       // Load template with items
@@ -125,6 +126,7 @@ export class TaskTemplateService {
 
       const createResult = await this.taskRepo.createFromTemplate(
         jobId,
+        tenantId,
         template.items,
         templateImageUrls
       );

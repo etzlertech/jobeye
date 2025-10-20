@@ -87,7 +87,7 @@ export async function POST(
     const service = new TaskTemplateService(templateRepo, taskRepo);
 
     // Instantiate template
-    const result = await service.instantiateTemplate(params.id, body.job_id);
+    const result = await service.instantiateTemplate(params.id, body.job_id, context.tenantId);
 
     if (!result.ok) {
       if (result.error.code === 'TEMPLATE_NOT_FOUND') {

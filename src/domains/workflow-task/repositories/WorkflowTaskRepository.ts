@@ -204,12 +204,13 @@ export class WorkflowTaskRepository {
   /**
    * Create new task
    */
-  async create(input: CreateTaskInput): Promise<Result<WorkflowTask, RepositoryError>> {
+  async create(input: CreateTaskInput & { tenant_id?: string }): Promise<Result<WorkflowTask, RepositoryError>> {
     try {
       // Validate input
       const validated = CreateTaskSchema.parse(input);
 
       const task = {
+        tenant_id: input.tenant_id, // Required for RLS policy
         job_id: validated.job_id,
         task_description: validated.task_description,
         task_order: validated.task_order,
@@ -340,11 +341,13 @@ export class WorkflowTaskRepository {
    */
   async createFromTemplate(
     jobId: string,
+    tenantId: string,
     templateItems: TaskTemplateItem[],
     templateImageUrls?: WorkflowTaskImageUrls
   ): Promise<Result<WorkflowTask[], RepositoryError>> {
     try {
       const tasks = templateItems.map(item => ({
+        tenant_id: tenantId, // Required for RLS policy
         job_id: jobId,
         task_description: item.task_description,
         task_order: item.task_order,

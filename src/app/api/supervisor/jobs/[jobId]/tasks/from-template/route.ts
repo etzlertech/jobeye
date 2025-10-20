@@ -66,7 +66,7 @@ export async function POST(
     const taskRepo = new WorkflowTaskRepository(supabase);
     const templateService = new TaskTemplateService(templateRepo, taskRepo);
 
-    const result = await templateService.instantiateTemplate(template_id, jobId);
+    const result = await templateService.instantiateTemplate(template_id, jobId, tenantId);
 
     if (!result.ok) {
       throw new Error(result.error.message || 'Failed to instantiate template');
