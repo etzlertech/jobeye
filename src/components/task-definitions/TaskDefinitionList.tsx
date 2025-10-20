@@ -12,7 +12,7 @@
  * offline_capability: REQUIRED
  * dependencies: {
  *   internal: ['@/domains/task-definition/types', '@/components/task-definitions/TaskDefinitionCard'],
- *   external: ['react'],
+ *   external: ['react', 'lucide-react'],
  *   supabase: []
  * }
  * exports: ['TaskDefinitionList', 'TaskDefinitionListProps']
@@ -33,7 +33,7 @@
 import React from 'react';
 import { TaskDefinitionCard } from './TaskDefinitionCard';
 import type { TaskDefinition } from '@/domains/task-definition/types/task-definition-types';
-import { AlertCircle } from 'lucide-react';
+import { FileText, Loader2 } from 'lucide-react';
 
 export interface TaskDefinitionListProps {
   taskDefinitions: TaskDefinition[];
@@ -56,11 +56,18 @@ export function TaskDefinitionList({
   // Loading state
   if (loading) {
     return (
-      <div className={`flex items-center justify-center py-12 ${className}`}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="text-sm text-gray-600">Loading task definitions...</p>
-        </div>
+      <div className={`empty-state ${className}`}>
+        <Loader2 className="w-12 h-12 animate-spin mx-auto mb-3" style={{ color: '#FFD700' }} />
+        <p className="text-gray-400">Loading task definitions...</p>
+        <style jsx>{`
+          .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 0.75rem;
+          }
+        `}</style>
       </div>
     );
   }
@@ -68,24 +75,29 @@ export function TaskDefinitionList({
   // Empty state
   if (taskDefinitions.length === 0) {
     return (
-      <div className={`flex items-center justify-center py-12 ${className}`}>
-        <div className="text-center max-w-md">
-          <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            No task definitions found
-          </h3>
-          <p className="text-sm text-gray-600">
-            Create your first task definition to get started. Task definitions are reusable tasks that can be added to templates.
-          </p>
-        </div>
+      <div className={`empty-state ${className}`}>
+        <FileText className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+        <p className="text-gray-400 mb-1 font-semibold">No task definitions yet</p>
+        <p className="text-gray-500 text-sm">
+          Create reusable task definitions to add to templates
+        </p>
+        <style jsx>{`
+          .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 0.75rem;
+          }
+        `}</style>
       </div>
     );
   }
 
-  // Grid display
+  // List display
   return (
     <div
-      className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${className}`}
+      className={`space-y-2 pt-4 ${className}`}
       data-testid="task-definition-list"
     >
       {taskDefinitions.map((taskDefinition) => (

@@ -11,7 +11,7 @@
  * state_machine: null
  * offline_capability: REQUIRED
  * dependencies: {
- *   internal: ['@/domains/task-definition/types', '@/components/task-definitions/*'],
+ *   internal: ['@/domains/task-definition/types', '@/components/task-definitions/*', '@/components/navigation/MobileNavigation'],
  *   external: ['react', 'next/navigation', 'lucide-react'],
  *   supabase: []
  * }
@@ -34,7 +34,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, AlertCircle } from 'lucide-react';
+import { Plus, AlertCircle, ArrowLeft, X, CheckCircle, Loader2 } from 'lucide-react';
+import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import { TaskDefinitionList } from '@/components/task-definitions/TaskDefinitionList';
 import type { TaskDefinition } from '@/domains/task-definition/types/task-definition-types';
 
@@ -44,6 +45,7 @@ export default function TaskDefinitionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [deleteError, setDeleteError] = useState<string>('');
+  const [success, setSuccess] = useState<string>('');
 
   // Fetch task definitions
   useEffect(() => {
@@ -124,6 +126,9 @@ export default function TaskDefinitionsPage() {
         throw new Error(errorData.error || 'Failed to delete task definition');
       }
 
+      setSuccess('Task definition deleted successfully');
+      setTimeout(() => setSuccess(''), 3000);
+
       // Refresh list
       await fetchTaskDefinitions();
     } catch (err) {
@@ -134,72 +139,217 @@ export default function TaskDefinitionsPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Page header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Task Definitions</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Create and manage reusable task definitions that can be added to templates
-              </p>
-            </div>
-            <button
-              onClick={handleCreate}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              data-testid="create-task-definition-button"
-            >
-              <Plus className="w-4 h-4" />
-              Create Task Definition
-            </button>
+  if (loading) {
+    return (
+      <div className="mobile-container">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: '#FFD700' }} />
+            <p className="text-gray-400 text-lg">Loading task definitions...</p>
           </div>
         </div>
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 0 0.5rem;
+            box-sizing: border-box;
+          }
+        `}</style>
+      </div>
+    );
+  }
 
-        {/* Global error */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-red-800">Error Loading Task Definitions</p>
-              <p className="text-sm text-red-700 mt-1">{error}</p>
-              <button
-                onClick={fetchTaskDefinitions}
-                className="mt-2 text-sm font-medium text-red-800 underline hover:text-red-900"
-              >
-                Try again
-              </button>
-            </div>
-          </div>
-        )}
+  return (
+    <div className="mobile-container">
+      {/* Mobile Navigation */}
+      <MobileNavigation
+        currentRole="supervisor"
+        onLogout={() => router.push('/sign-in')}
+      />
 
-        {/* Delete error */}
-        {deleteError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-red-800">Error Deleting Task</p>
-              <p className="text-sm text-red-700 mt-1">{deleteError}</p>
-              <button
-                onClick={() => setDeleteError('')}
-                className="mt-2 text-sm font-medium text-red-800 underline hover:text-red-900"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        )}
+      {/* Header */}
+      <div className="header-bar">
+        <div>
+          <h1 className="text-xl font-semibold">Task Definitions</h1>
+          <p className="text-xs text-gray-500">{taskDefinitions.length} total</p>
+        </div>
+      </div>
 
-        {/* Task definitions list */}
+      {/* Notifications */}
+      {error && (
+        <div className="notification-bar error">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{error}</span>
+          <button
+            type="button"
+            onClick={() => setError('')}
+            className="ml-auto"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      {deleteError && (
+        <div className="notification-bar error">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{deleteError}</span>
+          <button
+            type="button"
+            onClick={() => setDeleteError('')}
+            className="ml-auto"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      {success && (
+        <div className="notification-bar success">
+          <CheckCircle className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{success}</span>
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
         <TaskDefinitionList
           taskDefinitions={taskDefinitions}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onClick={handleViewDetail}
-          loading={loading}
+          loading={false}
         />
       </div>
+
+      {/* Bottom Actions */}
+      <div className="bottom-actions">
+        <button
+          type="button"
+          onClick={() => router.push('/supervisor')}
+          className="btn-secondary flex-1"
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back
+        </button>
+        <button
+          type="button"
+          onClick={handleCreate}
+          className="btn-primary flex-1"
+          data-testid="create-task-definition-button"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          Create
+        </button>
+      </div>
+
+      <style jsx>{`
+        .mobile-container {
+          width: 100%;
+          max-width: 375px;
+          height: 100vh;
+          max-height: 812px;
+          margin: 0 auto;
+          background: #000;
+          color: white;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          padding: 0 0.5rem;
+          box-sizing: border-box;
+        }
+
+        .header-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem;
+          border-bottom: 1px solid #333;
+          background: rgba(0, 0, 0, 0.9);
+        }
+
+        .notification-bar {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1rem;
+          margin: 0.5rem 1rem;
+          border-radius: 0.5rem;
+        }
+
+        .notification-bar.error {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #fca5a5;
+        }
+
+        .notification-bar.success {
+          background: rgba(255, 215, 0, 0.1);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          color: #FFD700;
+        }
+
+        .bottom-actions {
+          display: flex;
+          gap: 0.75rem;
+          padding: 1rem;
+          background: rgba(0, 0, 0, 0.9);
+          border-top: 1px solid #333;
+        }
+
+        .btn-primary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem 1rem;
+          background: #FFD700;
+          color: #000;
+          font-weight: 600;
+          border-radius: 0.5rem;
+          border: none;
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+          background: #FFC700;
+        }
+
+        .btn-primary:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .btn-secondary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem 1rem;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          font-weight: 600;
+          border-radius: 0.5rem;
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+          background: rgba(255, 255, 255, 0.15);
+          border-color: #FFD700;
+        }
+      `}</style>
     </div>
   );
 }

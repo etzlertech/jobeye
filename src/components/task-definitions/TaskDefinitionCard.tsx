@@ -73,82 +73,73 @@ export function TaskDefinitionCard({
 
   return (
     <div
-      className={`
-        relative bg-white rounded-lg border border-gray-200 shadow-sm
-        hover:shadow-md transition-all duration-200 p-4
-        ${onClick ? 'cursor-pointer' : ''}
-        ${className}
-      `}
+      className={`task-definition-card ${onClick ? 'clickable' : ''} ${className}`}
       onClick={handleClick}
       data-testid={`task-definition-card-${taskDefinition.id}`}
     >
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 truncate">
-            {taskDefinition.name}
-          </h3>
+      <div className="card-header">
+        <div className="card-title-section">
+          <h3 className="card-title">{taskDefinition.name}</h3>
           {taskDefinition.acceptance_criteria && (
-            <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+            <div className="criteria-badge">
               <CheckCircle className="w-3 h-3" />
-              Has acceptance criteria
-            </p>
+              <span>Criteria</span>
+            </div>
           )}
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1 ml-2">
+        <div className="card-actions">
           {onEdit && (
             <button
               onClick={handleEdit}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              className="action-btn edit-btn"
               aria-label="Edit task definition"
               title="Edit"
             >
-              <Edit className="w-4 h-4 text-gray-600" />
+              <Edit className="w-4 h-4" />
             </button>
           )}
           {onDelete && (
             <button
               onClick={handleDelete}
-              className="p-1 hover:bg-red-50 rounded transition-colors"
+              className="action-btn delete-btn"
               aria-label="Delete task definition"
               title="Delete"
             >
-              <Trash2 className="w-4 h-4 text-red-600" />
+              <Trash2 className="w-4 h-4" />
             </button>
           )}
         </div>
       </div>
 
       {/* Description */}
-      <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-        {taskDefinition.description}
-      </p>
+      <p className="card-description">{taskDefinition.description}</p>
 
       {/* Flags */}
-      <div className="flex flex-wrap gap-2">
+      <div className="card-badges">
         {taskDefinition.requires_photo_verification && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+          <span className="badge photo-badge">
             <Camera className="w-3 h-3" />
-            Photo Required
+            Photo
           </span>
         )}
 
         {taskDefinition.requires_supervisor_approval && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+          <span className="badge approval-badge">
             <UserCheck className="w-3 h-3" />
-            Supervisor Approval
+            Approval
           </span>
         )}
 
         {taskDefinition.is_required ? (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+          <span className="badge required-badge">
             <AlertCircle className="w-3 h-3" />
             Required
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+          <span className="badge optional-badge">
             Optional
           </span>
         )}
@@ -156,12 +147,174 @@ export function TaskDefinitionCard({
 
       {/* Soft deleted indicator */}
       {taskDefinition.deleted_at && (
-        <div className="absolute top-0 left-0 right-0 bottom-0 bg-gray-900 bg-opacity-10 rounded-lg flex items-center justify-center">
-          <span className="bg-red-500 text-white text-xs font-medium px-3 py-1 rounded-full">
-            Deleted
-          </span>
+        <div className="deleted-overlay">
+          <span className="deleted-badge">Deleted</span>
         </div>
       )}
+
+      <style jsx>{`
+        .task-definition-card {
+          position: relative;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.5rem;
+          padding: 0.75rem;
+          transition: all 0.2s;
+        }
+
+        .task-definition-card.clickable {
+          cursor: pointer;
+        }
+
+        .task-definition-card:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 215, 0, 0.4);
+        }
+
+        .card-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          margin-bottom: 0.5rem;
+        }
+
+        .card-title-section {
+          flex: 1;
+          min-width: 0;
+          margin-right: 0.5rem;
+        }
+
+        .card-title {
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: white;
+          margin: 0 0 0.25rem 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .criteria-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.25rem;
+          padding: 0.125rem 0.375rem;
+          background: rgba(34, 197, 94, 0.1);
+          border: 1px solid rgba(34, 197, 94, 0.3);
+          border-radius: 0.25rem;
+          color: #22c55e;
+          font-size: 0.625rem;
+          font-weight: 600;
+        }
+
+        .card-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          flex-shrink: 0;
+        }
+
+        .action-btn {
+          padding: 0.25rem;
+          background: transparent;
+          border: none;
+          border-radius: 0.25rem;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .edit-btn {
+          color: #FFD700;
+        }
+
+        .edit-btn:hover {
+          background: rgba(255, 215, 0, 0.1);
+        }
+
+        .delete-btn {
+          color: #ef4444;
+        }
+
+        .delete-btn:hover {
+          background: rgba(239, 68, 68, 0.1);
+        }
+
+        .card-description {
+          font-size: 0.75rem;
+          color: #9CA3AF;
+          margin: 0 0 0.5rem 0;
+          line-height: 1.4;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .card-badges {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.375rem;
+        }
+
+        .badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.25rem;
+          padding: 0.125rem 0.5rem;
+          border-radius: 0.25rem;
+          font-size: 0.625rem;
+          font-weight: 600;
+        }
+
+        .photo-badge {
+          background: rgba(59, 130, 246, 0.1);
+          border: 1px solid rgba(59, 130, 246, 0.3);
+          color: #60a5fa;
+        }
+
+        .approval-badge {
+          background: rgba(168, 85, 247, 0.1);
+          border: 1px solid rgba(168, 85, 247, 0.3);
+          color: #c084fc;
+        }
+
+        .required-badge {
+          background: rgba(249, 115, 22, 0.1);
+          border: 1px solid rgba(249, 115, 22, 0.3);
+          color: #fb923c;
+        }
+
+        .optional-badge {
+          background: rgba(156, 163, 175, 0.1);
+          border: 1px solid rgba(156, 163, 175, 0.3);
+          color: #9ca3af;
+        }
+
+        .deleted-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          border-radius: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .deleted-badge {
+          background: #ef4444;
+          color: white;
+          font-size: 0.75rem;
+          font-weight: 600;
+          padding: 0.25rem 0.75rem;
+          border-radius: 0.375rem;
+        }
+      `}</style>
     </div>
   );
 }
