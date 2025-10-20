@@ -2,6 +2,90 @@
 
 This document tracks known technical debt and issues that require future attention.
 
+**Last Updated**: 2025-10-20
+
+---
+
+## Lessons Learned: Task Creation RLS Refactor (2025-10-20)
+
+**Context**: Fixed cascading errors in task creation endpoint after removing `job_checklist_items` system.
+
+### Error Cascade Pattern
+When fixing RLS violations, expect **layered errors** - each fix may expose the next validation layer:
+
+1. **Layer 1: Missing Database Columns** (commit eed1ac5)
+   - Error: 400 Bad Request - `requires_photo_verification` and `acceptance_criteria` not in DB
+   - Root cause: Repository inserting fields that don't exist in `workflow_tasks` table
+   - Fix: Removed non-existent fields from INSERT statements
+
+2. **Layer 2: RLS Policy Violation** (commit d59a8cc)
+   - Error: 500 Internal Server Error - "new row violates row-level security policy"
+   - Root cause: `workflow_tasks_tenant_isolation` policy requires `tenant_id` match, but repository not inserting `tenant_id`
+   - Fix: Updated entire call chain (route → service → repository) to propagate `tenant_id`
+
+3. **Layer 3: Frontend Validation Mismatch** (commit 3c4f551) ← **This was pre-existing**
+   - Error: 422 Unprocessable Entity - validation failed on `acceptance_criteria`
+   - Root cause: Frontend sending `null`, Zod expecting `string | undefined`
+   - **Why exposed now**: Previous RLS errors blocked requests before reaching validation layer
+   - Fix: Conditionally omit field from payload instead of sending `null`
+
+### Key Lessons
+
+**1. Zod `.optional()` vs `null`**
+```typescript
+// ❌ WRONG - Zod .optional() does NOT accept null
+z.string().optional()  // Type: string | undefined (NOT string | null)
+
+// Frontend sending:
+{ acceptance_criteria: null }  // ❌ Fails validation
+
+// ✅ CORRECT - Omit field entirely when empty
+const payload = { /* required fields */ };
+if (value.trim()) {
+  payload.acceptance_criteria = value.trim();  // ✅ Only include if present
+}
+```
+
+**2. Nullable Fields in Zod**
+If you need to accept `null`, use `.nullable()` or `.nullish()`:
+```typescript
+z.string().nullable()    // Type: string | null
+z.string().nullish()     // Type: string | null | undefined
+z.string().optional().nullable()  // Also works
+```
+
+**3. Layered Error Diagnosis**
+- Fix errors **one layer at a time** (don't assume first error is the only issue)
+- Each fix may reveal deeper validation issues
+- Use Supabase MCP to verify schema before assuming bug location
+- Check Railway logs for actual database error messages (more detailed than browser console)
+
+**4. RLS Policy Integration Checklist**
+When adding RLS to existing tables:
+- [ ] Query `pg_policies` via MCP to understand policy requirements
+- [ ] Trace data flow from route → service → repository
+- [ ] Ensure `tenant_id` included in ALL insert/update operations
+- [ ] Update ALL callers when changing repository method signatures
+- [ ] Test with real data, not just build verification
+
+**5. Frontend/Backend Contract Validation**
+- Always match frontend payload structure to backend Zod schemas exactly
+- Use TypeScript types generated from Zod schemas when possible (`z.infer<typeof Schema>`)
+- Test API endpoints with actual frontend payloads, not just Postman/curl
+- Consider adding integration tests for critical CRUD operations
+
+### Files Modified in This Refactor
+- `WorkflowTaskRepository.ts` - Added `tenant_id` parameter, removed non-existent columns
+- `TaskTemplateService.ts` - Added `tenantId` parameter to `instantiateTemplate()`
+- `TaskEditor.tsx` - Fixed `acceptance_criteria: null` → conditionally omit field
+- 4 API routes - Updated to pass `tenantId` to service layer
+
+### Prevention Strategy
+- Use TypeScript strict mode to catch `null` vs `undefined` issues at compile time
+- Add integration tests for multi-tenant CRUD operations
+- Document RLS policy requirements in repository JSDocs
+- Create shared type definitions for API request/response payloads
+
 ---
 
 ## TypeScript Type Generation Issues
