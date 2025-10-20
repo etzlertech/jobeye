@@ -3,19 +3,26 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
+import { SimpleCameraModal } from '@/components/camera/SimpleCameraModal';
 import {
   ArrowLeft,
   AlertCircle,
   X,
   Loader2,
   Save,
-  Package
+  Package,
+  Camera
 } from 'lucide-react';
 
 export default function CreateMaterialPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Camera state
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [imageBlob, setImageBlob] = useState<Blob | null>(null);
 
   // Form state
   const [name, setName] = useState('');
@@ -27,6 +34,12 @@ export default function CreateMaterialPage() {
   const [sku, setSku] = useState('');
   const [manufacturer, setManufacturer] = useState('');
   const [status, setStatus] = useState<'active' | 'retired'>('active');
+
+  const handleCameraCapture = (imageUrl: string, blob: Blob) => {
+    setCapturedImage(imageUrl);
+    setImageBlob(blob);
+    setIsCameraOpen(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,6 +122,30 @@ export default function CreateMaterialPage() {
       {/* Form Content */}
       <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
         <div className="p-4 space-y-6">
+          {/* Photo Preview */}
+          {capturedImage && (
+            <div className="form-section">
+              <h2 className="section-title">Photo</h2>
+              <div className="relative">
+                <img
+                  src={capturedImage}
+                  alt="Material photo"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCapturedImage(null);
+                    setImageBlob(null);
+                  }}
+                  className="absolute top-2 right-2 p-2 bg-red-500 rounded-full"
+                >
+                  <X className="w-4 h-4 text-white" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Basic Info */}
           <div className="form-section">
             <h2 className="section-title">Basic Information</h2>
@@ -312,7 +349,25 @@ export default function CreateMaterialPage() {
             </>
           )}
         </button>
+
+        {/* Camera Button - Bottom Right */}
+        <button
+          type="button"
+          onClick={() => setIsCameraOpen(true)}
+          disabled={isSubmitting}
+          className="btn-camera"
+          title="Take Photo"
+        >
+          <Camera className="w-6 h-6" />
+        </button>
       </div>
+
+      {/* Camera Modal */}
+      <SimpleCameraModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={handleCameraCapture}
+      />
 
       <style jsx>{`
         .mobile-container {
@@ -466,6 +521,31 @@ export default function CreateMaterialPage() {
         }
 
         .btn-secondary:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .btn-camera {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 3.5rem;
+          height: 3.5rem;
+          background: rgba(255, 215, 0, 0.2);
+          border: 2px solid #FFD700;
+          border-radius: 50%;
+          color: #FFD700;
+          cursor: pointer;
+          transition: all 0.2s;
+          flex-shrink: 0;
+        }
+
+        .btn-camera:hover:not(:disabled) {
+          background: rgba(255, 215, 0, 0.3);
+          transform: scale(1.05);
+        }
+
+        .btn-camera:disabled {
           opacity: 0.6;
           cursor: not-allowed;
         }
