@@ -47,14 +47,10 @@ export default function SupervisorVehiclesPage() {
   const loadVehicles = async () => {
     try {
       setIsLoading(true);
-      // TODO: Replace with actual API endpoint when available
-      // const response = await fetch('/api/supervisor/vehicles');
-      // const data = await response.json();
-      // if (!response.ok) throw new Error(data.message);
-      // setVehicles(data.vehicles || []);
-
-      // Mock data for now
-      setVehicles([]);
+      const response = await fetch('/api/supervisor/items?item_type=equipment&category=vehicle');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message);
+      setVehicles(data.items || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load vehicles');
     } finally {

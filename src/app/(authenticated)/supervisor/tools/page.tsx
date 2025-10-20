@@ -45,14 +45,10 @@ export default function SupervisorToolsPage() {
   const loadTools = async () => {
     try {
       setIsLoading(true);
-      // TODO: Replace with actual API endpoint when available
-      // const response = await fetch('/api/supervisor/tools');
-      // const data = await response.json();
-      // if (!response.ok) throw new Error(data.message);
-      // setTools(data.tools || []);
-
-      // Mock data for now
-      setTools([]);
+      const response = await fetch('/api/supervisor/items?item_type=tool');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message);
+      setTools(data.items || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tools');
     } finally {

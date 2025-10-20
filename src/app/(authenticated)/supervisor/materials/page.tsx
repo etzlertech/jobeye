@@ -47,14 +47,10 @@ export default function SupervisorMaterialsPage() {
   const loadMaterials = async () => {
     try {
       setIsLoading(true);
-      // TODO: Replace with actual API endpoint when available
-      // const response = await fetch('/api/supervisor/materials');
-      // const data = await response.json();
-      // if (!response.ok) throw new Error(data.message);
-      // setMaterials(data.materials || []);
-
-      // Mock data for now
-      setMaterials([]);
+      const response = await fetch('/api/supervisor/items?item_type=material');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message);
+      setMaterials(data.items || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load materials');
     } finally {
