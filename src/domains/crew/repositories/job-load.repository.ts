@@ -57,7 +57,7 @@ export class JobLoadRepository {
         status,
         workflow_task:workflow_tasks!inner (
           id,
-          title
+          task_description
         ),
         item:items!inner (
           id,
@@ -97,7 +97,7 @@ export class JobLoadRepository {
           is_required: item.is_required,
           status: item.status,
           task_id: item.workflow_task.id,
-          task_title: item.workflow_task.title,
+          task_title: item.workflow_task.task_description,
           source: 'table',
         });
       }
@@ -140,6 +140,7 @@ export class JobLoadRepository {
   ): Promise<void> {
     // Write to table
     if (taskId) {
+      // Direct update when task_id is known
       const { error } = await this.supabase
         .from('workflow_task_item_associations')
         .update({ status: 'loaded' })
@@ -148,6 +149,28 @@ export class JobLoadRepository {
 
       if (error) {
         console.error('[JobLoadRepository] Error updating table:', error);
+      }
+    } else {
+      // Find all associations for this job + item when task_id not provided
+      const { data: tasks, error: taskError } = await this.supabase
+        .from('workflow_tasks')
+        .select('id')
+        .eq('job_id', jobId);
+
+      if (taskError) {
+        console.error('[JobLoadRepository] Error finding tasks:', taskError);
+      } else if (tasks && tasks.length > 0) {
+        const taskIds = tasks.map((t) => t.id);
+
+        const { error } = await this.supabase
+          .from('workflow_task_item_associations')
+          .update({ status: 'loaded' })
+          .in('workflow_task_id', taskIds)
+          .eq('item_id', itemId);
+
+        if (error) {
+          console.error('[JobLoadRepository] Error updating table:', error);
+        }
       }
     }
 
@@ -188,6 +211,7 @@ export class JobLoadRepository {
   ): Promise<void> {
     // Write to table
     if (taskId) {
+      // Direct update when task_id is known
       const { error } = await this.supabase
         .from('workflow_task_item_associations')
         .update({ status: 'verified' })
@@ -196,6 +220,28 @@ export class JobLoadRepository {
 
       if (error) {
         console.error('[JobLoadRepository] Error updating table:', error);
+      }
+    } else {
+      // Find all associations for this job + item when task_id not provided
+      const { data: tasks, error: taskError } = await this.supabase
+        .from('workflow_tasks')
+        .select('id')
+        .eq('job_id', jobId);
+
+      if (taskError) {
+        console.error('[JobLoadRepository] Error finding tasks:', taskError);
+      } else if (tasks && tasks.length > 0) {
+        const taskIds = tasks.map((t) => t.id);
+
+        const { error } = await this.supabase
+          .from('workflow_task_item_associations')
+          .update({ status: 'verified' })
+          .in('workflow_task_id', taskIds)
+          .eq('item_id', itemId);
+
+        if (error) {
+          console.error('[JobLoadRepository] Error updating table:', error);
+        }
       }
     }
 
@@ -236,6 +282,7 @@ export class JobLoadRepository {
   ): Promise<void> {
     // Write to table
     if (taskId) {
+      // Direct update when task_id is known
       const { error } = await this.supabase
         .from('workflow_task_item_associations')
         .update({ status: 'missing' })
@@ -244,6 +291,28 @@ export class JobLoadRepository {
 
       if (error) {
         console.error('[JobLoadRepository] Error updating table:', error);
+      }
+    } else {
+      // Find all associations for this job + item when task_id not provided
+      const { data: tasks, error: taskError } = await this.supabase
+        .from('workflow_tasks')
+        .select('id')
+        .eq('job_id', jobId);
+
+      if (taskError) {
+        console.error('[JobLoadRepository] Error finding tasks:', taskError);
+      } else if (tasks && tasks.length > 0) {
+        const taskIds = tasks.map((t) => t.id);
+
+        const { error } = await this.supabase
+          .from('workflow_task_item_associations')
+          .update({ status: 'missing' })
+          .in('workflow_task_id', taskIds)
+          .eq('item_id', itemId);
+
+        if (error) {
+          console.error('[JobLoadRepository] Error updating table:', error);
+        }
       }
     }
 

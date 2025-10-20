@@ -117,9 +117,17 @@ export async function PUT(
     if (jsonbError) throw jsonbError;
 
     // 2. Update workflow_task_item_associations status based on checked field
+    let loadedCount = 0;
+    let missingCount = 0;
+
     for (const item of equipment) {
       if (item.checked) {
         await loadRepo.markItemLoaded(jobId, item.id);
+        loadedCount++;
+      } else {
+        // Mark unchecked items as missing to keep dual-write consistent
+        await loadRepo.markItemMissing(jobId, item.id);
+        missingCount++;
       }
     }
 
@@ -128,7 +136,9 @@ export async function PUT(
       equipment,
       _meta: {
         dual_write: true,
-        updated_count: equipment.length
+        total_items: equipment.length,
+        loaded_count: loadedCount,
+        missing_count: missingCount
       }
     });
 
