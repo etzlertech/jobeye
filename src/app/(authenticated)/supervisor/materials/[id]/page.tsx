@@ -9,7 +9,8 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
-  X
+  X,
+  Edit
 } from 'lucide-react';
 
 interface ItemDetails {
@@ -241,6 +242,14 @@ export default function MaterialDetailPage() {
           <ArrowLeft className="w-5 h-5 mr-2" />
           Back to Materials
         </button>
+        <button
+          type="button"
+          onClick={() => router.push(`/supervisor/materials/${itemId}/edit`)}
+          className="btn-primary flex-1"
+        >
+          <Edit className="w-5 h-5 mr-2" />
+          Edit Material
+        </button>
       </div>
 
       <style jsx>{`
@@ -331,6 +340,25 @@ export default function MaterialDetailPage() {
         .btn-secondary:hover {
           background: rgba(255, 255, 255, 0.15);
           border-color: #FFD700;
+        }
+
+        .btn-primary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem 1rem;
+          background: #FFD700;
+          color: #000;
+          font-weight: 600;
+          border-radius: 0.5rem;
+          border: none;
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+          background: #FFC700;
         }
       `}</style>
     </div>
