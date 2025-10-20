@@ -63,6 +63,8 @@ interface RequiredItem {
   icon?: string;
   checked: boolean;
   detectedBy?: 'gpt4' | 'gemini' | 'both';
+  confidence?: number; // VLM match confidence (0-1)
+  source?: 'table' | 'jsonb'; // Item source from API _meta
 }
 
 interface Detection {
@@ -94,6 +96,7 @@ export default function CrewJobLoadPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [view, setView] = useState<'job_select' | 'camera'>('job_select');
+  const [itemMeta, setItemMeta] = useState<{table: number; jsonb: number} | null>(null);
   
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -149,11 +152,22 @@ export default function CrewJobLoadPage() {
           if (equipmentResponse.ok) {
             const equipmentData = await equipmentResponse.json();
             const equipment = equipmentData.equipment || [];
-            
+            const meta = equipmentData._meta;
+
+            // Log metadata for debugging
+            if (meta) {
+              console.log(`[Equipment] Job ${job.id} metadata:`, {
+                total: meta.total,
+                table_items: meta.sources?.table || 0,
+                jsonb_items: meta.sources?.jsonb || 0
+              });
+            }
+
             return {
               ...job,
               kit_items: equipment.map((item: any) => item.name),
-              verified_items: equipment.filter((item: any) => item.checked).map((item: any) => item.name)
+              verified_items: equipment.filter((item: any) => item.checked).map((item: any) => item.name),
+              _meta: meta
             };
           } else {
             // Fallback to default items if equipment fetch fails
@@ -383,7 +397,7 @@ export default function CrewJobLoadPage() {
               console.log(`[VLM] Match found: "${matchingDetection.label}" → "${item.name}" (source: ${matchingDetection.source}, confidence: ${Math.round(matchingDetection.confidence * 100)}%)`);
               console.log(`[VLM] Auto-checking: ${item.name}`);
               hasChanges = true;
-              return { ...item, checked: true, detectedBy: matchingDetection.source };
+              return { ...item, checked: true, detectedBy: matchingDetection.source, confidence: matchingDetection.confidence };
             }
             return item;
           });
