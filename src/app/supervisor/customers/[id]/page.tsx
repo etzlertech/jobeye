@@ -139,7 +139,7 @@ export default function CustomerDetailPage() {
       <div className="mobile-container">
         <MobileNavigation
           currentRole="supervisor"
-          onLogout={() => router.push('/sign-in')}
+          onLogout={() => router.push('/')}
         />
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
@@ -156,7 +156,7 @@ export default function CustomerDetailPage() {
       {/* Mobile Navigation */}
       <MobileNavigation
         currentRole="supervisor"
-        onLogout={() => router.push('/sign-in')}
+        onLogout={() => router.push('/')}
       />
 
       {/* Header */}

@@ -208,7 +208,7 @@ export default function TaskDetailPage() {
 
   return (
     <div className="mobile-container">
-      <MobileNavigation currentRole="supervisor" onLogout={() => router.push('/sign-in')} />
+      <MobileNavigation currentRole="supervisor" onLogout={() => router.push('/')} />
 
       <div className="p-4 space-y-4 flex-1 overflow-y-auto">
         <button

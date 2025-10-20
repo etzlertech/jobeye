@@ -345,7 +345,7 @@ export default function EditTemplatePage() {
       {/* Mobile Navigation */}
       <MobileNavigation
         currentRole="supervisor"
-        onLogout={() => router.push('/sign-in')}
+        onLogout={() => router.push('/')}
       />
 
       {/* Header */}

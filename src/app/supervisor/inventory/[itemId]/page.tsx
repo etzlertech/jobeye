@@ -151,7 +151,7 @@ export default function InventoryItemDetailPage() {
       <div className="mobile-container">
         <MobileNavigation
           currentRole="supervisor"
-          onLogout={() => router.push('/sign-in')}
+          onLogout={() => router.push('/')}
           showBackButton={true}
           onBack={() => router.push('/supervisor/inventory')}
         />
@@ -170,7 +170,7 @@ export default function InventoryItemDetailPage() {
       {/* Mobile Navigation */}
       <MobileNavigation
         currentRole="supervisor"
-        onLogout={() => router.push('/sign-in')}
+        onLogout={() => router.push('/')}
         showBackButton={true}
         onBack={() => router.push('/supervisor/inventory')}
       />

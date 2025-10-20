@@ -121,7 +121,7 @@ export default function JobStatusPage() {
     <div className="mobile-container">
       <MobileNavigation
         currentRole="supervisor"
-        onLogout={() => router.push('/sign-in')}
+        onLogout={() => router.push('/')}
       />
 
       {/* Header */}

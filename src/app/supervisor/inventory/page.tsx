@@ -480,7 +480,7 @@ export default function SupervisorInventoryPage() {
         {/* Mobile Navigation */}
         <MobileNavigation
           currentRole="supervisor"
-          onLogout={() => router.push('/sign-in')}
+          onLogout={() => router.push('/')}
         />
         
         {/* Header */}
@@ -537,7 +537,7 @@ export default function SupervisorInventoryPage() {
         {/* Mobile Navigation */}
         <MobileNavigation
           currentRole="supervisor"
-          onLogout={() => router.push('/sign-in')}
+          onLogout={() => router.push('/')}
         />
         
         {/* Header */}
@@ -850,7 +850,7 @@ export default function SupervisorInventoryPage() {
       {/* Mobile Navigation */}
       <MobileNavigation
         currentRole="supervisor"
-        onLogout={() => router.push('/sign-in')}
+        onLogout={() => router.push('/')}
       />
       
       {/* Header */}
