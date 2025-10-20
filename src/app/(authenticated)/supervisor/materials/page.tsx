@@ -14,18 +14,22 @@ import {
   CheckCircle,
   X,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Filter
 } from 'lucide-react';
 
 interface Material {
   id: string;
   name: string;
   category?: string;
-  quantity?: number;
-  unit?: string;
-  status?: 'in_stock' | 'low_stock' | 'out_of_stock' | 'on_order';
-  location?: string;
-  thumbnailUrl?: string;
+  item_type?: string;
+  manufacturer?: string;
+  model?: string;
+  quantity_in_stock?: number;
+  reorder_point?: number;
+  storage_location?: string;
+  unit_cost?: number;
+  image_url?: string;
   created_at: string;
 }
 
@@ -34,35 +38,78 @@ export default function SupervisorMaterialsPage() {
 
   // State
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({ total: 0, hasMore: false });
 
-  // Load materials on mount
+  // Load categories on mount
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  // Load materials when category changes
   useEffect(() => {
     loadMaterials();
-  }, []);
+  }, [selectedCategory]);
+
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('/api/items/categories?item_type=material');
+      const data = await response.json();
+      if (response.ok) {
+        setCategories(data.categories || []);
+      }
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+    }
+  };
 
   const loadMaterials = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/supervisor/items?item_type=material');
+      setError(null);
+
+      const params = new URLSearchParams({
+        item_type: 'material',
+        limit: '50'
+      });
+
+      if (selectedCategory) {
+        params.append('category', selectedCategory);
+      }
+
+      if (searchQuery) {
+        params.append('search', searchQuery);
+      }
+
+      const response = await fetch(`/api/items?${params.toString()}`);
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message);
+
+      if (!response.ok) throw new Error(data.error || 'Failed to load materials');
+
       setMaterials(data.items || []);
+      setPagination(data.pagination || { total: 0, hasMore: false });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load materials');
+      setMaterials([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filteredMaterials = materials.filter(material =>
-    material.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (material.category && material.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (material.location && material.location.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    const timer = setTimeout(() => {
+      loadMaterials();
+    }, 500);
+    return () => clearTimeout(timer);
+  };
+
+  const filteredMaterials = materials;
 
   if (isLoading) {
     return (
@@ -105,7 +152,10 @@ export default function SupervisorMaterialsPage() {
       <div className="header-bar">
         <div>
           <h1 className="text-xl font-semibold">Materials</h1>
-          <p className="text-xs text-gray-500">{filteredMaterials.length} materials</p>
+          <p className="text-xs text-gray-500">
+            {pagination.total} item{pagination.total !== 1 ? 's' : ''}
+            {selectedCategory && ` • ${selectedCategory}`}
+          </p>
         </div>
       </div>
 
@@ -132,19 +182,38 @@ export default function SupervisorMaterialsPage() {
       )}
 
       <div className="flex-1 overflow-y-auto">
-        {/* Search */}
-        <div className="p-4">
+        {/* Search & Filters */}
+        <div className="p-4 space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search materials..."
+              placeholder="Search materials by name..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               className="input-field"
               style={{ paddingLeft: '2.5rem' }}
             />
           </div>
+
+          {categories.length > 0 && (
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="input-field"
+                style={{ paddingLeft: '2.5rem' }}
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Materials Grid */}
@@ -156,41 +225,35 @@ export default function SupervisorMaterialsPage() {
             }}
           >
             {filteredMaterials.map((material) => {
-              // Determine status color
-              const statusColor = material.status === 'in_stock' ? 'green' as const
-                : material.status === 'low_stock' ? 'orange' as const
-                : material.status === 'out_of_stock' ? 'red' as const
-                : 'blue' as const;
+              // Build subtitle
+              const subtitle = material.storage_location || 'No location';
 
-              // Build tags array
+              // Build tags
               const tags = [];
-              if (material.status) {
-                const icon = material.status === 'low_stock' || material.status === 'out_of_stock'
-                  ? <AlertTriangle className="w-3 h-3" />
-                  : undefined;
-                tags.push({
-                  label: material.status.replace('_', ' '),
-                  color: statusColor,
-                  icon
-                });
-              }
+
               if (material.category) {
                 tags.push({ label: material.category, color: 'gold' as const });
               }
-              if (material.quantity !== undefined && material.unit) {
+
+              if (material.quantity_in_stock !== undefined) {
+                const isLow = material.reorder_point && material.quantity_in_stock <= material.reorder_point;
+                const stockColor = isLow ? 'orange' as const : material.quantity_in_stock > 0 ? 'green' as const : 'red' as const;
+                const icon = isLow || material.quantity_in_stock === 0 ? <AlertTriangle className="w-3 h-3" /> : undefined;
+
                 tags.push({
-                  label: `${material.quantity} ${material.unit}`,
-                  color: 'gray' as const
+                  label: `${material.quantity_in_stock} in stock`,
+                  color: stockColor,
+                  icon
                 });
               }
 
               return (
                 <EntityTile
                   key={material.id}
-                  image={material.thumbnailUrl}
+                  image={material.image_url}
                   fallbackIcon={<Package />}
                   title={material.name}
-                  subtitle={material.location || 'No location'}
+                  subtitle={subtitle}
                   tags={tags}
                   onClick={() => router.push(`/supervisor/materials/${material.id}`)}
                 />

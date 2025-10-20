@@ -13,17 +13,21 @@ import {
   AlertCircle,
   CheckCircle,
   X,
-  Loader2
+  Loader2,
+  Filter
 } from 'lucide-react';
 
 interface Tool {
   id: string;
   name: string;
-  type?: string;
-  status?: 'available' | 'in_use' | 'maintenance' | 'retired';
-  location?: string;
-  assigned_to?: string;
-  thumbnailUrl?: string;
+  category?: string;
+  item_type?: string;
+  manufacturer?: string;
+  model?: string;
+  quantity_in_stock?: number;
+  storage_location?: string;
+  unit_cost?: number;
+  image_url?: string;
   created_at: string;
 }
 
@@ -32,35 +36,85 @@ export default function SupervisorToolsPage() {
 
   // State
   const [tools, setTools] = useState<Tool[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({ total: 0, hasMore: false });
 
-  // Load tools on mount
+  // Load categories on mount
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  // Load tools when category or search changes
   useEffect(() => {
     loadTools();
-  }, []);
+  }, [selectedCategory]);
+
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('/api/items/categories?item_type=equipment');
+      const data = await response.json();
+      if (response.ok) {
+        // Filter to tool-related categories
+        const toolCategories = (data.categories || []).filter((cat: string) =>
+          cat.toLowerCase().includes('tool') ||
+          cat.toLowerCase().includes('equipment')
+        );
+        setCategories(toolCategories);
+      }
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+    }
+  };
 
   const loadTools = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/supervisor/items?item_type=tool');
+      setError(null);
+
+      // Build query parameters
+      const params = new URLSearchParams({
+        item_type: 'equipment',
+        limit: '50'
+      });
+
+      if (selectedCategory) {
+        params.append('category', selectedCategory);
+      }
+
+      if (searchQuery) {
+        params.append('search', searchQuery);
+      }
+
+      const response = await fetch(`/api/items?${params.toString()}`);
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message);
+
+      if (!response.ok) throw new Error(data.error || 'Failed to load tools');
+
       setTools(data.items || []);
+      setPagination(data.pagination || { total: 0, hasMore: false });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tools');
+      setTools([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filteredTools = tools.filter(tool =>
-    tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (tool.type && tool.type.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (tool.location && tool.location.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    // Debounce search
+    const timer = setTimeout(() => {
+      loadTools();
+    }, 500);
+    return () => clearTimeout(timer);
+  };
+
+  const filteredTools = tools;
 
   if (isLoading) {
     return (
@@ -102,8 +156,11 @@ export default function SupervisorToolsPage() {
       {/* Header */}
       <div className="header-bar">
         <div>
-          <h1 className="text-xl font-semibold">Tools</h1>
-          <p className="text-xs text-gray-500">{filteredTools.length} tools</p>
+          <h1 className="text-xl font-semibold">Tools & Equipment</h1>
+          <p className="text-xs text-gray-500">
+            {pagination.total} item{pagination.total !== 1 ? 's' : ''}
+            {selectedCategory && ` • ${selectedCategory}`}
+          </p>
         </div>
       </div>
 
@@ -130,19 +187,40 @@ export default function SupervisorToolsPage() {
       )}
 
       <div className="flex-1 overflow-y-auto">
-        {/* Search */}
-        <div className="p-4">
+        {/* Search & Filters */}
+        <div className="p-4 space-y-3">
+          {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search tools..."
+              placeholder="Search by name, manufacturer, model..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               className="input-field"
               style={{ paddingLeft: '2.5rem' }}
             />
           </div>
+
+          {/* Category Filter */}
+          {categories.length > 0 && (
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="input-field"
+                style={{ paddingLeft: '2.5rem' }}
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Tools Grid */}
@@ -154,28 +232,33 @@ export default function SupervisorToolsPage() {
             }}
           >
             {filteredTools.map((tool) => {
-              // Determine status color
-              const statusColor = tool.status === 'available' ? 'green' as const
-                : tool.status === 'in_use' ? 'blue' as const
-                : tool.status === 'maintenance' ? 'orange' as const
-                : 'gray' as const;
+              // Build subtitle with manufacturer/model or location
+              const subtitle = tool.manufacturer && tool.model
+                ? `${tool.manufacturer} ${tool.model}`
+                : tool.storage_location || 'No location';
 
               // Build tags array
               const tags = [];
-              if (tool.status) {
-                tags.push({ label: tool.status.replace('_', ' '), color: statusColor });
+
+              if (tool.category) {
+                tags.push({ label: tool.category, color: 'gold' as const });
               }
-              if (tool.type) {
-                tags.push({ label: tool.type, color: 'gold' as const });
+
+              if (tool.quantity_in_stock !== undefined) {
+                const stockColor = tool.quantity_in_stock > 0 ? 'green' as const : 'orange' as const;
+                tags.push({
+                  label: `${tool.quantity_in_stock} in stock`,
+                  color: stockColor
+                });
               }
 
               return (
                 <EntityTile
                   key={tool.id}
-                  image={tool.thumbnailUrl}
+                  image={tool.image_url}
                   fallbackIcon={<Wrench />}
                   title={tool.name}
-                  subtitle={tool.location || tool.assigned_to || 'No location'}
+                  subtitle={subtitle}
                   tags={tags}
                   onClick={() => router.push(`/supervisor/tools/${tool.id}`)}
                 />
