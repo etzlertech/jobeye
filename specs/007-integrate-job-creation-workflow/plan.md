@@ -1,5 +1,7 @@
 # Implementation Plan: Integrate Job Creation Workflow for Authenticated Supervisors
 
+> **⚠️ SCHEMA CHANGE (2025-10-19)**: The `job_checklist_items` table created by this feature (Task T002) has been **RETIRED** and dropped from the database. The system now uses `item_transactions` for tool/material tracking. This plan document remains for historical context. See `RETIRED_CHECKLIST_SYSTEM.md`.
+
 **Branch**: `007-integrate-job-creation-workflow` | **Date**: 2025-10-14 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/007-integrate-job-creation-workflow/spec.md`
 

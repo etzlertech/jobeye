@@ -1,9 +1,11 @@
 # Data Model: Job Creation Workflow Integration
 
+> **⚠️ SCHEMA CHANGE (2025-10-19)**: The `job_checklist_items` table documented in Section 3.1 has been **RETIRED** and dropped from the database schema. The system now uses `item_transactions` (check_out/check_in pattern) for tracking tools/materials on jobs. This document remains for historical context. See `RETIRED_CHECKLIST_SYSTEM.md` for migration details.
+
 **Feature**: 007-integrate-job-creation-workflow
 **Date**: 2025-10-14
 **Phase**: 1 (Design & Contracts)
-**Status**: Complete
+**Status**: Complete (table job_checklist_items later retired 2025-10-19)
 
 ## Data Sources
 
