@@ -214,9 +214,8 @@ export class WorkflowTaskRepository {
         task_description: validated.task_description,
         task_order: validated.task_order,
         is_required: validated.is_required,
-        requires_photo_verification: validated.requires_photo_verification,
+        // Note: requires_photo_verification and acceptance_criteria not in DB schema
         requires_supervisor_approval: validated.requires_supervisor_approval,
-        acceptance_criteria: validated.acceptance_criteria || null,
         task_type: validated.task_type,
         status: TaskStatus.PENDING,
         is_deleted: false,
@@ -350,9 +349,8 @@ export class WorkflowTaskRepository {
         task_description: item.task_description,
         task_order: item.task_order,
         is_required: item.is_required,
-        requires_photo_verification: item.requires_photo_verification,
+        // Note: requires_photo_verification and acceptance_criteria not in DB schema
         requires_supervisor_approval: item.requires_supervisor_approval,
-        acceptance_criteria: item.acceptance_criteria,
         template_id: item.template_id,
         status: TaskStatus.PENDING,
         is_deleted: false,
