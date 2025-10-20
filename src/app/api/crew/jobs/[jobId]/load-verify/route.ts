@@ -40,6 +40,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { CrewWorkflowService } from '@/domains/crew/services/crew-workflow.service';
 import { withAuth } from '@/lib/auth/with-auth';
 import { handleApiError } from '@/core/errors/error-handler';
+import { getRequestContext } from '@/lib/auth/context';
+import { isJobLoadV2Enabled } from '@/lib/features/flags';
 import { z } from 'zod';
 
 // Force dynamic rendering - prevents static analysis during build
@@ -78,6 +80,20 @@ export async function POST(
         return NextResponse.json(
           { error: 'Insufficient permissions' },
           { status: 403 }
+        );
+      }
+
+      // Check if job load v2 feature is enabled
+      const context = await getRequestContext(req);
+      const useV2 = await isJobLoadV2Enabled(context);
+
+      if (!useV2) {
+        return NextResponse.json(
+          {
+            error: 'Feature not available',
+            message: 'Load verification with AI vision is not enabled for your organization'
+          },
+          { status: 404 }
         );
       }
 

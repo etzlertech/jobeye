@@ -36,6 +36,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { handleApiError } from '@/core/errors/error-handler';
 import { JobLoadRepository } from '@/domains/crew/repositories/job-load.repository';
+import { getRequestContext } from '@/lib/auth/context';
+import { isJobLoadV2Enabled } from '@/lib/features/flags';
 
 interface EquipmentItem {
   name: string;
@@ -54,9 +56,40 @@ export async function GET(
     const supabase = await createServerClient();
     const { jobId } = params;
 
-    const loadRepo = new JobLoadRepository(supabase);
+    // Get request context for feature flag check
+    const context = await getRequestContext(request);
+    const useV2 = await isJobLoadV2Enabled(context);
 
-    // Use dual-read logic to get required items
+    if (!useV2) {
+      // LEGACY PATH: Read only from jobs.checklist_items JSONB
+      const { data: job, error } = await supabase
+        .from('jobs')
+        .select('checklist_items')
+        .eq('id', jobId)
+        .single();
+
+      if (error) throw error;
+
+      const checklistItems = (job?.checklist_items as any[]) || [];
+      const equipment = checklistItems.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        checked: item.checked || item.loaded || false,
+        category: item.category || 'primary',
+        quantity: item.quantity || 1,
+        verified_at: item.verified_at,
+        icon: item.icon
+      }));
+
+      return NextResponse.json({
+        equipment,
+        job_id: jobId
+        // No _meta in legacy mode
+      });
+    }
+
+    // NEW PATH: Use dual-read logic from JobLoadRepository
+    const loadRepo = new JobLoadRepository(supabase);
     const items = await loadRepo.getRequiredItems(jobId);
 
     // Transform to legacy equipment format for backward compatibility
@@ -105,6 +138,27 @@ export async function PUT(
       );
     }
 
+    // Get request context for feature flag check
+    const context = await getRequestContext(request);
+    const useV2 = await isJobLoadV2Enabled(context);
+
+    if (!useV2) {
+      // LEGACY PATH: Update only jobs.checklist_items JSONB
+      const { error } = await supabase
+        .from('jobs')
+        .update({ checklist_items: equipment })
+        .eq('id', jobId);
+
+      if (error) throw error;
+
+      return NextResponse.json({
+        success: true,
+        equipment
+        // No _meta in legacy mode
+      });
+    }
+
+    // NEW PATH: Dual-write using JobLoadRepository
     const loadRepo = new JobLoadRepository(supabase);
 
     // Dual-write: Update both JSONB and workflow_task_item_associations

@@ -597,3 +597,173 @@ describe('PUT /api/crew/jobs/[jobId]/equipment - Contract Test', () => {
     });
   });
 });
+
+describe('Feature Flag Behavior - jobLoadV2Enabled', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('GET /equipment with flag OFF (legacy mode)', () => {
+    it('should return equipment without _meta when flag is OFF', async () => {
+      const { req, res } = createMocks({
+        method: 'GET',
+        url: '/api/crew/jobs/550e8400-e29b-41d4-a716-446655440000/equipment',
+        headers: {
+          'authorization': 'Bearer valid-crew-token',
+        },
+      });
+
+      // Simulate flag OFF: No _meta in response
+      mockHandler.mockImplementation((req) => {
+        res.statusCode = 200;
+        res._setData(JSON.stringify({
+          equipment: [
+            {
+              id: '1',
+              name: 'Lawn Mower',
+              checked: true,
+              category: 'primary',
+              quantity: 1
+            }
+          ],
+          job_id: '550e8400-e29b-41d4-a716-446655440000'
+          // No _meta when flag is OFF
+        }));
+      });
+
+      await mockHandler(req as unknown as NextRequest);
+
+      const response = JSON.parse(res._getData());
+      expect(response.equipment).toBeDefined();
+      expect(response.job_id).toBeDefined();
+      expect(response._meta).toBeUndefined(); // No metadata in legacy mode
+    });
+  });
+
+  describe('GET /equipment with flag ON (v2 mode)', () => {
+    it('should return equipment with _meta when flag is ON', async () => {
+      const { req, res } = createMocks({
+        method: 'GET',
+        url: '/api/crew/jobs/550e8400-e29b-41d4-a716-446655440000/equipment',
+        headers: {
+          'authorization': 'Bearer valid-crew-token',
+        },
+      });
+
+      // Simulate flag ON: Include _meta with sources
+      mockHandler.mockImplementation((req) => {
+        res.statusCode = 200;
+        res._setData(JSON.stringify({
+          equipment: [
+            {
+              id: '1',
+              name: 'Lawn Mower',
+              checked: true,
+              category: 'primary',
+              quantity: 1
+            }
+          ],
+          job_id: '550e8400-e29b-41d4-a716-446655440000',
+          _meta: {
+            total: 1,
+            sources: {
+              table: 1,
+              jsonb: 0
+            }
+          }
+        }));
+      });
+
+      await mockHandler(req as unknown as NextRequest);
+
+      const response = JSON.parse(res._getData());
+      expect(response._meta).toBeDefined();
+      expect(response._meta.sources).toBeDefined();
+      expect(response._meta.sources.table).toBeGreaterThanOrEqual(0);
+      expect(response._meta.sources.jsonb).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('PUT /equipment with flag OFF (legacy mode)', () => {
+    it('should update JSONB only without dual-write metadata when flag is OFF', async () => {
+      const { req, res } = createMocks({
+        method: 'PUT',
+        url: '/api/crew/jobs/550e8400-e29b-41d4-a716-446655440000/equipment',
+        headers: {
+          'authorization': 'Bearer valid-crew-token',
+          'content-type': 'application/json',
+        },
+        body: {
+          equipment: [
+            { id: '1', name: 'Lawn Mower', checked: true, category: 'primary', quantity: 1 }
+          ]
+        }
+      });
+
+      // Simulate flag OFF: No _meta in response
+      mockHandler.mockImplementation((req) => {
+        res.statusCode = 200;
+        res._setData(JSON.stringify({
+          success: true,
+          equipment: [
+            { id: '1', name: 'Lawn Mower', checked: true, category: 'primary', quantity: 1 }
+          ]
+          // No _meta when flag is OFF
+        }));
+      });
+
+      await mockHandler(req as unknown as NextRequest);
+
+      const response = JSON.parse(res._getData());
+      expect(response.success).toBe(true);
+      expect(response.equipment).toBeDefined();
+      expect(response._meta).toBeUndefined(); // No metadata in legacy mode
+    });
+  });
+
+  describe('PUT /equipment with flag ON (v2 mode)', () => {
+    it('should perform dual-write with metadata when flag is ON', async () => {
+      const { req, res } = createMocks({
+        method: 'PUT',
+        url: '/api/crew/jobs/550e8400-e29b-41d4-a716-446655440000/equipment',
+        headers: {
+          'authorization': 'Bearer valid-crew-token',
+          'content-type': 'application/json',
+        },
+        body: {
+          equipment: [
+            { id: '1', name: 'Lawn Mower', checked: true, category: 'primary', quantity: 1 },
+            { id: '2', name: 'Trimmer', checked: false, category: 'primary', quantity: 1 }
+          ]
+        }
+      });
+
+      // Simulate flag ON: Include _meta with dual-write info
+      mockHandler.mockImplementation((req) => {
+        res.statusCode = 200;
+        res._setData(JSON.stringify({
+          success: true,
+          equipment: [
+            { id: '1', name: 'Lawn Mower', checked: true, category: 'primary', quantity: 1 },
+            { id: '2', name: 'Trimmer', checked: false, category: 'primary', quantity: 1 }
+          ],
+          _meta: {
+            dual_write: true,
+            total_items: 2,
+            loaded_count: 1,
+            missing_count: 1
+          }
+        }));
+      });
+
+      await mockHandler(req as unknown as NextRequest);
+
+      const response = JSON.parse(res._getData());
+      expect(response._meta).toBeDefined();
+      expect(response._meta.dual_write).toBe(true);
+      expect(response._meta.total_items).toBe(2);
+      expect(response._meta.loaded_count).toBe(1);
+      expect(response._meta.missing_count).toBe(1);
+    });
+  });
+});

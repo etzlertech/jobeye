@@ -97,6 +97,7 @@ export default function CrewJobLoadPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [view, setView] = useState<'job_select' | 'camera'>('job_select');
   const [itemMeta, setItemMeta] = useState<{table: number; jsonb: number} | null>(null);
+  const [jobLoadV2Enabled, setJobLoadV2Enabled] = useState<boolean | null>(null); // null = loading
   
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -120,6 +121,29 @@ export default function CrewJobLoadPage() {
       setEditableItems(items.map(item => item.name));
     }
   }, [selectedJob]);
+
+  // Check feature flag on mount
+  useEffect(() => {
+    const checkFeatureFlag = async () => {
+      try {
+        const response = await fetch('/api/features/job-load-v2');
+        if (response.ok) {
+          const data = await response.json();
+          setJobLoadV2Enabled(data.enabled);
+          console.log('[FeatureFlag] Job load v2 enabled:', data.enabled);
+        } else {
+          // If endpoint fails, default to false
+          setJobLoadV2Enabled(false);
+          console.warn('[FeatureFlag] Failed to check job load v2 feature, defaulting to false');
+        }
+      } catch (err) {
+        console.error('[FeatureFlag] Error checking job load v2:', err);
+        setJobLoadV2Enabled(false);
+      }
+    };
+
+    checkFeatureFlag();
+  }, []);
 
   // Load jobs on mount
   useEffect(() => {
@@ -198,6 +222,13 @@ export default function CrewJobLoadPage() {
 
   const selectJob = (job: Job) => {
     setSelectedJob(job);
+
+    // Check if job load v2 is enabled
+    if (jobLoadV2Enabled === false) {
+      // Feature not enabled - show alert and don't switch to camera
+      alert('AI-powered load verification is not available for your organization. Please contact your administrator to enable this feature.');
+      return;
+    }
 
     // Populate itemMeta from job metadata
     if ((job as any)._meta?.sources) {
