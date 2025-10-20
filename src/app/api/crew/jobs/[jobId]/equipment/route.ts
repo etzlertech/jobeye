@@ -35,6 +35,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { handleApiError } from '@/core/errors/error-handler';
+import { JobLoadRepository } from '@/domains/crew/repositories/job-load.repository';
 
 interface EquipmentItem {
   name: string;
@@ -53,21 +54,32 @@ export async function GET(
     const supabase = await createServerClient();
     const { jobId } = params;
 
-    // Get job with required tools/materials (stored in checklist_items field for compatibility)
-    const { data: job, error } = await supabase
-      .from('jobs')
-      .select('id, checklist_items')
-      .eq('id', jobId)
-      .single();
+    const loadRepo = new JobLoadRepository(supabase);
 
-    if (error) throw error;
+    // Use dual-read logic to get required items
+    const items = await loadRepo.getRequiredItems(jobId);
 
-    // checklist_items is a JSONB array representing required tools/materials
-    const equipment = job?.checklist_items || [];
+    // Transform to legacy equipment format for backward compatibility
+    const equipment = items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      checked: item.status === 'loaded' || item.status === 'verified',
+      category: item.item_type === 'equipment' ? 'primary' : 'materials',
+      quantity: item.quantity,
+      verified_at: item.status === 'verified' ? new Date().toISOString() : undefined,
+      icon: undefined
+    }));
 
     return NextResponse.json({
-      equipment: equipment,
-      job_id: jobId
+      equipment,
+      job_id: jobId,
+      _meta: {
+        total: items.length,
+        sources: {
+          table: items.filter((i) => i.source === 'table').length,
+          jsonb: items.filter((i) => i.source === 'jsonb').length
+        }
+      }
     });
 
   } catch (error) {
@@ -93,19 +105,31 @@ export async function PUT(
       );
     }
 
-    // Update the job's required tools/materials (stored in checklist_items field)
-    const { data, error } = await supabase
+    const loadRepo = new JobLoadRepository(supabase);
+
+    // Dual-write: Update both JSONB and workflow_task_item_associations
+    // 1. Update JSONB for backward compatibility
+    const { error: jsonbError } = await supabase
       .from('jobs')
       .update({ checklist_items: equipment })
-      .eq('id', jobId)
-      .select('checklist_items')
-      .single();
+      .eq('id', jobId);
 
-    if (error) throw error;
+    if (jsonbError) throw jsonbError;
+
+    // 2. Update workflow_task_item_associations status based on checked field
+    for (const item of equipment) {
+      if (item.checked) {
+        await loadRepo.markItemLoaded(jobId, item.id);
+      }
+    }
 
     return NextResponse.json({
       success: true,
-      equipment: data.checklist_items // Field name preserved for API compatibility
+      equipment,
+      _meta: {
+        dual_write: true,
+        updated_count: equipment.length
+      }
     });
 
   } catch (error) {

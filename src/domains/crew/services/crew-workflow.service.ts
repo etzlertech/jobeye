@@ -48,6 +48,7 @@
 
 import { AppError } from '@/core/errors/error-types';
 import { createServerClient } from '@/lib/supabase/server';
+import { JobLoadRepository } from '../repositories/job-load.repository';
 
 export interface LoadVerificationResult {
   verified: boolean;
@@ -111,12 +112,6 @@ export class CrewWorkflowService {
             ),
             properties!inner (
               address
-            ),
-            job_equipment!inner (
-              equipment!inner (
-                id,
-                name
-              )
             )
           )
         `)
@@ -129,19 +124,27 @@ export class CrewWorkflowService {
         throw new AppError('Failed to fetch jobs');
       }
 
-      return assignments?.map((assignment: any) => ({
-        id: assignment.jobs.id,
-        customerName: assignment.jobs.customers?.name ?? 'Unknown customer',
-        propertyAddress: assignment.jobs.properties?.address ?? 'Unknown address',
-        scheduledTime: assignment.jobs.scheduled_time,
-        status: assignment.jobs.status,
-        specialInstructions: assignment.jobs.special_instructions ||
-          assignment.jobs.voice_instructions,
-        requiredEquipment: (assignment.jobs.job_equipment ?? [])
-          .map((je: any) => je.equipment?.name)
-          .filter((name: string | undefined): name is string => Boolean(name)),
-        loadVerified: Boolean(assignment.jobs.load_verified)
-      })) || [];
+      // Use JobLoadRepository to get required items for each job
+      const loadRepo = new JobLoadRepository(client);
+      const jobSummaries = await Promise.all(
+        (assignments || []).map(async (assignment: any) => {
+          const items = await loadRepo.getRequiredItems(assignment.jobs.id);
+
+          return {
+            id: assignment.jobs.id,
+            customerName: assignment.jobs.customers?.name ?? 'Unknown customer',
+            propertyAddress: assignment.jobs.properties?.address ?? 'Unknown address',
+            scheduledTime: assignment.jobs.scheduled_time,
+            status: assignment.jobs.status,
+            specialInstructions: assignment.jobs.special_instructions ||
+              assignment.jobs.voice_instructions,
+            requiredEquipment: items.map((item) => item.name),
+            loadVerified: Boolean(assignment.jobs.load_verified)
+          };
+        })
+      );
+
+      return jobSummaries;
     } catch (error) {
       throw error;
     }
@@ -214,43 +217,40 @@ export class CrewWorkflowService {
       const supabase = await createServerClient();
       const client = supabase as any;
 
-      const { data: jobEquipment, error } = await client
-        .from('job_equipment')
-        .select('equipment_id, equipment:equipment_id(name)')
-        .eq('job_id', jobId)
-        .eq('tenant_id', tenantId);
+      const loadRepo = new JobLoadRepository(client);
 
-      if (error) {
-        throw error;
-      }
-
-      const requiredItems = (jobEquipment ?? []).map((entry: any) => ({
-        id: entry.equipment_id,
-        name: entry.equipment?.name ?? entry.equipment_id
-      }));
+      // Get required items using dual-read logic
+      const requiredItems = await loadRepo.getRequiredItems(jobId);
 
       const verifiedItemIds = manualItems ?? [];
       const missingItems = requiredItems
-        .filter((item: { id: string }) => !verifiedItemIds.includes(item.id))
-        .map((item: { name: string }) => item.name);
+        .filter((item) => !verifiedItemIds.includes(item.id))
+        .map((item) => item.name);
 
-      await client
-        .from('jobs')
-        .update({
-          load_verified: missingItems.length === 0,
-          load_verified_at: new Date().toISOString(),
-          load_verification_method: manualItems ? 'manual' : 'ai_vision'
-        })
-        .eq('id', jobId)
-        .eq('tenant_id', tenantId);
+      // Mark items as verified or missing
+      for (const item of requiredItems) {
+        if (verifiedItemIds.includes(item.id)) {
+          await loadRepo.markItemVerified(jobId, item.id, item.task_id || undefined);
+        } else {
+          await loadRepo.markItemMissing(jobId, item.id, item.task_id || undefined);
+        }
+      }
+
+      // Update overall job verification status
+      const method = manualItems ? 'manual' : 'ai_vision';
+      await loadRepo.updateLoadVerificationStatus(
+        jobId,
+        missingItems.length === 0,
+        method
+      );
 
       return {
         verified: missingItems.length === 0,
         verifiedItems: requiredItems
-          .filter((item: { id: string }) => verifiedItemIds.includes(item.id))
-          .map((item: { name: string }) => item.name),
+          .filter((item) => verifiedItemIds.includes(item.id))
+          .map((item) => item.name),
         missingItems,
-        method: manualItems ? 'manual' : 'ai_vision',
+        method,
         confidence: manualItems ? 1 : undefined
       };
     } catch (error) {
