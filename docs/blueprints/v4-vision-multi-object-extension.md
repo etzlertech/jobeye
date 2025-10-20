@@ -1,5 +1,7 @@
 # JobEye v4 Extension - Multi-Object Vision with Container Awareness
 
+> **⚠️ HISTORICAL BLUEPRINT (2025-10-19)**: This document is a historical design blueprint. The `job_checklist_items` table shown in schema sections below has been **RETIRED** and dropped from the database. The current implementation uses `item_transactions` (check_out/check_in) for tracking tools/materials instead. See `RETIRED_CHECKLIST_SYSTEM.md` for details.
+
 ## Overview
 This extension builds upon the v4-voice-vision-checklists.md blueprint to support multi-object detection and container-based loading verification.
 

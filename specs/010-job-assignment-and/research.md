@@ -1,5 +1,7 @@
 # Phase 0: Research & Technical Discovery
 
+> **⚠️ HISTORICAL NOTE (2025-10-19)**: This document reflects the database state as of 2025-10-16. The `job_checklist_items` table mentioned in section 1.4 has since been **RETIRED** (dropped 2025-10-19). Current implementation uses `item_transactions` for tool/material tracking. See `RETIRED_CHECKLIST_SYSTEM.md`.
+
 **Feature**: Job Assignment and Crew Hub Dashboard
 **Date**: 2025-10-16
 **Research Method**: Supabase MCP live database queries

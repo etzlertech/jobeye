@@ -158,6 +158,8 @@
 
 ### Supabase MCP Queries Executed
 
+> **⚠️ SCHEMA CHANGE (2025-10-19)**: The `job_checklist_items` table referenced in Query 2 below has been **RETIRED** and dropped from the database. It has been replaced by the `item_transactions` pattern for tracking tools/materials. This does not affect the task lists feature (workflow_tasks table). See `RETIRED_CHECKLIST_SYSTEM.md`.
+
 **Query 1 - Jobs Table Schema** (2025-10-18)
 ```sql
 SELECT column_name, data_type, is_nullable, column_default

@@ -1,5 +1,7 @@
 # Quickstart: Job Assignment and Crew Hub Dashboard
 
+> **⚠️ HISTORICAL NOTE (2025-10-19)**: References to `job_checklist_items` in test scenarios below are now **OUTDATED**. The table was dropped from the schema. Current implementation uses `item_transactions` (check_out/check_in) for tracking tools/materials. See `RETIRED_CHECKLIST_SYSTEM.md` for migration details.
+
 **Feature**: Job Assignment and Crew Hub Dashboard
 **Date**: 2025-10-16
 **Purpose**: End-to-end test scenarios to validate feature implementation
