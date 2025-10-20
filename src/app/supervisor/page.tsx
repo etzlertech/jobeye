@@ -27,7 +27,11 @@ import {
   UserPlus,
   Building2,
   ListChecks,
-  CheckSquare
+  CheckSquare,
+  Wrench,
+  Truck,
+  Repeat,
+  Briefcase
 } from 'lucide-react';
 import { TenantBadge } from '@/components/tenant';
 import { supabase } from '@/lib/supabase/client';
@@ -270,37 +274,21 @@ export default function SupervisorDashboard() {
           )}
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <button
               type="button"
-              onClick={() => router.push('/supervisor/jobs')}
-              className="action-button primary"
-            >
-              <Calendar className="w-6 h-6" />
-              <span className="text-sm">Jobs</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push('/supervisor/templates')}
+              onClick={() => router.push('/supervisor/users')}
               className="action-button secondary"
             >
-              <ListChecks className="w-6 h-6" />
-              <span className="text-sm">Task Templates</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push('/supervisor/task-definitions')}
-              className="action-button secondary"
-            >
-              <CheckSquare className="w-6 h-6" />
-              <span className="text-sm">Task Definitions</span>
+              <Users className="w-6 h-6" />
+              <span className="text-sm">Team</span>
             </button>
             <button
               type="button"
               onClick={() => router.push('/supervisor/customers')}
               className="action-button secondary"
             >
-              <UserPlus className="w-6 h-6" />
+              <Briefcase className="w-6 h-6" />
               <span className="text-sm">Customers</span>
             </button>
             <button
@@ -308,24 +296,56 @@ export default function SupervisorDashboard() {
               onClick={() => router.push('/supervisor/properties')}
               className="action-button secondary"
             >
-              <Home className="w-6 h-6" />
+              <Building2 className="w-6 h-6" />
               <span className="text-sm">Properties</span>
             </button>
             <button
               type="button"
-              onClick={() => router.push('/supervisor/inventory')}
+              onClick={() => router.push('/supervisor/jobs')}
               className="action-button secondary"
             >
-              <Package className="w-6 h-6" />
-              <span className="text-sm">Inventory</span>
+              <Calendar className="w-6 h-6" />
+              <span className="text-sm">Jobs</span>
             </button>
             <button
               type="button"
-              onClick={() => router.push('/supervisor/users')}
+              onClick={() => router.push('/supervisor/task-definitions')}
               className="action-button secondary"
             >
-              <Users className="w-6 h-6" />
-              <span className="text-sm">Users</span>
+              <CheckSquare className="w-6 h-6" />
+              <span className="text-sm">Tasks</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/supervisor/templates')}
+              className="action-button secondary"
+            >
+              <Repeat className="w-6 h-6" />
+              <span className="text-sm">Process</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/supervisor/tools')}
+              className="action-button secondary"
+            >
+              <Wrench className="w-6 h-6" />
+              <span className="text-sm">Tools</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/supervisor/materials')}
+              className="action-button secondary"
+            >
+              <Package className="w-6 h-6" />
+              <span className="text-sm">Materials</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/supervisor/vehicles')}
+              className="action-button secondary"
+            >
+              <Truck className="w-6 h-6" />
+              <span className="text-sm">Vehicles</span>
             </button>
           </div>
 

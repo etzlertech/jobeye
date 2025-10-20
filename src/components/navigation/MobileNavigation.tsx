@@ -57,7 +57,10 @@ import {
   Shield,
   Briefcase,
   Wrench,
-  ArrowLeft
+  ArrowLeft,
+  CheckSquare,
+  Repeat,
+  Truck
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -81,12 +84,16 @@ const navigationItems: NavigationItem[] = [
   { id: 'admin-dashboard', label: 'Admin Dashboard', path: '/admin', icon: Shield, roles: ['admin'] },
 
   // Supervisor screens
-  { id: 'supervisor-dashboard', label: 'Supervisor Hub', path: '/supervisor', icon: Briefcase, roles: ['supervisor', 'admin'] },
-  { id: 'jobs', label: 'Jobs', path: '/supervisor/jobs', icon: Calendar, roles: ['supervisor', 'admin'] },
-  { id: 'users', label: 'User Management', path: '/supervisor/users', icon: Users, roles: ['supervisor', 'admin'] },
-  { id: 'customers', label: 'Customers', path: '/supervisor/customers', icon: Users, roles: ['supervisor', 'admin'] },
+  { id: 'supervisor-dashboard', label: 'Home', path: '/supervisor', icon: Home, roles: ['supervisor', 'admin'] },
+  { id: 'team', label: 'Team', path: '/supervisor/users', icon: Users, roles: ['supervisor', 'admin'] },
+  { id: 'customers', label: 'Customers', path: '/supervisor/customers', icon: Briefcase, roles: ['supervisor', 'admin'] },
   { id: 'properties', label: 'Properties', path: '/supervisor/properties', icon: Building, roles: ['supervisor', 'admin'] },
-  { id: 'inventory', label: 'Inventory', path: '/supervisor/inventory', icon: Package, roles: ['supervisor', 'admin'] },
+  { id: 'jobs', label: 'Jobs', path: '/supervisor/jobs', icon: Calendar, roles: ['supervisor', 'admin'] },
+  { id: 'tasks', label: 'Tasks', path: '/supervisor/task-definitions', icon: CheckSquare, roles: ['supervisor', 'admin'] },
+  { id: 'process', label: 'Process', path: '/supervisor/templates', icon: Repeat, roles: ['supervisor', 'admin'] },
+  { id: 'tools', label: 'Tools', path: '/supervisor/tools', icon: Wrench, roles: ['supervisor', 'admin'] },
+  { id: 'materials', label: 'Materials', path: '/supervisor/materials', icon: Package, roles: ['supervisor', 'admin'] },
+  { id: 'vehicles', label: 'Vehicles', path: '/supervisor/vehicles', icon: Truck, roles: ['supervisor', 'admin'] },
 
   // Crew screens
   { id: 'crew-dashboard', label: 'Crew Hub', path: '/crew', icon: Wrench, roles: ['crew', 'supervisor', 'admin'] },
