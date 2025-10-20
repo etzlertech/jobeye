@@ -43,6 +43,7 @@ export interface CompanyFeatureFlags {
   offlineMode: boolean;
   visionVerification: boolean;
   voiceCommands: boolean;
+  jobLoadV2Enabled: boolean;
 }
 
 export interface CompanySettings {
@@ -80,6 +81,7 @@ const DEFAULT_FEATURE_FLAGS: CompanyFeatureFlags = {
   offlineMode: true,
   visionVerification: true,
   voiceCommands: true,
+  jobLoadV2Enabled: false, // Default to false for gradual rollout
 };
 
 export const DEFAULT_COMPANY_SETTINGS = {
@@ -152,6 +154,7 @@ const normalizeFeatureFlags = (value: unknown): CompanyFeatureFlags => {
     offlineMode: toBoolean(value.offlineMode, DEFAULT_FEATURE_FLAGS.offlineMode),
     visionVerification: toBoolean(value.visionVerification, DEFAULT_FEATURE_FLAGS.visionVerification),
     voiceCommands: toBoolean(value.voiceCommands, DEFAULT_FEATURE_FLAGS.voiceCommands),
+    jobLoadV2Enabled: toBoolean(value.jobLoadV2Enabled, DEFAULT_FEATURE_FLAGS.jobLoadV2Enabled),
   };
 };
 

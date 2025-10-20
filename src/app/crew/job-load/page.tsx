@@ -198,6 +198,22 @@ export default function CrewJobLoadPage() {
 
   const selectJob = (job: Job) => {
     setSelectedJob(job);
+
+    // Populate itemMeta from job metadata
+    if ((job as any)._meta?.sources) {
+      const meta = (job as any)._meta.sources;
+      setItemMeta({
+        table: meta.table || 0,
+        jsonb: meta.jsonb || 0
+      });
+      console.log('[Equipment] Populated itemMeta state:', {
+        table: meta.table || 0,
+        jsonb: meta.jsonb || 0
+      });
+    } else {
+      setItemMeta(null);
+    }
+
     // Initialize required items from job equipment
     const icons = ['🪜', '🪔', '🌳', '🛡️', '⛽', '🔧', '🚧', '🎲', '🚨', '💊', '💧', '🌿'];
     const jobRequiredItems = (job.kit_items || []).map((item, index) => ({

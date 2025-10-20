@@ -163,6 +163,7 @@ export interface TenantSettings {
     api_access: boolean;
     custom_branding: boolean;
     advanced_analytics: boolean;
+    jobLoadV2Enabled?: boolean; // Job load v2 with unified equipment tracking
   };
   
   // Usage limits
@@ -509,7 +510,8 @@ export const createDefaultTenantSettings = (): TenantSettings => ({
     mobile_app: true,
     api_access: false,
     custom_branding: false,
-    advanced_analytics: false
+    advanced_analytics: false,
+    jobLoadV2Enabled: false // Default to false for gradual rollout
   },
   limits: {
     max_users: 10,
