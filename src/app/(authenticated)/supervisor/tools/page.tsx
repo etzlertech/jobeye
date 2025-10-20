@@ -27,7 +27,9 @@ interface Tool {
   quantity_in_stock?: number;
   storage_location?: string;
   unit_cost?: number;
-  image_url?: string;
+  thumbnail_url?: string;
+  medium_url?: string;
+  primary_image_url?: string;
   created_at: string;
 }
 
@@ -255,7 +257,7 @@ export default function SupervisorToolsPage() {
               return (
                 <EntityTile
                   key={tool.id}
-                  image={tool.image_url}
+                  image={tool.thumbnail_url || tool.medium_url || tool.primary_image_url}
                   fallbackIcon={<Wrench />}
                   title={tool.name}
                   subtitle={subtitle}

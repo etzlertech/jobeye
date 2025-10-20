@@ -28,7 +28,9 @@ interface Vehicle {
   quantity_in_stock?: number;
   storage_location?: string;
   unit_cost?: number;
-  image_url?: string;
+  thumbnail_url?: string;
+  medium_url?: string;
+  primary_image_url?: string;
   created_at: string;
 }
 
@@ -256,7 +258,7 @@ export default function SupervisorVehiclesPage() {
               return (
                 <EntityTile
                   key={vehicle.id}
-                  image={vehicle.image_url}
+                  image={vehicle.thumbnail_url || vehicle.medium_url || vehicle.primary_image_url}
                   fallbackIcon={<Truck />}
                   title={vehicle.name}
                   subtitle={subtitle}

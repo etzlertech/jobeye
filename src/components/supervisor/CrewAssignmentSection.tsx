@@ -212,9 +212,9 @@ export function CrewAssignmentSection({
                   className="crew-checkbox"
                 />
                 <div className="crew-avatar">
-                  {user.thumbnail_url ? (
+                  {(user.thumbnail_url || user.medium_url || user.primary_image_url) ? (
                     <img
-                      src={user.thumbnail_url}
+                      src={user.thumbnail_url || user.medium_url || user.primary_image_url || ''}
                       alt={user.display_name || 'User'}
                       className="crew-avatar-img"
                     />
@@ -267,9 +267,9 @@ export function CrewAssignmentSection({
           currentAssignments.map((assignment) => (
             <div key={assignment.user_id} className="assignment-item">
               <div className="crew-avatar">
-                {assignment.user?.thumbnail_url ? (
+                {(assignment.user?.thumbnail_url || assignment.user?.medium_url || assignment.user?.primary_image_url) ? (
                   <img
-                    src={assignment.user.thumbnail_url}
+                    src={assignment.user.thumbnail_url || assignment.user.medium_url || assignment.user.primary_image_url || ''}
                     alt={assignment.user?.display_name || 'User'}
                     className="crew-avatar-img"
                   />

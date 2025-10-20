@@ -234,7 +234,7 @@ export default function TemplatesPage() {
                       return (
                         <EntityTile
                           key={template.id}
-                          image={template.thumbnail_url}
+                          image={template.thumbnail_url || template.medium_url || template.primary_image_url}
                           fallbackIcon={<FileText />}
                           title={template.name}
                           subtitle={template.description || undefined}
@@ -276,7 +276,7 @@ export default function TemplatesPage() {
                       return (
                         <EntityTile
                           key={template.id}
-                          image={template.thumbnail_url}
+                          image={template.thumbnail_url || template.medium_url || template.primary_image_url}
                           fallbackIcon={<FileText />}
                           title={template.name}
                           subtitle={template.description || undefined}

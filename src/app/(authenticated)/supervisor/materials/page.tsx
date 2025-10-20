@@ -29,7 +29,9 @@ interface Material {
   reorder_point?: number;
   storage_location?: string;
   unit_cost?: number;
-  image_url?: string;
+  thumbnail_url?: string;
+  medium_url?: string;
+  primary_image_url?: string;
   created_at: string;
 }
 
@@ -250,7 +252,7 @@ export default function SupervisorMaterialsPage() {
               return (
                 <EntityTile
                   key={material.id}
-                  image={material.image_url}
+                  image={material.thumbnail_url || material.medium_url || material.primary_image_url}
                   fallbackIcon={<Package />}
                   title={material.name}
                   subtitle={subtitle}
