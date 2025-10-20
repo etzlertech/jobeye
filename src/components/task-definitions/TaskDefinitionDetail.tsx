@@ -102,16 +102,16 @@ export function TaskDefinitionDetail({
 
   // View mode
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 shadow-sm ${className}`}>
+    <div className={className}>
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-start justify-between">
+      <div className="header-section">
+        <div className="header-content">
           <div className="flex-1 min-w-0">
             {/* Back button */}
             {onBack && (
               <button
                 onClick={onBack}
-                className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-3"
+                className="back-button"
                 data-testid="back-button"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -120,13 +120,13 @@ export function TaskDefinitionDetail({
             )}
 
             {/* Title */}
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="title">
               {taskDefinition.name}
             </h1>
 
             {/* Acceptance criteria indicator */}
             {taskDefinition.acceptance_criteria && (
-              <p className="text-sm text-emerald-600 flex items-center gap-1">
+              <p className="criteria-badge">
                 <CheckCircle className="w-4 h-4" />
                 Has acceptance criteria defined
               </p>
@@ -138,7 +138,7 @@ export function TaskDefinitionDetail({
             {onUpdate && !taskDefinition.deleted_at && (
               <button
                 onClick={() => setIsEditMode(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="btn-secondary-small"
                 data-testid="edit-button"
               >
                 <Edit className="w-4 h-4" />
@@ -149,7 +149,7 @@ export function TaskDefinitionDetail({
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={usageCount > 0 || isDeleting}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-delete"
                 title={usageCount > 0 ? `Cannot delete: Used in ${usageCount} template(s)` : 'Delete task definition'}
                 data-testid="delete-button"
               >
@@ -172,18 +172,18 @@ export function TaskDefinitionDetail({
 
       {/* Delete confirmation modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 className="modal-title">
               Delete Task Definition?
             </h3>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="modal-text">
               Are you sure you want to delete "{taskDefinition.name}"? This action cannot be undone.
             </p>
-            <div className="flex items-center justify-end gap-3">
+            <div className="modal-actions">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="btn-secondary"
                 data-testid="cancel-delete-button"
               >
                 Cancel
@@ -193,7 +193,7 @@ export function TaskDefinitionDetail({
                   setShowDeleteConfirm(false);
                   handleDelete();
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700"
+                className="btn-delete"
                 data-testid="confirm-delete-button"
               >
                 Delete
@@ -204,11 +204,11 @@ export function TaskDefinitionDetail({
       )}
 
       {/* Content */}
-      <div className="p-6 space-y-6">
+      <div className="content-section">
         {/* Deleted indicator */}
         {taskDefinition.deleted_at && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm font-medium text-red-800">
+          <div className="notification error">
+            <p className="text-sm font-medium">
               This task definition has been deleted and cannot be used in new templates.
             </p>
           </div>
@@ -216,58 +216,58 @@ export function TaskDefinitionDetail({
 
         {/* Usage warning */}
         {usageCount > 0 && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm font-medium text-blue-800">
+          <div className="notification info">
+            <p className="text-sm font-medium">
               This task definition is used in {usageCount} template{usageCount !== 1 ? 's' : ''} and cannot be deleted.
             </p>
           </div>
         )}
 
         {/* Description */}
-        <div>
-          <h2 className="text-sm font-semibold text-gray-900 mb-2">Description</h2>
-          <p className="text-sm text-gray-700 whitespace-pre-wrap">
+        <div className="section">
+          <h2 className="section-title">Description</h2>
+          <p className="section-text">
             {taskDefinition.description}
           </p>
         </div>
 
         {/* Acceptance criteria */}
         {taskDefinition.acceptance_criteria && (
-          <div>
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">
+          <div className="section">
+            <h2 className="section-title">
               Acceptance Criteria
             </h2>
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">
+            <p className="section-text">
               {taskDefinition.acceptance_criteria}
             </p>
           </div>
         )}
 
         {/* Task settings */}
-        <div>
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">Task Settings</h2>
+        <div className="section">
+          <h2 className="section-title">Task Settings</h2>
           <div className="flex flex-wrap gap-2">
             {taskDefinition.requires_photo_verification && (
-              <span className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-800">
+              <span className="badge badge-blue">
                 <Camera className="w-4 h-4" />
                 Photo Verification Required
               </span>
             )}
 
             {taskDefinition.requires_supervisor_approval && (
-              <span className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-purple-100 text-purple-800">
+              <span className="badge badge-purple">
                 <UserCheck className="w-4 h-4" />
                 Supervisor Approval Required
               </span>
             )}
 
             {taskDefinition.is_required ? (
-              <span className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-orange-100 text-orange-800">
+              <span className="badge badge-orange">
                 <AlertCircle className="w-4 h-4" />
                 Required Task
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-800">
+              <span className="badge badge-gray">
                 Optional Task
               </span>
             )}
@@ -275,10 +275,10 @@ export function TaskDefinitionDetail({
         </div>
 
         {/* Audit trail */}
-        <div className="pt-4 border-t border-gray-200">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">Audit Trail</h2>
-          <div className="space-y-2 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
+        <div className="section border-top">
+          <h2 className="section-title">Audit Trail</h2>
+          <div className="audit-trail">
+            <div className="audit-item">
               <Calendar className="w-4 h-4" />
               <span>
                 Created:{' '}
@@ -289,12 +289,12 @@ export function TaskDefinitionDetail({
               </span>
             </div>
             {taskDefinition.created_by && (
-              <div className="flex items-center gap-2">
+              <div className="audit-item">
                 <User className="w-4 h-4" />
                 <span>Created by: {taskDefinition.created_by}</span>
               </div>
             )}
-            <div className="flex items-center gap-2">
+            <div className="audit-item">
               <Calendar className="w-4 h-4" />
               <span>
                 Last updated:{' '}
@@ -305,9 +305,9 @@ export function TaskDefinitionDetail({
               </span>
             </div>
             {taskDefinition.deleted_at && (
-              <div className="flex items-center gap-2">
+              <div className="audit-item">
                 <Calendar className="w-4 h-4" />
-                <span className="text-red-600">
+                <span className="text-red" style={{ color: '#EF4444' }}>
                   Deleted:{' '}
                   {new Date(taskDefinition.deleted_at).toLocaleString('en-US', {
                     dateStyle: 'medium',
@@ -319,6 +319,244 @@ export function TaskDefinitionDetail({
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .header-section {
+          padding: 1rem;
+          border-bottom: 1px solid #333;
+          background: rgba(0, 0, 0, 0.9);
+        }
+
+        .header-content {
+          display: flex;
+          align-items: start;
+          justify-content: space-between;
+        }
+
+        .back-button {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+          color: #FFD700;
+          margin-bottom: 0.75rem;
+          background: none;
+          border: none;
+          cursor: pointer;
+        }
+
+        .back-button:hover {
+          color: #FFC700;
+        }
+
+        .title {
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: white;
+          margin-bottom: 0.5rem;
+        }
+
+        .criteria-badge {
+          font-size: 0.875rem;
+          color: #10B981;
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
+
+        .btn-secondary-small {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 1rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: white;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          border-radius: 0.5rem;
+          cursor: pointer;
+        }
+
+        .btn-secondary-small:hover {
+          background: rgba(255, 255, 255, 0.15);
+          border-color: rgba(255, 215, 0, 0.5);
+        }
+
+        .btn-delete {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 1rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: white;
+          background: #DC2626;
+          border: 1px solid transparent;
+          border-radius: 0.5rem;
+          cursor: pointer;
+        }
+
+        .btn-delete:hover {
+          background: #B91C1C;
+        }
+
+        .btn-delete:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 50;
+        }
+
+        .modal-content {
+          background: #1A1A1A;
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          border-radius: 0.5rem;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+          max-width: 28rem;
+          width: 100%;
+          margin: 1rem;
+          padding: 1.5rem;
+        }
+
+        .modal-title {
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: white;
+          margin-bottom: 0.5rem;
+        }
+
+        .modal-text {
+          font-size: 0.875rem;
+          color: #9CA3AF;
+          margin-bottom: 1.5rem;
+        }
+
+        .modal-actions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 0.75rem;
+        }
+
+        .btn-secondary {
+          padding: 0.5rem 1rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: white;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          border-radius: 0.5rem;
+          cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+          background: rgba(255, 255, 255, 0.15);
+        }
+
+        .content-section {
+          padding: 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .notification {
+          padding: 1rem;
+          border-radius: 0.5rem;
+        }
+
+        .notification.error {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #FCA5A5;
+        }
+
+        .notification.info {
+          background: rgba(59, 130, 246, 0.1);
+          border: 1px solid rgba(59, 130, 246, 0.3);
+          color: #93C5FD;
+        }
+
+        .section {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .section.border-top {
+          padding-top: 1rem;
+          border-top: 1px solid #333;
+        }
+
+        .section-title {
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: white;
+        }
+
+        .section-text {
+          font-size: 0.875rem;
+          color: #9CA3AF;
+          white-space: pre-wrap;
+        }
+
+        .badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.25rem;
+          padding: 0.5rem 0.75rem;
+          border-radius: 0.5rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+        }
+
+        .badge-blue {
+          background: rgba(59, 130, 246, 0.1);
+          border: 1px solid rgba(59, 130, 246, 0.3);
+          color: #60A5FA;
+        }
+
+        .badge-purple {
+          background: rgba(168, 85, 247, 0.1);
+          border: 1px solid rgba(168, 85, 247, 0.3);
+          color: #C084FC;
+        }
+
+        .badge-orange {
+          background: rgba(251, 146, 60, 0.1);
+          border: 1px solid rgba(251, 146, 60, 0.3);
+          color: #FB923C;
+        }
+
+        .badge-gray {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: #9CA3AF;
+        }
+
+        .audit-trail {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+          color: #9CA3AF;
+        }
+
+        .audit-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+      `}</style>
     </div>
   );
 }

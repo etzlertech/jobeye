@@ -11,7 +11,7 @@
  * state_machine: null
  * offline_capability: REQUIRED
  * dependencies: {
- *   internal: ['@/domains/task-definition/types', '@/components/task-definitions/TaskDefinitionDetail'],
+ *   internal: ['@/domains/task-definition/types', '@/components/task-definitions/TaskDefinitionDetail', '@/components/navigation/MobileNavigation'],
  *   external: ['react', 'next/navigation', 'lucide-react'],
  *   supabase: []
  * }
@@ -35,7 +35,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2, X } from 'lucide-react';
+import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import { TaskDefinitionDetail } from '@/components/task-definitions/TaskDefinitionDetail';
 import type { TaskDefinition } from '@/domains/task-definition/types/task-definition-types';
 import type { TaskDefinitionFormData } from '@/components/task-definitions/TaskDefinitionForm';
@@ -177,15 +178,29 @@ export default function TaskDefinitionDetailPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="text-sm text-gray-600">Loading task definition...</p>
-            </div>
+      <div className="mobile-container">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: '#FFD700' }} />
+            <p className="text-gray-400 text-lg">Loading task definition...</p>
           </div>
         </div>
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 0 0.5rem;
+            box-sizing: border-box;
+          }
+        `}</style>
       </div>
     );
   }
@@ -193,67 +208,98 @@ export default function TaskDefinitionDetailPage() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="p-6 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+      <div className="mobile-container">
+        <MobileNavigation
+          currentRole="supervisor"
+          onLogout={() => router.push('/')}
+        />
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="notification-bar error">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-red-800">Error Loading Task Definition</p>
-              <p className="text-sm text-red-700 mt-1">{error}</p>
-              <div className="mt-4 flex items-center gap-3">
-                <button
-                  onClick={fetchTaskDefinition}
-                  className="text-sm font-medium text-red-800 underline hover:text-red-900"
-                >
-                  Try again
-                </button>
-                <button
-                  onClick={handleBack}
-                  className="text-sm font-medium text-red-800 underline hover:text-red-900"
-                >
-                  Back to list
-                </button>
-              </div>
+              <p className="text-sm font-medium">Error Loading Task Definition</p>
+              <p className="text-xs mt-1">{error}</p>
             </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Not found state
-  if (!taskDefinition) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm font-medium text-yellow-800">Task definition not found</p>
             <button
-              onClick={handleBack}
-              className="mt-2 text-sm font-medium text-yellow-800 underline hover:text-yellow-900"
+              onClick={() => setError('')}
+              className="ml-auto"
             >
-              Back to list
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 0 0.5rem;
+            box-sizing: border-box;
+          }
+
+          .notification-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+          }
+
+          .notification-bar.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+          }
+        `}</style>
       </div>
     );
   }
 
   // Detail view
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        <TaskDefinitionDetail
-          taskDefinition={taskDefinition}
-          onUpdate={handleUpdate}
-          onDelete={handleDelete}
-          onBack={handleBack}
-          isUpdating={isUpdating}
-          isDeleting={isDeleting}
-          usageCount={usageCount}
-        />
+    <div className="mobile-container">
+      <MobileNavigation
+        currentRole="supervisor"
+        onLogout={() => router.push('/')}
+      />
+
+      <div className="flex-1 overflow-y-auto">
+        {taskDefinition && (
+          <TaskDefinitionDetail
+            taskDefinition={taskDefinition}
+            onUpdate={handleUpdate}
+            onDelete={handleDelete}
+            onBack={handleBack}
+            isUpdating={isUpdating}
+            isDeleting={isDeleting}
+            usageCount={usageCount}
+          />
+        )}
       </div>
+
+      <style jsx>{`
+        .mobile-container {
+          width: 100%;
+          max-width: 375px;
+          height: 100vh;
+          max-height: 812px;
+          margin: 0 auto;
+          background: #000;
+          color: white;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          padding: 0 0.5rem;
+          box-sizing: border-box;
+        }
+      `}</style>
     </div>
   );
 }
