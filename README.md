@@ -231,11 +231,21 @@ Must be one of: REQUIRED, OPTIONAL, NONE
 ### "Missing LLM cost estimate"
 Any file touching AI/LLM must include estimated_llm_cost
 
+## Documentation
+
+### Important Project Documentation
+
+- **[Known Issues](KNOWN_ISSUES.md)** - Technical debt and known issues requiring future attention
+- **[Retired Systems](RETIRED_CHECKLIST_SYSTEM.md)** - Documentation of retired features and migration guides
+- **[Recent Cleanups](CLEANUP_COMPLETE_20251019.md)** - Summary of completed cleanup operations
+
+### Schema & Architecture
+
+For detailed architecture documentation, see `.claude/spec/` directory.
+
 ## Next Steps
 
 1. Start with Phase 1 / Authentication domain
 2. Complete all Phase 1 skeletons before moving to Phase 2
 3. Begin implementation only after all skeletons are reviewed
 4. Run status reports regularly to track progress
-
-For detailed architecture documentation, see `.claude/spec/` directory.
