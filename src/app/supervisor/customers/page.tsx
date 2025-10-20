@@ -46,6 +46,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
+import { EntityTile } from '@/components/ui/EntityTile';
+import { EntityTileGrid } from '@/components/ui/EntityTileGrid';
 import {
   Plus,
   Search,
@@ -389,99 +391,36 @@ export default function SupervisorCustomersPage() {
 
           {/* Customer List */}
           <div className="px-4 pb-4">
-            {filteredCustomers.length === 0 ? (
-              <div className="empty-state">
-                <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-400">
-                  {searchQuery ? 'Try adjusting your search' : 'Add your first customer to get started'}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredCustomers.map((customer) => (
-                  <div
+            <EntityTileGrid
+              emptyState={{
+                icon: <Users className="w-12 h-12" />,
+                message: searchQuery ? 'Try adjusting your search' : 'Add your first customer to get started'
+              }}
+            >
+              {filteredCustomers.map((customer) => {
+                const tags = [];
+
+                // Add property count if exists
+                if (customer.property_count && customer.property_count > 0) {
+                  tags.push({
+                    label: `${customer.property_count} ${customer.property_count === 1 ? 'property' : 'properties'}`,
+                    color: 'gold' as const
+                  });
+                }
+
+                return (
+                  <EntityTile
                     key={customer.id}
-                    className="customer-card"
+                    image={customer.thumbnailUrl}
+                    fallbackIcon={<Users />}
+                    title={customer.name}
+                    subtitle={customer.email}
+                    tags={tags}
                     onClick={() => router.push(`/supervisor/customers/${customer.id}`)}
-                  >
-                    <div className="flex items-start gap-3">
-                      {/* Thumbnail */}
-                      <div className="customer-thumbnail">
-                        {customer.thumbnailUrl ? (
-                          <img
-                            src={customer.thumbnailUrl}
-                            alt={customer.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Users className="w-6 h-6 text-gray-400" />
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-white">
-                              {customer.name}
-                            </h3>
-                            {customer.property_count && customer.property_count > 0 && (
-                              <span className="property-badge">
-                                {customer.property_count} properties
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex flex-col gap-2 ml-2">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(customer);
-                              }}
-                              className="icon-button"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(customer.id);
-                              }}
-                              className="icon-button delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="space-y-1 text-xs text-gray-400">
-                          <div className="flex items-center gap-2">
-                            <Mail className="w-3 h-3" />
-                            <span className="truncate">{customer.email}</span>
-                          </div>
-
-                          {customer.phone && (
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-3 h-3" />
-                              <span>{customer.phone}</span>
-                            </div>
-                          )}
-
-                          {customer.address && (
-                            <div className="flex items-start gap-2 text-gray-500">
-                              <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                              <span className="line-clamp-2">{customer.address}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  />
+                );
+              })}
+            </EntityTileGrid>
           </div>
         </div>
 
@@ -570,79 +509,6 @@ export default function SupervisorCustomersPage() {
 
           .input-field::placeholder {
             color: #9CA3AF;
-          }
-
-          .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 0.75rem;
-          }
-
-          .customer-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 0.75rem;
-            padding: 1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-          }
-
-          .customer-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 215, 0, 0.4);
-            transform: translateX(2px);
-          }
-
-          .customer-thumbnail {
-            width: 3rem;
-            height: 3rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 0.5rem;
-            overflow: hidden;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-
-          .property-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.125rem 0.5rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            background: rgba(255, 215, 0, 0.2);
-            color: #FFD700;
-            border-radius: 9999px;
-            text-transform: uppercase;
-            margin-top: 0.25rem;
-          }
-
-          .icon-button {
-            padding: 0.375rem;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 0.375rem;
-            cursor: pointer;
-            transition: all 0.2s;
-          }
-
-          .icon-button:hover {
-            background: rgba(255, 215, 0, 0.2);
-            border-color: #FFD700;
-          }
-
-          .icon-button.delete {
-            color: #ef4444;
-            border-color: rgba(239, 68, 68, 0.2);
-          }
-
-          .icon-button.delete:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: #ef4444;
           }
 
           .bottom-actions {

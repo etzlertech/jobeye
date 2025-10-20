@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
+import { EntityTile } from '@/components/ui/EntityTile';
+import { EntityTileGrid } from '@/components/ui/EntityTileGrid';
 import { JobForm } from './_components/JobForm';
 import { buildJobPayload, type JobFormState } from './_utils/job-utils';
 import type { CustomerOption, PropertyOption } from './_components/JobForm';
@@ -18,7 +20,8 @@ import {
   CheckCircle,
   X,
   Clock,
-  Loader2
+  Loader2,
+  Package
 } from 'lucide-react';
 
 interface Job {
@@ -229,24 +232,6 @@ function JobsPageContent() {
     job.job_number.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return '#22c55e';
-      case 'in_progress': return '#3b82f6';
-      case 'scheduled': return '#FFD700';
-      default: return '#6b7280';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return '#ef4444';
-      case 'high': return '#f97316';
-      case 'normal': return '#FFD700';
-      default: return '#6b7280';
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="mobile-container">
@@ -350,53 +335,52 @@ function JobsPageContent() {
         {/* Job List */}
         {!showForm && (
           <div className="px-4 pb-4">
-          {filteredJobs.length === 0 ? (
-            <div className="empty-state">
-              <Briefcase className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400">
-                {searchQuery ? 'No jobs match your search' : 'No jobs scheduled yet'}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredJobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="job-card"
-                >
-                  <div
-                    className="flex-1"
+            <EntityTileGrid
+              emptyState={{
+                icon: <Briefcase className="w-12 h-12" />,
+                message: searchQuery ? 'No jobs match your search' : 'No jobs scheduled yet'
+              }}
+            >
+              {filteredJobs.map((job) => {
+                // Determine tag colors
+                const statusColor = job.status === 'completed' ? 'green' as const
+                  : job.status === 'in_progress' ? 'blue' as const
+                  : job.status === 'scheduled' ? 'gold' as const
+                  : 'gray' as const;
+
+                const priorityColor = job.priority === 'urgent' ? 'red' as const
+                  : job.priority === 'high' ? 'orange' as const
+                  : job.priority === 'normal' ? 'gold' as const
+                  : 'gray' as const;
+
+                // Build tags array
+                const tags = [
+                  { label: job.status, color: statusColor },
+                  { label: job.priority, color: priorityColor }
+                ];
+
+                // Add load status if there are items
+                if (job.total_items > 0) {
+                  tags.push({
+                    label: `${job.loaded_items}/${job.total_items} loaded`,
+                    color: 'purple' as const,
+                    icon: <Package className="w-3 h-3" />
+                  });
+                }
+
+                return (
+                  <EntityTile
+                    key={job.id}
+                    image={job.thumbnailUrl}
+                    fallbackIcon={<Briefcase />}
+                    title={job.title}
+                    subtitle={`${job.customerName} • ${new Date(job.scheduled_start).toLocaleDateString()}`}
+                    tags={tags}
                     onClick={() => router.push(`/supervisor/jobs/${job.id}`)}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-semibold text-white text-sm">{job.title}</h3>
-                      <span
-                        className="status-badge"
-                        style={{
-                          background: `${getStatusColor(job.status)}20`,
-                          color: getStatusColor(job.status),
-                          border: `1px solid ${getStatusColor(job.status)}40`
-                        }}
-                      >
-                        {job.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500">{job.customerName} • {new Date(job.scheduled_start).toLocaleDateString()}</p>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/crew/load-verify?jobId=${job.id}`);
-                    }}
-                    className="load-status-btn"
-                    title={`${job.loaded_items} of ${job.total_items} items loaded (${job.completion_percentage}%)`}
-                  >
-                    LOAD {job.loaded_items}/{job.total_items}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                  />
+                );
+              })}
+            </EntityTileGrid>
           </div>
         )}
       </div>
@@ -494,67 +478,6 @@ function JobsPageContent() {
 
         .input-field::placeholder {
           color: #6b7280;
-        }
-
-        .empty-state {
-          text-align: center;
-          padding: 3rem 1rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 215, 0, 0.2);
-          border-radius: 0.75rem;
-        }
-
-        .job-card {
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          gap: 0.75rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 215, 0, 0.2);
-          border-radius: 0.5rem;
-          padding: 0.75rem;
-          transition: all 0.2s;
-        }
-
-        .job-card:hover {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: rgba(255, 215, 0, 0.4);
-        }
-
-        .job-card .flex-1 {
-          cursor: pointer;
-        }
-
-        .load-status-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0.5rem 0.75rem;
-          background: rgba(255, 215, 0, 0.1);
-          border: 1px solid rgba(255, 215, 0, 0.3);
-          border-radius: 0.375rem;
-          color: #FFD700;
-          font-size: 0.75rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-          white-space: nowrap;
-          flex-shrink: 0;
-        }
-
-        .load-status-btn:hover {
-          background: rgba(255, 215, 0, 0.2);
-          border-color: #FFD700;
-        }
-
-        .status-badge {
-          display: inline-flex;
-          align-items: center;
-          padding: 0.125rem 0.5rem;
-          font-size: 0.75rem;
-          font-weight: 600;
-          border-radius: 0.25rem;
-          text-transform: capitalize;
         }
 
         .bottom-actions {

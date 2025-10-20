@@ -9,6 +9,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
+import { EntityTile } from '@/components/ui/EntityTile';
+import { EntityTileGrid } from '@/components/ui/EntityTileGrid';
 import {
   Plus,
   Search,
@@ -193,20 +195,14 @@ export default function TemplatesPage() {
         {/* Template List */}
         <div className="px-4 pb-4">
           {filteredTemplates.length === 0 ? (
-            <div className="empty-state">
-              <ListChecks className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400">
-                {searchQuery ? 'No templates match your search' : 'No templates yet'}
-              </p>
-              {!searchQuery && (
-                <button
-                  onClick={() => router.push('/supervisor/templates/create')}
-                  className="mt-4 px-4 py-2 bg-[#FFD700] text-black font-semibold rounded-lg hover:bg-[#FFC700]"
-                >
-                  Create Your First Template
-                </button>
-              )}
-            </div>
+            <EntityTileGrid
+              emptyState={{
+                icon: <ListChecks className="w-12 h-12" />,
+                message: searchQuery ? 'No templates match your search' : 'No templates yet'
+              }}
+            >
+              {[]} {/* Empty array for empty state */}
+            </EntityTileGrid>
           ) : (
             <div className="space-y-6">
               {/* Active Templates */}
@@ -215,82 +211,39 @@ export default function TemplatesPage() {
                   <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
                     Active Templates ({activeTemplates.length})
                   </h2>
-                  <div className="space-y-3">
-                    {activeTemplates.map((template) => (
-                      <div key={template.id} className="template-card">
-                        {/* Template Thumbnail */}
-                        <div
-                          className="template-thumbnail cursor-pointer"
+                  <EntityTileGrid
+                    emptyState={{
+                      icon: <ListChecks className="w-12 h-12" />,
+                      message: 'No active templates'
+                    }}
+                  >
+                    {activeTemplates.map((template) => {
+                      // Build tags array
+                      const tags = [
+                        { label: 'Active', color: 'green' as const, icon: <CheckCircle className="w-3 h-3" /> },
+                        { label: `${template.items?.length || 0} tasks`, color: 'gold' as const }
+                      ];
+
+                      if (template.job_type) {
+                        tags.push({
+                          label: template.job_type.replace('_', ' '),
+                          color: 'blue' as const
+                        });
+                      }
+
+                      return (
+                        <EntityTile
+                          key={template.id}
+                          image={template.thumbnail_url}
+                          fallbackIcon={<FileText />}
+                          title={template.name}
+                          subtitle={template.description || undefined}
+                          tags={tags}
                           onClick={() => router.push(`/supervisor/templates/${template.id}/edit`)}
-                        >
-                          {template.thumbnail_url ? (
-                            <img
-                              src={template.thumbnail_url}
-                              alt={template.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex items-center justify-center h-full">
-                              <ImageIcon className="w-6 h-6 text-gray-600" />
-                            </div>
-                          )}
-                        </div>
-
-                        <div
-                          className="flex-1 cursor-pointer"
-                          onClick={() => router.push(`/supervisor/templates/${template.id}/edit`)}
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-5 h-5 text-[#FFD700]" />
-                              <h3 className="font-semibold text-white">{template.name}</h3>
-                            </div>
-                            <span className="status-badge active">
-                              <CheckCircle className="w-3 h-3" />
-                              Active
-                            </span>
-                          </div>
-
-                          {template.description && (
-                            <p className="text-sm text-gray-400 mb-2">{template.description}</p>
-                          )}
-
-                          <div className="flex items-center gap-3 text-xs text-gray-500">
-                            <span>{template.items?.length || 0} tasks</span>
-                            {template.job_type && (
-                              <>
-                                <span>•</span>
-                                <span className="capitalize">{template.job_type.replace('_', ' ')}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 ml-3">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/supervisor/templates/${template.id}/edit`);
-                            }}
-                            className="icon-button"
-                            title="Edit template"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteConfirm(template.id);
-                            }}
-                            className="icon-button delete"
-                            title="Delete template"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                        />
+                      );
+                    })}
+                  </EntityTileGrid>
                 </div>
               )}
 
@@ -300,82 +253,39 @@ export default function TemplatesPage() {
                   <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
                     Inactive Templates ({inactiveTemplates.length})
                   </h2>
-                  <div className="space-y-3">
-                    {inactiveTemplates.map((template) => (
-                      <div key={template.id} className="template-card inactive">
-                        {/* Template Thumbnail */}
-                        <div
-                          className="template-thumbnail cursor-pointer"
+                  <EntityTileGrid
+                    emptyState={{
+                      icon: <ListChecks className="w-12 h-12" />,
+                      message: 'No inactive templates'
+                    }}
+                  >
+                    {inactiveTemplates.map((template) => {
+                      // Build tags array
+                      const tags = [
+                        { label: 'Inactive', color: 'gray' as const, icon: <XCircle className="w-3 h-3" /> },
+                        { label: `${template.items?.length || 0} tasks`, color: 'gray' as const }
+                      ];
+
+                      if (template.job_type) {
+                        tags.push({
+                          label: template.job_type.replace('_', ' '),
+                          color: 'gray' as const
+                        });
+                      }
+
+                      return (
+                        <EntityTile
+                          key={template.id}
+                          image={template.thumbnail_url}
+                          fallbackIcon={<FileText />}
+                          title={template.name}
+                          subtitle={template.description || undefined}
+                          tags={tags}
                           onClick={() => router.push(`/supervisor/templates/${template.id}/edit`)}
-                        >
-                          {template.thumbnail_url ? (
-                            <img
-                              src={template.thumbnail_url}
-                              alt={template.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex items-center justify-center h-full">
-                              <ImageIcon className="w-6 h-6 text-gray-600" />
-                            </div>
-                          )}
-                        </div>
-
-                        <div
-                          className="flex-1 cursor-pointer"
-                          onClick={() => router.push(`/supervisor/templates/${template.id}/edit`)}
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-5 h-5 text-gray-500" />
-                              <h3 className="font-semibold text-gray-400">{template.name}</h3>
-                            </div>
-                            <span className="status-badge inactive">
-                              <XCircle className="w-3 h-3" />
-                              Inactive
-                            </span>
-                          </div>
-
-                          {template.description && (
-                            <p className="text-sm text-gray-500 mb-2">{template.description}</p>
-                          )}
-
-                          <div className="flex items-center gap-3 text-xs text-gray-600">
-                            <span>{template.items?.length || 0} tasks</span>
-                            {template.job_type && (
-                              <>
-                                <span>•</span>
-                                <span className="capitalize">{template.job_type.replace('_', ' ')}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 ml-3">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/supervisor/templates/${template.id}/edit`);
-                            }}
-                            className="icon-button"
-                            title="Edit template"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteConfirm(template.id);
-                            }}
-                            className="icon-button delete"
-                            title="Delete template"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                        />
+                      );
+                    })}
+                  </EntityTileGrid>
                 </div>
               )}
             </div>
@@ -495,96 +405,6 @@ export default function TemplatesPage() {
 
         .input-field::placeholder {
           color: #6b7280;
-        }
-
-        .empty-state {
-          text-align: center;
-          padding: 3rem 1rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 215, 0, 0.2);
-          border-radius: 0.75rem;
-        }
-
-        .template-card {
-          display: flex;
-          align-items: start;
-          gap: 0.75rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 215, 0, 0.2);
-          border-radius: 0.5rem;
-          padding: 0.75rem;
-          transition: all 0.2s;
-        }
-
-        .template-card:hover {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: rgba(255, 215, 0, 0.4);
-        }
-
-        .template-card.inactive {
-          opacity: 0.6;
-        }
-
-        .template-thumbnail {
-          width: 60px;
-          height: 60px;
-          flex-shrink: 0;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 215, 0, 0.2);
-          border-radius: 0.375rem;
-          overflow: hidden;
-        }
-
-        .status-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.25rem;
-          padding: 0.125rem 0.5rem;
-          font-size: 0.625rem;
-          font-weight: 600;
-          border-radius: 0.25rem;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .status-badge.active {
-          background: rgba(34, 197, 94, 0.1);
-          color: #22c55e;
-          border: 1px solid rgba(34, 197, 94, 0.3);
-        }
-
-        .status-badge.inactive {
-          background: rgba(107, 114, 128, 0.1);
-          color: #9ca3af;
-          border: 1px solid rgba(107, 114, 128, 0.3);
-        }
-
-        .icon-button {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0.5rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 215, 0, 0.2);
-          border-radius: 0.375rem;
-          color: #FFD700;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .icon-button:hover {
-          background: rgba(255, 215, 0, 0.1);
-          border-color: #FFD700;
-        }
-
-        .icon-button.delete {
-          color: #ef4444;
-          border-color: rgba(239, 68, 68, 0.3);
-        }
-
-        .icon-button.delete:hover {
-          background: rgba(239, 68, 68, 0.1);
-          border-color: #ef4444;
         }
 
         .modal-overlay {

@@ -46,6 +46,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
+import { EntityTile } from '@/components/ui/EntityTile';
+import { EntityTileGrid } from '@/components/ui/EntityTileGrid';
 import {
   Plus,
   Search,
@@ -431,106 +433,47 @@ export default function SupervisorPropertiesPage() {
           </div>
 
           {/* Property List */}
-          <div className="px-4">
-            {filteredProperties.length === 0 ? (
-              <div className="empty-state">
-                <Building className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-500">
-                  {searchQuery || filterCustomerId || filterType
-                    ? 'Try adjusting your filters'
-                    : 'Add your first property to get started'}
-                </p>
-              </div>
-            ) : (
-              <div className="property-list">
-                {filteredProperties.map((property) => {
-                  // Guard against undefined type
-                  const propertyType = property.type || 'residential';
-                  const TypeIcon = propertyTypeIcons[propertyType] || Home;
-                  const typeLabel = propertyTypeLabels[propertyType] || 'Residential';
+          <div className="px-4 pb-4">
+            <EntityTileGrid
+              emptyState={{
+                icon: <Building className="w-12 h-12" />,
+                message: searchQuery || filterCustomerId || filterType
+                  ? 'Try adjusting your filters'
+                  : 'Add your first property to get started'
+              }}
+            >
+              {filteredProperties.map((property) => {
+                // Guard against undefined type
+                const propertyType = property.type || 'residential';
+                const TypeIcon = propertyTypeIcons[propertyType] || Home;
+                const typeLabel = propertyTypeLabels[propertyType] || 'Residential';
 
-                  return (
-                    <div
-                      key={property.id}
-                      className="property-card"
-                      onClick={() => router.push(`/supervisor/properties/${property.id}`)}
-                    >
-                      <div className="flex items-start gap-3">
-                        {/* Thumbnail */}
-                        <div className="property-thumbnail">
-                          {property.thumbnailUrl ? (
-                            <img
-                              src={property.thumbnailUrl}
-                              alt={property.name || 'Property'}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <TypeIcon className="w-6 h-6 text-gray-400" />
-                          )}
-                        </div>
+                // Build tags array
+                const tags = [
+                  { label: typeLabel, color: 'gold' as const }
+                ];
 
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-white">
-                                {property.name || getAddressString(property.address) || 'Unnamed Property'}
-                              </h3>
-                              <div className="flex items-center gap-3 mt-1">
-                                <span className="property-type-badge">
-                                  {typeLabel}
-                                </span>
-                                {property.size && (
-                                  <span className="text-xs text-gray-500 flex items-center gap-1">
-                                    <Ruler className="w-3 h-3" />
-                                    {property.size}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                if (property.size) {
+                  tags.push({
+                    label: property.size,
+                    color: 'gray' as const,
+                    icon: <Ruler className="w-3 h-3" />
+                  });
+                }
 
-                            <div className="flex flex-col gap-2 ml-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEdit(property);
-                                }}
-                                className="icon-button"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(property.id);
-                                }}
-                                className="icon-button text-red-500"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="space-y-1 text-xs">
-                            <div className="flex items-center gap-2 text-gray-400">
-                              <Users className="w-3 h-3" />
-                              <span>{property.customer?.name || 'Unknown Customer'}</span>
-                            </div>
-
-                            {property.notes && (
-                              <div className="flex items-start gap-2 text-gray-500">
-                                <FileText className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                                <span className="line-clamp-2">{property.notes}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                return (
+                  <EntityTile
+                    key={property.id}
+                    image={property.thumbnailUrl}
+                    fallbackIcon={<TypeIcon />}
+                    title={property.name || getAddressString(property.address) || 'Unnamed Property'}
+                    subtitle={property.customer?.name || 'Unknown Customer'}
+                    tags={tags}
+                    onClick={() => router.push(`/supervisor/properties/${property.id}`)}
+                  />
+                );
+              })}
+            </EntityTileGrid>
           </div>
         </div>
 
@@ -621,71 +564,6 @@ export default function SupervisorPropertiesPage() {
             background: #111827;
             color: white;
             padding: 0.5rem;
-          }
-
-          .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-          }
-
-          .property-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-          }
-
-          .property-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 0.75rem;
-            padding: 1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-          }
-
-          .property-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 215, 0, 0.4);
-            transform: translateX(2px);
-          }
-
-          .property-thumbnail {
-            width: 3rem;
-            height: 3rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 0.5rem;
-            overflow: hidden;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-
-          .property-type-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.125rem 0.5rem;
-            font-size: 0.7rem;
-            font-weight: 500;
-            background: rgba(255, 215, 0, 0.2);
-            color: #FFD700;
-            border-radius: 9999px;
-            text-transform: uppercase;
-          }
-
-          .icon-button {
-            padding: 0.375rem;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 0.375rem;
-            cursor: pointer;
-            transition: all 0.2s;
-          }
-
-          .icon-button:hover {
-            background: rgba(255, 215, 0, 0.2);
-            border-color: #FFD700;
           }
 
           .bottom-actions {

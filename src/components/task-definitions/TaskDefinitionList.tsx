@@ -31,9 +31,10 @@
 'use client';
 
 import React from 'react';
-import { TaskDefinitionCard } from './TaskDefinitionCard';
+import { EntityTile } from '@/components/ui/EntityTile';
+import { EntityTileGrid } from '@/components/ui/EntityTileGrid';
 import type { TaskDefinition } from '@/domains/task-definition/types/task-definition-types';
-import { FileText, Loader2 } from 'lucide-react';
+import { FileText, Loader2, Camera, UserCheck, AlertCircle, CheckCircle } from 'lucide-react';
 
 export interface TaskDefinitionListProps {
   taskDefinitions: TaskDefinition[];
@@ -53,62 +54,72 @@ export function TaskDefinitionList({
   className = ''
 }: TaskDefinitionListProps) {
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className={`empty-state ${className}`}>
-        <Loader2 className="w-12 h-12 animate-spin mx-auto mb-3" style={{ color: '#FFD700' }} />
-        <p className="text-gray-400">Loading task definitions...</p>
-        <style jsx>{`
-          .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 0.75rem;
-          }
-        `}</style>
-      </div>
-    );
-  }
-
-  // Empty state
-  if (taskDefinitions.length === 0) {
-    return (
-      <div className={`empty-state ${className}`}>
-        <FileText className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-        <p className="text-gray-400 mb-1 font-semibold">No task definitions yet</p>
-        <p className="text-gray-500 text-sm">
-          Create reusable task definitions to add to templates
-        </p>
-        <style jsx>{`
-          .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 0.75rem;
-          }
-        `}</style>
-      </div>
-    );
-  }
-
-  // List display
+  // For loading or empty states, pass to EntityTileGrid
   return (
-    <div
-      className={`space-y-2 pt-4 ${className}`}
-      data-testid="task-definition-list"
-    >
-      {taskDefinitions.map((taskDefinition) => (
-        <TaskDefinitionCard
-          key={taskDefinition.id}
-          taskDefinition={taskDefinition}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onClick={onClick}
-        />
-      ))}
+    <div className={`pt-4 ${className}`} data-testid="task-definition-list">
+      <EntityTileGrid
+        emptyState={{
+          icon: loading ? <Loader2 className="w-12 h-12 animate-spin" style={{ color: '#FFD700' }} /> : <FileText className="w-12 h-12" />,
+          message: loading ? 'Loading task definitions...' : 'No task definitions yet'
+        }}
+      >
+        {taskDefinitions.map((taskDefinition) => {
+          // Build tags array
+          const tags = [];
+
+          // Photo verification tag
+          if (taskDefinition.requires_photo_verification) {
+            tags.push({
+              label: 'Photo',
+              color: 'blue' as const,
+              icon: <Camera className="w-3 h-3" />
+            });
+          }
+
+          // Supervisor approval tag
+          if (taskDefinition.requires_supervisor_approval) {
+            tags.push({
+              label: 'Approval',
+              color: 'purple' as const,
+              icon: <UserCheck className="w-3 h-3" />
+            });
+          }
+
+          // Required/Optional tag
+          if (taskDefinition.is_required) {
+            tags.push({
+              label: 'Required',
+              color: 'orange' as const,
+              icon: <AlertCircle className="w-3 h-3" />
+            });
+          } else {
+            tags.push({
+              label: 'Optional',
+              color: 'gray' as const
+            });
+          }
+
+          // Acceptance criteria tag
+          if (taskDefinition.acceptance_criteria) {
+            tags.push({
+              label: 'Criteria',
+              color: 'green' as const,
+              icon: <CheckCircle className="w-3 h-3" />
+            });
+          }
+
+          return (
+            <EntityTile
+              key={taskDefinition.id}
+              fallbackIcon={<FileText />}
+              title={taskDefinition.name}
+              subtitle={taskDefinition.description}
+              tags={tags}
+              onClick={() => onClick?.(taskDefinition.id)}
+            />
+          );
+        })}
+      </EntityTileGrid>
     </div>
   );
 }
