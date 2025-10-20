@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
           )
         )
       `)
-      .eq('crew_id', userId)
+      .eq('user_id', userId)
       .eq('tenant_id', tenantId)
       .eq('jobs.scheduled_date', today)
       .order('jobs.scheduled_time', { ascending: true });

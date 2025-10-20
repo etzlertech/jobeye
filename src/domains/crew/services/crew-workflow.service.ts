@@ -115,7 +115,7 @@ export class CrewWorkflowService {
             )
           )
         `)
-        .eq('crew_id', crewId)
+        .eq('user_id', crewId)
         .eq('tenant_id', tenantId)
         .eq('jobs.scheduled_date', targetDate)
         .order('jobs.scheduled_time');
@@ -168,7 +168,7 @@ export class CrewWorkflowService {
         .from('job_assignments')
         .select('id')
         .eq('job_id', jobId)
-        .eq('crew_id', crewId)
+        .eq('user_id', crewId)
         .eq('tenant_id', tenantId)
         .single();
 

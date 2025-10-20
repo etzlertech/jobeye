@@ -70,7 +70,7 @@ export async function POST(
       .from('job_verifications')
       .insert({
         job_id: jobId,
-        crew_id: userId,
+        user_id: userId,
         tenant_id: tenantId,
         verified_items,
         verification_time: verification_time || new Date().toISOString(),
