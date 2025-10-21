@@ -43,7 +43,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createPortal } from 'react-dom';
 
@@ -79,7 +79,7 @@ interface Detection {
   };
 }
 
-export default function CrewJobLoadPage() {
+function CrewJobLoadPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -1750,5 +1750,28 @@ export default function CrewJobLoadPage() {
         </div>
       )}
     </>
+  );
+}
+// Wrapper component with Suspense boundary for useSearchParams()
+export default function CrewJobLoadPage() {
+  return (
+    <Suspense fallback={
+      <div style={{
+        width: "100vw",
+        height: "100vh",
+        background: "#000",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#FFD700"
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "48px", marginBottom: "20px" }}>📷</div>
+          <div>Loading job load screen...</div>
+        </div>
+      </div>
+    }>
+      <CrewJobLoadPageContent />
+    </Suspense>
   );
 }
