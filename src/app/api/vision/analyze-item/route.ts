@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Convert base64 to the format expected by Gemini
-    // Using Gemini 2.0 Flash to align with multi-object load pipeline
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    // Using Gemini 2.0 Flash Preview for higher quota limits
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-preview-image-generation' });
 
     const imagePart = {
       inlineData: {
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       analysis: analysis.trim(),
       cost: 0.005, // Estimated cost for Gemini 2.0 Flash
-      model: 'gemini-2.0-flash-exp'
+      model: 'gemini-2.0-flash-preview-image-generation'
     });
 
   } catch (error) {

@@ -53,7 +53,7 @@ export async function detectWithGemini(
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: options.model || 'gemini-2.0-flash-exp',
+      model: options.model || 'gemini-2.0-flash-preview-image-generation',
       generationConfig: {
         responseMimeType: 'application/json',
       }
@@ -193,7 +193,7 @@ For each item detected, provide:
         processingTimeMs,
         estimatedCost: 0.001, // Gemini is much cheaper
         provider: 'google-gemini-2.5',
-        modelVersion: options.model || 'gemini-2.0-flash-exp',
+        modelVersion: options.model || 'gemini-2.0-flash-preview-image-generation',
       },
       error: null,
     };

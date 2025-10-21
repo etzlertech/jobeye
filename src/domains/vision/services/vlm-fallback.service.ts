@@ -90,7 +90,7 @@ export async function detectWithVlm(
     }
 
     const {
-      model = 'gemini-2.0-flash-exp',
+      model = 'gemini-2.0-flash-preview-image-generation',
       maxTokens = 1500,
       includeBboxes = true, // Enable by default for mobile UI
     } = options;
