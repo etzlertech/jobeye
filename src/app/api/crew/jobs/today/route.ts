@@ -87,22 +87,24 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    // Transform the data
-    const jobs = (assignments || []).map(assignment => {
-      const job = assignment.jobs;
-      const scheduledStart = job.scheduled_start ? new Date(job.scheduled_start) : null;
-      return {
-        id: job.id,
-        customer_name: job.customers?.name || 'Unknown Customer',
-        property_address: job.properties?.address || 'Unknown Address',
-        scheduled_time: scheduledStart?.toISOString() || '',
-        status: job.status,
-        special_instructions: job.description || job.voice_notes || '',
-        template_name: job.job_templates?.name || 'Custom Job',
-        estimated_duration: job.job_templates?.estimated_duration?.toString() || 'N/A',
-        assigned_at: assignment.assigned_at
-      };
-    });
+    // Transform the data - filter out null jobs (assignments without valid job data)
+    const jobs = (assignments || [])
+      .filter(assignment => assignment.jobs !== null)
+      .map(assignment => {
+        const job = assignment.jobs;
+        const scheduledStart = job.scheduled_start ? new Date(job.scheduled_start) : null;
+        return {
+          id: job.id,
+          customer_name: job.customers?.name || 'Unknown Customer',
+          property_address: job.properties?.address || 'Unknown Address',
+          scheduled_time: scheduledStart?.toISOString() || '',
+          status: job.status,
+          special_instructions: job.description || job.voice_notes || '',
+          template_name: job.job_templates?.name || 'Custom Job',
+          estimated_duration: job.job_templates?.estimated_duration?.toString() || 'N/A',
+          assigned_at: assignment.assigned_at
+        };
+      });
 
     return NextResponse.json({
       jobs,
