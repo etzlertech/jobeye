@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     // Convert base64 to the format expected by Gemini
     // Using Gemini 1.5 Flash for stable vision analysis with higher quotas
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
     const imagePart = {
       inlineData: {
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       analysis: analysis.trim(),
       cost: 0.002, // Estimated cost for Gemini 1.5 Flash
-      model: 'gemini-1.5-flash'
+      model: 'gemini-1.5-flash-latest'
     });
 
   } catch (error) {

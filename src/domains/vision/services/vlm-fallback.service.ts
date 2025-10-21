@@ -90,7 +90,7 @@ export async function detectWithVlm(
     }
 
     const {
-      model = 'gemini-1.5-flash',
+      model = 'gemini-1.5-flash-latest',
       maxTokens = 1500,
       includeBboxes = true, // Enable by default for mobile UI
     } = options;
