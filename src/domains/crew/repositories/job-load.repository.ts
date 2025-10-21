@@ -44,10 +44,10 @@ export class JobLoadRepository {
 
   /**
    * Get all required items for a job
-   * Reads from multiple sources: workflow_task_item_associations, item_transactions, and checklist_items
+   * Dual-reads from both workflow_task_item_associations and checklist_items
    */
   async getRequiredItems(jobId: string): Promise<JobLoadItem[]> {
-    // Read from normalized table (workflow-based associations)
+    // Read from normalized table
     const { data: tableItems, error: tableError } = await this.supabase
       .from('workflow_task_item_associations')
       .select(`
@@ -72,25 +72,6 @@ export class JobLoadRepository {
       console.error('[JobLoadRepository] Error fetching table items:', tableError);
     }
 
-    // Read from item_transactions table (direct job-item associations)
-    const { data: transactionItems, error: transactionError } = await this.supabase
-      .from('item_transactions')
-      .select(`
-        id,
-        quantity,
-        transaction_type,
-        items!inner (
-          id,
-          name,
-          item_type
-        )
-      `)
-      .eq('job_id', jobId);
-
-    if (transactionError) {
-      console.error('[JobLoadRepository] Error fetching transaction items:', transactionError);
-    }
-
     // Read from JSONB fallback
     const { data: job, error: jobError } = await this.supabase
       .from('jobs')
@@ -105,7 +86,7 @@ export class JobLoadRepository {
     // Merge results
     const items: JobLoadItem[] = [];
 
-    // Add workflow-based items (highest priority)
+    // Add table items (preferred source)
     if (tableItems) {
       for (const item of tableItems) {
         items.push({
@@ -122,29 +103,7 @@ export class JobLoadRepository {
       }
     }
 
-    // Add transaction items (second priority - skip if already in workflow items)
-    if (transactionItems) {
-      for (const item of transactionItems) {
-        // Skip if already in workflow items
-        if (items.some((i) => i.id === item.items.id)) {
-          continue;
-        }
-
-        items.push({
-          id: item.items.id,
-          name: item.items.name,
-          item_type: item.items.item_type,
-          quantity: Number(item.quantity),
-          is_required: true,
-          status: 'pending', // Default status for transaction items
-          task_id: null,
-          task_title: null,
-          source: 'table', // Mark as 'table' since it's from normalized tables
-        });
-      }
-    }
-
-    // Add JSONB items (fallback for legacy data - lowest priority)
+    // Add JSONB items (fallback for legacy data)
     if (job?.checklist_items) {
       const checklistItems = job.checklist_items as any[];
       for (const item of checklistItems) {
