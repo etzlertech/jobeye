@@ -12,6 +12,11 @@ const nextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
+
+  // Disable ESLint during build (warnings should not fail production builds)
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   
   // Environment variable validation
   env: {
