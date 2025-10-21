@@ -279,7 +279,7 @@ export function InstructionSearcher({
         ) : query.trim() && !loading ? (
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
             <p className="text-gray-600 text-sm">
-              No instructions found for "{query}"
+              No instructions found for &ldquo;{query}&rdquo;
             </p>
             <p className="text-xs text-gray-500 mt-1">
               Try a different search term or category
@@ -289,7 +289,7 @@ export function InstructionSearcher({
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
             <p className="font-medium">💡 Search Tips:</p>
             <ul className="mt-2 space-y-1 text-xs">
-              <li>• Use natural language (e.g., "how to handle tall grass")</li>
+              <li>• Use natural language (e.g., &ldquo;how to handle tall grass&rdquo;)</li>
               <li>• Semantic search finds related instructions automatically</li>
               <li>• Filter by category for more specific results</li>
               <li>• Results are cached for 60 minutes for faster access</li>

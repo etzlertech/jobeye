@@ -299,7 +299,7 @@ export function JobCard({
           {job.specialInstructions && !compact && (
             <div className="mb-2">
               <p className="text-xs text-gray-700 italic line-clamp-2">
-                "{job.specialInstructions}"
+                &ldquo;{job.specialInstructions}&rdquo;
               </p>
             </div>
           )}

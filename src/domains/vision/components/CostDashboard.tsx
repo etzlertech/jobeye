@@ -226,7 +226,7 @@ export default function CostDashboard({
       {/* Cost Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg border p-4">
-          <p className="text-sm text-gray-600 mb-1">Today's Cost</p>
+          <p className="text-sm text-gray-600 mb-1">Today&apos;s Cost</p>
           <p className="text-2xl font-bold">${costSummary.todayCost.toFixed(2)}</p>
           <p className="text-xs text-gray-500">{costSummary.todayRequests} requests</p>
         </div>
