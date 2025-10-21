@@ -90,7 +90,7 @@ export async function detectWithVlm(
     }
 
     const {
-      model = 'gemini-1.5-flash-latest',
+      model = 'gemini-2.5-pro',
       maxTokens = 1500,
       includeBboxes = true, // Enable by default for mobile UI
     } = options;
@@ -175,8 +175,8 @@ Example: {"x": 25, "y": 30, "width": 15, "height": 20} means box starts 25% from
 
     const processingTimeMs = Date.now() - startTime;
 
-    // Estimate cost: Gemini 2.0 Flash is ~$0.002 per image (much cheaper than GPT-4)
-    const estimatedCost = 0.002; // $0.002 per image
+    // Estimate cost: Gemini 2.5 Pro enterprise pricing
+    const estimatedCost = 0.003; // $0.003 per image
 
     // Map detections to VlmDetection format
     const mappedDetections: VlmDetection[] = detections.map((d: any) => {

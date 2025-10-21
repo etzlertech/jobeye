@@ -115,10 +115,14 @@ async function verifyMigrationSequence(): Promise<VerificationResult> {
     }
   }
   
-  // Check for duplicates
+  // Check for duplicates (allow documented exceptions)
+  const knownExceptions = new Set(['job_templates']); // 20251021010000_prod_sync_job_templates.sql documents this as intentional
+
   for (const [table, files] of tableCreations) {
-    if (files.length > 1) {
+    if (files.length > 1 && !knownExceptions.has(table)) {
       errors.push(`Table '${table}' created in multiple migrations: ${files.join(', ')}`);
+    } else if (files.length > 1 && knownExceptions.has(table)) {
+      warnings.push(`Table '${table}' created in multiple migrations (documented exception): ${files.join(', ')}`);
     }
   }
   
