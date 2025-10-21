@@ -93,10 +93,30 @@ export async function GET(request: NextRequest) {
       .map(assignment => {
         const job = assignment.jobs;
         const scheduledStart = job.scheduled_start ? new Date(job.scheduled_start) : null;
+
+        // Serialize property address - handle both string and JSONB object formats
+        let propertyAddress = 'Unknown Address';
+        if (job.properties?.address) {
+          if (typeof job.properties.address === 'string') {
+            propertyAddress = job.properties.address;
+          } else if (typeof job.properties.address === 'object') {
+            const addr = job.properties.address as any;
+            if (addr.street) {
+              const parts = [addr.street];
+              if (addr.city) parts.push(addr.city);
+              if (addr.state) parts.push(addr.state);
+              if (addr.zip) parts.push(addr.zip);
+              propertyAddress = parts.join(', ');
+            } else {
+              propertyAddress = JSON.stringify(addr).substring(0, 100);
+            }
+          }
+        }
+
         return {
           id: job.id,
           customer_name: job.customers?.name || 'Unknown Customer',
-          property_address: job.properties?.address || 'Unknown Address',
+          property_address: propertyAddress,
           scheduled_time: scheduledStart?.toISOString() || '',
           status: job.status,
           special_instructions: job.description || job.voice_notes || '',
