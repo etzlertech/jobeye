@@ -130,8 +130,19 @@ export async function GET(
     if (job.properties?.address) {
       if (typeof job.properties.address === 'string') {
         propertyAddress = job.properties.address;
-      } else if (typeof job.properties.address === 'object' && job.properties.address.street) {
-        propertyAddress = job.properties.address.street;
+      } else if (typeof job.properties.address === 'object') {
+        // Handle JSONB address objects
+        const addr = job.properties.address as any;
+        if (addr.street) {
+          const parts = [addr.street];
+          if (addr.city) parts.push(addr.city);
+          if (addr.state) parts.push(addr.state);
+          if (addr.zip) parts.push(addr.zip);
+          propertyAddress = parts.join(', ');
+        } else {
+          // Fallback for malformed address objects
+          propertyAddress = JSON.stringify(addr).substring(0, 100);
+        }
       }
     }
 
