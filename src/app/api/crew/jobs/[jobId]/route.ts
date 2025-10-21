@@ -114,29 +114,45 @@ export async function GET(
         notes: t.notes
       }));
 
-    // Transform the job data
+    // Transform the job data to match frontend interface
     const scheduledStart = job.scheduled_start ? new Date(job.scheduled_start) : null;
     const scheduledEnd = job.scheduled_end ? new Date(job.scheduled_end) : null;
 
-    const response = {
+    // Map items to requiredEquipment format
+    const requiredEquipment = items.map(item => ({
+      id: item.id,
+      name: item.name,
+      category: item.category || 'equipment',
+      verified: false // TODO: Track verification status
+    }));
+
+    const jobDetail = {
       id: job.id,
-      job_number: job.job_number,
-      customer_name: job.customers?.name || 'Unknown Customer',
-      property_address: job.properties?.address || 'Unknown Address',
-      scheduled_time: scheduledStart?.toISOString() || '',
-      scheduled_start: scheduledStart?.toISOString() || '',
-      scheduled_end: scheduledEnd?.toISOString() || '',
-      status: job.status,
-      priority: job.priority,
-      special_instructions: job.description || job.voice_notes || '',
-      template_name: job.job_templates?.name || 'Custom Job',
-      estimated_duration: job.job_templates?.estimated_duration?.toString() || 'N/A',
-      checklist_items: job.job_templates?.checklist_items || [],
-      assigned_at: assignment.assigned_at,
-      items: items
+      customerName: job.customers?.name || 'Unknown Customer',
+      customerPhone: '', // TODO: Add phone to query
+      propertyAddress: typeof job.properties?.address === 'string'
+        ? job.properties.address
+        : JSON.stringify(job.properties?.address || {}),
+      propertyType: 'residential', // TODO: Add property type to query
+      scheduledDate: scheduledStart?.toISOString() || '',
+      scheduledTime: scheduledStart?.toISOString() || '',
+      status: job.status === 'scheduled' ? 'assigned' : job.status,
+      templateName: job.job_templates?.name || 'Custom Job',
+      specialInstructions: job.description || job.voice_notes || '',
+      voiceInstructions: job.voice_notes || undefined,
+      voiceInstructionsUrl: undefined, // TODO: Add voice URL support
+      estimatedDuration: job.job_templates?.estimated_duration || 60,
+      actualStartTime: undefined,
+      actualEndTime: undefined,
+      startPhotoUrl: undefined,
+      completionPhotoUrl: undefined,
+      requiredEquipment: requiredEquipment,
+      loadVerified: false, // TODO: Track load verification
+      priority: job.priority || 'medium',
+      notes: job.description
     };
 
-    return NextResponse.json(response);
+    return NextResponse.json({ job: jobDetail });
 
   } catch (error) {
     console.error('[Crew Job Details] Unexpected error', error);
