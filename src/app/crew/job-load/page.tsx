@@ -44,7 +44,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createPortal } from 'react-dom';
 
 interface Job {
@@ -81,6 +81,7 @@ interface Detection {
 
 export default function CrewJobLoadPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // State
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -117,7 +118,7 @@ export default function CrewJobLoadPage() {
         name: item,
         checked: selectedJob.verified_items?.includes(item) || false
       }));
-      setChecklist(items);
+      setRequiredItems(items);
       setEditableItems(items.map(item => item.name));
     }
   }, [selectedJob]);
@@ -159,6 +160,18 @@ export default function CrewJobLoadPage() {
       }
     };
   }, []);
+
+  // Auto-select job from query parameter
+  useEffect(() => {
+    const jobId = searchParams.get('jobId');
+    if (jobId && jobs.length > 0 && !selectedJob) {
+      const job = jobs.find(j => j.id === jobId);
+      if (job) {
+        console.log('[JobLoad] Auto-selecting job from query parameter:', jobId);
+        selectJob(job);
+      }
+    }
+  }, [jobs, selectedJob, searchParams]);
 
   const loadJobs = async () => {
     try {
