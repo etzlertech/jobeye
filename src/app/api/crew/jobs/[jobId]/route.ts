@@ -126,13 +126,21 @@ export async function GET(
       verified: false // TODO: Track verification status
     }));
 
+    // Format property address - handle both string and object formats
+    let propertyAddress = 'Unknown Address';
+    if (job.properties?.address) {
+      if (typeof job.properties.address === 'string') {
+        propertyAddress = job.properties.address;
+      } else if (typeof job.properties.address === 'object' && job.properties.address.street) {
+        propertyAddress = job.properties.address.street;
+      }
+    }
+
     const jobDetail = {
       id: job.id,
       customerName: job.customers?.name || 'Unknown Customer',
       customerPhone: '', // TODO: Add phone to query
-      propertyAddress: typeof job.properties?.address === 'string'
-        ? job.properties.address
-        : JSON.stringify(job.properties?.address || {}),
+      propertyAddress: propertyAddress,
       propertyType: 'residential', // TODO: Add property type to query
       scheduledDate: scheduledStart?.toISOString() || '',
       scheduledTime: scheduledStart?.toISOString() || '',
