@@ -72,6 +72,11 @@ export async function GET(request: NextRequest) {
           properties (
             id,
             address
+          ),
+          job_templates (
+            id,
+            name,
+            estimated_duration
           )
         )
       `)
@@ -93,8 +98,8 @@ export async function GET(request: NextRequest) {
         scheduled_time: scheduledStart?.toISOString() || '',
         status: job.status,
         special_instructions: job.description || job.voice_notes || '',
-        template_name: 'Custom Job',
-        estimated_duration: 'N/A',
+        template_name: job.job_templates?.name || 'Custom Job',
+        estimated_duration: job.job_templates?.estimated_duration?.toString() || 'N/A',
         assigned_at: assignment.assigned_at
       };
     });
