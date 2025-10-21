@@ -56,8 +56,7 @@ export async function GET(
           job_templates (
             id,
             name,
-            estimated_duration,
-            checklist_items
+            estimated_duration
           )
         )
       `)
