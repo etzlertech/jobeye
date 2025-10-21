@@ -551,15 +551,35 @@ export function handleApiError(error: unknown): NextResponse {
     });
   }
 
-  // Handle non-Error objects
+  // Handle non-Error objects - serialize properly for debugging
+  let errorDetails: any = {};
+
+  try {
+    // Attempt to serialize as JSON
+    errorDetails = JSON.parse(JSON.stringify(error));
+  } catch (jsonError) {
+    // If JSON serialization fails, extract properties manually
+    if (typeof error === 'object' && error !== null) {
+      for (const [key, value] of Object.entries(error)) {
+        try {
+          errorDetails[key] = JSON.stringify(value);
+        } catch {
+          errorDetails[key] = String(value);
+        }
+      }
+    } else {
+      errorDetails = { rawValue: String(error) };
+    }
+  }
+
   const unknownError = new ApiError(
     'An unknown error occurred',
     500,
     'UNKNOWN_ERROR',
-    { error: String(error) }
+    errorDetails
   );
 
-  return NextResponse.json(unknownError.toJSON(), { 
+  return NextResponse.json(unknownError.toJSON(), {
     status: 500,
     headers: {
       'Content-Type': 'application/json',
