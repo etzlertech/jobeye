@@ -36,11 +36,38 @@ export interface GeminiOptions {
 /**
  * Gemini-based object detection
  */
+const DEFAULT_TIMEOUT_MS = 6000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`Gemini request timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    promise
+      .then(result => {
+        clearTimeout(timeoutId);
+        resolve(result);
+      })
+      .catch(err => {
+        clearTimeout(timeoutId);
+        reject(err);
+      });
+  });
+}
+
 export async function detectWithGemini(
   request: GeminiDetectionRequest,
   options: GeminiOptions = {}
 ): Promise<{ data: GeminiResult | null; error: Error | null }> {
   const startTime = Date.now();
+  const configuredTimeout = process.env.GEMINI_VLM_TIMEOUT_MS
+    ? Number(process.env.GEMINI_VLM_TIMEOUT_MS)
+    : undefined;
+  const timeoutMs =
+    configuredTimeout && Number.isFinite(configuredTimeout) && configuredTimeout > 0
+      ? configuredTimeout
+      : DEFAULT_TIMEOUT_MS;
 
   try {
     const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
@@ -114,15 +141,18 @@ For each item detected, provide:
     console.log('===================================\n');
 
     // Call Gemini
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: imageData,
-          mimeType: 'image/jpeg',
+    const result = await withTimeout(
+      model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            data: imageData,
+            mimeType: 'image/jpeg',
+          },
         },
-      },
-    ]);
+      ]),
+      timeoutMs
+    );
 
     const response = result.response;
     const text = response.text();

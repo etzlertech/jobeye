@@ -47,6 +47,9 @@ import { useState, useRef, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createPortal } from 'react-dom';
 
+const VLM_ERROR_COOLDOWN_MS = 5000;
+const VLM_TIMEOUT_COOLDOWN_MS = 3500;
+
 interface Job {
   id: string;
   customer_name: string;
@@ -104,11 +107,13 @@ function CrewJobLoadPageContent() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const analysisIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const cooldownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const inputRefs = useRef<HTMLInputElement[]>([]);
   const analysisQueue = useRef<Set<number>>(new Set());
   const sessionStartTime = useRef<number>(0);
   const frameCount = useRef<number>(0);
+  const isAnalyzingRef = useRef(false);
 
   // Initialize job items when selected
   useEffect(() => {
@@ -158,8 +163,15 @@ function CrewJobLoadPageContent() {
       if (analysisIntervalRef.current) {
         clearInterval(analysisIntervalRef.current);
       }
+      if (cooldownTimeoutRef.current) {
+        clearTimeout(cooldownTimeoutRef.current);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    isAnalyzingRef.current = isAnalyzing;
+  }, [isAnalyzing]);
 
   // Auto-select job from query parameter
   useEffect(() => {
@@ -304,6 +316,11 @@ function CrewJobLoadPageContent() {
     console.log(`[VLM] 📊 Session ended: ${frameCount.current} frames in ${elapsed.toFixed(1)}s, Est. cost: $${finalCost}`);
     
     setIsAnalyzing(false);
+    isAnalyzingRef.current = false;
+    if (cooldownTimeoutRef.current) {
+      clearTimeout(cooldownTimeoutRef.current);
+      cooldownTimeoutRef.current = null;
+    }
     analysisQueue.current.clear();
   };
 
@@ -356,6 +373,11 @@ function CrewJobLoadPageContent() {
         console.log('[VLM] ✅ All items detected! Stopping analysis and camera...');
         setDetectionStatus('✅ LIST COMPLETED!');
         setIsAnalyzing(false);
+        isAnalyzingRef.current = false;
+        if (cooldownTimeoutRef.current) {
+          clearTimeout(cooldownTimeoutRef.current);
+          cooldownTimeoutRef.current = null;
+        }
 
         // Stop the interval
         if (analysisIntervalRef.current) {
@@ -399,7 +421,12 @@ function CrewJobLoadPageContent() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`[VLM] Frame #${frameId} API Error:`, errorText);
-        throw new Error(`API error: ${response.statusText}`);
+        const apiError = new Error(
+          `API error: ${response.status} ${response.statusText || ''}`.trim()
+        );
+        (apiError as any).status = response.status;
+        (apiError as any).details = errorText;
+        throw apiError;
       }
 
       const result = await response.json();
@@ -489,9 +516,47 @@ function CrewJobLoadPageContent() {
       console.error(`[VLM] Frame #${frameId} Detection error:`, {
         message: error.message,
         stack: error.stack,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        status: error?.status,
+        details: error?.details
       });
-      setDetectionStatus(`❌ Frame #${frameId} failed`);
+
+      const statusCode = typeof error?.status === 'number' ? error.status : undefined;
+      const message: string = error?.message || 'Unknown error';
+      const lowered = message.toLowerCase();
+      const isTimeout = lowered.includes('timed out') || statusCode === 504;
+      const cooldownMs = isTimeout ? VLM_TIMEOUT_COOLDOWN_MS : VLM_ERROR_COOLDOWN_MS;
+
+      setDetectionStatus(
+        isTimeout
+          ? `⏳ Vision service timed out (Frame ${frameId}). Cooling down for ${(cooldownMs / 1000).toFixed(1)}s...`
+          : `🛑 Vision error (${message}). Cooling down ${(cooldownMs / 1000).toFixed(1)}s...`
+      );
+
+      // Stop interval to prevent spamming the API
+      if (analysisIntervalRef.current) {
+        clearInterval(analysisIntervalRef.current);
+        analysisIntervalRef.current = null;
+      }
+
+      analysisQueue.current.clear();
+      setIsAnalyzing(false);
+      isAnalyzingRef.current = false;
+
+      if (cooldownTimeoutRef.current) {
+        clearTimeout(cooldownTimeoutRef.current);
+      }
+
+      cooldownTimeoutRef.current = setTimeout(() => {
+        // Skip auto-restart if another analysis already running or no stream available
+        if (isAnalyzingRef.current || analysisIntervalRef.current || !stream) {
+          console.log('[VLM] Cooldown complete, skipping restart (analysis already active or camera stopped).');
+          return;
+        }
+
+        console.log(`[VLM] Cooldown complete after ${cooldownMs}ms. Restarting analysis...`);
+        void startAnalysis();
+      }, cooldownMs);
     } finally {
       // Remove from queue when done
       analysisQueue.current.delete(frameId);
@@ -500,6 +565,12 @@ function CrewJobLoadPageContent() {
   };
 
   const startAnalysis = async () => {
+    if (cooldownTimeoutRef.current) {
+      clearTimeout(cooldownTimeoutRef.current);
+      cooldownTimeoutRef.current = null;
+    }
+
+    isAnalyzingRef.current = true;
     setIsAnalyzing(true);
     setDetectionStatus('Starting analysis...');
 
@@ -527,6 +598,11 @@ function CrewJobLoadPageContent() {
 
         // Stop the analysis interval but keep camera running for restart
         setIsAnalyzing(false);
+        isAnalyzingRef.current = false;
+        if (cooldownTimeoutRef.current) {
+          clearTimeout(cooldownTimeoutRef.current);
+          cooldownTimeoutRef.current = null;
+        }
         if (analysisIntervalRef.current) {
           clearInterval(analysisIntervalRef.current);
           analysisIntervalRef.current = null;
@@ -865,6 +941,11 @@ function CrewJobLoadPageContent() {
       console.log('[AUTO-STOP] All items checked! Stopping...');
       setDetectionStatus('✅ LIST COMPLETED!');
       setIsAnalyzing(false);
+      isAnalyzingRef.current = false;
+      if (cooldownTimeoutRef.current) {
+        clearTimeout(cooldownTimeoutRef.current);
+        cooldownTimeoutRef.current = null;
+      }
 
       // Play success sound and show confetti
       playSuccessSound();

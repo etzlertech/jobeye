@@ -43,9 +43,10 @@ export async function POST(request: NextRequest) {
         message: error.message,
         stack: error.stack
       });
+      const statusCode = error.message?.toLowerCase().includes('timed out') ? 504 : 500;
       return NextResponse.json(
         { error: error.message },
-        { status: 500 }
+        { status: statusCode }
       );
     }
 
