@@ -84,9 +84,14 @@ export async function POST(
       const jobIdSchema = z.string().uuid();
       const jobId = jobIdSchema.parse(params.jobId);
 
-      // Parse and validate request
-      const body = await req.json();
-      const validatedData = startJobRequestSchema.parse(body);
+      // Parse and validate request (body is optional)
+      let validatedData = { startPhotoUrl: undefined, location: undefined };
+      try {
+        const body = await req.json();
+        validatedData = startJobRequestSchema.parse(body);
+      } catch (error) {
+        // Empty body is acceptable, use defaults
+      }
 
       // Get crew ID from user metadata
       const crewId = user.app_metadata?.crew_id || user.id;
