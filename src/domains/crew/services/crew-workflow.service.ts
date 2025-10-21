@@ -103,8 +103,8 @@ export class CrewWorkflowService {
             id,
             scheduled_start,
             status,
-            special_instructions,
-            voice_instructions,
+            description,
+            voice_notes,
             load_verified,
             customers!inner (
               name
@@ -136,8 +136,8 @@ export class CrewWorkflowService {
             propertyAddress: assignment.jobs.properties?.address ?? 'Unknown address',
             scheduledTime: assignment.jobs.scheduled_start || '',
             status: assignment.jobs.status,
-            specialInstructions: assignment.jobs.special_instructions ||
-              assignment.jobs.voice_instructions,
+            specialInstructions: assignment.jobs.description ||
+              assignment.jobs.voice_notes || '',
             requiredEquipment: items.map((item) => item.name),
             loadVerified: Boolean(assignment.jobs.load_verified)
           };

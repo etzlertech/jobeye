@@ -63,7 +63,8 @@ export async function GET(request: NextRequest) {
           id,
           scheduled_start,
           status,
-          special_instructions,
+          description,
+          voice_notes,
           template_id,
           customers (
             id,
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest) {
         property_address: job.properties?.address || 'Unknown Address',
         scheduled_time: scheduledStart?.toISOString() || '',
         status: job.status,
-        special_instructions: job.special_instructions,
+        special_instructions: job.description || job.voice_notes || '',
         template_name: job.job_templates?.name || 'Custom Job',
         estimated_duration: job.job_templates?.estimated_duration || 'N/A',
         assigned_at: assignment.assigned_at
