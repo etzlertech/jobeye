@@ -517,17 +517,24 @@ function CrewJobLoadPageContent() {
 
     // Set aggressive capture interval: 0.5 seconds = 2 fps
     // This allows 3-4 frames in 2 seconds as requested
-    // Cost: ~$0.003-$0.005 per frame, max 30 frames in 15 seconds = $0.09-$0.15 max
+    // Cost: ~$0.003-$0.005 per frame, max 40 frames in 20 seconds = $0.12-$0.20 max
     analysisIntervalRef.current = setInterval(() => {
-      // Check 15-second safety limit
+      // Check 20-second safety limit
       const elapsed = (Date.now() - sessionStartTime.current) / 1000;
-      if (elapsed >= 15) {
-        console.log(`[VLM] 🔒 15-second safety limit reached. Stopping analysis. Frames sent: ${frameCount.current}, Est. cost: $${(frameCount.current * 0.004).toFixed(3)}`);
-        setDetectionStatus(`🔒 15s limit reached (${frameCount.current} frames, ~$${(frameCount.current * 0.004).toFixed(3)})`);
-        stopCamera();
+      if (elapsed >= 20) {
+        console.log(`[VLM] 🔒 20-second safety limit reached. Stopping analysis. Frames sent: ${frameCount.current}, Est. cost: $${(frameCount.current * 0.004).toFixed(3)}`);
+        setDetectionStatus(`🔒 20s limit reached (${frameCount.current} frames, ~$${(frameCount.current * 0.004).toFixed(3)}) - Press START to restart`);
+
+        // Stop the analysis interval but keep camera running for restart
+        setIsAnalyzing(false);
+        if (analysisIntervalRef.current) {
+          clearInterval(analysisIntervalRef.current);
+          analysisIntervalRef.current = null;
+        }
+        analysisQueue.current.clear();
         return;
       }
-      
+
       analyzeFrame();
     }, 500); // 2 fps for responsive detection
   };
@@ -618,18 +625,18 @@ function CrewJobLoadPageContent() {
     // Initialize audio context on user interaction (Safari requirement)
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      
+
       if (!audioContextRef.current) {
         audioContextRef.current = new AudioContext();
         console.log('[Audio] Context created on START button press, state:', audioContextRef.current.state);
       }
-      
+
       // CRITICAL for Safari: Must resume on user gesture
       if (audioContextRef.current.state === 'suspended') {
         await audioContextRef.current.resume();
         console.log('[Audio] Context resumed successfully, state:', audioContextRef.current.state);
       }
-      
+
       // Test beep to verify audio is working
       if (audioContextRef.current.state === 'running') {
         const osc = audioContextRef.current.createOscillator();
@@ -647,7 +654,7 @@ function CrewJobLoadPageContent() {
     } catch (e) {
       console.error('[Audio] Failed to initialize:', e);
     }
-    
+
     if (!stream) {
       // Camera not started yet - start it
       startCamera();
@@ -655,6 +662,10 @@ function CrewJobLoadPageContent() {
       // All items checked - verify and finish
       alert('Load verified! Ready to proceed.');
       completeVerification();
+    } else if (stream && !isAnalyzing) {
+      // Camera is running but analysis stopped (timeout) - restart analysis
+      console.log('[VLM] Restarting analysis after timeout...');
+      startAnalysis();
     }
   };
 
@@ -1673,7 +1684,7 @@ function CrewJobLoadPageContent() {
 
         <div className="container-4">
           <div
-            className={`button-half button-yes ${stream && !allChecked ? 'disabled' : ''}`}
+            className={`button-half button-yes ${stream && isAnalyzing && !allChecked ? 'disabled' : ''}`}
             onClick={handleStart}
           >
             START
