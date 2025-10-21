@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError } from '@/core/errors/error-handler';
 import { getRequestContext } from '@/lib/auth/context';
+import { JobLoadRepository } from '@/domains/crew/repositories/job-load.repository';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -74,44 +75,9 @@ export async function GET(
 
     const job = assignment.jobs;
 
-    // Get items for this job from item_transactions
-    const { data: itemTransactions, error: itemsError } = await supabase
-      .from('item_transactions')
-      .select(`
-        id,
-        item_id,
-        transaction_type,
-        quantity,
-        notes,
-        items (
-          id,
-          name,
-          item_type,
-          category,
-          description,
-          current_quantity,
-          unit_of_measure,
-          thumbnail_url,
-          primary_image_url
-        )
-      `)
-      .eq('job_id', jobId);
-
-    const items = (itemTransactions || [])
-      .filter(t => t.items !== null)
-      .map(t => ({
-        id: t.items.id,
-        name: t.items.name,
-        item_type: t.items.item_type,
-        category: t.items.category,
-        description: t.items.description,
-        quantity: Number(t.quantity),
-        unit_of_measure: t.items.unit_of_measure,
-        transaction_type: t.transaction_type,
-        thumbnail_url: t.items.thumbnail_url,
-        primary_image_url: t.items.primary_image_url,
-        notes: t.notes
-      }));
+    // Get items for this job using JobLoadRepository (dual-read from workflow tables + JSONB)
+    const loadRepo = new JobLoadRepository(supabase);
+    const items = await loadRepo.getRequiredItems(jobId);
 
     // Transform the job data to match frontend interface
     const scheduledStart = job.scheduled_start ? new Date(job.scheduled_start) : null;
@@ -121,8 +87,8 @@ export async function GET(
     const requiredEquipment = items.map(item => ({
       id: item.id,
       name: item.name,
-      category: item.category || 'equipment',
-      verified: false // TODO: Track verification status
+      category: item.item_type === 'equipment' ? 'equipment' : 'materials',
+      verified: item.status === 'verified'
     }));
 
     // Format property address - handle both string and object formats
