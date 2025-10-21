@@ -688,10 +688,10 @@ export default function CrewJobDetailPage() {
               {!job.loadVerified && (
                 <div className="mt-4">
                   <button
-                    onClick={() => router.push(`/crew/load-verify?jobId=${jobId}`)}
+                    onClick={() => router.push(`/crew/job-load?jobId=${jobId}`)}
                     className="w-full py-2 px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
                   >
-                    Verify Load Now
+                    Load Items for Job
                   </button>
                 </div>
               )}
