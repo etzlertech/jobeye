@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { handleApiError } from '@/core/errors/error-handler';
 import { getRequestContext } from '@/lib/auth/context';
+import { JobsRepository } from '@/domains/jobs/repositories/jobs.repository';
+import { z } from 'zod';
+import type { Database } from '@/types/database';
 
 export async function GET(
   request: NextRequest,
@@ -185,6 +188,177 @@ export async function GET(
     return NextResponse.json({ job });
 
   } catch (error) {
+    return handleApiError(error);
+  }
+}
+
+type JobUpdatePayload = Database['public']['Tables']['jobs']['Update'] & {
+  scheduled_date?: string;
+  scheduled_time?: string;
+};
+
+const updateSchema = z.object({
+  title: z.string().trim().min(1).optional(),
+  description: z.string().optional(),
+  status: z.string().optional(),
+  priority: z.string().optional(),
+  scheduledDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  scheduledTime: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/)
+    .optional(),
+  scheduled_start: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/)
+    .optional(),
+  scheduledStart: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/)
+    .optional()
+});
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { jobId: string } }
+) {
+  try {
+    const context = await getRequestContext(request);
+    const { tenantId, user } = context;
+    const supabase = user
+      ? await createServerClient()
+      : createServiceClient();
+
+    const jobId = params.jobId;
+    const body = await request.json();
+    const validated = updateSchema.parse(body);
+
+    if (!Object.values(validated).some((value) => value !== undefined)) {
+      return NextResponse.json(
+        { error: 'No valid fields provided for update' },
+        { status: 400 }
+      );
+    }
+
+    const jobsRepo = new JobsRepository(supabase);
+    const existingJob = await jobsRepo.findById(jobId, { tenant_id: tenantId });
+
+    if (!existingJob) {
+      return NextResponse.json(
+        { error: 'Job not found' },
+        { status: 404 }
+      );
+    }
+
+    const updatePayload: JobUpdatePayload = {
+      updated_at: new Date().toISOString()
+    };
+
+    if (validated.title !== undefined) {
+      updatePayload.title = validated.title;
+    }
+
+    if (validated.description !== undefined) {
+      updatePayload.description = validated.description;
+    }
+
+    if (validated.status !== undefined) {
+      updatePayload.status = validated.status as Database['public']['Enums']['job_status'];
+    }
+
+    if (validated.priority !== undefined) {
+      updatePayload.priority = validated.priority as Database['public']['Enums']['job_priority'];
+    }
+
+    const incomingSchedule =
+      validated.scheduled_start ||
+      validated.scheduledStart ||
+      undefined;
+
+    let scheduleDate = validated.scheduledDate;
+    let scheduleTime = validated.scheduledTime;
+
+    if (incomingSchedule) {
+      const [incomingDate, incomingTimeRaw] = incomingSchedule.split('T');
+      if (incomingDate) {
+        scheduleDate = scheduleDate ?? incomingDate;
+      }
+      if (incomingTimeRaw) {
+        const trimmed = incomingTimeRaw.slice(0, 5);
+        if (/^\d{2}:\d{2}$/.test(trimmed)) {
+          scheduleTime = scheduleTime ?? trimmed;
+        }
+      }
+    }
+
+    const existingDate =
+      (existingJob as Record<string, any>).scheduled_date ||
+      (existingJob as Record<string, any>).scheduled_start?.split?.('T')?.[0];
+    const existingTimeRaw =
+      (existingJob as Record<string, any>).scheduled_time ||
+      (existingJob as Record<string, any>).scheduled_start?.split?.('T')?.[1];
+
+    if (scheduleDate || scheduleTime) {
+      const resolvedDate = scheduleDate ?? existingDate;
+      const resolvedTime =
+        scheduleTime ??
+        (typeof existingTimeRaw === 'string'
+          ? existingTimeRaw.slice(0, 5)
+          : undefined) ??
+        '09:00';
+
+      if (!resolvedDate || !/^\d{4}-\d{2}-\d{2}$/.test(resolvedDate)) {
+        return NextResponse.json(
+          { error: 'Invalid schedule payload' },
+          { status: 400 }
+        );
+      }
+
+      const dateCheck = new Date(`${resolvedDate}T00:00:00Z`);
+      if (Number.isNaN(dateCheck.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid schedule payload' },
+          { status: 400 }
+        );
+      }
+
+      if (!/^\d{2}:\d{2}$/.test(resolvedTime)) {
+        return NextResponse.json(
+          { error: 'Invalid schedule payload' },
+          { status: 400 }
+        );
+      }
+
+      const scheduledStart = `${resolvedDate}T${resolvedTime}:00`;
+      updatePayload.scheduled_start = scheduledStart;
+      updatePayload.scheduled_date = resolvedDate;
+      updatePayload.scheduled_time = resolvedTime;
+    }
+
+    const updatedJob = await jobsRepo.update(
+      jobId,
+      updatePayload,
+      { tenant_id: tenantId }
+    );
+
+    if (!updatedJob) {
+      return NextResponse.json(
+        { error: 'Job update failed' },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({ job: updatedJob });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid schedule payload', details: error.errors },
+        { status: 400 }
+      );
+    }
+
     return handleApiError(error);
   }
 }

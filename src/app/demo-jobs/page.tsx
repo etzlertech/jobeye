@@ -55,8 +55,8 @@ export default function DemoJobsPage() {
     resetForm,
     jobs,
     editingId,
-    editingTitle,
-    setEditingTitle,
+    editingDraft,
+    updateEditingDraft,
     beginEdit,
     cancelEdit,
     saveEdit,
@@ -133,8 +133,8 @@ export default function DemoJobsPage() {
         isLoading={combinedLoading}
         tenantAvailable={tenantAvailable}
         editingId={editingId}
-        editingTitle={editingTitle}
-        onEditChange={setEditingTitle}
+        editingDraft={editingDraft}
+        onEditChange={updateEditingDraft}
         onStartEdit={beginEdit}
         onCancelEdit={cancelEdit}
         onSaveEdit={saveEdit}

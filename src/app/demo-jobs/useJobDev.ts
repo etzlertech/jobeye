@@ -21,8 +21,37 @@ import { useCallback, useMemo, useState } from 'react';
 import type { DevAlertTone } from '@/hooks/useDevAlert';
 import type { JobFormState } from '@/app/demo-jobs/utils';
 import type { CustomerOption, PropertyOption } from '@/app/demo-jobs/_components/JobForm';
-import type { JobRecord } from '@/app/demo-jobs/_components/JobList';
 import { buildJobPayload } from '@/app/demo-jobs/utils';
+
+export interface JobRecord {
+  id: string;
+  job_number: string;
+  title: string;
+  description?: string | null;
+  status: string;
+  priority: string;
+  scheduled_start?: string | null;
+  scheduled_end?: string | null;
+  scheduled_date?: string | null;
+  scheduled_time?: string | null;
+  customerName: string;
+  propertyName?: string;
+  created_at: string;
+}
+
+export interface EditingDraft {
+  title: string;
+  scheduledDate: string;
+  scheduledTime: string;
+}
+
+function buildDefaultEditingDraft(): EditingDraft {
+  return {
+    title: '',
+    scheduledDate: new Date().toISOString().split('T')[0],
+    scheduledTime: ''
+  };
+}
 
 interface UseJobDevArgs {
   tenantId: string | null;
@@ -45,7 +74,7 @@ export function useJobDev({ tenantId, tenantHeaders, requireSignIn, setAlertMess
     priority: 'normal'
   });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingTitle, setEditingTitle] = useState('');
+  const [editingDraft, setEditingDraft] = useState<EditingDraft>(buildDefaultEditingDraft());
   const [loading, setLoading] = useState(false);
 
   const tenantAvailable = useMemo(() => Boolean(tenantId), [tenantId]);
@@ -134,6 +163,8 @@ export function useJobDev({ tenantId, tenantHeaders, requireSignIn, setAlertMess
           priority: job.priority,
           scheduled_start: job.scheduled_start,
           scheduled_end: job.scheduled_end,
+          scheduled_date: job.scheduled_date,
+          scheduled_time: job.scheduled_time,
           customerName: job.customer?.name || job.customer_id || 'Unknown customer',
           propertyName: job.property?.name || job.property?.address?.street || undefined,
           created_at: job.created_at
@@ -171,6 +202,16 @@ export function useJobDev({ tenantId, tenantHeaders, requireSignIn, setAlertMess
       priority: 'normal'
     }));
   }, [customers]);
+
+  const updateEditingDraft = useCallback(
+    <Key extends keyof EditingDraft>(field: Key, value: EditingDraft[Key]) => {
+      setEditingDraft((prev) => ({
+        ...prev,
+        [field]: value
+      }));
+    },
+    []
+  );
 
   const createJob = useCallback(async () => {
     if (!tenantId || requireSignIn) {
@@ -230,29 +271,44 @@ export function useJobDev({ tenantId, tenantHeaders, requireSignIn, setAlertMess
         return;
       }
 
-      if (!editingTitle.trim()) {
+      if (!editingDraft.title.trim()) {
         setAlertMessage('Job title cannot be empty', 'error');
+        return;
+      }
+
+      if (!editingDraft.scheduledDate) {
+        setAlertMessage('Scheduled date is required', 'error');
         return;
       }
 
       setLoading(true);
       try {
+        const payload: Record<string, unknown> = {
+          title: editingDraft.title.trim(),
+          scheduledDate: editingDraft.scheduledDate
+        };
+
+        if (editingDraft.scheduledTime) {
+          payload.scheduledTime = editingDraft.scheduledTime;
+        }
+
         const response = await fetch(`/api/supervisor/jobs/${id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             ...tenantHeaders
           },
-          body: JSON.stringify({ title: editingTitle })
+          body: JSON.stringify(payload)
         });
 
         if (response.ok) {
           setAlertMessage('Job updated successfully', 'success');
           setEditingId(null);
+          setEditingDraft(buildDefaultEditingDraft());
           await loadJobs();
         } else {
           const data = await response.json();
-          const message = typeof data?.error === 'object' 
+          const message = typeof data?.error === 'object'
             ? data.error.message || 'Failed to update job'
             : data?.error || 'Failed to update job';
           setAlertMessage(message, 'error');
@@ -263,7 +319,7 @@ export function useJobDev({ tenantId, tenantHeaders, requireSignIn, setAlertMess
         setLoading(false);
       }
     },
-    [tenantId, requireSignIn, editingTitle, tenantHeaders, loadJobs, setAlertMessage]
+    [tenantId, requireSignIn, editingDraft, tenantHeaders, loadJobs, setAlertMessage]
   );
 
   const deleteJob = useCallback(
@@ -340,14 +396,41 @@ export function useJobDev({ tenantId, tenantHeaders, requireSignIn, setAlertMess
     [tenantId, requireSignIn, tenantHeaders, loadJobs, setAlertMessage]
   );
 
-  const beginEdit = useCallback((id: string, title: string) => {
-    setEditingId(id);
-    setEditingTitle(title);
+  const beginEdit = useCallback((job: JobRecord) => {
+    setEditingId(job.id);
+
+    const nextDraft = buildDefaultEditingDraft();
+    let datePart = '';
+    let timePart = '';
+
+    if (typeof job.scheduled_start === 'string') {
+      const [dateSection, timeSection] = job.scheduled_start.split('T');
+      if (dateSection) {
+        datePart = dateSection;
+      }
+      if (timeSection) {
+        timePart = timeSection.slice(0, 5);
+      }
+    }
+
+    if (!datePart && typeof job.scheduled_date === 'string') {
+      datePart = job.scheduled_date.slice(0, 10);
+    }
+
+    if (!timePart && typeof job.scheduled_time === 'string') {
+      timePart = job.scheduled_time.slice(0, 5);
+    }
+
+    nextDraft.title = job.title;
+    nextDraft.scheduledDate = datePart || nextDraft.scheduledDate;
+    nextDraft.scheduledTime = timePart || nextDraft.scheduledTime;
+
+    setEditingDraft(nextDraft);
   }, []);
 
   const cancelEdit = useCallback(() => {
     setEditingId(null);
-    setEditingTitle('');
+    setEditingDraft(buildDefaultEditingDraft());
   }, []);
 
   return {
@@ -358,8 +441,8 @@ export function useJobDev({ tenantId, tenantHeaders, requireSignIn, setAlertMess
     resetForm,
     jobs,
     editingId,
-    editingTitle,
-    setEditingTitle,
+    editingDraft,
+    updateEditingDraft,
     beginEdit,
     cancelEdit,
     saveEdit,

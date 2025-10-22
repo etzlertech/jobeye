@@ -16,32 +16,19 @@ voice_considerations:
   - List optimized for voice navigation
 */
 
-import { Edit2, Trash2, Calendar, Clock, User, Home, AlertCircle, RefreshCcw, Loader2, Package } from 'lucide-react';
+import { Edit2, Trash2, Calendar, User, Home, AlertCircle, RefreshCcw, Loader2, Package } from 'lucide-react';
 import Link from 'next/link';
 import { formatJobStatus, formatJobPriority, formatJobDateTime, getStatusColor, getPriorityColor } from '@/app/demo-jobs/utils';
-
-export interface JobRecord {
-  id: string;
-  job_number: string;
-  title: string;
-  description?: string;
-  status: string;
-  priority: string;
-  scheduled_start?: string;
-  scheduled_end?: string;
-  customerName: string;
-  propertyName?: string;
-  created_at: string;
-}
+import type { JobRecord, EditingDraft } from '@/app/demo-jobs/useJobDev';
 
 export interface JobListProps {
   jobs: JobRecord[];
   isLoading: boolean;
   tenantAvailable: boolean;
   editingId: string | null;
-  editingTitle: string;
-  onEditChange: (value: string) => void;
-  onStartEdit: (id: string, title: string) => void;
+  editingDraft: EditingDraft;
+  onEditChange: <K extends keyof EditingDraft>(field: K, value: EditingDraft[K]) => void;
+  onStartEdit: (job: JobRecord) => void;
   onCancelEdit: () => void;
   onSaveEdit: (id: string) => void;
   onDelete: (id: string, title: string) => void;
@@ -54,7 +41,7 @@ export function JobList({
   isLoading,
   tenantAvailable,
   editingId,
-  editingTitle,
+  editingDraft,
   onEditChange,
   onStartEdit,
   onCancelEdit,
@@ -97,35 +84,77 @@ export function JobList({
         <p className="py-8 text-center text-gray-400">No jobs yet. Create your first job above.</p>
       ) : (
         <div className="space-y-4">
-          {jobs.map((job) => (
-            <div
-              key={job.id}
-              className="rounded-lg border border-gray-700 bg-gray-800 p-4 transition hover:border-gray-600"
-            >
+          {jobs.map((job) => {
+            const isEditing = editingId === job.id;
+            const editingIso = isEditing
+              ? (editingDraft.scheduledDate
+                ? `${editingDraft.scheduledDate}T${(editingDraft.scheduledTime || '09:00')}:00`
+                : null)
+              : null;
+            const scheduleDisplay = isEditing
+              ? (editingIso ? formatJobDateTime(editingIso) : 'Not scheduled')
+              : formatJobDateTime(job.scheduled_start || null);
+
+            return (
+              <div
+                key={job.id}
+                className="rounded-lg border border-gray-700 bg-gray-800 p-4 transition hover:border-gray-600"
+              >
               {/* Header Row */}
               <div className="mb-3 flex items-start justify-between">
                 <div className="flex-1">
-                  {editingId === job.id ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={editingTitle}
-                        onChange={(e) => onEditChange(e.target.value)}
-                        className="flex-1 rounded bg-gray-700 px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => onSaveEdit(job.id)}
-                        className="rounded bg-green-600 px-2 py-1 text-sm text-white hover:bg-green-500"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={onCancelEdit}
-                        className="rounded bg-gray-600 px-2 py-1 text-sm text-white hover:bg-gray-500"
-                      >
-                        Cancel
-                      </button>
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div className="grid gap-2 md:grid-cols-3">
+                        <div className="md:col-span-3">
+                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                            Title
+                          </label>
+                          <input
+                            type="text"
+                            value={editingDraft.title}
+                            onChange={(e) => onEditChange('title', e.target.value)}
+                            className="w-full rounded bg-gray-700 px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            autoFocus
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                            Scheduled Date
+                          </label>
+                          <input
+                            type="date"
+                            value={editingDraft.scheduledDate}
+                            onChange={(e) => onEditChange('scheduledDate', e.target.value)}
+                            className="w-full rounded bg-gray-700 px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-400">
+                            Scheduled Time
+                          </label>
+                          <input
+                            type="time"
+                            value={editingDraft.scheduledTime}
+                            onChange={(e) => onEditChange('scheduledTime', e.target.value)}
+                            className="w-full rounded bg-gray-700 px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => onSaveEdit(job.id)}
+                          className="rounded bg-green-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-green-500"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={onCancelEdit}
+                          className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-500"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div>
@@ -150,9 +179,9 @@ export function JobList({
                       <Package className="h-4 w-4" />
                     </Link>
                     <button
-                      onClick={() => onStartEdit(job.id, job.title)}
+                      onClick={() => onStartEdit(job)}
                       className="rounded p-1 text-gray-400 hover:bg-gray-700 hover:text-white"
-                      title="Edit job title"
+                      title="Edit job"
                     >
                       <Edit2 className="h-4 w-4" />
                     </button>
@@ -188,7 +217,7 @@ export function JobList({
                 {/* Schedule */}
                 <div className="flex items-center gap-1 text-gray-400">
                   <Calendar className="h-3.5 w-3.5" />
-                  <span>{formatJobDateTime(job.scheduled_start || null)}</span>
+                  <span>{scheduleDisplay}</span>
                 </div>
 
                 {/* Customer */}
@@ -236,7 +265,8 @@ export function JobList({
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
