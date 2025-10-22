@@ -7,7 +7,7 @@
  */
 
 import { detectObjects as yoloDetectObjects } from '@/domains/vision/services/yolo-inference.service';
-import { detectWithVlm } from '@/domains/vision/services/vlm-fallback.service';
+import { detectWithGemini } from '@/domains/vision/services/gemini-vlm.service';
 import { VisionVerificationService } from '@/domains/vision/services/vision-verification.service';
 import { MediaAssetService } from '@/domains/vision/services/media-asset.service';
 import { getOfflineQueue } from '@/domains/vision/lib/offline-queue';
@@ -125,13 +125,16 @@ export class VerificationWorkflowService {
         // Convert ImageData to base64 for VLM
         const base64Photo = this.imageDataToBase64(imageData);
 
-        const vlmResult = await detectWithVlm({
+        const geminiResult = await detectWithGemini({
           imageData: base64Photo,
           expectedItems,
+        }, {
+          model: 'gemini-2.0-flash-exp',
+          includeBboxes: true,
         });
 
-        if (vlmResult.data) {
-          const detectedItems = vlmResult.data.detections.map(d => ({
+        if (geminiResult.data) {
+          const detectedItems = geminiResult.data.detections.map(d => ({
             class_name: d.label,
             confidence: d.confidence,
             bbox: d.bbox
@@ -139,8 +142,8 @@ export class VerificationWorkflowService {
 
           return {
             detectedItems,
-            confidenceScore: Math.max(...vlmResult.data.detections.map(d => d.confidence)),
-            shouldFallback: false, // Already used VLM
+            confidenceScore: Math.max(...geminiResult.data.detections.map(d => d.confidence)),
+            shouldFallback: false, // Already used Gemini
             usedVLM: true,
             retryCount: session.retryCount,
           };

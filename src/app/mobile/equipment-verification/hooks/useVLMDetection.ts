@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { detectWithVlm } from '@/domains/vision/services/vlm-fallback.service';
+import { detectWithGemini } from '@/domains/vision/services/gemini-vlm.service';
 import { getVLMRateLimiter, type RateLimiterStats } from '../lib/vlm-rate-limiter';
 import type { DetectedItem } from '@/domains/vision/types';
 
@@ -138,9 +138,12 @@ export function useVLMDetection(options: VLMDetectionOptions = {}): VLMDetection
 
         // Execute with rate limiting
         const result = await rateLimiter.executeWithLimit(async () => {
-          return await detectWithVlm({
+          return await detectWithGemini({
             imageData: base64Photo,
             expectedItems,
+          }, {
+            model: 'gemini-2.0-flash-exp',
+            includeBboxes: true,
           });
         });
 

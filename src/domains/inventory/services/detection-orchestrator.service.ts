@@ -16,7 +16,7 @@
 
 import * as detectionSessionService from '../../vision/services/detection-session.service';
 import * as yoloInferenceService from '../../vision/services/yolo-inference.service';
-import * as vlmFallbackService from '../../vision/services/vlm-fallback.service';
+import { detectWithGemini, isGeminiAvailable } from '../../vision/services/gemini-vlm.service';
 import * as inventoryItemsRepo from '../repositories/inventory-items.repository';
 import type { InventoryItem } from '../types/inventory-types';
 
@@ -153,9 +153,9 @@ export async function detectInventoryItems(
       candidates.length < MIN_DETECTIONS ||
       (request.expectedItems && candidates.length < request.expectedItems.length);
 
-    if (needsFallback && vlmFallbackService.isAvailable()) {
-      // Trigger VLM fallback
-      return await fallbackToVlm(
+    if (needsFallback && isGeminiAvailable()) {
+      // Trigger Gemini fallback
+      return await fallbackToGemini(
         session.id,
         request,
         candidatesWithMatches,
@@ -184,9 +184,9 @@ export async function detectInventoryItems(
 }
 
 /**
- * Fallback to VLM when YOLO is insufficient
+ * Fallback to Gemini when YOLO is insufficient
  */
-async function fallbackToVlm(
+async function fallbackToGemini(
   sessionId: string,
   request: DetectionRequest,
   yoloCandidates: DetectionCandidate[],
@@ -199,8 +199,8 @@ async function fallbackToVlm(
       'Low YOLO confidence or missing expected items'
     );
 
-    // Run VLM detection
-    const vlmResult = await vlmFallbackService.detectWithVlm(
+    // Run Gemini detection
+    const geminiResult = await detectWithGemini(
       {
         imageData: request.imageSource as File | Blob | string,
         expectedItems: request.expectedItems,
@@ -208,43 +208,44 @@ async function fallbackToVlm(
       },
       {
         includeBboxes: true,
+        model: 'gemini-2.0-flash-exp',
       }
     );
 
-    if (vlmResult.error || !vlmResult.data) {
+    if (geminiResult.error || !geminiResult.data) {
       return {
         data: null,
-        error: vlmResult.error || new Error('VLM detection failed'),
+        error: geminiResult.error || new Error('Gemini detection failed'),
       };
     }
 
-    // Convert VLM detections to candidates
-    const vlmCandidates = await Promise.all(
-      vlmResult.data.detections.map(async (detection, idx) => {
+    // Convert Gemini detections to candidates
+    const geminiCandidates = await Promise.all(
+      geminiResult.data.detections.map(async (detection, idx) => {
         const matches = await matchLabelToItems(
           request.tenantId,
           detection.label
         );
 
         return {
-          id: `vlm-${idx}`,
+          id: `gemini-${idx}`,
           label: detection.label,
           confidence: detection.confidence,
           bbox: detection.bbox || { x: 0, y: 0, width: 0, height: 0 },
-          cropDataUrl: '', // No crop for VLM detections
+          cropDataUrl: '', // No crop for Gemini detections
           matchedItems: matches,
         };
       })
     );
 
-    // Update session with VLM results
+    // Update session with Gemini results
     await detectionSessionService.completeVlmFallback(sessionId, {
-      detections: vlmResult.data.detections.map((d) => ({
+      detections: geminiResult.data.detections.map((d) => ({
         label: d.label,
         confidence: d.confidence,
         bbox: d.bbox,
       })),
-      totalCost: vlmResult.data.estimatedCost,
+      totalCost: geminiResult.data.estimatedCost,
     });
 
     const processingTimeMs = Date.now() - startTime;
@@ -253,16 +254,16 @@ async function fallbackToVlm(
       data: {
         sessionId,
         method: 'vlm',
-        candidates: vlmCandidates,
+        candidates: geminiCandidates,
         processingTimeMs,
-        estimatedCost: vlmResult.data.estimatedCost,
+        estimatedCost: geminiResult.data.estimatedCost,
       },
       error: null,
     };
   } catch (err: any) {
     return {
       data: null,
-      error: new Error(`VLM fallback failed: ${err.message}`),
+      error: new Error(`Gemini fallback failed: ${err.message}`),
     };
   }
 }
