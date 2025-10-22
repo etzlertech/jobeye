@@ -704,32 +704,8 @@ export default function CrewJobDetailPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            {job.requiredEquipment.map(equipment => (
-              <div
-                key={equipment.id}
-                className={`flex items-center gap-3 p-3 rounded-lg border ${
-                  equipment.verified
-                    ? 'border-emerald-500 border-opacity-30 bg-emerald-900 bg-opacity-10'
-                    : 'border-orange-500 border-opacity-30 bg-orange-900 bg-opacity-10'
-                }`}
-              >
-                <Package className={`w-5 h-5 ${
-                  equipment.verified ? 'text-emerald-400' : 'text-orange-400'
-                }`} />
-                <div className="flex-1">
-                  <p className="font-medium text-white text-sm">{equipment.name}</p>
-                  <p className="text-xs text-gray-500 capitalize">{equipment.category}</p>
-                </div>
-                {equipment.verified && (
-                  <CheckCircle className="w-5 h-5 text-emerald-400" />
-                )}
-              </div>
-            ))}
-          </div>
-
           {!job.loadVerified && (
-            <div className="mt-4">
+            <div className="mb-4">
               <button
                 onClick={() => router.push(`/crew/job-load?jobId=${jobId}`)}
                 className="btn-primary w-full"
@@ -738,6 +714,42 @@ export default function CrewJobDetailPage() {
               </button>
             </div>
           )}
+
+          <div className="space-y-2">
+            {job.requiredEquipment.map(equipment => (
+              <div
+                key={equipment.id}
+                className={`item-card ${
+                  equipment.verified
+                    ? 'border-emerald-500 border-opacity-30 bg-emerald-900 bg-opacity-10'
+                    : 'border-orange-500 border-opacity-30 bg-orange-900 bg-opacity-10'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="item-thumbnail">
+                    {equipment.thumbnailUrl ? (
+                      <img
+                        src={equipment.thumbnailUrl}
+                        alt={equipment.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Package className={`w-5 h-5 ${
+                        equipment.verified ? 'text-emerald-400' : 'text-orange-400'
+                      }`} />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-semibold text-white">{equipment.name}</h4>
+                    <p className="text-xs text-gray-500 capitalize">{equipment.category}</p>
+                  </div>
+                  {equipment.verified && (
+                    <CheckCircle className="w-5 h-5 text-emerald-400" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Task List */}
@@ -937,6 +949,31 @@ export default function CrewJobDetailPage() {
         .btn-primary:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+        }
+
+        .item-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.5rem;
+          padding: 0.75rem;
+          transition: all 0.2s;
+        }
+
+        .item-card:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 215, 0, 0.4);
+        }
+
+        .item-thumbnail {
+          width: 2.5rem;
+          height: 2.5rem;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 0.375rem;
+          overflow: hidden;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .space-y-4 > * + * {
