@@ -217,6 +217,14 @@ const updateSchema = z.object({
   scheduledStart: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/)
+    .optional(),
+  scheduled_end: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/)
+    .optional(),
+  scheduledEnd: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/)
     .optional()
 });
 
@@ -335,6 +343,16 @@ export async function PUT(
       updatePayload.scheduled_start = scheduledStart;
       updatePayload.scheduled_date = resolvedDate;
       updatePayload.scheduled_time = resolvedTime;
+    }
+
+    // Handle scheduled_end
+    const incomingEnd =
+      validated.scheduled_end ||
+      validated.scheduledEnd ||
+      undefined;
+
+    if (incomingEnd) {
+      updatePayload.scheduled_end = incomingEnd;
     }
 
     const updatedJob = await jobsRepo.update(
