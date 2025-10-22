@@ -192,10 +192,7 @@ export async function GET(
   }
 }
 
-type JobUpdatePayload = Database['public']['Tables']['jobs']['Update'] & {
-  scheduled_date?: string;
-  scheduled_time?: string;
-};
+type JobUpdatePayload = Database['public']['Tables']['jobs']['Update'];
 
 const updateSchema = z.object({
   title: z.string().trim().min(1).optional(),
@@ -341,8 +338,6 @@ export async function PUT(
 
       const scheduledStart = `${resolvedDate}T${resolvedTime}:00`;
       updatePayload.scheduled_start = scheduledStart;
-      updatePayload.scheduled_date = resolvedDate;
-      updatePayload.scheduled_time = resolvedTime;
     }
 
     // Handle scheduled_end
