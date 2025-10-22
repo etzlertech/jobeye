@@ -1,10 +1,10 @@
 /**
  * VLM Detection API Endpoint
- * Accepts base64 image and returns detected items with bounding boxes
+ * Uses Gemini 2.0 Flash for fast, accurate object detection
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { detectWithDualVlm } from '@/domains/vision/services/dual-vlm.service';
+import { detectWithGemini } from '@/domains/vision/services/gemini-vlm.service';
 
 export async function POST(request: NextRequest) {
   const requestId = Math.random().toString(36).substring(7);
@@ -27,19 +27,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call Dual VLM service (GPT-4 + Gemini in parallel)
+    // Call Gemini 2.0 Flash (fast, accurate, cheap)
     const serviceStart = performance.now();
-    const { data, error } = await detectWithDualVlm({
+    const { data, error } = await detectWithGemini({
       imageData,
       expectedItems: expectedItems || [],
+    }, {
       includeBboxes: includeBboxes ?? true,
+      model: 'gemini-2.0-flash-exp', // Fast model for real-time detection
     });
     const serviceDuration = performance.now() - serviceStart;
 
-    console.log(`[VLM API ${requestId}] Dual VLM completed in ${serviceDuration.toFixed(0)}ms`);
+    console.log(`[VLM API ${requestId}] Gemini completed in ${serviceDuration.toFixed(0)}ms`);
 
     if (error) {
-      console.error(`[VLM API ${requestId}] VLM detection error:`, {
+      console.error(`[VLM API ${requestId}] Gemini detection error:`, {
         message: error.message,
         stack: error.stack
       });
@@ -59,30 +61,24 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`[VLM API ${requestId}] Success:`, {
-      winner: data.winner,
+      provider: data.provider,
+      model: data.modelVersion,
       detectionCount: data.detections.length,
       detections: data.detections.map(d => ({
         label: d.label,
         confidence: d.confidence,
-        source: d.source,
         hasBbox: !!d.bbox
       })),
-      gpt4TimeMs: data.gpt4TimeMs,
-      geminiTimeMs: data.geminiTimeMs,
-      gpt4Success: data.gpt4Success,
-      geminiSuccess: data.geminiSuccess,
+      processingTimeMs: data.processingTimeMs,
       cost: data.estimatedCost
     });
 
     return NextResponse.json({
       detections: data.detections,
-      processingTimeMs: data.totalTimeMs,
+      processingTimeMs: data.processingTimeMs,
       estimatedCost: data.estimatedCost,
-      winner: data.winner,
-      gpt4TimeMs: data.gpt4TimeMs,
-      geminiTimeMs: data.geminiTimeMs,
-      gpt4Success: data.gpt4Success,
-      geminiSuccess: data.geminiSuccess,
+      provider: data.provider,
+      modelVersion: data.modelVersion,
     });
   } catch (err: any) {
     console.error(`[VLM API ${requestId}] API error:`, {

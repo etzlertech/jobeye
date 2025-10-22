@@ -65,7 +65,6 @@ interface RequiredItem {
   name: string;
   icon?: string;
   checked: boolean;
-  detectedBy?: 'gpt4' | 'gemini' | 'both';
   confidence?: number; // VLM match confidence (0-1)
   source?: 'table' | 'jsonb'; // Item source from API _meta
 }
@@ -73,7 +72,6 @@ interface RequiredItem {
 interface Detection {
   label: string;
   confidence: number;
-  source?: 'gpt4' | 'gemini' | 'both';
   bbox?: {
     x: number;
     y: number;
@@ -350,8 +348,8 @@ function CrewJobLoadPageContent() {
     // Generate unique frame ID for tracking
     const frameId = Date.now();
     
-    // Check if we have too many concurrent requests (limit to 3)
-    if (analysisQueue.current.size >= 3) {
+    // Check if we have too many concurrent requests (limit to 2 for faster individual responses)
+    if (analysisQueue.current.size >= 2) {
       console.log(`[VLM] Skipping frame ${frameId} - too many concurrent analyses (${analysisQueue.current.size})`);
       return;
     }
@@ -433,11 +431,8 @@ function CrewJobLoadPageContent() {
       console.log(`[VLM] Frame #${frameId} Success - Detections:`, {
         count: result.detections?.length || 0,
         detections: result.detections,
-        winner: result.winner,
-        gpt4TimeMs: result.gpt4TimeMs,
-        geminiTimeMs: result.geminiTimeMs,
-        gpt4Success: result.gpt4Success,
-        geminiSuccess: result.geminiSuccess,
+        provider: result.provider,
+        model: result.modelVersion,
         processingTimeMs: result.processingTimeMs,
         estimatedCost: result.estimatedCost
       });
@@ -446,11 +441,9 @@ function CrewJobLoadPageContent() {
         setDetections(result.detections);
         const detectedLabels = result.detections.map((d: Detection) => d.label).join(', ');
 
-        // Show detection info
-        const winnerEmoji = result.winner === 'gpt4' ? '🤖 GPT-4 Fallback' : '💎 Gemini';
-        const timeMs = result.geminiTimeMs || result.gpt4TimeMs || 0;
-
-        setDetectionStatus(`${winnerEmoji} (${timeMs}ms): ${detectedLabels}`);
+        // Show detection info with Gemini Flash branding
+        const timeMs = result.processingTimeMs || 0;
+        setDetectionStatus(`⚡ Gemini Flash (${timeMs}ms): ${detectedLabels}`);
 
         // Auto-check matching items
         setRequiredItems(prev => {
@@ -481,10 +474,10 @@ function CrewJobLoadPageContent() {
             });
 
             if (matchingDetection) {
-              console.log(`[VLM] Match found: "${matchingDetection.label}" → "${item.name}" (source: ${matchingDetection.source}, confidence: ${Math.round(matchingDetection.confidence * 100)}%)`);
+              console.log(`[VLM] Match found: "${matchingDetection.label}" → "${item.name}" (confidence: ${Math.round(matchingDetection.confidence * 100)}%)`);
               console.log(`[VLM] Auto-checking: ${item.name}`);
               hasChanges = true;
-              return { ...item, checked: true, detectedBy: matchingDetection.source, confidence: matchingDetection.confidence };
+              return { ...item, checked: true, confidence: matchingDetection.confidence };
             }
             return item;
           });

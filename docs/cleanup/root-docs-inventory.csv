@@ -1,0 +1,109 @@
+file,last_modified_iso,size_kb,category_guess,notes
+.lintstagedrc.json,2025-09-30T21:21:52.208703,0.2,generated-candidate,JSON artifact
+.mcp.json,2025-10-22T16:34:23.442801,0.2,generated-candidate,JSON artifact
+ADVANCED_E2E_BUG_REPORT.md,2025-09-30T17:38:26.793731,11.7,review-needed,Needs manual classification
+AGENTS.md,2025-10-21T19:23:43.294343,7.6,evergreen-candidate,Known playbook
+API-FIX-STATUS.md,2025-10-21T19:23:43.294492,8.0,historical-candidate,Name contains historical keyword
+CLAUDE.md,2025-10-21T19:23:43.294852,8.1,evergreen-candidate,Known playbook
+CLAUDE_CODE_MCP_SETUP.md,2025-10-21T19:23:43.295089,14.0,review-needed,Needs manual classification
+CLEANUP_COMPLETE_20251019.md,2025-10-21T19:23:43.295228,7.7,active-candidate,Contains plan/spec/analysis
+CODEBASE_ANALYSIS_REPORT.md,2025-09-30T17:38:26.795945,22.8,active-candidate,Contains plan/spec/analysis
+CONSOLIDATION_PROGRESS.md,2025-09-30T17:38:26.796432,12.5,active-candidate,Contains plan/spec/analysis
+CONTAINER_CONSOLIDATION_PLAN.md,2025-09-30T17:38:26.796953,6.1,active-candidate,Contains plan/spec/analysis
+CONTROL_TOWER_SETUP.md,2025-09-27T08:22:46.330385,3.1,review-needed,Needs manual classification
+CRITICAL_OPERATIONS.md,2025-10-21T19:23:43.295362,4.3,evergreen-candidate,Known playbook
+CRUD-FIX-SUMMARY.md,2025-10-21T19:23:43.295486,5.0,historical-candidate,Name contains historical keyword
+DATA-FIELD-STANDARD.md,2025-10-21T19:23:43.295614,6.9,evergreen-candidate,Known playbook
+DATABASE_ISSUES.md,2025-10-21T19:23:43.295737,5.4,review-needed,Needs manual classification
+DATABASE_QUERY_SUMMARY_2025-10-16.md,2025-10-21T19:23:43.295873,26.1,review-needed,Needs manual classification
+DEEP_ANALYSIS_REPORT_2025-09-30.md,2025-09-30T17:38:26.797737,23.7,active-candidate,Contains plan/spec/analysis
+DEEP_ANALYSIS_REPORT_2025-09-30_SECOND.md,2025-09-30T17:38:26.798213,25.4,active-candidate,Contains plan/spec/analysis
+DEMO_USERS.md,2025-10-21T19:23:43.296134,2.1,review-needed,Needs manual classification
+DETAILED_PROGRESS_MANIFEST.md,2025-09-27T09:15:52.724051,77.9,review-needed,Needs manual classification
+E2E_COMPLETE_WORKFLOWS.md,2025-09-30T17:38:26.798663,12.3,review-needed,Needs manual classification
+E2E_FINAL_STATUS.md,2025-09-30T17:38:26.799136,8.3,review-needed,Needs manual classification
+E2E_FINAL_STATUS_2025-09-30.md,2025-09-30T17:38:26.799498,8.0,review-needed,Needs manual classification
+E2E_PROGRESS_UPDATE.md,2025-09-30T17:38:26.799949,7.9,review-needed,Needs manual classification
+E2E_TEST_FINDINGS_REPORT.md,2025-09-30T17:38:26.800375,15.7,review-needed,Needs manual classification
+E2E_TEST_IMPROVEMENTS_2025-09-30.md,2025-09-30T17:38:26.801349,7.1,review-needed,Needs manual classification
+E2E_TEST_RESULTS.md,2025-09-30T17:38:26.802003,8.8,review-needed,Needs manual classification
+E2E_TEST_RESULTS_2025-09-30.md,2025-09-30T17:38:26.803042,8.2,review-needed,Needs manual classification
+E2E_TEST_SCENARIOS.md,2025-09-30T17:38:26.804483,8.4,review-needed,Needs manual classification
+E2E_TEST_SETUP_REQUIRED.md,2025-09-30T17:38:26.805031,10.9,review-needed,Needs manual classification
+E2E_TEST_STATUS_FINAL.md,2025-09-30T17:38:26.805489,10.5,review-needed,Needs manual classification
+FEATURE_006_VLM_FIRST_PLAN.md,2025-10-01T08:27:43.369871,10.8,active-candidate,Contains plan/spec/analysis
+FINAL_VISION_TESTING_RESULTS.md,2025-09-30T17:38:26.805975,12.0,review-needed,Needs manual classification
+FIXES_COMPLETED_2025-09-30.md,2025-09-30T17:38:26.806577,10.4,review-needed,Needs manual classification
+FIX_RLS_INSTRUCTIONS.md,2025-10-21T19:23:43.296238,2.2,review-needed,Needs manual classification
+FRAME_ANALYSIS_OPTIMIZATION.md,2025-10-02T20:32:52.390511,2.8,active-candidate,Contains plan/spec/analysis
+GOLDEN-STANDARD-STYLING.md,2025-10-21T19:23:43.296380,4.5,review-needed,Needs manual classification
+GOLDEN-STYLING-STATUS.md,2025-10-21T19:23:43.296511,10.1,historical-candidate,Name contains historical keyword
+IMPLEMENTATION_SUMMARY.md,2025-09-27T15:55:33.676147,4.2,review-needed,Needs manual classification
+JOBEYE_CLEANUP_PLAN.md,2025-10-21T19:23:43.296628,10.6,active-candidate,Contains plan/spec/analysis
+JOB_LOAD_REFACTOR_PLAN.md,2025-10-21T19:23:43.296773,47.3,active-candidate,Contains plan/spec/analysis
+KNOWN_ISSUES.md,2025-10-21T19:23:43.296888,8.5,evergreen-candidate,Known playbook
+MANIFEST_GENERATION_DIAGNOSIS.md,2025-09-27T08:22:46.331104,4.3,review-needed,Needs manual classification
+MEMORY.md,2025-10-21T19:23:43.297279,12.2,evergreen-candidate,Known playbook
+MIGRATION_EXECUTION_REPORT.md,2025-09-30T17:38:26.807050,11.2,review-needed,Needs manual classification
+MIGRATION_SUMMARY.md,2025-09-30T17:38:26.807448,2.7,review-needed,Needs manual classification
+MISSING_SERVICE_METHODS.md,2025-09-30T17:38:26.808507,14.6,review-needed,Needs manual classification
+MULTI_OBJECT_VISION_TEST_REPORT.md,2025-09-27T15:55:33.676612,5.4,review-needed,Needs manual classification
+NEW_SCENARIO_TESTS_SUMMARY.md,2025-09-30T17:38:26.809158,15.4,review-needed,Needs manual classification
+PHASE1_COMPLETION_REPORT.md,2025-09-27T09:38:42.436118,7.0,review-needed,Needs manual classification
+PROGRESS_MANIFEST.md,2025-09-27T09:37:35.302303,1.2,review-needed,Needs manual classification
+README.md,2025-10-21T19:23:43.297658,7.4,evergreen-candidate,Known playbook
+READY_TO_TEST.md,2025-09-30T17:37:32.650924,2.7,review-needed,Needs manual classification
+RETIRED_CHECKLIST_SYSTEM.md,2025-10-21T19:23:43.297791,5.1,review-needed,Needs manual classification
+RLS_POLICIES_COMPLETE_REPORT.txt,2025-10-21T19:23:43.297922,54.7,review-needed,Needs manual classification
+RLS_POLICY_DEFINITIONS_2025-10-15.md,2025-10-21T19:23:43.298083,5.8,review-needed,Needs manual classification
+RLS_USERS_EXTENDED_RECURSION_ANALYSIS.md,2025-10-21T19:23:43.298189,8.2,active-candidate,Contains plan/spec/analysis
+RLS_VALIDATION_REPORT_2025-10-15T01-35-00Z.md,2025-10-21T19:23:43.298383,12.6,review-needed,Needs manual classification
+SCENARIO_TEST_RESULTS.md,2025-09-30T17:38:26.810860,11.4,review-needed,Needs manual classification
+SCHEDULING_API_CONTRACT_STATUS.md,2025-09-30T17:37:32.652318,8.3,review-needed,Needs manual classification
+SCHEDULING_COMPLETE.md,2025-09-30T17:37:32.652572,7.5,review-needed,Needs manual classification
+SCHEDULING_FINAL_STATUS.md,2025-09-30T17:37:32.652836,7.2,review-needed,Needs manual classification
+SCHEDULING_TEST_HARNESS.md,2025-09-30T17:37:32.653117,8.2,review-needed,Needs manual classification
+SCHEDULING_TEST_SUCCESS.md,2025-09-30T17:38:26.811549,12.7,review-needed,Needs manual classification
+SCHEDULING_WIP_STATUS.md,2025-09-30T17:37:32.654607,5.5,review-needed,Needs manual classification
+SESSION-SUMMARY.md,2025-10-21T19:23:43.298526,7.8,historical-candidate,Name contains historical keyword
+SESSION_COMPLETE_VISION_TESTS.md,2025-09-30T17:38:26.811884,14.9,review-needed,Needs manual classification
+SESSION_SUMMARY.md,2025-09-30T17:38:26.812867,9.7,review-needed,Needs manual classification
+STYLING-AUDIT.md,2025-10-21T19:23:43.298615,3.7,review-needed,Needs manual classification
+TENANCY.md,2025-09-30T17:38:26.814687,13.0,evergreen-candidate,Known playbook
+TESTING_COMPLETE.md,2025-09-30T17:38:26.817117,6.7,review-needed,Needs manual classification
+TESTING_SESSION_NOTES.md,2025-09-30T17:38:26.817891,9.9,review-needed,Needs manual classification
+TEST_COVERAGE_ANALYSIS.md,2025-09-30T17:38:26.818465,12.1,active-candidate,Contains plan/spec/analysis
+TEST_IMPROVEMENTS_SUMMARY.md,2025-09-30T17:38:26.818835,14.5,review-needed,Needs manual classification
+TEST_RESULTS.md,2025-09-30T17:38:26.819288,8.8,review-needed,Needs manual classification
+TEST_RESULTS_2025-09-30.json,2025-09-30T21:21:52.212641,3.9,generated-candidate,JSON artifact
+TEST_RESULTS_COMPREHENSIVE.md,2025-09-30T17:38:26.822395,8.8,review-needed,Needs manual classification
+TEST_STATUS_REPORT.md,2025-09-27T14:44:59.774565,3.5,review-needed,Needs manual classification
+TEST_UI_GUIDE.md,2025-09-30T17:38:26.822933,6.1,active-candidate,Contains plan/spec/analysis
+TODO.md,2025-10-21T19:23:43.298714,9.3,evergreen-candidate,Known playbook
+UI-CONSISTENCY-SPEC.md,2025-10-21T19:23:43.298841,7.2,evergreen-candidate,Known playbook
+UPDATED_COST_ANALYSIS.md,2025-10-02T20:32:52,1.7,active-candidate,Contains plan/spec/analysis
+VISION_FEATURE_STATUS.md,2025-09-30T17:38:26.823411,13.5,review-needed,Needs manual classification
+VISION_TESTING_IMPLEMENTATION_SUMMARY.md,2025-09-30T17:38:26.823874,9.6,review-needed,Needs manual classification
+VOICE_COMPLETE.md,2025-09-30T17:38:26.825757,6.0,review-needed,Needs manual classification
+VOICE_LLM_READY.md,2025-09-30T17:38:26.826353,3.0,review-needed,Needs manual classification
+VOICE_LLM_TEST_GUIDE.md,2025-09-30T17:38:26.826905,11.8,active-candidate,Contains plan/spec/analysis
+actual-database-table-mapping.md,2025-10-21T19:23:43.299086,8.9,review-needed,Needs manual classification
+admin-ui-specs.md,2025-10-21T19:23:43.299222,6.3,active-candidate,Contains plan/spec/analysis
+codebase-audit-results.json,2025-09-30T17:38:26.827591,14.5,historical-candidate,Name contains historical keyword
+components.json,2025-10-21T19:23:43.299937,0.5,generated-candidate,JSON artifact
+container-repository-analysis.md,2025-10-21T19:23:43.300065,7.9,active-candidate,Contains plan/spec/analysis
+database-analysis-raw.json,2025-09-30T17:38:26.828127,0.1,active-candidate,Contains plan/spec/analysis
+database-precheck-report.md,2025-10-01T08:27:43.370233,2.8,historical-candidate,Name contains historical keyword
+database-table-mapping.md,2025-10-02T20:32:52,2.4,review-needed,Needs manual classification
+live-database-inspection.json,2025-09-30T17:38:26.849282,4.5,active-candidate,Contains plan/spec/analysis
+mcp_info.md,2025-10-21T19:23:43.312850,2.9,review-needed,Needs manual classification
+package-lock.json,2025-10-21T19:23:43.314013,651.5,generated-candidate,JSON artifact
+package.json,2025-10-21T19:23:43.314278,9.7,generated-candidate,JSON artifact
+property-management-skeleton.txt,2025-09-27T09:45:51.863194,13.1,review-needed,Needs manual classification
+property-skeleton-formatted.txt,2025-09-27T09:47:07.345393,13.2,review-needed,Needs manual classification
+railway.json,2025-09-27T08:22:46.334532,0.2,generated-candidate,JSON artifact
+schema_output.json,2025-10-21T19:23:43.326046,1267.9,generated-candidate,JSON artifact
+supabase_direct_access_instructions.md,2025-09-27T08:22:46.353374,5.1,review-needed,Needs manual classification
+tsconfig.build.json,2025-10-21T19:23:43.563177,1.0,generated-candidate,JSON artifact
+tsconfig.json,2025-10-21T19:23:43.563724,1.9,generated-candidate,JSON artifact
+tsconfig.scripts.json,2025-10-21T19:23:43.563853,0.4,generated-candidate,JSON artifact

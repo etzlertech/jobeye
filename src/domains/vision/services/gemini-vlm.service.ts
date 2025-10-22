@@ -35,8 +35,9 @@ export interface GeminiOptions {
 
 /**
  * Gemini-based object detection
+ * Using Gemini 2.0 Flash for fast, real-time detection
  */
-const DEFAULT_TIMEOUT_MS = 6000;
+const DEFAULT_TIMEOUT_MS = 10000; // Increased to 10s for reliability
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -80,7 +81,7 @@ export async function detectWithGemini(
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: options.model || 'gemini-2.5-pro',
+      model: options.model || 'gemini-2.0-flash-exp', // Fast model for real-time detection
       generationConfig: {
         responseMimeType: 'application/json',
       }
@@ -221,9 +222,9 @@ For each item detected, provide:
       data: {
         detections: mappedDetections,
         processingTimeMs,
-        estimatedCost: 0.003, // Gemini 2.5 Pro enterprise pricing
-        provider: 'google-gemini-2.5',
-        modelVersion: options.model || 'gemini-2.5-pro',
+        estimatedCost: 0.0001, // Gemini 2.0 Flash pricing (30x cheaper than Pro)
+        provider: 'google-gemini-2.0-flash',
+        modelVersion: options.model || 'gemini-2.0-flash-exp',
       },
       error: null,
     };
