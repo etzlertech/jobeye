@@ -1,6 +1,6 @@
 /**
  * AGENT DIRECTIVE BLOCK
- * 
+ *
  * file: /src/app/crew/jobs/[jobId]/page.tsx
  * phase: 3
  * domain: crew
@@ -53,6 +53,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import {
   ArrowLeft,
   Play,
@@ -71,7 +72,8 @@ import {
   Phone,
   Navigation,
   Wrench,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Loader2
 } from 'lucide-react';
 import { ButtonLimiter, useButtonActions } from '@/components/ui/ButtonLimiter';
 import { CameraCapture } from '@/components/camera/CameraCapture';
@@ -127,15 +129,15 @@ export default function CrewJobDetailPage() {
   const [photos, setPhotos] = useState<JobPhoto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Audio state
   const [isPlayingVoice, setIsPlayingVoice] = useState(false);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
-  
+
   // Camera state
   const [showCamera, setShowCamera] = useState(false);
   const [photoType, setPhotoType] = useState<'start' | 'completion' | 'progress' | 'issue'>('progress');
-  
+
   // Progress state
   const [isStarting, setIsStarting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
@@ -258,7 +260,7 @@ export default function CrewJobDetailPage() {
     if (!job) return;
 
     setIsStarting(true);
-    
+
     try {
       const response = await fetch(`/api/crew/jobs/${jobId}/start`, {
         method: 'POST'
@@ -420,7 +422,7 @@ export default function CrewJobDetailPage() {
       });
 
       const result = await response.json();
-      
+
       // Handle voice actions
       if (result.response.actions) {
         for (const action of result.response.actions) {
@@ -442,9 +444,9 @@ export default function CrewJobDetailPage() {
   };
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return new Date(dateString).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -456,29 +458,74 @@ export default function CrewJobDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading job details...</p>
+      <div className="mobile-container">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: '#FFD700' }} />
+            <p className="text-gray-400 text-lg">Loading job...</p>
+          </div>
         </div>
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+        `}</style>
       </div>
     );
   }
 
   if (error || !job) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <p className="text-gray-900 mb-2">Failed to load job</p>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={() => router.back()}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-          >
-            Go Back
-          </button>
+      <div className="mobile-container">
+        <MobileNavigation
+          currentRole="crew"
+          onLogout={() => router.push('/')}
+        />
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center p-4">
+            <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <p className="text-white text-lg mb-2">Failed to load job</p>
+            <p className="text-gray-400 mb-4">{error}</p>
+            <button
+              onClick={() => router.back()}
+              className="btn-primary"
+            >
+              Go Back
+            </button>
+          </div>
         </div>
+        <style jsx>{`
+          .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 812px;
+            margin: 0 auto;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+          }
+          .btn-primary {
+            padding: 0.75rem 1.5rem;
+            background: #FFD700;
+            color: #000;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+          }
+        `}</style>
       </div>
     );
   }
@@ -493,7 +540,7 @@ export default function CrewJobDetailPage() {
           showIntentOverlay={false}
           className="h-screen"
         />
-        
+
         {/* Action Bar */}
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
           <div className="text-center mb-4">
@@ -515,314 +562,427 @@ export default function CrewJobDetailPage() {
     );
   }
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return '#22c55e';
+      case 'in_progress': return '#3b82f6';
+      case 'assigned': return '#FFD700';
+      default: return '#6b7280';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="mobile-container">
+      {/* Mobile Navigation */}
+      <MobileNavigation
+        currentRole="crew"
+        onLogout={() => router.push('/')}
+      />
+
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4 h-16">
-            <button
-              onClick={() => router.back()}
-              className="text-gray-600 hover:text-gray-800"
-            >
-              <ArrowLeft className="w-6 h-6" />
-            </button>
-            <div className="flex-1">
-              <h1 className="text-xl font-bold text-gray-900">{job.customerName}</h1>
-              <p className="text-sm text-gray-600">{job.propertyAddress}</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <TenantBadge />
-              <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                job.status === 'assigned' ? 'bg-yellow-100 text-yellow-800' :
-                job.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                job.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
-                {job.status.replace('_', ' ')}
-              </div>
-            </div>
-          </div>
+      <div className="header-bar">
+        <div>
+          <h1 className="text-xl font-semibold">{job.customerName}</h1>
+          <p className="text-xs text-gray-500">{job.propertyAddress}</p>
         </div>
+        <span
+          className="status-badge"
+          style={{
+            background: `${getStatusColor(job.status)}20`,
+            color: getStatusColor(job.status),
+            border: `1px solid ${getStatusColor(job.status)}40`
+          }}
+        >
+          {job.status.replace('_', ' ')}
+        </span>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* Job Overview */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Job Overview</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <User className="w-5 h-5 text-gray-500" />
-                    <div>
-                      <p className="font-medium text-gray-900">{job.customerName}</p>
-                      <p className="text-sm text-gray-600">{job.customerPhone}</p>
-                    </div>
-                    <button
-                      onClick={() => window.open(`tel:${job.customerPhone}`)}
-                      className="ml-auto p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                    >
-                      <Phone className="w-4 h-4" />
-                    </button>
-                  </div>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Job Overview */}
+        <div className="detail-section">
+          <h2 className="detail-section-title">Job Overview</h2>
 
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{job.propertyAddress}</p>
-                      <p className="text-sm text-gray-600 capitalize">{job.propertyType}</p>
-                    </div>
-                    <button
-                      onClick={() => window.open(`https://maps.google.com?q=${encodeURIComponent(job.propertyAddress)}`)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                    >
-                      <Navigation className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-gray-500" />
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {formatTime(job.scheduledTime)}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Est. {formatDuration(job.estimatedDuration)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {job.templateName && (
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-gray-500" />
-                      <div>
-                        <p className="font-medium text-gray-900">{job.templateName}</p>
-                        <p className="text-sm text-gray-600">Job template</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <User className="w-5 h-5 text-gray-400" />
+              <div className="flex-1">
+                <p className="font-medium text-white">{job.customerName}</p>
+                <p className="text-sm text-gray-500">{job.customerPhone}</p>
               </div>
+              <button
+                onClick={() => window.open(`tel:${job.customerPhone}`)}
+                className="icon-button"
+              >
+                <Phone className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Instructions */}
-            {(job.specialInstructions || job.voiceInstructions) && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Instructions</h2>
-                
-                {job.voiceInstructions && (
-                  <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium text-blue-900">Voice Instructions from Supervisor</h3>
-                      <div className="flex items-center gap-2">
-                        {isPlayingVoice ? (
-                          <Volume2 className="w-5 h-5 text-blue-600" />
-                        ) : (
-                          <VolumeX className="w-5 h-5 text-gray-500" />
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-blue-800 text-sm mb-3">{job.voiceInstructions}</p>
-                    {job.voiceInstructionsUrl && (
-                      <button
-                        onClick={toggleVoiceInstructions}
-                        className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                      >
-                        {isPlayingVoice ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                        {isPlayingVoice ? 'Stop' : 'Play'} Voice
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {job.specialInstructions && (
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <h3 className="font-medium text-gray-900 mb-2">Special Instructions</h3>
-                    <p className="text-gray-700">{job.specialInstructions}</p>
-                  </div>
-                )}
+            <div className="flex items-start gap-3">
+              <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-medium text-white">{job.propertyAddress}</p>
+                <p className="text-sm text-gray-500 capitalize">{job.propertyType}</p>
               </div>
-            )}
-
-            {/* Equipment */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Required Equipment</h2>
-                <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  job.loadVerified ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'
-                }`}>
-                  {job.loadVerified ? 'Verified' : 'Not Verified'}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {job.requiredEquipment.map(equipment => (
-                  <div
-                    key={equipment.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg border ${
-                      equipment.verified 
-                        ? 'border-emerald-200 bg-emerald-50'
-                        : 'border-orange-200 bg-orange-50'
-                    }`}
-                  >
-                    <Package className={`w-5 h-5 ${
-                      equipment.verified ? 'text-emerald-600' : 'text-orange-600'
-                    }`} />
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{equipment.name}</p>
-                      <p className="text-sm text-gray-600 capitalize">{equipment.category}</p>
-                    </div>
-                    {equipment.verified && (
-                      <CheckCircle className="w-5 h-5 text-emerald-600" />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {!job.loadVerified && (
-                <div className="mt-4">
-                  <button
-                    onClick={() => router.push(`/crew/job-load?jobId=${jobId}`)}
-                    className="w-full py-2 px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-                  >
-                    Load Items for Job
-                  </button>
-                </div>
-              )}
+              <button
+                onClick={() => window.open(`https://maps.google.com?q=${encodeURIComponent(job.propertyAddress)}`)}
+                className="icon-button"
+              >
+                <Navigation className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Task List */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Job Tasks</h2>
-              <TaskList
-                jobId={jobId}
-                editable={job.status === 'in_progress'}
-                onTaskComplete={handleTaskComplete}
-              />
-            </div>
-
-            {/* Photos */}
-            {photos.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Photos</h2>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {photos.map(photo => (
-                    <div key={photo.id} className="relative group">
-                      <img
-                        src={photo.thumbnailUrl}
-                        alt={`${photo.type} photo`}
-                        className="w-full h-24 object-cover rounded-lg cursor-pointer hover:opacity-90"
-                        onClick={() => window.open(photo.url, '_blank')}
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                        <ImageIcon className="w-6 h-6 text-white" />
-                      </div>
-                      <div className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-medium ${
-                        photo.type === 'start' ? 'bg-green-100 text-green-800' :
-                        photo.type === 'completion' ? 'bg-blue-100 text-blue-800' :
-                        photo.type === 'issue' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {photo.type}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Actions */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
-              <ButtonLimiter
-                actions={actions}
-                maxVisibleButtons={4}
-                showVoiceButton={false}
-                layout="grid"
-                className="w-full"
-              />
-            </div>
-
-            {/* Voice Assistant */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Voice Assistant</h3>
-              <div className="text-center">
-                <VoiceCommandButton
-                  onTranscript={handleVoiceCommand}
-                  size="lg"
-                  className="mx-auto"
-                />
-                <p className="text-sm text-gray-600 mt-2">
-                  Try: "Start job", "Take photo", "Play voice"
+            <div className="flex items-center gap-3">
+              <Clock className="w-5 h-5 text-gray-400" />
+              <div>
+                <p className="font-medium text-white">
+                  {formatTime(job.scheduledTime)}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Est. {formatDuration(job.estimatedDuration)}
                 </p>
               </div>
             </div>
 
-            {/* Job Progress */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Progress</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${
-                    job.status !== 'assigned' ? 'bg-emerald-500' : 'bg-gray-300'
-                  }`} />
-                  <span className="text-sm text-gray-700">Job started</span>
-                  {job.actualStartTime && (
-                    <span className="text-xs text-gray-500 ml-auto">
-                      {formatTime(job.actualStartTime)}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${
-                    photos.some(p => p.type === 'start') ? 'bg-emerald-500' : 'bg-gray-300'
-                  }`} />
-                  <span className="text-sm text-gray-700">Start photo</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${
-                    job.status === 'completed' ? 'bg-emerald-500' : 'bg-gray-300'
-                  }`} />
-                  <span className="text-sm text-gray-700">Job completed</span>
-                  {job.actualEndTime && (
-                    <span className="text-xs text-gray-500 ml-auto">
-                      {formatTime(job.actualEndTime)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Timer */}
-            {job.status === 'in_progress' && job.actualStartTime && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Time Elapsed</h3>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-emerald-600">
-                    {Math.floor((Date.now() - new Date(job.actualStartTime).getTime()) / 60000)}m
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Started at {formatTime(job.actualStartTime)}
-                  </p>
+            {job.templateName && (
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-gray-400" />
+                <div>
+                  <p className="font-medium text-white">{job.templateName}</p>
+                  <p className="text-sm text-gray-500">Job template</p>
                 </div>
               </div>
             )}
           </div>
         </div>
+
+        {/* Instructions */}
+        {(job.specialInstructions || job.voiceInstructions) && (
+          <div className="detail-section">
+            <h2 className="detail-section-title">Instructions</h2>
+
+            {job.voiceInstructions && (
+              <div className="mb-4 p-3 bg-blue-900 bg-opacity-20 rounded-lg border border-blue-500 border-opacity-30">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium text-blue-300 text-sm">Voice Instructions</h3>
+                  {isPlayingVoice ? (
+                    <Volume2 className="w-4 h-4 text-blue-400" />
+                  ) : (
+                    <VolumeX className="w-4 h-4 text-gray-500" />
+                  )}
+                </div>
+                <p className="text-blue-200 text-sm mb-3">{job.voiceInstructions}</p>
+                {job.voiceInstructionsUrl && (
+                  <button
+                    onClick={toggleVoiceInstructions}
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                  >
+                    {isPlayingVoice ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    {isPlayingVoice ? 'Stop' : 'Play'} Voice
+                  </button>
+                )}
+              </div>
+            )}
+
+            {job.specialInstructions && (
+              <div className="p-3 bg-gray-800 bg-opacity-50 rounded-lg">
+                <h3 className="font-medium text-gray-300 mb-2 text-sm">Special Instructions</h3>
+                <p className="text-gray-400 text-sm">{job.specialInstructions}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Equipment */}
+        <div className="detail-section">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="detail-section-title" style={{ margin: 0 }}>Required Equipment</h2>
+            <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+              job.loadVerified ? 'bg-emerald-900 bg-opacity-30 text-emerald-400' : 'bg-orange-900 bg-opacity-30 text-orange-400'
+            }`}>
+              {job.loadVerified ? 'Verified' : 'Not Verified'}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {job.requiredEquipment.map(equipment => (
+              <div
+                key={equipment.id}
+                className={`flex items-center gap-3 p-3 rounded-lg border ${
+                  equipment.verified
+                    ? 'border-emerald-500 border-opacity-30 bg-emerald-900 bg-opacity-10'
+                    : 'border-orange-500 border-opacity-30 bg-orange-900 bg-opacity-10'
+                }`}
+              >
+                <Package className={`w-5 h-5 ${
+                  equipment.verified ? 'text-emerald-400' : 'text-orange-400'
+                }`} />
+                <div className="flex-1">
+                  <p className="font-medium text-white text-sm">{equipment.name}</p>
+                  <p className="text-xs text-gray-500 capitalize">{equipment.category}</p>
+                </div>
+                {equipment.verified && (
+                  <CheckCircle className="w-5 h-5 text-emerald-400" />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {!job.loadVerified && (
+            <div className="mt-4">
+              <button
+                onClick={() => router.push(`/crew/job-load?jobId=${jobId}`)}
+                className="btn-primary w-full"
+              >
+                Load Items for Job
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Task List */}
+        <div className="detail-section">
+          <h2 className="detail-section-title">Job Tasks</h2>
+          <TaskList
+            jobId={jobId}
+            editable={job.status === 'in_progress'}
+            onTaskComplete={handleTaskComplete}
+          />
+        </div>
+
+        {/* Photos */}
+        {photos.length > 0 && (
+          <div className="detail-section">
+            <h2 className="detail-section-title">Photos</h2>
+
+            <div className="grid grid-cols-2 gap-3">
+              {photos.map(photo => (
+                <div key={photo.id} className="relative group">
+                  <img
+                    src={photo.thumbnailUrl}
+                    alt={`${photo.type} photo`}
+                    className="w-full h-24 object-cover rounded-lg cursor-pointer"
+                    onClick={() => window.open(photo.url, '_blank')}
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                    <ImageIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-medium ${
+                    photo.type === 'start' ? 'bg-green-900 bg-opacity-80 text-green-300' :
+                    photo.type === 'completion' ? 'bg-blue-900 bg-opacity-80 text-blue-300' :
+                    photo.type === 'issue' ? 'bg-red-900 bg-opacity-80 text-red-300' :
+                    'bg-gray-900 bg-opacity-80 text-gray-300'
+                  }`}>
+                    {photo.type}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Progress Tracker */}
+        <div className="detail-section">
+          <h2 className="detail-section-title">Progress</h2>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-3 h-3 rounded-full ${
+                job.status !== 'assigned' ? 'bg-emerald-500' : 'bg-gray-600'
+              }`} />
+              <span className="text-sm text-gray-300">Job started</span>
+              {job.actualStartTime && (
+                <span className="text-xs text-gray-500 ml-auto">
+                  {formatTime(job.actualStartTime)}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className={`w-3 h-3 rounded-full ${
+                photos.some(p => p.type === 'start') ? 'bg-emerald-500' : 'bg-gray-600'
+              }`} />
+              <span className="text-sm text-gray-300">Start photo</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className={`w-3 h-3 rounded-full ${
+                job.status === 'completed' ? 'bg-emerald-500' : 'bg-gray-600'
+              }`} />
+              <span className="text-sm text-gray-300">Job completed</span>
+              {job.actualEndTime && (
+                <span className="text-xs text-gray-500 ml-auto">
+                  {formatTime(job.actualEndTime)}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Timer */}
+        {job.status === 'in_progress' && job.actualStartTime && (
+          <div className="detail-section text-center">
+            <h2 className="detail-section-title">Time Elapsed</h2>
+            <p className="text-2xl font-bold text-emerald-400 mb-1">
+              {Math.floor((Date.now() - new Date(job.actualStartTime).getTime()) / 60000)}m
+            </p>
+            <p className="text-sm text-gray-500">
+              Started at {formatTime(job.actualStartTime)}
+            </p>
+          </div>
+        )}
       </div>
+
+      {/* Bottom Actions */}
+      <div className="bottom-actions">
+        <ButtonLimiter
+          actions={actions}
+          maxVisibleButtons={4}
+          showVoiceButton={false}
+          layout="grid"
+          className="w-full"
+        />
+      </div>
+
+      <style jsx>{`
+        .mobile-container {
+          width: 100%;
+          max-width: 375px;
+          height: 100vh;
+          max-height: 812px;
+          margin: 0 auto;
+          background: #000;
+          color: white;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          padding: 0 0.5rem;
+          box-sizing: border-box;
+        }
+
+        .header-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem;
+          border-bottom: 1px solid #333;
+          background: rgba(0, 0, 0, 0.9);
+        }
+
+        .status-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 0.25rem 0.75rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+          border-radius: 0.375rem;
+          text-transform: capitalize;
+        }
+
+        .detail-section {
+          padding: 1rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.75rem;
+        }
+
+        .detail-section-title {
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: #FFD700;
+          margin: 0 0 0.75rem 0;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .icon-button {
+          padding: 0.5rem;
+          color: #3b82f6;
+          background: rgba(59, 130, 246, 0.1);
+          border: 1px solid rgba(59, 130, 246, 0.3);
+          border-radius: 0.5rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .icon-button:hover {
+          background: rgba(59, 130, 246, 0.2);
+        }
+
+        .bottom-actions {
+          padding: 1rem;
+          background: rgba(0, 0, 0, 0.9);
+          border-top: 1px solid #333;
+        }
+
+        .btn-primary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem 1rem;
+          background: #FFD700;
+          color: #000;
+          font-weight: 600;
+          border-radius: 0.5rem;
+          border: none;
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+          background: #FFC700;
+        }
+
+        .btn-primary:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .space-y-4 > * + * {
+          margin-top: 1rem;
+        }
+
+        .space-y-3 > * + * {
+          margin-top: 0.75rem;
+        }
+
+        .space-y-2 > * + * {
+          margin-top: 0.5rem;
+        }
+
+        .grid {
+          display: grid;
+        }
+
+        .grid-cols-2 {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .gap-3 {
+          gap: 0.75rem;
+        }
+
+        .flex {
+          display: flex;
+        }
+
+        .flex-1 {
+          flex: 1;
+        }
+
+        .items-center {
+          align-items: center;
+        }
+
+        .items-start {
+          align-items: flex-start;
+        }
+
+        .justify-center {
+          justify-content: center;
+        }
+      `}</style>
     </div>
   );
 }
