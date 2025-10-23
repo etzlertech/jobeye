@@ -9,7 +9,7 @@
 
 import { OfflineDatabase } from '@/lib/offline/offline-db';
 import { JobLoadRepository } from '../repositories/job-load.repository';
-import { createServerClient } from '@/lib/supabase/server';
+import { createBrowserClient } from '@/lib/supabase/client';
 
 export interface SyncResult {
   synced: number;
@@ -58,8 +58,8 @@ export class LoadVerificationSyncService {
       let failed = 0;
       const errors: string[] = [];
 
-      // Create Supabase client
-      const supabase = await createServerClient();
+      // Create Supabase browser client
+      const supabase = createBrowserClient();
 
       for (const item of pending) {
         try {
