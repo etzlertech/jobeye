@@ -232,6 +232,19 @@ export class SupervisorWorkflowService {
 
       const job = insertedJob as Database['public']['Tables']['jobs']['Row'];
 
+      // If templateId provided, create workflow_task with template (trigger will auto-populate items)
+      if (request.templateId) {
+        await this.supabase
+          .from('workflow_tasks')
+          .insert({
+            tenant_id: tenantId,
+            job_id: job.id,
+            template_id: request.templateId, // This triggers auto_instantiate_task_items
+            task_description: 'Load equipment and materials',
+            status: 'pending',
+          });
+      }
+
       if (request.assignedCrewIds?.length) {
         const validation = await this.validateCrewAssignments(
           request.assignedCrewIds,
