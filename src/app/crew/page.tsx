@@ -76,6 +76,11 @@ export default function CrewDashboardPage() {
   const [isOffline, setIsOffline] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentUser, setCurrentUser] = useState<{ name?: string | null; email?: string | null } | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    today: true,
+    week: true,
+    month: false,
+  });
 
   // Update current time every minute
   useEffect(() => {
@@ -212,10 +217,47 @@ export default function CrewDashboardPage() {
     );
   }
 
-  const todayJobs = jobs.filter(job => {
-    const today = new Date().toDateString();
-    return new Date(job.scheduled_time).toDateString() === today;
-  });
+  // Categorize jobs by time period
+  const categorizeJobs = () => {
+    const now = new Date();
+    const today = now.toDateString();
+
+    // Get start of week (Sunday)
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    // Get end of week (Saturday)
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    // Get start of month
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Get end of month
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const todayJobs = jobs.filter(job => {
+      const jobDate = new Date(job.scheduled_time);
+      return jobDate.toDateString() === today;
+    });
+
+    const weekJobs = jobs.filter(job => {
+      const jobDate = new Date(job.scheduled_time);
+      return jobDate >= startOfWeek && jobDate <= endOfWeek && jobDate.toDateString() !== today;
+    });
+
+    const monthJobs = jobs.filter(job => {
+      const jobDate = new Date(job.scheduled_time);
+      return jobDate >= startOfMonth && jobDate <= endOfMonth &&
+             !(jobDate >= startOfWeek && jobDate <= endOfWeek);
+    });
+
+    return { todayJobs, weekJobs, monthJobs };
+  };
+
+  const { todayJobs, weekJobs, monthJobs } = categorizeJobs();
 
   return (
     <div className="mobile-container">
@@ -297,57 +339,213 @@ export default function CrewDashboardPage() {
             </div>
           )}
 
+          {/* Job Sections */}
           {/* Today's Jobs */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold">Today's Jobs</h2>
-              <span className="count-badge">{todayJobs.length}</span>
+          <div className="job-section">
+            <div
+              className="section-header"
+              onClick={() => setExpandedSections({...expandedSections, today: !expandedSections.today})}
+            >
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5" style={{ color: '#FFD700' }} />
+                <h2 className="text-lg font-semibold">Today</h2>
+                <span className="count-badge">{todayJobs.length}</span>
+              </div>
+              <motion.div
+                animate={{ rotate: expandedSections.today ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </motion.div>
             </div>
 
-            <div className="space-y-3">
-              {todayJobs.length > 0 ? (
-                todayJobs.map((job) => (
-                  <motion.div
-                    key={job.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div
-                      className="job-card"
-                      onClick={() => router.push(`/crew/jobs/${job.id}`)}
+            {expandedSections.today && (
+              <div className="space-y-3 mt-3">
+                {todayJobs.length > 0 ? (
+                  todayJobs.map((job) => (
+                    <motion.div
+                      key={job.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className={`status-badge ${job.status}`}>
-                              {job.status.replace('_', ' ')}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {new Date(job.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          <h3 className="font-semibold truncate">{job.customer_name}</h3>
-                          <p className="text-sm text-gray-400 truncate mt-1">
-                            {job.property_address}
-                          </p>
-                          {job.template_name && (
-                            <p className="text-xs text-gray-500 mt-2">
-                              {job.template_name} • {job.estimated_duration || 'N/A'}
+                      <div
+                        className="job-card"
+                        onClick={() => router.push(`/crew/jobs/${job.id}`)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className={`status-badge ${job.status}`}>
+                                {job.status.replace('_', ' ')}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {new Date(job.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <h3 className="font-semibold truncate">{job.customer_name}</h3>
+                            <p className="text-sm text-gray-400 truncate mt-1">
+                              {job.property_address}
                             </p>
-                          )}
+                            {job.template_name && (
+                              <p className="text-xs text-gray-500 mt-2">
+                                {job.template_name} • {job.estimated_duration || 'N/A'}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))
-              ) : (
-                <div className="empty-state">
-                  <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-400">No jobs scheduled for today</p>
-                </div>
-              )}
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="empty-state-small">
+                    <p className="text-gray-500 text-sm">No jobs today</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* This Week's Jobs */}
+          <div className="job-section">
+            <div
+              className="section-header"
+              onClick={() => setExpandedSections({...expandedSections, week: !expandedSections.week})}
+            >
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" style={{ color: '#FFD700' }} />
+                <h2 className="text-lg font-semibold">This Week</h2>
+                <span className="count-badge">{weekJobs.length}</span>
+              </div>
+              <motion.div
+                animate={{ rotate: expandedSections.week ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </motion.div>
             </div>
+
+            {expandedSections.week && (
+              <div className="space-y-3 mt-3">
+                {weekJobs.length > 0 ? (
+                  weekJobs.map((job) => (
+                    <motion.div
+                      key={job.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <div
+                        className="job-card"
+                        onClick={() => router.push(`/crew/jobs/${job.id}`)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className={`status-badge ${job.status}`}>
+                                {job.status.replace('_', ' ')}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {new Date(job.scheduled_time).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
+                                {' • '}
+                                {new Date(job.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <h3 className="font-semibold truncate">{job.customer_name}</h3>
+                            <p className="text-sm text-gray-400 truncate mt-1">
+                              {job.property_address}
+                            </p>
+                            {job.template_name && (
+                              <p className="text-xs text-gray-500 mt-2">
+                                {job.template_name} • {job.estimated_duration || 'N/A'}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="empty-state-small">
+                    <p className="text-gray-500 text-sm">No jobs this week</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* This Month's Jobs */}
+          <div className="job-section">
+            <div
+              className="section-header"
+              onClick={() => setExpandedSections({...expandedSections, month: !expandedSections.month})}
+            >
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" style={{ color: '#FFD700' }} />
+                <h2 className="text-lg font-semibold">This Month</h2>
+                <span className="count-badge">{monthJobs.length}</span>
+              </div>
+              <motion.div
+                animate={{ rotate: expandedSections.month ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </motion.div>
+            </div>
+
+            {expandedSections.month && (
+              <div className="space-y-3 mt-3">
+                {monthJobs.length > 0 ? (
+                  monthJobs.map((job) => (
+                    <motion.div
+                      key={job.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <div
+                        className="job-card"
+                        onClick={() => router.push(`/crew/jobs/${job.id}`)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className={`status-badge ${job.status}`}>
+                                {job.status.replace('_', ' ')}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {new Date(job.scheduled_time).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                {' • '}
+                                {new Date(job.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <h3 className="font-semibold truncate">{job.customer_name}</h3>
+                            <p className="text-sm text-gray-400 truncate mt-1">
+                              {job.property_address}
+                            </p>
+                            {job.template_name && (
+                              <p className="text-xs text-gray-500 mt-2">
+                                {job.template_name} • {job.estimated_duration || 'N/A'}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="empty-state-small">
+                    <p className="text-gray-500 text-sm">No jobs this month</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Bottom padding */}
@@ -462,6 +660,34 @@ export default function CrewDashboardPage() {
           border-radius: 0.375rem;
           font-size: 0.75rem;
           font-weight: 600;
+        }
+
+        .job-section {
+          margin-bottom: 1.5rem;
+        }
+
+        .section-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 0.5rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .section-header:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 215, 0, 0.4);
+        }
+
+        .empty-state-small {
+          padding: 1rem;
+          text-align: center;
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 0.5rem;
         }
 
         .job-card {
