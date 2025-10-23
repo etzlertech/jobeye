@@ -70,6 +70,11 @@ import {
 import { ButtonLimiter, useButtonActions } from '@/components/ui/ButtonLimiter';
 import { CameraCapture } from '@/components/camera/CameraCapture';
 import { ItemChecklist } from '@/components/ui/ItemChecklist';
+import { LoadItemStateManager } from '@/domains/crew/lib/load-item-state-manager';
+import { getLoadVerificationSyncService } from '@/domains/crew/services/load-verification-sync.service';
+import { OfflineDatabase } from '@/lib/offline/offline-db';
+import { createBrowserClient } from '@/lib/supabase/client';
+import { JobLoadRepository } from '@/domains/crew/repositories/job-load.repository';
 
 interface Job {
   id: string;
@@ -134,6 +139,10 @@ function CrewLoadVerifyPageContent() {
   // Manual verification state
   const [manualItems, setManualItems] = useState<Record<string, boolean>>({});
   const [showManualMode, setShowManualMode] = useState(false);
+
+  // Offline state
+  const [offlineMode, setOfflineMode] = useState(typeof window !== 'undefined' ? !navigator.onLine : false);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
 
   // Setup button actions
   useEffect(() => {
@@ -215,12 +224,11 @@ function CrewLoadVerifyPageContent() {
 
       addAction({
         id: 'confirm-verification',
-        label: 'Confirm',
+        label: 'Done',
         priority: 'critical',
         icon: CheckCircle,
         onClick: handleConfirmVerification,
-        className: 'bg-emerald-600 text-white hover:bg-emerald-700',
-        disabled: !verificationResult?.verified
+        className: 'bg-emerald-600 text-white hover:bg-emerald-700'
       });
     } else if (verificationStep === 'manual') {
       addAction({
@@ -237,7 +245,7 @@ function CrewLoadVerifyPageContent() {
 
       addAction({
         id: 'confirm-manual',
-        label: 'Confirm Manual',
+        label: 'Done',
         priority: 'critical',
         icon: CheckCircle,
         onClick: handleManualVerification,
@@ -249,6 +257,48 @@ function CrewLoadVerifyPageContent() {
   // Load jobs on mount
   useEffect(() => {
     loadJobs();
+  }, []);
+
+  // Initialize offline sync and network listeners
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const syncService = getLoadVerificationSyncService();
+
+    // Start auto-sync
+    syncService.startAutoSync(30000); // Sync every 30 seconds
+
+    // Update pending count
+    const updatePendingCount = async () => {
+      const count = await syncService.getPendingCount();
+      setPendingSyncCount(count);
+    };
+
+    // Initial count
+    updatePendingCount();
+
+    // Network event listeners
+    const handleOnline = () => {
+      setOfflineMode(false);
+      updatePendingCount();
+    };
+
+    const handleOffline = () => {
+      setOfflineMode(true);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Periodic pending count update
+    const intervalId = setInterval(updatePendingCount, 5000);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearInterval(intervalId);
+      syncService.stopAutoSync();
+    };
   }, []);
 
   // Auto-select job if provided in URL
@@ -333,6 +383,38 @@ function CrewLoadVerifyPageContent() {
           processingTime,
           cost: result.verification.cost || 0
         };
+
+        // 🆕 AUTO-SAVE detected items immediately
+        try {
+          const supabase = createBrowserClient();
+          const loadRepo = new JobLoadRepository(supabase as any);
+          const offlineDB = OfflineDatabase.getInstance();
+          const stateManager = new LoadItemStateManager(
+            selectedJob.id,
+            loadRepo,
+            offlineDB
+          );
+
+          // Build item updates from detection results
+          const detectedItemIds = verificationResult.detectedItems.map(item => item.id);
+          const allItems = selectedJob.requiredEquipment;
+
+          const itemUpdates = allItems.map(item => ({
+            itemId: item.id,
+            status: detectedItemIds.includes(item.id) ? 'verified' as const : 'missing' as const,
+          }));
+
+          const saveResult = await stateManager.batchUpdateItems(itemUpdates);
+
+          if (saveResult.offline) {
+            console.log('[LoadVerify] Changes saved offline - will sync when online');
+          } else {
+            console.log('[LoadVerify] Changes saved successfully');
+          }
+        } catch (saveError) {
+          console.error('[LoadVerify] Failed to auto-save detection results:', saveError);
+          // Don't block the UI if auto-save fails
+        }
 
         setVerificationResult(verificationResult);
         setVerificationStep('results');
@@ -507,6 +589,17 @@ function CrewLoadVerifyPageContent() {
           <h1 className="text-xl font-semibold">Manual Equipment Check</h1>
         </div>
 
+        {/* Offline Indicator */}
+        {offlineMode && (
+          <div className="offline-banner">
+            <AlertCircle className="w-4 h-4" />
+            <span>Offline - changes will sync when online</span>
+            {pendingSyncCount > 0 && (
+              <span className="pending-count">{pendingSyncCount} pending</span>
+            )}
+          </div>
+        )}
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 space-y-4">
@@ -528,11 +621,36 @@ function CrewLoadVerifyPageContent() {
                   required: item.required,
                   checked: manualItems[item.id] || false
                 }))}
-                onChange={(itemId, checked) => {
+                onChange={async (itemId, checked) => {
+                  // Update local state immediately (optimistic update)
                   setManualItems(prev => ({
                     ...prev,
                     [itemId]: checked
                   }));
+
+                  // 🆕 AUTO-SAVE to database
+                  try {
+                    const supabase = createBrowserClient();
+                    const loadRepo = new JobLoadRepository(supabase as any);
+                    const offlineDB = OfflineDatabase.getInstance();
+                    const stateManager = new LoadItemStateManager(
+                      selectedJob.id,
+                      loadRepo,
+                      offlineDB
+                    );
+
+                    const status = checked ? 'verified' : 'pending';
+                    const result = await stateManager.updateItemState(itemId, status);
+
+                    if (result.offline) {
+                      console.log('[LoadVerify] Item state saved offline');
+                    } else {
+                      console.log('[LoadVerify] Item state saved');
+                    }
+                  } catch (error) {
+                    console.error('[LoadVerify] Failed to auto-save item state:', error);
+                    // Don't block the UI if auto-save fails
+                  }
                 }}
                 title=""
               />
@@ -634,6 +752,17 @@ function CrewLoadVerifyPageContent() {
             {verificationResult.verified ? 'Complete' : 'Missing'}
           </div>
         </div>
+
+        {/* Offline Indicator */}
+        {offlineMode && (
+          <div className="offline-banner">
+            <AlertCircle className="w-4 h-4" />
+            <span>Offline - changes will sync when online</span>
+            {pendingSyncCount > 0 && (
+              <span className="pending-count">{pendingSyncCount} pending</span>
+            )}
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
@@ -890,6 +1019,17 @@ function CrewLoadVerifyPageContent() {
         <h1 className="text-xl font-semibold">Load Verification</h1>
       </div>
 
+      {/* Offline Indicator */}
+      {offlineMode && (
+        <div className="offline-banner">
+          <AlertCircle className="w-4 h-4" />
+          <span>Offline - changes will sync when online</span>
+          {pendingSyncCount > 0 && (
+            <span className="pending-count">{pendingSyncCount} pending</span>
+          )}
+        </div>
+      )}
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 space-y-4">
@@ -1089,6 +1229,26 @@ function CrewLoadVerifyPageContent() {
 
         .actions-section {
           padding: 1rem 0;
+        }
+
+        .offline-banner {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1rem;
+          background: rgba(234, 179, 8, 0.1);
+          border-bottom: 1px solid rgba(234, 179, 8, 0.3);
+          color: #fbbf24;
+          font-size: 0.875rem;
+        }
+
+        .pending-count {
+          margin-left: auto;
+          padding: 0.25rem 0.5rem;
+          background: rgba(234, 179, 8, 0.2);
+          border-radius: 0.375rem;
+          font-weight: 600;
+          font-size: 0.75rem;
         }
       `}</style>
     </div>

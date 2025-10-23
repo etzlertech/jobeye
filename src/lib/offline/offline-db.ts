@@ -126,7 +126,7 @@ export class OfflineDatabase {
   private static instance: OfflineDatabase;
   private db: IDBDatabase | null = null;
   private readonly DB_NAME = 'jobeye_offline';
-  private readonly DB_VERSION = 2;
+  private readonly DB_VERSION = 3; // Incremented for new load_verification_items store
 
   private constructor() {}
 
@@ -226,6 +226,16 @@ export class OfflineDatabase {
           entityStore.createIndex('entity', 'entity', { unique: false });
           entityStore.createIndex('timestamp', 'timestamp', { unique: false });
           entityStore.createIndex('syncStatus', 'syncStatus', { unique: false });
+        }
+
+        // Load verification item states (Phase 2: Offline queue integration)
+        if (!db.objectStoreNames.contains('load_verification_items')) {
+          const loadStore = db.createObjectStore('load_verification_items', {
+            keyPath: 'id'
+          });
+          loadStore.createIndex('jobId', 'jobId', { unique: false });
+          loadStore.createIndex('syncStatus', 'syncStatus', { unique: false });
+          loadStore.createIndex('timestamp', 'timestamp', { unique: false });
         }
       };
     });
@@ -706,6 +716,105 @@ export class OfflineDatabase {
       const request = index.getAll('pending');
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(new Error('Failed to get pending offline entities'));
+    });
+  }
+
+  // Load verification item state methods
+  async storeLoadItemState(item: {
+    id: string;
+    jobId: string;
+    itemId: string;
+    status: string;
+    taskId?: string;
+    timestamp: number;
+    syncStatus: 'pending' | 'synced' | 'error';
+  }): Promise<void> {
+    await this.ensureInitialized();
+
+    const tx = this.db!.transaction(['load_verification_items'], 'readwrite');
+    const store = tx.objectStore('load_verification_items');
+
+    return new Promise((resolve, reject) => {
+      const request = store.put(item);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(new Error('Failed to store load item state'));
+    });
+  }
+
+  async getLoadItemState(id: string): Promise<any | null> {
+    await this.ensureInitialized();
+
+    const tx = this.db!.transaction(['load_verification_items'], 'readonly');
+    const store = tx.objectStore('load_verification_items');
+
+    return new Promise((resolve, reject) => {
+      const request = store.get(id);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(new Error('Failed to get load item state'));
+    });
+  }
+
+  async getPendingLoadItemStates(jobId?: string): Promise<any[]> {
+    await this.ensureInitialized();
+
+    const tx = this.db!.transaction(['load_verification_items'], 'readonly');
+    const store = tx.objectStore('load_verification_items');
+
+    return new Promise((resolve, reject) => {
+      let request;
+      if (jobId) {
+        const index = store.index('jobId');
+        request = index.getAll(jobId);
+      } else {
+        const index = store.index('syncStatus');
+        request = index.getAll('pending');
+      }
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(new Error('Failed to get pending load items'));
+    });
+  }
+
+  async updateLoadItemStateStatus(
+    id: string,
+    syncStatus: 'pending' | 'synced' | 'error'
+  ): Promise<void> {
+    await this.ensureInitialized();
+
+    const tx = this.db!.transaction(['load_verification_items'], 'readwrite');
+    const store = tx.objectStore('load_verification_items');
+
+    return new Promise((resolve, reject) => {
+      const getRequest = store.get(id);
+
+      getRequest.onsuccess = () => {
+        const item = getRequest.result;
+        if (!item) {
+          reject(new Error('Load item state not found'));
+          return;
+        }
+
+        item.syncStatus = syncStatus;
+
+        const updateRequest = store.put(item);
+        updateRequest.onsuccess = () => resolve();
+        updateRequest.onerror = () => reject(new Error('Failed to update load item state status'));
+      };
+
+      getRequest.onerror = () => reject(new Error('Failed to get load item state'));
+    });
+  }
+
+  async deleteLoadItemState(id: string): Promise<void> {
+    await this.ensureInitialized();
+
+    const tx = this.db!.transaction(['load_verification_items'], 'readwrite');
+    const store = tx.objectStore('load_verification_items');
+
+    return new Promise((resolve, reject) => {
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(new Error('Failed to delete load item state'));
     });
   }
 
