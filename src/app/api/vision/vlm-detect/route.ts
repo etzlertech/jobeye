@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       expectedItems: expectedItems || [],
     }, {
       includeBboxes: includeBboxes ?? true,
-      model: 'gemini-2.0-flash-exp', // Fast model for real-time detection
+      model: 'gemini-2.0-flash', // Switched from flash-exp due to rate limits (2K RPM, unlimited RPD)
     });
     const serviceDuration = performance.now() - serviceStart;
 

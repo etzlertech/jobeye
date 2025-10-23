@@ -81,7 +81,7 @@ export async function detectWithGemini(
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: options.model || 'gemini-2.0-flash-exp', // Fast model for real-time detection
+      model: options.model || 'gemini-2.0-flash', // Switched from flash-exp due to rate limits (2K RPM, unlimited RPD)
       generationConfig: {
         responseMimeType: 'application/json',
       }
@@ -224,7 +224,7 @@ For each item detected, provide:
         processingTimeMs,
         estimatedCost: 0.0001, // Gemini 2.0 Flash pricing (30x cheaper than Pro)
         provider: 'google-gemini-2.0-flash',
-        modelVersion: options.model || 'gemini-2.0-flash-exp',
+        modelVersion: options.model || 'gemini-2.0-flash',
       },
       error: null,
     };

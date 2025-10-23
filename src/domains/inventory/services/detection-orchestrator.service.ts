@@ -208,7 +208,7 @@ async function fallbackToGemini(
       },
       {
         includeBboxes: true,
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.0-flash',
       }
     );
 
