@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing user context' }, { status: 400 });
     }
 
-    // Get jobs assigned to this crew member for today
+    // Get ALL jobs assigned to this crew member (filter by date in JavaScript)
+    // Note: Supabase nested filters on joins can be unreliable, so we filter client-side
     const { data: assignments, error } = await supabase
       .from('job_assignments')
       .select(`
@@ -81,15 +82,20 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('user_id', userId)
-      .eq('tenant_id', tenantId)
-      .gte('jobs.scheduled_start', today)
-      .lt('jobs.scheduled_start', `${today}T23:59:59`);
+      .eq('tenant_id', tenantId);
 
     if (error) throw error;
 
-    // Transform the data - filter out null jobs (assignments without valid job data)
+    // Filter for today's jobs in JavaScript (more reliable than Supabase nested filters)
+    const todayStart = new Date(today);
+    const todayEnd = new Date(`${today}T23:59:59`);
+
     const jobs = (assignments || [])
-      .filter(assignment => assignment.jobs !== null)
+      .filter(assignment => {
+        if (!assignment.jobs) return false;
+        const scheduledStart = new Date(assignment.jobs.scheduled_start);
+        return scheduledStart >= todayStart && scheduledStart < todayEnd;
+      })
       .map(assignment => {
         const job = assignment.jobs;
         const scheduledStart = job.scheduled_start ? new Date(job.scheduled_start) : null;
