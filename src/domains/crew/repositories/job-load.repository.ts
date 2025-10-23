@@ -1,13 +1,11 @@
 /**
  * JobLoadRepository
  *
- * Handles dual-read/dual-write for job load verification during migration from
- * checklist_items (JSONB) to workflow_task_item_associations (normalized table).
+ * Handles job load verification by managing item assignments and status tracking.
  *
- * Migration Strategy:
- * - Read from both sources, merge results
- * - Write to both sources for backward compatibility
- * - Prefer table data when conflicts exist
+ * Data Source:
+ * - Primary: item_transactions (check_out/check_in transactions)
+ * - Status tracking: Inferred from latest transaction type per item
  *
  * @see JOB_LOAD_REFACTOR_PLAN.md for architecture details
  */
@@ -44,301 +42,187 @@ export class JobLoadRepository {
 
   /**
    * Get all required items for a job
-   * Dual-reads from both workflow_task_item_associations and checklist_items
+   * Reads from item_transactions (primary source of truth)
    */
   async getRequiredItems(jobId: string): Promise<JobLoadItem[]> {
-    // Read from normalized table
-    const { data: tableItems, error: tableError } = await this.supabase
-      .from('workflow_task_item_associations')
+    // Read from item_transactions (primary source)
+    const { data: transactions, error: txError } = await this.supabase
+      .from('item_transactions')
       .select(`
         id,
+        item_id,
+        transaction_type,
         quantity,
-        is_required,
-        status,
-        workflow_task:workflow_tasks!inner (
-          id,
-          task_description
-        ),
-        item:items!inner (
+        created_at,
+        items!inner(
           id,
           name,
-          item_type
+          item_type,
+          category
         )
       `)
-      .eq('workflow_task.job_id', jobId);
-      // Removed .eq('is_required', true) filter to show ALL items (required and optional)
+      .eq('job_id', jobId)
+      .order('created_at', { ascending: false });
 
-    if (tableError) {
-      console.error('[JobLoadRepository] Error fetching table items:', tableError);
+    if (txError) {
+      console.error('[JobLoadRepository] Error fetching item transactions:', txError);
+      return [];
     }
 
-    // Read from JSONB fallback
-    const { data: job, error: jobError } = await this.supabase
-      .from('jobs')
-      .select('id, checklist_items')
-      .eq('id', jobId)
-      .single();
-
-    if (jobError) {
-      console.error('[JobLoadRepository] Error fetching job:', jobError);
-    }
-
-    // Merge results
-    const items: JobLoadItem[] = [];
-
-    // Add table items (preferred source)
-    if (tableItems) {
-      for (const item of tableItems) {
-        items.push({
-          id: item.item.id,
-          name: item.item.name,
-          item_type: item.item.item_type,
-          quantity: item.quantity,
-          is_required: item.is_required,
-          status: item.status,
-          task_id: item.workflow_task.id,
-          task_title: item.workflow_task.task_description,
-          source: 'table',
-        });
-      }
-    }
-
-    // Add JSONB items (fallback for legacy data)
-    if (job?.checklist_items) {
-      const checklistItems = job.checklist_items as any[];
-      for (const item of checklistItems) {
-        // Skip if already in table items
-        if (items.some((i) => i.id === item.id)) {
-          continue;
-        }
-
-        items.push({
-          id: item.id,
-          name: item.name,
-          item_type: item.type || 'equipment',
-          quantity: item.quantity || 1,
-          is_required: true,
-          status: item.loaded ? 'loaded' : 'pending',
+    // Group by item_id to get latest status per item
+    const itemsMap = new Map<string, any>();
+    (transactions || []).forEach((tx: any) => {
+      if (!itemsMap.has(tx.item_id)) {
+        itemsMap.set(tx.item_id, {
+          id: tx.items.id,
+          name: tx.items.name,
+          item_type: tx.items.item_type,
+          quantity: tx.quantity,
+          is_required: true, // All items in transactions are required
+          status: tx.transaction_type === 'check_in' ? 'pending' : 'loaded',
           task_id: null,
           task_title: null,
-          source: 'jsonb',
+          source: 'table' as const,
         });
       }
-    }
+    });
+
+    // Filter to only show currently assigned items (not returned)
+    const items: JobLoadItem[] = Array.from(itemsMap.values())
+      .filter(item => item.status === 'loaded');
+
+    console.log(`[JobLoadRepository] Found ${items.length} items from item_transactions for job ${jobId}`);
 
     return items;
   }
 
   /**
    * Mark an item as loaded
-   * Dual-writes to both sources
+   * Updates status in workflow_task_item_associations if exists
    */
   async markItemLoaded(
     jobId: string,
     itemId: string,
     taskId?: string
   ): Promise<void> {
-    // Write to table
+    console.log(`[JobLoadRepository] Marking item ${itemId} as loaded for job ${jobId}`);
+
+    // Try to update workflow_task_item_associations for status tracking
     if (taskId) {
-      // Direct update when task_id is known
       const { error } = await this.supabase
         .from('workflow_task_item_associations')
         .update({ status: 'loaded' })
         .eq('workflow_task_id', taskId)
         .eq('item_id', itemId);
 
-      if (error) {
-        console.error('[JobLoadRepository] Error updating table:', error);
+      if (error && error.code !== 'PGRST116') { // Ignore "not found" errors
+        console.error('[JobLoadRepository] Error updating status:', error);
       }
     } else {
-      // Find all associations for this job + item when task_id not provided
-      const { data: tasks, error: taskError } = await this.supabase
+      // Find workflow tasks for this job
+      const { data: tasks } = await this.supabase
         .from('workflow_tasks')
         .select('id')
         .eq('job_id', jobId);
 
-      if (taskError) {
-        console.error('[JobLoadRepository] Error finding tasks:', taskError);
-      } else if (tasks && tasks.length > 0) {
+      if (tasks && tasks.length > 0) {
         const taskIds = tasks.map((t) => t.id);
-
         const { error } = await this.supabase
           .from('workflow_task_item_associations')
           .update({ status: 'loaded' })
           .in('workflow_task_id', taskIds)
           .eq('item_id', itemId);
 
-        if (error) {
-          console.error('[JobLoadRepository] Error updating table:', error);
+        if (error && error.code !== 'PGRST116') {
+          console.error('[JobLoadRepository] Error updating status:', error);
         }
       }
-    }
-
-    // Write to JSONB (backward compatibility)
-    const { data: job, error: fetchError } = await this.supabase
-      .from('jobs')
-      .select('checklist_items')
-      .eq('id', jobId)
-      .single();
-
-    if (fetchError || !job?.checklist_items) {
-      return;
-    }
-
-    const checklistItems = job.checklist_items as any[];
-    const updatedItems = checklistItems.map((item) =>
-      item.id === itemId ? { ...item, loaded: true } : item
-    );
-
-    const { error: updateError } = await this.supabase
-      .from('jobs')
-      .update({ checklist_items: updatedItems })
-      .eq('id', jobId);
-
-    if (updateError) {
-      console.error('[JobLoadRepository] Error updating JSONB:', updateError);
     }
   }
 
   /**
    * Mark an item as verified (after VLM confirmation)
-   * Dual-writes to both sources
+   * Updates status in workflow_task_item_associations if exists
    */
   async markItemVerified(
     jobId: string,
     itemId: string,
     taskId?: string
   ): Promise<void> {
-    // Write to table
+    console.log(`[JobLoadRepository] Marking item ${itemId} as verified for job ${jobId}`);
+
+    // Try to update workflow_task_item_associations for status tracking
     if (taskId) {
-      // Direct update when task_id is known
       const { error } = await this.supabase
         .from('workflow_task_item_associations')
         .update({ status: 'verified' })
         .eq('workflow_task_id', taskId)
         .eq('item_id', itemId);
 
-      if (error) {
-        console.error('[JobLoadRepository] Error updating table:', error);
+      if (error && error.code !== 'PGRST116') {
+        console.error('[JobLoadRepository] Error updating status:', error);
       }
     } else {
-      // Find all associations for this job + item when task_id not provided
-      const { data: tasks, error: taskError } = await this.supabase
+      const { data: tasks } = await this.supabase
         .from('workflow_tasks')
         .select('id')
         .eq('job_id', jobId);
 
-      if (taskError) {
-        console.error('[JobLoadRepository] Error finding tasks:', taskError);
-      } else if (tasks && tasks.length > 0) {
+      if (tasks && tasks.length > 0) {
         const taskIds = tasks.map((t) => t.id);
-
         const { error } = await this.supabase
           .from('workflow_task_item_associations')
           .update({ status: 'verified' })
           .in('workflow_task_id', taskIds)
           .eq('item_id', itemId);
 
-        if (error) {
-          console.error('[JobLoadRepository] Error updating table:', error);
+        if (error && error.code !== 'PGRST116') {
+          console.error('[JobLoadRepository] Error updating status:', error);
         }
       }
-    }
-
-    // Write to JSONB (backward compatibility)
-    const { data: job, error: fetchError } = await this.supabase
-      .from('jobs')
-      .select('checklist_items')
-      .eq('id', jobId)
-      .single();
-
-    if (fetchError || !job?.checklist_items) {
-      return;
-    }
-
-    const checklistItems = job.checklist_items as any[];
-    const updatedItems = checklistItems.map((item) =>
-      item.id === itemId ? { ...item, verified: true, loaded: true } : item
-    );
-
-    const { error: updateError } = await this.supabase
-      .from('jobs')
-      .update({ checklist_items: updatedItems })
-      .eq('id', jobId);
-
-    if (updateError) {
-      console.error('[JobLoadRepository] Error updating JSONB:', updateError);
     }
   }
 
   /**
    * Mark an item as missing
-   * Dual-writes to both sources
+   * Updates status in workflow_task_item_associations if exists
    */
   async markItemMissing(
     jobId: string,
     itemId: string,
     taskId?: string
   ): Promise<void> {
-    // Write to table
+    console.log(`[JobLoadRepository] Marking item ${itemId} as missing for job ${jobId}`);
+
+    // Try to update workflow_task_item_associations for status tracking
     if (taskId) {
-      // Direct update when task_id is known
       const { error } = await this.supabase
         .from('workflow_task_item_associations')
         .update({ status: 'missing' })
         .eq('workflow_task_id', taskId)
         .eq('item_id', itemId);
 
-      if (error) {
-        console.error('[JobLoadRepository] Error updating table:', error);
+      if (error && error.code !== 'PGRST116') {
+        console.error('[JobLoadRepository] Error updating status:', error);
       }
     } else {
-      // Find all associations for this job + item when task_id not provided
-      const { data: tasks, error: taskError } = await this.supabase
+      const { data: tasks } = await this.supabase
         .from('workflow_tasks')
         .select('id')
         .eq('job_id', jobId);
 
-      if (taskError) {
-        console.error('[JobLoadRepository] Error finding tasks:', taskError);
-      } else if (tasks && tasks.length > 0) {
+      if (tasks && tasks.length > 0) {
         const taskIds = tasks.map((t) => t.id);
-
         const { error } = await this.supabase
           .from('workflow_task_item_associations')
           .update({ status: 'missing' })
           .in('workflow_task_id', taskIds)
           .eq('item_id', itemId);
 
-        if (error) {
-          console.error('[JobLoadRepository] Error updating table:', error);
+        if (error && error.code !== 'PGRST116') {
+          console.error('[JobLoadRepository] Error updating status:', error);
         }
       }
-    }
-
-    // Write to JSONB (backward compatibility)
-    const { data: job, error: fetchError } = await this.supabase
-      .from('jobs')
-      .select('checklist_items')
-      .eq('id', jobId)
-      .single();
-
-    if (fetchError || !job?.checklist_items) {
-      return;
-    }
-
-    const checklistItems = job.checklist_items as any[];
-    const updatedItems = checklistItems.map((item) =>
-      item.id === itemId ? { ...item, loaded: false, missing: true } : item
-    );
-
-    const { error: updateError } = await this.supabase
-      .from('jobs')
-      .update({ checklist_items: updatedItems })
-      .eq('id', jobId);
-
-    if (updateError) {
-      console.error('[JobLoadRepository] Error updating JSONB:', updateError);
     }
   }
 
