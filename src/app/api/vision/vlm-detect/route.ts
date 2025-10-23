@@ -1,6 +1,6 @@
 /**
  * VLM Detection API Endpoint
- * Uses Gemini 2.0 Flash for fast, accurate object detection
+ * Uses Gemini 2.5 Flash for fast, accurate object detection
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -27,14 +27,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call Gemini 2.0 Flash (fast, accurate, cheap)
+    // Call Gemini 2.5 Flash (fast, accurate, enterprise-grade)
     const serviceStart = performance.now();
     const { data, error } = await detectWithGemini({
       imageData,
       expectedItems: expectedItems || [],
     }, {
       includeBboxes: includeBboxes ?? true,
-      model: 'gemini-2.0-flash', // Switched from flash-exp due to rate limits (2K RPM, unlimited RPD)
+      model: 'gemini-2.5-flash', // Using Gemini 2.5 Flash for best performance
     });
     const serviceDuration = performance.now() - serviceStart;
 

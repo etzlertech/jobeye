@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Convert base64 to the format expected by Gemini
-    // Using Gemini 2.0 Flash for fast, accurate vision analysis
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    // Using Gemini 2.5 Flash for fast, accurate vision analysis
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const imagePart = {
       inlineData: {
@@ -72,8 +72,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       analysis: analysis.trim(),
-      cost: 0.0001, // Estimated cost for Gemini 2.0 Flash (30x cheaper than Pro)
-      model: 'gemini-2.0-flash'
+      cost: 0.0001, // Estimated cost for Gemini 2.5 Flash
+      model: 'gemini-2.5-flash'
     });
 
   } catch (error) {
