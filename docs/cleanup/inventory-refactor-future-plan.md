@@ -62,6 +62,23 @@ voice_considerations:
    - Surface reorder alerts when projected available drops below safety stock before next confirmed supply.
    - Support manual overrides and vendor lead-time adjustments.
 
+## Extended Capabilities & Modularity
+
+Design the platform so advanced users can enable richer functionality while smaller teams keep UI noise minimal.
+
+- **Inventory Costing**: Track acquisition cost (FIFO/LIFO/average) per batch; post consumption cost to jobs for profitability tracking.
+- **Kits / BOM Management**: Define reusable kits or assemblies with substitutions; connect to job templates to auto-create allocations.
+- **Cycle Counts & Adjustments**: Provide workflows for periodic counts, variance approvals, scrap/damage logging, and audit trails.
+- **Returns & Refurbishment**: Support returning unused materials to stock, handling RMAs to vendors, and refurbishing reusable equipment.
+- **Serial & Lot Control**: Optional tracking of unique/regulated items with lot numbers, expiry dates, and compliance metadata.
+- **Unit-of-Measure Conversions**: Allow different purchase/storage/consumption units with conversion factors.
+- **Vendor & Procurement Profiles**: Capture preferred suppliers, lead times, pricing agreements, dropship rules, and contact data.
+- **Regulatory Compliance Hooks**: Associate MSDS documents, licensing requirements, and hazardous transport flags where applicable.
+- **Role-Based Approvals**: Configure approval steps for exceptions (e.g., low recognition confidence, negative stock) so supervisors can intervene.
+- **Offline Resilience**: Queue images and transactions when devices are offline; reconcile once connectivity returns.
+
+UI/UX should expose “basic” vs. “advanced” modes so smaller operators see streamlined flows, while complex teams can enable the full feature set.
+
 ## High-Level Implementation Roadmap (Pre-Refactor)
 
 1. **Discovery & Data Audit**

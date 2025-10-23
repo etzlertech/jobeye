@@ -25,11 +25,13 @@ This document decomposes the long-term inventory lifecycle vision into focused w
 
 **Key Deliverables**
 - `inventory_locations`, `inventory_location_hierarchy`
-- `inventory_transactions` with transaction_type enum (`reserve`, `release`, `load`, `transfer`, `consume`, `return`, `adjust`) and location columns
+- `inventory_transactions` with transaction_type enum (`reserve`, `release`, `load`, `transfer`, `consume`, `return`, `adjust`) and location columns, plus optional lot/serial references
 - `inventory_allocations` to track reservations per job/task/automation rule
-- `purchase_orders`, `purchase_order_lines` (or extend existing table if available)
+- `purchase_orders`, `purchase_order_lines`, vendor profiles, and lead-time metadata
 - `inventory_media` to associate images/inspection notes with transactions
-- Safety stock & reorder configuration per item/location
+- Safety stock & reorder configuration per item/location (including unit-of-measure conversions)
+- Optional tables for kits/BOM definitions and cycle-count schedules
+- Costing fields (moving average / FIFO seed) on item batches to support job profitability
 
 **Dependencies**: Align with existing `items` table; ensure compatibility with Supabase RLS strategy.
 
@@ -42,11 +44,12 @@ This document decomposes the long-term inventory lifecycle vision into focused w
 **Objective**: Refactor supervisor, crew, and automation-facing services to use the new schema while honoring image-first confirmations.
 
 **Key Deliverables**
-- Reservation API (`POST /jobs/:id/allocations`) decoupled from physical movement
+- Reservation API (`POST /jobs/:id/allocations`) decoupled from physical movement, with optional approval hooks
 - Movement APIs that accept intent (voice/autopilot) and require image evidence to finalize (`/movements/confirm`)
-- Consumption & return endpoints tied to job/task completion events
-- Purchase order receiving endpoints with photo capture
+- Consumption & return endpoints tied to job/task completion events, supporting refurbishment and RMA flows
+- Purchase order receiving endpoints with photo capture and cost updates
 - Background reconciliation service to ensure transactions + allocations stay balanced
+- Cycle-count and adjustment APIs with variance approval workflow
 
 **Dependencies**: Workstream 1 schema availability; decision on auth/role enforcement for new endpoints.
 
@@ -75,11 +78,12 @@ This document decomposes the long-term inventory lifecycle vision into focused w
 **Objective**: Deliver interfaces that expose reservations, on-hand vs. available quantities, and item timelines with photos.
 
 **Key Deliverables**
-- Supervisor allocation board (plan vs. actual)
-- Crew load screen showing reservation state, expected source bin, and last-seen image
-- Item detail timeline (receipt → storage → load → consume) with image carousel
-- Reorder dashboard with supply/demand projections
-- Mobile-first flows for quick capture and voice prompts
+- Supervisor allocation board (plan vs. actual) with basic/advanced toggles
+- Crew load screen showing reservation state, expected source bin, last-seen image, and offline queue status
+- Item detail timeline (receipt → storage → load → consume) with image carousel and quality notes
+- Reorder dashboard with supply/demand projections, safety stock alerts, and vendor lead times
+- Mobile-first flows for quick capture and voice prompts, designed to hide advanced controls for smaller teams
+- Configurable approval surfaces (e.g., “low confidence image, supervisor review”) surfaced contextually
 
 **Dependencies**: Workstreams 1–3 for data+API support.
 
@@ -108,10 +112,10 @@ This document decomposes the long-term inventory lifecycle vision into focused w
 **Objective**: Provide insight into shrinkage, SLA adherence, recognition accuracy, and compliance.
 
 **Key Deliverables**
-- Metrics pipeline (turnover, inventory aging, recognition confidence distribution)
-- Alerting for anomalies (unconfirmed moves, missing photos, low confidence)
-- Audit views combining transactions, images, voice transcripts (if retained)
-- Documentation of SOPs for small rural service teams
+- Metrics pipeline (turnover, inventory aging, recognition confidence distribution, cycle-count accuracy, cost variance)
+- Alerting for anomalies (unconfirmed moves, missing photos, low confidence, negative projected available, regulatory thresholds)
+- Audit views combining transactions, images, voice transcripts (if retained) and approval logs
+- Documentation of SOPs for small rural service teams, including optional advanced-playbook appendices
 
 **Dependencies**: Workstreams 1–4 for source data.
 

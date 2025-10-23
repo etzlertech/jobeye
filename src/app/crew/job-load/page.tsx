@@ -49,6 +49,8 @@ import { createPortal } from 'react-dom';
 
 const VLM_ERROR_COOLDOWN_MS = 5000;
 const VLM_TIMEOUT_COOLDOWN_MS = 3500;
+const TARGET_IMAGE_SIZE = 600;
+const JPEG_QUALITY = 0.8;
 
 interface Job {
   id: string;
@@ -66,18 +68,15 @@ interface RequiredItem {
   icon?: string;
   checked: boolean;
   confidence?: number; // VLM match confidence (0-1)
+  note?: string;
   source?: 'table' | 'jsonb'; // Item source from API _meta
 }
 
 interface Detection {
-  label: string;
-  confidence: number;
-  bbox?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
+  name: string;
+  status: 'present' | 'missing' | 'uncertain';
+  confidence?: number;
+  note?: string;
 }
 
 function CrewJobLoadPageContent() {
@@ -112,6 +111,7 @@ function CrewJobLoadPageContent() {
   const sessionStartTime = useRef<number>(0);
   const frameCount = useRef<number>(0);
   const isAnalyzingRef = useRef(false);
+  const lastDetectionsRef = useRef<Detection[]>([]);
 
   // Initialize job items when selected
   useEffect(() => {
@@ -327,15 +327,36 @@ function CrewJobLoadPageContent() {
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
+    const { videoWidth, videoHeight } = video;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    if (!videoWidth || !videoHeight) {
+      console.warn('[VLM] Video dimensions not ready for capture');
+      return null;
+    }
+
+    const squareSide = Math.min(videoWidth, videoHeight);
+    const sx = (videoWidth - squareSide) / 2;
+    const sy = (videoHeight - squareSide) / 2;
+
+    canvas.width = TARGET_IMAGE_SIZE;
+    canvas.height = TARGET_IMAGE_SIZE;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/jpeg', 0.8);
+    ctx.drawImage(
+      video,
+      sx,
+      sy,
+      squareSide,
+      squareSide,
+      0,
+      0,
+      TARGET_IMAGE_SIZE,
+      TARGET_IMAGE_SIZE
+    );
+
+    return canvas.toDataURL('image/jpeg', JPEG_QUALITY);
   };
 
   const analyzeFrame = async () => {
@@ -403,13 +424,24 @@ function CrewJobLoadPageContent() {
 
       // Call VLM API
       const requestStart = performance.now();
+      const verifiedItems = requiredItems.filter(item => item.checked).map(item => item.name);
+      const frameNumber = frameCount.current;
+
+      const priorDetections =
+        lastDetectionsRef.current.length > 0
+          ? lastDetectionsRef.current
+          : [];
+
       const response = await fetch('/api/vision/vlm-detect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           imageData: frameData,
-          expectedItems,
-          includeBboxes: true,
+          remainingItems: expectedItems,
+          verifiedItems,
+          priorDetections,
+          frameNumber,
+          lightingHint: 'unknown',
         }),
       });
       const requestDuration = performance.now() - requestStart;
@@ -428,83 +460,90 @@ function CrewJobLoadPageContent() {
       }
 
       const result = await response.json();
-      console.log(`[VLM] Frame #${frameId} Success - Detections:`, {
-        count: result.detections?.length || 0,
-        detections: result.detections,
+      const detectedItems: Detection[] = Array.isArray(result.items) ? result.items : [];
+      lastDetectionsRef.current = detectedItems;
+
+      console.log(`[VLM] Frame #${frameId} Success - Checklist:`, {
+        count: detectedItems.length,
+        items: detectedItems,
         provider: result.provider,
         model: result.modelVersion,
         processingTimeMs: result.processingTimeMs,
         estimatedCost: result.estimatedCost
       });
 
-      if (result.detections && result.detections.length > 0) {
-        setDetections(result.detections);
-        const detectedLabels = result.detections.map((d: Detection) => d.label).join(', ');
+      const presentItems = detectedItems.filter(d => d.status === 'present');
+      const uncertainItems = detectedItems.filter(d => d.status === 'uncertain');
+      const missingItems = detectedItems.filter(d => d.status === 'missing');
+      const timeMs = result.processingTimeMs || 0;
 
-        // Show detection info with Gemini Flash branding
-        const timeMs = result.processingTimeMs || 0;
-        setDetectionStatus(`⚡ Gemini Flash (${timeMs}ms): ${detectedLabels}`);
+      const formatDetectionLine = (items: Detection[], emoji: string) =>
+        items.length > 0
+          ? `${emoji} ${items
+              .map(item => {
+                const confidence = typeof item.confidence === 'number'
+                  ? `${Math.round(item.confidence * 100)}%`
+                  : '—';
+                return `${item.name} (${confidence})`;
+              })
+              .join(', ')}`
+          : null;
 
-        // Auto-check matching items
-        setRequiredItems(prev => {
-          let hasChanges = false;
-          const updated = prev.map(item => {
-            // Skip if already checked
-            if (item.checked) return item;
+      const statusLines = [
+        formatDetectionLine(presentItems, '✅'),
+        formatDetectionLine(uncertainItems, '🤔'),
+        formatDetectionLine(missingItems, '❌'),
+      ].filter(Boolean);
 
-            // Check if this item matches any detection
-            const matchingDetection = result.detections.find((d: Detection) => {
-              const itemLower = item.name.toLowerCase().replace(/[\s-_()]/g, '');
-              const detectedLower = d.label.toLowerCase().replace(/[\s-_()]/g, '');
+      setDetectionStatus(
+        statusLines.length > 0
+          ? `⚡ Gemini Flash (${timeMs}ms) · ${statusLines.join(' · ')}`
+          : `⚡ Gemini Flash (${timeMs}ms) · No items visible`
+      );
 
-              return (
-                detectedLower.includes(itemLower) ||
-                itemLower.includes(detectedLower) ||
-                (itemLower.includes('mower') && detectedLower.includes('mower')) ||
-                (itemLower.includes('trimmer') && detectedLower.includes('trimmer')) ||
-                (itemLower.includes('blower') && detectedLower.includes('blower')) ||
-                (itemLower.includes('safety') && (detectedLower.includes('safety') || detectedLower.includes('gear') || detectedLower.includes('glasses') || detectedLower.includes('protection'))) ||
-                (itemLower.includes('fuel') && detectedLower.includes('gas')) ||
-                (itemLower.includes('gas') && (detectedLower.includes('fuel') || detectedLower.includes('gas'))) ||
-                (itemLower.includes('edger') && detectedLower.includes('edg')) ||
-                (itemLower.includes('cycle') && detectedLower.includes('oil')) ||
-                (itemLower.includes('water') && detectedLower.includes('water')) ||
-                (itemLower.includes('cooler') && detectedLower.includes('cooler'))
-              );
-            });
+      setDetections(detectedItems);
 
-            if (matchingDetection) {
-              console.log(`[VLM] Match found: "${matchingDetection.label}" → "${item.name}" (confidence: ${Math.round(matchingDetection.confidence * 100)}%)`);
-              console.log(`[VLM] Auto-checking: ${item.name}`);
-              hasChanges = true;
-              return { ...item, checked: true, confidence: matchingDetection.confidence };
-            }
-            return item;
-          });
+      if (detectedItems.length === 0) {
+        console.log(`[VLM] Frame #${frameId} - No checklist matches returned`);
+      }
 
-          // Only sort if there were changes
-          if (!hasChanges) return prev;
+      // Auto-check matching items when Gemini marks them present with confidence ≥ 0.6
+      setRequiredItems(prev => {
+        let hasChanges = false;
+        const updated = prev.map(item => {
+          if (item.checked) return item;
 
-          // Sort: unchecked items first, checked items last
-          const sorted = updated.sort((a, b) => {
-            if (a.checked === b.checked) return 0;
-            return a.checked ? 1 : -1;
-          });
+          const match = detectedItems.find(d =>
+            d.name.trim().toLowerCase() === item.name.trim().toLowerCase()
+          );
 
-          // Flash animation and sound on detection
-          if (hasChanges) {
-            setShowFlash(true);
-            // Simple beep sound
-            playBeep();
-            setTimeout(() => setShowFlash(false), 300);
+          if (match && match.status === 'present' && (match.confidence ?? 0) >= 0.6) {
+            console.log(`[VLM] Present detected: "${match.name}" → "${item.name}" (confidence: ${Math.round((match.confidence ?? 0) * 100)}%)`);
+            hasChanges = true;
+            return {
+              ...item,
+              checked: true,
+              confidence: match.confidence,
+              note: match.note,
+            };
           }
 
-          return sorted;
+          return item;
         });
-      } else {
-        console.log(`[VLM] Frame #${frameId} - No detections in response`);
-        setDetections([]);
-      }
+
+        if (!hasChanges) return prev;
+
+        const sorted = updated.sort((a, b) => {
+          if (a.checked === b.checked) return 0;
+          return a.checked ? 1 : -1;
+        });
+
+        setShowFlash(true);
+        playBeep();
+        setTimeout(() => setShowFlash(false), 300);
+
+        return sorted;
+      });
     } catch (error: any) {
       console.error(`[VLM] Frame #${frameId} Detection error:`, {
         message: error.message,
@@ -513,6 +552,9 @@ function CrewJobLoadPageContent() {
         status: error?.status,
         details: error?.details
       });
+
+      setDetections([]);
+      lastDetectionsRef.current = [];
 
       const statusCode = typeof error?.status === 'number' ? error.status : undefined;
       const message: string = error?.message || 'Unknown error';
@@ -1118,7 +1160,7 @@ function CrewJobLoadPageContent() {
         }
 
         .container-2 {
-          flex: 1.3;
+          flex: 0 0 auto;
           border: 3px solid #FFC107;
           border-radius: 12px;
           background: #000;
@@ -1127,12 +1169,15 @@ function CrewJobLoadPageContent() {
           justify-content: center;
           position: relative;
           overflow: hidden;
+          width: 100%;
+          aspect-ratio: 1;
         }
 
         .video-feed {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          object-position: center;
         }
 
         .detection-overlay {
@@ -1151,6 +1196,19 @@ function CrewJobLoadPageContent() {
           color: #000;
           font-weight: bold;
           font-size: 14px;
+        }
+
+        .detection-breakdown {
+          margin-top: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #1a1a1a;
+          text-align: left;
+        }
+
+        .detection-breakdown span {
+          display: block;
+          line-height: 1.3;
         }
 
         .container-3 {
@@ -1639,44 +1697,33 @@ function CrewJobLoadPageContent() {
                 }}
               />
 
-              {detections.map((detection, index) => (
-                detection.bbox && (
-                  <div
-                    key={index}
-                    style={{
-                      position: 'absolute',
-                      left: `${detection.bbox.x}%`,
-                      top: `${detection.bbox.y}%`,
-                      width: `${detection.bbox.width}%`,
-                      height: `${detection.bbox.height}%`,
-                      border: '3px solid #00FF00',
-                      borderRadius: '4px',
-                      boxShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
-                      pointerEvents: 'none'
-                    }}
-                  >
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '-25px',
-                        left: '0',
-                        background: '#00FF00',
-                        color: '#000',
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {detection.label} ({Math.round(detection.confidence * 100)}%)
-                    </div>
-                  </div>
-                )
-              ))}
-              {isAnalyzing && (
+              {(isAnalyzing || detections.length > 0) && (
                 <div className="detection-overlay">
                   <div className="detection-text">{detectionStatus}</div>
+                  {detections.length > 0 && (
+                    <div className="detection-breakdown">
+                      {detections.map((detection, index) => {
+                        const emoji =
+                          detection.status === 'present'
+                            ? '✅'
+                            : detection.status === 'uncertain'
+                              ? '🤔'
+                              : '❌';
+                        const confidence =
+                          typeof detection.confidence === 'number'
+                            ? ` (${Math.round(detection.confidence * 100)}%)`
+                            : '';
+                        const note = detection.note ? ` · ${detection.note}` : '';
+                        return (
+                          <span key={`${detection.name}-${index}`}>
+                            {emoji} {detection.name}
+                            {confidence}
+                            {note}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </>

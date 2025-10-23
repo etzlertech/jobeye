@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { detectWithGemini } from '@/domains/vision/services/gemini-vlm.service';
+import { detectChecklistWithGemini } from '@/domains/vision/services/gemini-vlm.service';
 
 export async function POST(request: NextRequest) {
   const requestId = Math.random().toString(36).substring(7);
@@ -14,10 +14,26 @@ export async function POST(request: NextRequest) {
     console.log(`[VLM API ${requestId}] ${timestamp} - Request received`);
 
     const body = await request.json();
-    const { imageData, expectedItems, includeBboxes } = body;
+    const {
+      imageData,
+      remainingItems,
+      verifiedItems,
+      priorDetections,
+      frameNumber,
+      lightingHint,
+      bboxHints,
+      expectedItems, // legacy field fallback
+    } = body;
 
-    console.log(`[VLM API ${requestId}] Expected items:`, expectedItems);
-    console.log(`[VLM API ${requestId}] Include bboxes:`, includeBboxes);
+    const checklistItems: string[] =
+      Array.isArray(remainingItems) && remainingItems.length > 0
+        ? remainingItems
+        : Array.isArray(expectedItems)
+          ? expectedItems
+          : [];
+
+    console.log(`[VLM API ${requestId}] Remaining items:`, checklistItems);
+    console.log(`[VLM API ${requestId}] Verified items:`, verifiedItems);
 
     if (!imageData) {
       console.error(`[VLM API ${requestId}] Missing imageData`);
@@ -27,14 +43,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call Gemini 2.5 Flash (fast, accurate, enterprise-grade)
+    if (checklistItems.length === 0) {
+      console.warn(`[VLM API ${requestId}] No remaining items to verify`);
+      return NextResponse.json({
+        items: [],
+        processingTimeMs: 0,
+        estimatedCost: 0,
+        provider: 'google-gemini-2.5-flash',
+        modelVersion: 'gemini-2.5-flash',
+        frameNumber: frameNumber ?? 1,
+      });
+    }
+
+    // Call Gemini 2.5 Flash checklist verifier
     const serviceStart = performance.now();
-    const { data, error } = await detectWithGemini({
+    const { data, error } = await detectChecklistWithGemini({
       imageData,
-      expectedItems: expectedItems || [],
+      remainingItems: checklistItems,
+      verifiedItems: Array.isArray(verifiedItems) ? verifiedItems : [],
+      priorDetections: Array.isArray(priorDetections) ? priorDetections : [],
+      frameNumber,
+      lightingHint,
+      bboxHints,
     }, {
-      includeBboxes: includeBboxes ?? true,
-      model: 'gemini-2.5-flash', // Using Gemini 2.5 Flash for best performance
+      model: 'gemini-2.5-flash',
     });
     const serviceDuration = performance.now() - serviceStart;
 
@@ -63,22 +95,33 @@ export async function POST(request: NextRequest) {
     console.log(`[VLM API ${requestId}] Success:`, {
       provider: data.provider,
       model: data.modelVersion,
-      detectionCount: data.detections.length,
-      detections: data.detections.map(d => ({
-        label: d.label,
-        confidence: d.confidence,
-        hasBbox: !!d.bbox
-      })),
+      itemCount: data.items.length,
+      items: data.items,
       processingTimeMs: data.processingTimeMs,
       cost: data.estimatedCost
     });
 
+    const legacyDetections = data.items.map((item) => ({
+      label: item.name,
+      confidence: item.confidence ?? 0,
+      source: item.status,
+      status: item.status,
+      note: item.note,
+    }));
+
     return NextResponse.json({
-      detections: data.detections,
+      items: data.items,
+      detections: legacyDetections,
       processingTimeMs: data.processingTimeMs,
       estimatedCost: data.estimatedCost,
       provider: data.provider,
       modelVersion: data.modelVersion,
+      frameNumber: data.frameNumber,
+      winner: 'gemini',
+      geminiTimeMs: data.processingTimeMs,
+      geminiSuccess: true,
+      gpt4TimeMs: null,
+      gpt4Success: false,
     });
   } catch (err: any) {
     console.error(`[VLM API ${requestId}] API error:`, {
