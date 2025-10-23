@@ -65,8 +65,8 @@ export class JobLoadRepository {
           item_type
         )
       `)
-      .eq('workflow_task.job_id', jobId)
-      .eq('is_required', true);
+      .eq('workflow_task.job_id', jobId);
+      // Removed .eq('is_required', true) filter to show ALL items (required and optional)
 
     if (tableError) {
       console.error('[JobLoadRepository] Error fetching table items:', tableError);
