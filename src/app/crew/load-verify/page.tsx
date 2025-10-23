@@ -306,8 +306,8 @@ function CrewLoadVerifyPageContent() {
     if (preselectedJobId && jobs.length > 0) {
       const job = jobs.find(j => j.id === preselectedJobId);
       if (job) {
-        setSelectedJob(job);
-        setSelectedJobId(job.id);
+        // Use handleJobSelect to load saved states
+        handleJobSelect(job);
       }
     }
   }, [preselectedJobId, jobs]);
@@ -327,16 +327,44 @@ function CrewLoadVerifyPageContent() {
     }
   };
 
-  const handleJobSelect = (job: Job) => {
+  const handleJobSelect = async (job: Job) => {
     setSelectedJob(job);
     setSelectedJobId(job.id);
 
-    // Initialize manual items state
-    const initialState: Record<string, boolean> = {};
-    job.requiredEquipment.forEach(item => {
-      initialState[item.id] = false;
-    });
-    setManualItems(initialState);
+    try {
+      // Fetch current item states from database
+      const response = await fetch(`/api/crew/jobs/${job.id}/load-items`);
+      const data = await response.json();
+
+      if (data.success && data.items) {
+        // Initialize with actual saved states
+        const initialState: Record<string, boolean> = {};
+
+        data.items.forEach((item: any) => {
+          // Mark as checked if verified or loaded
+          initialState[item.id] = item.status === 'verified' || item.status === 'loaded';
+        });
+
+        console.log('[LoadVerify] Loaded item states:', initialState);
+        setManualItems(initialState);
+      } else {
+        // Fallback: Initialize all as unchecked
+        const initialState: Record<string, boolean> = {};
+        job.requiredEquipment.forEach(item => {
+          initialState[item.id] = false;
+        });
+        setManualItems(initialState);
+      }
+    } catch (error) {
+      console.error('[LoadVerify] Failed to load item states:', error);
+
+      // Fallback: Initialize all as unchecked
+      const initialState: Record<string, boolean> = {};
+      job.requiredEquipment.forEach(item => {
+        initialState[item.id] = false;
+      });
+      setManualItems(initialState);
+    }
   };
 
   const handleCameraCapture = async (imageBlob: Blob, imageUrl: string) => {
