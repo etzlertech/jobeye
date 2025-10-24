@@ -161,3 +161,6 @@ export async function getUser() {
 // Aliases for legacy imports
 export const createClient = () => supabase;
 export const createSupabaseClient = () => supabase;
+
+// Export browser client factory for consistency with server client
+export const createBrowserClient = () => supabase;
