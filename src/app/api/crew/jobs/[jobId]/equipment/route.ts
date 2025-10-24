@@ -4,7 +4,7 @@
  * file: /src/app/api/crew/jobs/[jobId]/equipment/route.ts
  * phase: 3
  * domain: crew
- * purpose: API endpoint for managing required tools/materials (stored in jobs.checklist_items for compatibility)
+ * purpose: Hybrid API endpoint - reads item list from item_transactions, verification status from jobs.checklist_items
  * spec_ref: 007-mvp-intent-driven/contracts/crew-api.md
  * complexity_budget: 200
  * migrations_touched: []
@@ -38,6 +38,25 @@ import { handleApiError } from '@/core/errors/error-handler';
 import { JobLoadRepository } from '@/domains/crew/repositories/job-load.repository';
 import { getRequestContext } from '@/lib/auth/context';
 import { isJobLoadV2Enabled } from '@/lib/features/flags';
+
+/**
+ * HYBRID MODEL ARCHITECTURE
+ *
+ * This endpoint uses a hybrid approach for job load verification:
+ *
+ * 1. Item Assignment (Source of Truth): item_transactions table
+ *    - What items are assigned to the job
+ *    - Managed via supervisor item assignment API
+ *    - Provides audit trail of check_out/check_in
+ *
+ * 2. Verification Status: jobs.checklist_items JSONB field
+ *    - Which items have been verified/checked by crew
+ *    - Tracks checked/unchecked state
+ *    - Updated by crew during load verification
+ *
+ * GET: Merges item_transactions (item list) + checklist_items (checked status)
+ * PUT: Updates only checklist_items (verification status)
+ */
 
 interface EquipmentItem {
   name: string;
@@ -88,20 +107,38 @@ export async function GET(
       });
     }
 
-    // NEW PATH: Use dual-read logic from JobLoadRepository
+    // NEW PATH: Hybrid model
+    // 1. Get assigned items from item_transactions (what's assigned to job)
     const loadRepo = new JobLoadRepository(supabase);
-    const items = await loadRepo.getRequiredItems(jobId);
+    const assignedItems = await loadRepo.getRequiredItems(jobId);
 
-    // Transform to legacy equipment format for backward compatibility
-    const equipment = items.map((item) => ({
-      id: item.id,
-      name: item.name,
-      checked: item.status === 'loaded' || item.status === 'verified',
-      category: item.item_type === 'equipment' ? 'primary' : 'materials',
-      quantity: item.quantity,
-      verified_at: item.status === 'verified' ? new Date().toISOString() : undefined,
-      icon: undefined
-    }));
+    // 2. Get verification status from JSONB (what's been verified/checked)
+    const { data: job } = await supabase
+      .from('jobs')
+      .select('checklist_items')
+      .eq('id', jobId)
+      .single();
+
+    const checklistItems = (job?.checklist_items as any[]) || [];
+
+    // 3. Merge: use item_transactions for item list, JSONB for checked status
+    const equipment = assignedItems.map((item) => {
+      // Find matching checklist item by name (fallback to ID if names don't match)
+      const checklistItem = checklistItems.find(
+        (ci: any) => ci.name === item.name || ci.id === item.id
+      );
+
+      return {
+        id: item.id,
+        name: item.name,
+        checked: checklistItem?.checked || checklistItem?.loaded || false, // Get from JSONB, not item_transactions status
+        category: item.item_type === 'equipment' ? 'primary' :
+                  item.item_type === 'material' ? 'materials' : 'support',
+        quantity: item.quantity,
+        verified_at: checklistItem?.verified_at,
+        icon: checklistItem?.icon
+      };
+    });
 
     return NextResponse.json({
       equipment,
@@ -158,11 +195,8 @@ export async function PUT(
       });
     }
 
-    // NEW PATH: Dual-write using JobLoadRepository
-    const loadRepo = new JobLoadRepository(supabase);
-
-    // Dual-write: Update both JSONB and workflow_task_item_associations
-    // 1. Update JSONB for backward compatibility
+    // NEW PATH: Hybrid model - update only JSONB verification status
+    // Item assignments are managed via supervisor API, not here
     const { error: jsonbError } = await supabase
       .from('jobs')
       .update({ checklist_items: equipment })
@@ -170,29 +204,15 @@ export async function PUT(
 
     if (jsonbError) throw jsonbError;
 
-    // 2. Update workflow_task_item_associations status based on checked field
-    let loadedCount = 0;
-    let missingCount = 0;
-
-    for (const item of equipment) {
-      if (item.checked) {
-        await loadRepo.markItemLoaded(jobId, item.id);
-        loadedCount++;
-      } else {
-        // Mark unchecked items as missing to keep dual-write consistent
-        await loadRepo.markItemMissing(jobId, item.id);
-        missingCount++;
-      }
-    }
+    console.log(`[Equipment PUT] Updated verification status for ${equipment.length} items`);
 
     return NextResponse.json({
       success: true,
       equipment,
       _meta: {
-        dual_write: true,
         total_items: equipment.length,
-        loaded_count: loadedCount,
-        missing_count: missingCount
+        checked_count: equipment.filter(item => item.checked).length,
+        unchecked_count: equipment.filter(item => !item.checked).length
       }
     });
 
