@@ -34,7 +34,7 @@
 //   4. Configure auth persistence
 // --- END DIRECTIVE BLOCK ---
 
-import { createBrowserClient, createServerClient as createSupabaseServerClient } from '@supabase/ssr';
+import { createBrowserClient as createSupabaseBrowserClient, createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
@@ -47,7 +47,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Browser client singleton
-export const supabase = createBrowserClient<Database>(
+export const supabase = createSupabaseBrowserClient<Database>(
   supabaseUrl,
   supabaseAnonKey,
   {
