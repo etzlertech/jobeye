@@ -416,7 +416,7 @@ function CrewJobLoadPageContent() {
       }
 
       const expectedItems = uncheckedItems.map(item => item.name);
-      const estimatedCost = (frameCount.current * 0.004).toFixed(3);
+      const estimatedCost = (frameCount.current * 0.0001).toFixed(4);
 
       setDetectionStatus(`🔍 Analyzing (${uncheckedItems.length} remaining, ${analysisQueue.current.size} frames processing, ~$${estimatedCost})...`);
       console.log(`[VLM] Unchecked items remaining (${uncheckedItems.length}):`, expectedItems);
@@ -621,15 +621,15 @@ function CrewJobLoadPageContent() {
     console.log('[VLM] Sending initial frame immediately...');
     analyzeFrame();
 
-    // Set aggressive capture interval: 0.5 seconds = 2 fps
-    // This allows 3-4 frames in 2 seconds as requested
-    // Cost: ~$0.003-$0.005 per frame, max 40 frames in 20 seconds = $0.12-$0.20 max
+    // Set aggressive capture interval: 333ms = 3 fps
+    // With concurrency limit of 2, some frames may be skipped when API is slow
+    // Cost: ~$0.0001 per frame, max ~60 frames in 20 seconds = $0.006 max (many skipped)
     analysisIntervalRef.current = setInterval(() => {
       // Check 20-second safety limit
       const elapsed = (Date.now() - sessionStartTime.current) / 1000;
       if (elapsed >= 20) {
-        console.log(`[VLM] 🔒 20-second safety limit reached. Stopping analysis. Frames sent: ${frameCount.current}, Est. cost: $${(frameCount.current * 0.004).toFixed(3)}`);
-        setDetectionStatus(`🔒 20s limit reached (${frameCount.current} frames, ~$${(frameCount.current * 0.004).toFixed(3)}) - Press START to restart`);
+        console.log(`[VLM] 🔒 20-second safety limit reached. Stopping analysis. Frames sent: ${frameCount.current}, Est. cost: $${(frameCount.current * 0.0001).toFixed(4)}`);
+        setDetectionStatus(`🔒 20s limit reached (${frameCount.current} frames, ~$${(frameCount.current * 0.0001).toFixed(4)}) - Press START to restart`);
 
         // Stop the analysis interval but keep camera running for restart
         setIsAnalyzing(false);
@@ -647,7 +647,7 @@ function CrewJobLoadPageContent() {
       }
 
       analyzeFrame();
-    }, 500); // 2 fps for responsive detection
+    }, 333); // 3 fps for more responsive detection
   };
 
   const playBeep = () => {
@@ -1256,7 +1256,7 @@ function CrewJobLoadPageContent() {
             transparent 100%
           );
           box-shadow: 0 0 8px rgba(255, 193, 7, 0.6);
-          animation: scan 2s ease-in-out infinite;
+          animation: scan 1.5s ease-in-out infinite;
         }
 
         @keyframes scan {
