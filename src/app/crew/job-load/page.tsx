@@ -972,36 +972,42 @@ function CrewJobLoadPageContent() {
   // Watch for all items being checked
   useEffect(() => {
     const allChecked = requiredItems.every(item => item.checked);
-    if (allChecked && requiredItems.length > 0 && isAnalyzing) {
-      console.log('[AUTO-STOP] All items checked! Stopping...');
-      setDetectionStatus('✅ LIST COMPLETED!');
-      setIsAnalyzing(false);
-      isAnalyzingRef.current = false;
-      if (cooldownTimeoutRef.current) {
-        clearTimeout(cooldownTimeoutRef.current);
-        cooldownTimeoutRef.current = null;
-      }
+    if (allChecked && requiredItems.length > 0) {
+      console.log('[COMPLETION] All items checked! Showing confetti...');
 
-      // Play success sound and show confetti
+      // Always play success sound and show confetti when all items completed
       playSuccessSound();
       setShowConfetti(true);
 
       // Stop confetti after 8 seconds
       setTimeout(() => setShowConfetti(false), 8000);
 
-      // Stop the interval immediately
-      if (analysisIntervalRef.current) {
-        clearInterval(analysisIntervalRef.current);
-        analysisIntervalRef.current = null;
-      }
+      // If we're analyzing, stop the camera and detection
+      if (isAnalyzing) {
+        console.log('[AUTO-STOP] Stopping vision detection...');
+        setDetectionStatus('✅ LIST COMPLETED!');
+        setIsAnalyzing(false);
+        isAnalyzingRef.current = false;
 
-      // Stop camera after delay
-      setTimeout(() => {
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-          setStream(null);
+        if (cooldownTimeoutRef.current) {
+          clearTimeout(cooldownTimeoutRef.current);
+          cooldownTimeoutRef.current = null;
         }
-      }, 1500);
+
+        // Stop the interval immediately
+        if (analysisIntervalRef.current) {
+          clearInterval(analysisIntervalRef.current);
+          analysisIntervalRef.current = null;
+        }
+
+        // Stop camera after delay
+        setTimeout(() => {
+          if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            setStream(null);
+          }
+        }, 1500);
+      }
     }
   }, [requiredItems, isAnalyzing, stream]);
 
@@ -1442,19 +1448,19 @@ function CrewJobLoadPageContent() {
             opacity: 1;
           }
           10% {
-            transform: translateY(-80vh) translateX(10px) rotate(90deg) scale(1);
+            transform: translateY(-80vh) translateX(15vw) rotate(90deg) scale(1);
           }
           20% {
-            transform: translateY(-60vh) translateX(-10px) rotate(180deg) scale(1);
+            transform: translateY(-60vh) translateX(-12vw) rotate(180deg) scale(1);
           }
           30% {
-            transform: translateY(-40vh) translateX(15px) rotate(270deg) scale(1);
+            transform: translateY(-40vh) translateX(20vw) rotate(270deg) scale(1);
           }
           50% {
             opacity: 1;
           }
           100% {
-            transform: translateY(100vh) translateX(-20px) rotate(720deg) scale(0.5);
+            transform: translateY(100vh) translateX(-18vw) rotate(720deg) scale(0.5);
             opacity: 0;
           }
         }
@@ -1465,19 +1471,19 @@ function CrewJobLoadPageContent() {
             opacity: 1;
           }
           10% {
-            transform: translateY(-80vh) translateX(-15px) rotate(-90deg) scale(1);
+            transform: translateY(-80vh) translateX(-18vw) rotate(-90deg) scale(1);
           }
           25% {
-            transform: translateY(-50vh) translateX(20px) rotate(-180deg) scale(1);
+            transform: translateY(-50vh) translateX(22vw) rotate(-180deg) scale(1);
           }
           40% {
-            transform: translateY(-20vh) translateX(-25px) rotate(-270deg) scale(1);
+            transform: translateY(-20vh) translateX(-15vw) rotate(-270deg) scale(1);
           }
           60% {
             opacity: 1;
           }
           100% {
-            transform: translateY(100vh) translateX(15px) rotate(-630deg) scale(0.5);
+            transform: translateY(100vh) translateX(25vw) rotate(-630deg) scale(0.5);
             opacity: 0;
           }
         }
@@ -1488,19 +1494,19 @@ function CrewJobLoadPageContent() {
             opacity: 1;
           }
           15% {
-            transform: translateY(-70vh) translateX(25px) rotate(120deg) scale(1);
+            transform: translateY(-70vh) translateX(28vw) rotate(120deg) scale(1);
           }
           35% {
-            transform: translateY(-35vh) translateX(-15px) rotate(240deg) scale(1);
+            transform: translateY(-35vh) translateX(-20vw) rotate(240deg) scale(1);
           }
           55% {
-            transform: translateY(0vh) translateX(10px) rotate(360deg) scale(1);
+            transform: translateY(0vh) translateX(16vw) rotate(360deg) scale(1);
           }
           70% {
             opacity: 1;
           }
           100% {
-            transform: translateY(100vh) translateX(-10px) rotate(540deg) scale(0.3);
+            transform: translateY(100vh) translateX(-22vw) rotate(540deg) scale(0.3);
             opacity: 0;
           }
         }
@@ -1825,15 +1831,16 @@ function CrewJobLoadPageContent() {
           width: '100vw',
           height: '100vh',
           pointerEvents: 'none',
-          zIndex: 99999
+          zIndex: 99999,
+          overflow: 'hidden'
         }}>
-          {[...Array(100)].map((_, i) => (
+          {[...Array(200)].map((_, i) => (
             <div
               key={i}
               className={`confetti-${(i % 6) + 1}`}
               style={{
                 left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 4}s`,
+                animationDelay: `${Math.random() * 3}s`,
                 borderRadius: i % 3 === 0 ? '50%' : i % 3 === 1 ? '20%' : '0'
               }}
             />
