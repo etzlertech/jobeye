@@ -136,7 +136,8 @@ export async function GET(
                   item.item_type === 'material' ? 'materials' : 'support',
         quantity: item.quantity,
         verified_at: checklistItem?.verified_at,
-        icon: checklistItem?.icon
+        icon: checklistItem?.icon,
+        source: item.source
       };
     });
 
@@ -144,10 +145,10 @@ export async function GET(
       equipment,
       job_id: jobId,
       _meta: {
-        total: items.length,
+        total: equipment.length,
         sources: {
-          table: items.filter((i) => i.source === 'table').length,
-          jsonb: items.filter((i) => i.source === 'jsonb').length
+          table: equipment.filter((i) => i.source === 'table').length,
+          jsonb: equipment.filter((i) => i.source === 'jsonb').length
         }
       }
     });
