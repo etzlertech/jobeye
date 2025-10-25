@@ -99,7 +99,16 @@ function CrewJobLoadPageContent() {
   const [view, setView] = useState<'job_select' | 'camera'>('job_select');
   const [itemMeta, setItemMeta] = useState<{table: number; jsonb: number} | null>(null);
   const [jobLoadV2Enabled, setJobLoadV2Enabled] = useState<boolean | null>(null); // null = loading
-  
+
+  // Batch scan state
+  const [scanMode, setScanMode] = useState<'continuous' | 'batch'>('batch'); // Default to batch mode
+  const [batchPhase, setBatchPhase] = useState<'idle' | 'capturing' | 'processing' | 'complete'>('idle');
+  const [countdown, setCountdown] = useState(10);
+  const [capturedCount, setCapturedCount] = useState(0);
+  const [processedCount, setProcessedCount] = useState(0);
+  const [totalDetectedCount, setTotalDetectedCount] = useState(0);
+  const [borderFlash, setBorderFlash] = useState(false);
+
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -112,6 +121,14 @@ function CrewJobLoadPageContent() {
   const frameCount = useRef<number>(0);
   const isAnalyzingRef = useRef(false);
   const lastDetectionsRef = useRef<Detection[]>([]);
+
+  // Batch scan refs
+  const processingQueue = useRef<Array<{imageData: string; index: number; remainingItems: string[]}>>([]);
+  const activeRequests = useRef<Set<number>>(new Set());
+  const processedResults = useRef<Map<number, any>>(new Map());
+  const capturedImages = useRef<Array<{data: string; index: number; timestamp: number}>>([]);
+  const captureIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize job items when selected
   useEffect(() => {
@@ -357,6 +374,205 @@ function CrewJobLoadPageContent() {
     );
 
     return canvas.toDataURL('image/jpeg', JPEG_QUALITY);
+  };
+
+  // Batch scan functions
+  const flashBorder = () => {
+    setBorderFlash(true);
+    setTimeout(() => setBorderFlash(false), 150);
+  };
+
+  const processNextBatch = async () => {
+    const MAX_CONCURRENT = 4;
+
+    while (
+      processingQueue.current.length > 0 &&
+      activeRequests.current.size < MAX_CONCURRENT
+    ) {
+      const item = processingQueue.current.shift()!;
+      processImage(item);
+    }
+  };
+
+  const processImage = async (item: {imageData: string; index: number; remainingItems: string[]}) => {
+    const { imageData, index, remainingItems } = item;
+
+    activeRequests.current.add(index);
+
+    console.log(`[Batch Scan] Processing image ${index}/20 (${activeRequests.current.size} in flight)`);
+
+    try {
+      const response = await fetch('/api/vision/vlm-detect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageData,
+          remainingItems,
+          verifiedItems: requiredItems.filter(i => i.checked).map(i => i.name),
+          frameNumber: index
+        })
+      });
+
+      const result = await response.json();
+
+      processedResults.current.set(index, result);
+      handleBatchDetectionResult(result, index);
+      setProcessedCount(processedResults.current.size);
+
+      console.log(`[Batch Scan] ✅ Image ${index}/20 complete - Detected: ${result.items?.filter((i: any) => i.status === 'present').length || 0} items`);
+
+    } catch (error) {
+      console.error(`[Batch Scan] ❌ Image ${index} failed:`, error);
+    } finally {
+      activeRequests.current.delete(index);
+      processNextBatch();
+
+      if (processedResults.current.size === 20) {
+        onBatchScanComplete();
+      }
+    }
+  };
+
+  const handleBatchDetectionResult = (result: any, frameIndex: number) => {
+    const presentItems = result.items?.filter(
+      (item: any) => item.status === 'present' && (item.confidence ?? 0) >= 0.6
+    ) || [];
+
+    if (presentItems.length === 0) return;
+
+    setRequiredItems(prev => {
+      let newDetections = 0;
+
+      const updated = prev.map(item => {
+        if (item.checked) return item;
+
+        const match = presentItems.find(
+          (d: any) => d.name.toLowerCase() === item.name.toLowerCase()
+        );
+
+        if (match) {
+          newDetections++;
+          console.log(`[Batch Scan] 🎯 Frame ${frameIndex} detected: ${item.name} (${Math.round(match.confidence * 100)}%)`);
+
+          return {
+            ...item,
+            checked: true,
+            confidence: match.confidence,
+            note: match.note
+          };
+        }
+
+        return item;
+      });
+
+      if (newDetections > 0) {
+        playBeep();
+        setShowFlash(true);
+        setTimeout(() => setShowFlash(false), 200);
+        setTotalDetectedCount(prev => prev + newDetections);
+      }
+
+      return updated;
+    });
+  };
+
+  const onBatchScanComplete = () => {
+    console.log(`[Batch Scan] 🏁 Complete! Processed all 20 images`);
+    setBatchPhase('complete');
+
+    const detected = requiredItems.filter(i => i.checked).length;
+    const total = requiredItems.length;
+
+    setDetectionStatus(`✅ Scan complete! Detected ${detected}/${total} items`);
+
+    if (detected === total) {
+      setShowConfetti(true);
+      playSuccessSound();
+      setTimeout(() => setShowConfetti(false), 8000);
+    }
+  };
+
+  const queueForProcessing = (imageData: string, index: number) => {
+    const uncheckedItems = requiredItems
+      .filter(item => !item.checked)
+      .map(item => item.name);
+
+    processingQueue.current.push({
+      imageData,
+      index,
+      remainingItems: uncheckedItems
+    });
+
+    processNextBatch();
+  };
+
+  const startBatchScan = async () => {
+    console.log('[Batch Scan] Starting 10-second batch scan...');
+
+    // Reset state
+    setBatchPhase('capturing');
+    setCapturedCount(0);
+    setProcessedCount(0);
+    setTotalDetectedCount(0);
+    capturedImages.current = [];
+    processingQueue.current = [];
+    activeRequests.current.clear();
+    processedResults.current.clear();
+
+    const startTime = Date.now();
+    let imageCount = 0;
+
+    // Countdown timer (updates 10x per second)
+    countdownIntervalRef.current = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      const remaining = Math.max(0, 10 - elapsed);
+      setCountdown(remaining);
+    }, 100);
+
+    // Capture at 2 FPS (every 500ms)
+    const capture = () => {
+      const frameData = captureFrame();
+
+      if (frameData) {
+        imageCount++;
+        setCapturedCount(imageCount);
+
+        capturedImages.current.push({
+          data: frameData,
+          index: imageCount,
+          timestamp: Date.now()
+        });
+
+        flashBorder();
+        queueForProcessing(frameData, imageCount);
+
+        console.log(`[Batch Scan] Captured image ${imageCount}/20`);
+      }
+
+      if (imageCount >= 20 && captureIntervalRef.current) {
+        clearInterval(captureIntervalRef.current);
+        captureIntervalRef.current = null;
+      }
+    };
+
+    // Capture first image immediately
+    capture();
+
+    // Then capture every 500ms
+    captureIntervalRef.current = setInterval(capture, 500);
+
+    // Safety timeout - stop after 10 seconds
+    setTimeout(() => {
+      if (captureIntervalRef.current) {
+        clearInterval(captureIntervalRef.current);
+        captureIntervalRef.current = null;
+      }
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      setBatchPhase('processing');
+    }, 10000);
   };
 
   const analyzeFrame = async () => {
@@ -609,6 +825,13 @@ function CrewJobLoadPageContent() {
     setIsAnalyzing(true);
     setDetectionStatus('Starting analysis...');
 
+    // Choose batch or continuous mode
+    if (scanMode === 'batch') {
+      await startBatchScan();
+      return;
+    }
+
+    // CONTINUOUS MODE (original behavior)
     // Reset session tracking
     sessionStartTime.current = Date.now();
     frameCount.current = 0;
@@ -1177,6 +1400,23 @@ function CrewJobLoadPageContent() {
           overflow: hidden;
           width: 100%;
           aspect-ratio: 1;
+          transition: all 0.15s ease-in-out;
+        }
+
+        .container-2.flash {
+          border-color: #fff;
+          box-shadow: 0 0 30px rgba(255, 193, 7, 1),
+                      0 0 60px rgba(255, 193, 7, 0.6);
+          animation: pulse 0.15s ease-in-out;
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.02);
+          }
         }
 
         .video-feed {
@@ -1271,6 +1511,113 @@ function CrewJobLoadPageContent() {
             top: 90%;
             opacity: 0.3;
           }
+        }
+
+        .batch-countdown-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+          pointer-events: none;
+        }
+
+        .countdown-circle {
+          background: rgba(255, 193, 7, 0.2);
+          border: 4px solid #FFC107;
+          border-radius: 50%;
+          width: 120px;
+          height: 120px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 20px;
+        }
+
+        .countdown-number {
+          font-size: 48px;
+          font-weight: bold;
+          color: #FFC107;
+          line-height: 1;
+        }
+
+        .countdown-label {
+          font-size: 12px;
+          color: #FFC107;
+          margin-top: 4px;
+        }
+
+        .capture-progress {
+          background: rgba(0, 0, 0, 0.8);
+          padding: 15px 25px;
+          border-radius: 8px;
+          border: 2px solid #FFC107;
+        }
+
+        .progress-bar {
+          width: 200px;
+          height: 8px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+          overflow: hidden;
+          margin-bottom: 8px;
+        }
+
+        .progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #FFC107, #FFD700);
+          transition: width 0.3s ease-out;
+          box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+        }
+
+        .progress-text {
+          font-size: 14px;
+          color: #FFC107;
+          font-weight: 600;
+          text-align: center;
+        }
+
+        .processing-status {
+          position: absolute;
+          top: 15px;
+          right: 15px;
+          background: rgba(0, 0, 0, 0.8);
+          padding: 10px 15px;
+          border-radius: 8px;
+          border: 2px solid #FFC107;
+          z-index: 5;
+        }
+
+        .status-row {
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          font-size: 12px;
+          margin-bottom: 4px;
+        }
+
+        .status-row:last-child {
+          margin-bottom: 0;
+        }
+
+        .status-row .label {
+          color: #ccc;
+        }
+
+        .status-row .value {
+          color: #FFC107;
+          font-weight: 600;
+        }
+
+        .status-row .value.success {
+          color: #4CAF50;
         }
 
         .detection-overlay {
@@ -1777,7 +2124,7 @@ function CrewJobLoadPageContent() {
           </div>
         </div>
 
-        <div className="container-2">
+        <div className={`container-2 ${borderFlash ? 'flash' : ''}`}>
           {stream ? (
             <>
               <video
@@ -1793,8 +2140,47 @@ function CrewJobLoadPageContent() {
                 }}
               />
 
-              {/* Scanning guide overlay - shows active detection area */}
-              {isAnalyzing && (
+              {/* Batch scan countdown overlay */}
+              {batchPhase === 'capturing' && (
+                <div className="batch-countdown-overlay">
+                  <div className="countdown-circle">
+                    <div className="countdown-number">{Math.ceil(countdown)}</div>
+                    <div className="countdown-label">seconds</div>
+                  </div>
+                  <div className="capture-progress">
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{ width: `${(capturedCount / 20) * 100}%` }}
+                      />
+                    </div>
+                    <div className="progress-text">
+                      Captured: {capturedCount}/20 images
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Processing status overlay */}
+              {(batchPhase === 'processing' || batchPhase === 'capturing') && processedCount > 0 && (
+                <div className="processing-status">
+                  <div className="status-row">
+                    <span className="label">Processed:</span>
+                    <span className="value">{processedCount}/20</span>
+                  </div>
+                  <div className="status-row">
+                    <span className="label">Detected:</span>
+                    <span className="value success">{totalDetectedCount} items</span>
+                  </div>
+                  <div className="status-row">
+                    <span className="label">Remaining:</span>
+                    <span className="value">{requiredItems.filter(i => !i.checked).length}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Scanning guide overlay - shows active detection area (continuous mode only) */}
+              {isAnalyzing && scanMode === 'continuous' && (
                 <div className="scanning-guide">
                   <div className="scanning-corners">
                     <div className="corner corner-tl"></div>
@@ -1806,7 +2192,7 @@ function CrewJobLoadPageContent() {
                 </div>
               )}
 
-              {(isAnalyzing || detections.length > 0) && (
+              {(isAnalyzing || detections.length > 0) && scanMode === 'continuous' && (
                 <div className="detection-overlay">
                   <div className="detection-text">{detectionStatus}</div>
                   {detections.length > 0 && (
