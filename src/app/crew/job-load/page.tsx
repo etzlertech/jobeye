@@ -1278,17 +1278,19 @@ function CrewJobLoadPageContent() {
           bottom: 15px;
           left: 15px;
           right: 15px;
-          background: rgba(255, 193, 7, 0.95);
+          background: rgba(255, 193, 7, 0.5);
           padding: 12px;
           border-radius: 8px;
           text-align: center;
           box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+          backdrop-filter: blur(4px);
         }
 
         .detection-text {
           color: #000;
           font-weight: bold;
           font-size: 14px;
+          text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
         }
 
         .detection-breakdown {
@@ -1297,6 +1299,7 @@ function CrewJobLoadPageContent() {
           font-weight: 600;
           color: #1a1a1a;
           text-align: left;
+          text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
         }
 
         .detection-breakdown span {
