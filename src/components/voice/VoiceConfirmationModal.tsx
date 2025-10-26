@@ -9,7 +9,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Mic, MicOff, Check, X, Volume2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VoiceIntentResult, VoiceIntentEntities } from '@/domains/intent/types/voice-intent-types';
@@ -41,6 +41,18 @@ export function VoiceConfirmationModal({
   // Build confirmation question from intent
   const confirmationQuestion = buildConfirmationQuestion(intent);
 
+  // Stable reference to startListening
+  const startListening = useCallback(() => {
+    if (!recognitionRef.current || isListening) return;
+
+    try {
+      recognitionRef.current.start();
+      setIsListening(true);
+    } catch (error) {
+      console.error('Failed to start recognition:', error);
+    }
+  }, [isListening]);
+
   // Announce via TTS and auto-start mic
   useEffect(() => {
     if (!isOpen || hasAnnounced) {
@@ -51,33 +63,37 @@ export function VoiceConfirmationModal({
     console.log('[VoiceConfirmationModal] Starting TTS:', confirmationQuestion);
 
     if (autoAnnounce && 'speechSynthesis' in window) {
-      // Cancel any ongoing speech first
+      // Cancel any ongoing speech first and wait a bit
       window.speechSynthesis.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(confirmationQuestion);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
+      // Small delay to let browser be ready for new speech
+      setTimeout(() => {
+        const utterance = new SpeechSynthesisUtterance(confirmationQuestion);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
 
-      utterance.onstart = () => {
-        console.log('[VoiceConfirmationModal] TTS started');
-      };
+        utterance.onstart = () => {
+          console.log('[VoiceConfirmationModal] TTS started');
+        };
 
-      // Start mic after announcement
-      utterance.onend = () => {
-        console.log('[VoiceConfirmationModal] TTS ended');
-        if (autoStartMic) {
-          console.log('[VoiceConfirmationModal] Starting mic');
-          setTimeout(() => startListening(), 500);
-        }
-      };
+        // Start mic after announcement
+        utterance.onend = () => {
+          console.log('[VoiceConfirmationModal] TTS ended');
+          if (autoStartMic) {
+            console.log('[VoiceConfirmationModal] Starting mic');
+            setTimeout(() => startListening(), 500);
+          }
+        };
 
-      utterance.onerror = (event) => {
-        console.error('[VoiceConfirmationModal] TTS error:', event);
-      };
+        utterance.onerror = (event) => {
+          console.error('[VoiceConfirmationModal] TTS error:', event);
+        };
 
-      utteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
+        utteranceRef.current = utterance;
+        window.speechSynthesis.speak(utterance);
+      }, 100);
+
       setHasAnnounced(true);
     } else if (autoStartMic) {
       // No TTS, just start mic
@@ -87,12 +103,13 @@ export function VoiceConfirmationModal({
     }
 
     return () => {
-      // Cleanup TTS
-      if (utteranceRef.current) {
+      // Only cleanup TTS when modal closes, not on re-renders
+      if (!isOpen && utteranceRef.current) {
+        console.log('[VoiceConfirmationModal] Cleaning up TTS');
         window.speechSynthesis.cancel();
       }
     };
-  }, [isOpen, autoAnnounce, autoStartMic, confirmationQuestion, hasAnnounced]);
+  }, [isOpen, autoAnnounce, autoStartMic, confirmationQuestion, hasAnnounced, startListening]);
 
   // Setup speech recognition
   useEffect(() => {
@@ -162,18 +179,7 @@ export function VoiceConfirmationModal({
     }
   }, [isOpen]);
 
-  const startListening = () => {
-    if (!recognitionRef.current || isListening) return;
-
-    try {
-      recognitionRef.current.start();
-      setIsListening(true);
-    } catch (error) {
-      console.error('Failed to start recognition:', error);
-    }
-  };
-
-  const stopListening = () => {
+  const stopListening = useCallback(() => {
     if (!recognitionRef.current || !isListening) return;
 
     try {
@@ -182,7 +188,7 @@ export function VoiceConfirmationModal({
     } catch (error) {
       console.error('Failed to stop recognition:', error);
     }
-  };
+  }, [isListening]);
 
   const speak = (text: string) => {
     if ('speechSynthesis' in window) {

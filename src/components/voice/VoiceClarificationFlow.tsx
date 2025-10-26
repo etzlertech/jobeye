@@ -9,7 +9,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Mic, MicOff, MessageCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VoiceIntentResult } from '@/domains/intent/types/voice-intent-types';
@@ -38,6 +38,19 @@ export function VoiceClarificationFlow({
   const currentAttempt = intentResult.turn_number || 1;
   const attemptsRemaining = maxAttempts - currentAttempt;
 
+  // Stable reference to startListening
+  const startListening = useCallback(() => {
+    if (!recognitionRef.current || isListening) return;
+
+    try {
+      setTranscript(''); // Clear previous transcript
+      recognitionRef.current.start();
+      setIsListening(true);
+    } catch (error) {
+      console.error('Failed to start recognition:', error);
+    }
+  }, [isListening]);
+
   // Announce follow-up question via TTS
   useEffect(() => {
     if (!isOpen || hasAnnounced || !intentResult.follow_up) {
@@ -48,28 +61,32 @@ export function VoiceClarificationFlow({
     console.log('[VoiceClarificationFlow] Starting TTS:', intentResult.follow_up);
 
     if ('speechSynthesis' in window) {
-      // Cancel any ongoing speech first
+      // Cancel any ongoing speech first and wait a bit
       window.speechSynthesis.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(intentResult.follow_up);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
+      // Small delay to let browser be ready for new speech
+      setTimeout(() => {
+        const utterance = new SpeechSynthesisUtterance(intentResult.follow_up);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
 
-      utterance.onstart = () => {
-        console.log('[VoiceClarificationFlow] TTS started');
-      };
+        utterance.onstart = () => {
+          console.log('[VoiceClarificationFlow] TTS started');
+        };
 
-      utterance.onend = () => {
-        console.log('[VoiceClarificationFlow] TTS ended, starting mic');
-        setTimeout(() => startListening(), 500);
-      };
+        utterance.onend = () => {
+          console.log('[VoiceClarificationFlow] TTS ended, starting mic');
+          setTimeout(() => startListening(), 500);
+        };
 
-      utterance.onerror = (event) => {
-        console.error('[VoiceClarificationFlow] TTS error:', event);
-      };
+        utterance.onerror = (event) => {
+          console.error('[VoiceClarificationFlow] TTS error:', event);
+        };
 
-      window.speechSynthesis.speak(utterance);
+        window.speechSynthesis.speak(utterance);
+      }, 100);
+
       setHasAnnounced(true);
     } else {
       console.warn('[VoiceClarificationFlow] Speech synthesis not available');
@@ -78,9 +95,13 @@ export function VoiceClarificationFlow({
     }
 
     return () => {
-      window.speechSynthesis.cancel();
+      // Only cleanup TTS when modal closes, not on re-renders
+      if (!isOpen) {
+        console.log('[VoiceClarificationFlow] Cleaning up TTS');
+        window.speechSynthesis.cancel();
+      }
     };
-  }, [isOpen, intentResult.follow_up, hasAnnounced]);
+  }, [isOpen, intentResult.follow_up, hasAnnounced, startListening]);
 
   // Setup speech recognition
   useEffect(() => {
@@ -148,19 +169,7 @@ export function VoiceClarificationFlow({
     }
   }, [isOpen]);
 
-  const startListening = () => {
-    if (!recognitionRef.current || isListening) return;
-
-    try {
-      setTranscript(''); // Clear previous transcript
-      recognitionRef.current.start();
-      setIsListening(true);
-    } catch (error) {
-      console.error('Failed to start recognition:', error);
-    }
-  };
-
-  const stopListening = () => {
+  const stopListening = useCallback(() => {
     if (!recognitionRef.current || !isListening) return;
 
     try {
@@ -169,7 +178,7 @@ export function VoiceClarificationFlow({
     } catch (error) {
       console.error('Failed to stop recognition:', error);
     }
-  };
+  }, [isListening]);
 
   const handleSubmit = async () => {
     if (!transcript.trim()) {
