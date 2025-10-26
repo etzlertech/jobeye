@@ -60,7 +60,8 @@ import {
   ArrowLeft,
   CheckSquare,
   Repeat,
-  Truck
+  Truck,
+  Mic
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -85,6 +86,7 @@ const navigationItems: NavigationItem[] = [
 
   // Supervisor screens
   { id: 'supervisor-dashboard', label: 'Home', path: '/supervisor', icon: Home, roles: ['supervisor', 'admin'] },
+  { id: 'voice-assistant', label: 'Voice Assistant', path: '/voice', icon: Mic, roles: ['supervisor', 'admin', 'crew'] },
   { id: 'team', label: 'Team', path: '/supervisor/users', icon: Users, roles: ['supervisor', 'admin'] },
   { id: 'customers', label: 'Customers', path: '/supervisor/customers', icon: Briefcase, roles: ['supervisor', 'admin'] },
   { id: 'properties', label: 'Properties', path: '/supervisor/properties', icon: Building, roles: ['supervisor', 'admin'] },

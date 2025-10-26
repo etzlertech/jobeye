@@ -31,7 +31,8 @@ import {
   Wrench,
   Truck,
   Repeat,
-  Briefcase
+  Briefcase,
+  Mic
 } from 'lucide-react';
 import { TenantBadge } from '@/components/tenant';
 import { supabase } from '@/lib/supabase/client';
@@ -333,11 +334,11 @@ export default function SupervisorDashboard() {
             </button>
             <button
               type="button"
-              onClick={() => router.push('/supervisor/materials')}
+              onClick={() => router.push('/voice')}
               className="action-button secondary"
             >
-              <Package className="w-6 h-6" />
-              <span className="text-sm">Materials</span>
+              <Mic className="w-6 h-6" />
+              <span className="text-sm">Voice</span>
             </button>
             <button
               type="button"
