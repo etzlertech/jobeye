@@ -94,19 +94,32 @@ export function useVoiceCommand(options: UseVoiceCommandOptions = {}) {
           console.error('Voice command API error:', {
             status: response.status,
             statusText: response.statusText,
-            error: errorData,
+            fullResponse: errorData,
           });
 
-          // Extract meaningful error message
+          // Extract meaningful error message from nested error structure
+          // Response format: { error: { message, code, statusCode, details } }
           let errorMessage = 'Voice command failed';
-          if (errorData.error) {
-            errorMessage = typeof errorData.error === 'string'
-              ? errorData.error
-              : JSON.stringify(errorData.error);
+
+          if (errorData.error && typeof errorData.error === 'object') {
+            // Structured API error
+            errorMessage = errorData.error.message || errorMessage;
+
+            // Include error code if available
+            if (errorData.error.code) {
+              errorMessage = `${errorMessage} (${errorData.error.code})`;
+            }
+
+            // Log details for debugging
+            if (errorData.error.details) {
+              console.error('Error details:', errorData.error.details);
+            }
+          } else if (typeof errorData.error === 'string') {
+            // Simple error string
+            errorMessage = errorData.error;
           } else if (errorData.message) {
+            // Direct message field
             errorMessage = errorData.message;
-          } else if (errorData.details) {
-            errorMessage = JSON.stringify(errorData.details);
           }
 
           throw new Error(errorMessage);

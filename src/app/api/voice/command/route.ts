@@ -263,6 +263,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(voiceCommandResponseSchema.parse(response), { status: 200 });
 
   } catch (error) {
+    // Log error for debugging
+    console.error('[Voice Command API] Error:', {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
     // Handle validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -274,7 +281,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Handle other errors
+    // Handle other errors with detailed logging
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    console.error('[Voice Command API] Returning error response:', errorMessage);
+
     return handleApiError(error);
   }
 }
