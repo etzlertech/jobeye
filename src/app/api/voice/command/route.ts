@@ -48,7 +48,6 @@ import { getRequestContext } from '@/lib/auth/context';
 import { GeminiIntentService } from '@/domains/intent/services/gemini-intent.service';
 import { InventoryVoiceOrchestrator } from '@/domains/inventory/services/inventory-voice-orchestrator.service';
 import { SpeechToTextService, STTProvider } from '@/domains/voice/services/speech-to-text-service';
-import { TextToSpeechService } from '@/domains/voice/services/text-to-speech-service';
 import { handleApiError } from '@/core/errors/error-handler';
 
 // Force dynamic rendering
@@ -184,11 +183,9 @@ export async function POST(req: NextRequest) {
 
     // Step 3: If needs clarification, return early
     if (intentResult.needs_clarification) {
-      // Generate TTS response for follow-up question
-      const ttsStart = Date.now();
-      const ttsService = new TextToSpeechService();
-      const audioUrl = await ttsService.speak(intentResult.follow_up || 'Could you clarify that?');
-      timings.ttsDuration = Date.now() - ttsStart;
+      // TTS is optional - client will handle voice synthesis
+      // Just return text response
+      timings.ttsDuration = 0;
 
       const response = {
         success: true,
@@ -199,7 +196,7 @@ export async function POST(req: NextRequest) {
         follow_up: intentResult.follow_up,
         response: {
           text: intentResult.follow_up || 'Could you clarify that?',
-          audioUrl,
+          // audioUrl is optional - client handles TTS
         },
         conversation_id: intentResult.conversation_id,
         turn_number: intentResult.turn_number,
@@ -227,11 +224,8 @@ export async function POST(req: NextRequest) {
 
     timings.actionDuration = Date.now() - actionStart;
 
-    // Step 5: Generate TTS response
-    const ttsStart = Date.now();
-    const ttsService = new TextToSpeechService();
-    const audioUrl = await ttsService.speak(actionResult.response_text);
-    timings.ttsDuration = Date.now() - ttsStart;
+    // Step 5: TTS is optional - client will handle voice synthesis
+    timings.ttsDuration = 0;
 
     // Step 6: Build and return response
     const totalCost = intentResult.cost_usd + (sttProvider === STTProvider.OPENAI_WHISPER ? 0.006 : 0) + 0.015;
@@ -248,7 +242,7 @@ export async function POST(req: NextRequest) {
       },
       response: {
         text: actionResult.response_text,
-        audioUrl,
+        // audioUrl is optional - client handles TTS
       },
       conversation_id: intentResult.conversation_id,
       turn_number: intentResult.turn_number,
