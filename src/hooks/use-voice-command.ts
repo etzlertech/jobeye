@@ -96,7 +96,20 @@ export function useVoiceCommand(options: UseVoiceCommandOptions = {}) {
             statusText: response.statusText,
             error: errorData,
           });
-          throw new Error(errorData.error || errorData.message || 'Voice command failed');
+
+          // Extract meaningful error message
+          let errorMessage = 'Voice command failed';
+          if (errorData.error) {
+            errorMessage = typeof errorData.error === 'string'
+              ? errorData.error
+              : JSON.stringify(errorData.error);
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.details) {
+            errorMessage = JSON.stringify(errorData.details);
+          }
+
+          throw new Error(errorMessage);
         }
 
         const result = await response.json();
