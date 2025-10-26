@@ -49,6 +49,7 @@ export default function VoiceCommandCenterPage() {
   const [micPermissionDenied, setMicPermissionDenied] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const transcriptRef = useRef<string>(''); // Ref to avoid re-creating effect on transcript change
 
   // Initialize voice command hook
   const voiceCommand = useVoiceCommand({
@@ -78,6 +79,31 @@ export default function VoiceCommandCenterPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Add assistant message when clarification is needed
+  useEffect(() => {
+    if (voiceCommand.showClarification && voiceCommand.currentIntent?.follow_up) {
+      addMessage({
+        role: 'assistant',
+        content: voiceCommand.currentIntent.follow_up,
+        intent: voiceCommand.currentIntent.intent,
+        confidence: voiceCommand.currentIntent.confidence,
+      });
+    }
+  }, [voiceCommand.showClarification, voiceCommand.currentIntent?.follow_up]);
+
+  // Add assistant message when confirmation is needed
+  useEffect(() => {
+    if (voiceCommand.showConfirmation && voiceCommand.currentIntent) {
+      const intent = voiceCommand.currentIntent.intent.replace(/_/g, ' ');
+      addMessage({
+        role: 'assistant',
+        content: `I'll ${intent}. Please confirm to proceed.`,
+        intent: voiceCommand.currentIntent.intent,
+        confidence: voiceCommand.currentIntent.confidence,
+      });
+    }
+  }, [voiceCommand.showConfirmation, voiceCommand.currentIntent?.intent]);
 
   // Setup speech recognition
   useEffect(() => {
@@ -132,9 +158,13 @@ export default function VoiceCommandCenterPage() {
       }
 
       if (finalTranscript) {
-        setTranscript(finalTranscript.trim());
+        const trimmed = finalTranscript.trim();
+        transcriptRef.current = trimmed;
+        setTranscript(trimmed);
       } else if (interimTranscript) {
-        setTranscript(interimTranscript.trim());
+        const trimmed = interimTranscript.trim();
+        transcriptRef.current = trimmed;
+        setTranscript(trimmed);
       }
     };
 
@@ -150,9 +180,11 @@ export default function VoiceCommandCenterPage() {
       setIsListening(false);
 
       // If we have a final transcript, submit it
-      if (transcript.trim()) {
-        handleVoiceCommand(transcript.trim());
+      const currentTranscript = transcriptRef.current;
+      if (currentTranscript) {
+        handleVoiceCommand(currentTranscript);
         setTranscript('');
+        transcriptRef.current = '';
       }
     };
 
@@ -167,8 +199,7 @@ export default function VoiceCommandCenterPage() {
         }
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transcript]);
+  }, []); // Empty deps - only run once on mount
 
   // Cleanup on unmount
   useEffect(() => {
@@ -193,24 +224,29 @@ export default function VoiceCommandCenterPage() {
   };
 
   const handleVoiceCommand = async (transcript: string) => {
+    // Validate transcript
+    if (!transcript || transcript.trim().length === 0) {
+      console.error('Empty transcript received');
+      toast.error('No voice input detected. Please try again.');
+      return;
+    }
+
     // Add user message to chat
     addMessage({
       role: 'user',
       content: transcript,
     });
 
-    // Process through voice command hook
-    await voiceCommand.processVoiceCommand(transcript);
+    try {
+      // Process through voice command hook
+      await voiceCommand.processVoiceCommand(transcript);
 
-    // Add assistant response (intent detected)
-    if (voiceCommand.currentIntent) {
+      // Note: Assistant responses will be added via onSuccess/onError callbacks
+    } catch (error) {
+      console.error('Error processing voice command:', error);
       addMessage({
         role: 'assistant',
-        content: voiceCommand.currentIntent.needs_clarification
-          ? voiceCommand.currentIntent.follow_up || 'I need more information...'
-          : `I'll ${voiceCommand.currentIntent.intent.replace('_', ' ')} for you.`,
-        intent: voiceCommand.currentIntent.intent,
-        confidence: voiceCommand.currentIntent.confidence,
+        content: 'Sorry, I encountered an error processing your command.',
       });
     }
   };
@@ -237,6 +273,7 @@ export default function VoiceCommandCenterPage() {
 
     try {
       setTranscript('');
+      transcriptRef.current = '';
       recognitionRef.current.start();
     } catch (error) {
       console.error('Failed to start recognition:', error);
