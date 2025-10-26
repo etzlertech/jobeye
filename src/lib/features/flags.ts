@@ -82,6 +82,16 @@ export async function isJobLoadV2Enabled(context: RequestContext): Promise<boole
 }
 
 /**
+ * Check if voice commands are enabled for the current tenant
+ *
+ * @param context - Request context with tenant ID
+ * @returns true if voice commands are enabled, false otherwise
+ */
+export async function isVoiceCommandsEnabled(context: RequestContext): Promise<boolean> {
+  return getFeatureFlag(context, 'voice_commands_enabled', false);
+}
+
+/**
  * Clear the feature flag cache
  * Useful for testing or when settings are updated
  */

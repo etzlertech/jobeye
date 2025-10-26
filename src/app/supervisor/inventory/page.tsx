@@ -72,6 +72,11 @@ import {
 import { ButtonLimiter, useButtonActions } from '@/components/ui/ButtonLimiter';
 import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
 import { SimpleCameraCapture } from '@/components/camera/SimpleCameraCapture';
+import { useVoiceCommand } from '@/hooks/use-voice-command';
+import { VoiceFloatingButton } from '@/components/voice/VoiceFloatingButton';
+import { VoiceConfirmationModal } from '@/components/voice/VoiceConfirmationModal';
+import { VoiceClarificationFlow } from '@/components/voice/VoiceClarificationFlow';
+import toast from 'react-hot-toast';
 
 // Simple camera component for capturing photos
 interface InventoryItem {
@@ -117,11 +122,11 @@ export default function SupervisorInventoryPage() {
   const [isOffline, setIsOffline] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   // View states
   const [view, setView] = useState<'list' | 'add_form' | 'camera'>('list');
-  
-  
+
+
   // Add item form
   const [newItem, setNewItem] = useState<NewItemForm>({
     name: '',
@@ -132,6 +137,31 @@ export default function SupervisorInventoryPage() {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Voice command integration
+  const voiceCommand = useVoiceCommand({
+    context: {
+      role: 'supervisor',
+      currentPage: 'inventory',
+    },
+    onSuccess: (result) => {
+      // Refresh inventory list
+      loadInventory();
+      if (voiceCommand.successMessage) {
+        toast.success(voiceCommand.successMessage, {
+          duration: 4000,
+          icon: '✅',
+        });
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message, {
+        duration: 5000,
+        icon: '❌',
+      });
+    },
+    autoConfirm: false, // Always show confirmation modal
+  });
 
   // Mock inventory data
   const mockItems: InventoryItem[] = [
@@ -445,21 +475,6 @@ export default function SupervisorInventoryPage() {
     }
   };
 
-  const handleVoiceCommand = useCallback((transcript: string) => {
-    const command = transcript.toLowerCase();
-    
-    if (command.includes('add') || command.includes('new')) {
-      setView('camera');
-    } else if (command.includes('search')) {
-      document.getElementById('search-input')?.focus();
-    } else if (command.includes('low stock')) {
-      setSelectedCategory('all');
-      setSearchQuery('');
-      // Filter will show all, but stats will highlight low stock
-    } else if (command.includes('show inventory') || command.includes('list items')) {
-      setView('list');
-    }
-  }, []);
 
   // Loading state
   if (isLoading) {
@@ -961,14 +976,29 @@ export default function SupervisorInventoryPage() {
         )}
       </div>
 
-      {/* Voice Assistant */}
-      <div className="voice-container">
-        <VoiceCommandButton
-          onTranscript={handleVoiceCommand}
-          size="md"
+      {/* Voice Components */}
+      <VoiceFloatingButton
+        onTranscript={voiceCommand.processVoiceCommand}
+        isProcessing={voiceCommand.isProcessing}
+      />
+
+      {voiceCommand.showClarification && voiceCommand.currentIntent && (
+        <VoiceClarificationFlow
+          isOpen={voiceCommand.showClarification}
+          intentResult={voiceCommand.currentIntent}
+          onClarify={voiceCommand.handleClarify}
+          onCancel={voiceCommand.handleCancel}
         />
-        <p className="voice-hint">Try: "Add new item", "Show low stock"</p>
-      </div>
+      )}
+
+      {voiceCommand.showConfirmation && voiceCommand.currentIntent && (
+        <VoiceConfirmationModal
+          isOpen={voiceCommand.showConfirmation}
+          intent={voiceCommand.currentIntent}
+          onConfirm={voiceCommand.handleConfirm}
+          onCancel={voiceCommand.handleCancel}
+        />
+      )}
 
       {/* Bottom Actions */}
       <div className="bottom-actions">
@@ -1115,23 +1145,6 @@ export default function SupervisorInventoryPage() {
           align-items: center;
           justify-content: center;
           height: 200px;
-        }
-
-        .voice-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 1rem;
-          border-top: 1px solid #333;
-          background: rgba(0, 0, 0, 0.9);
-        }
-
-        .voice-hint {
-          font-size: 0.75rem;
-          color: #9CA3AF;
-          text-align: center;
-          margin: 0;
         }
 
         .bottom-actions {

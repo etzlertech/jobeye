@@ -80,6 +80,11 @@ import { CameraCapture } from '@/components/camera/CameraCapture';
 import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
 import { TenantBadge } from '@/components/tenant';
 import { TaskList } from '@/components/tasks';
+import { useVoiceCommand } from '@/hooks/use-voice-command';
+import { VoiceFloatingButton } from '@/components/voice/VoiceFloatingButton';
+import { VoiceConfirmationModal } from '@/components/voice/VoiceConfirmationModal';
+import { VoiceClarificationFlow } from '@/components/voice/VoiceClarificationFlow';
+import toast from 'react-hot-toast';
 
 interface JobDetail {
   id: string;
@@ -141,6 +146,31 @@ export default function CrewJobDetailPage() {
   // Progress state
   const [isStarting, setIsStarting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+
+  // Voice command integration
+  const voiceCommand = useVoiceCommand({
+    context: {
+      role: 'crew',
+      currentPage: 'job-detail',
+      activeJobId: jobId,
+    },
+    onSuccess: (result) => {
+      // Refresh job data
+      loadJobDetail();
+      if (voiceCommand.successMessage) {
+        toast.success(voiceCommand.successMessage, {
+          duration: 4000,
+          icon: '✅',
+        });
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message, {
+        duration: 5000,
+        icon: '❌',
+      });
+    },
+  });
 
   // Setup button actions
   useEffect(() => {
@@ -406,42 +436,6 @@ export default function CrewJobDetailPage() {
     }
   };
 
-  const handleVoiceCommand = async (transcript: string) => {
-    try {
-      const response = await fetch('/api/crew/voice/command', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transcript,
-          context: {
-            currentPage: 'job_detail',
-            jobId: job?.id,
-            jobStatus: job?.status
-          }
-        })
-      });
-
-      const result = await response.json();
-
-      // Handle voice actions
-      if (result.response.actions) {
-        for (const action of result.response.actions) {
-          if (action.type === 'start_job') {
-            handleStartJob();
-          } else if (action.type === 'complete_job') {
-            handleCompleteJob();
-          } else if (action.type === 'take_photo') {
-            setPhotoType('progress');
-            setShowCamera(true);
-          } else if (action.type === 'play_voice' && job?.voiceInstructionsUrl) {
-            toggleVoiceInstructions();
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Voice command error:', error);
-    }
-  };
 
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString([], {
@@ -855,6 +849,30 @@ export default function CrewJobDetailPage() {
           className="w-full"
         />
       </div>
+
+      {/* Voice Components */}
+      <VoiceFloatingButton
+        onTranscript={voiceCommand.processVoiceCommand}
+        isProcessing={voiceCommand.isProcessing}
+      />
+
+      {voiceCommand.showClarification && voiceCommand.currentIntent && (
+        <VoiceClarificationFlow
+          isOpen={voiceCommand.showClarification}
+          intentResult={voiceCommand.currentIntent}
+          onClarify={voiceCommand.handleClarify}
+          onCancel={voiceCommand.handleCancel}
+        />
+      )}
+
+      {voiceCommand.showConfirmation && voiceCommand.currentIntent && (
+        <VoiceConfirmationModal
+          isOpen={voiceCommand.showConfirmation}
+          intent={voiceCommand.currentIntent}
+          onConfirm={voiceCommand.handleConfirm}
+          onCancel={voiceCommand.handleCancel}
+        />
+      )}
 
       <style jsx>{`
         .mobile-container {
