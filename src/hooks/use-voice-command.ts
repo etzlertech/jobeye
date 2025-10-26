@@ -65,14 +65,21 @@ export function useVoiceCommand(options: UseVoiceCommandOptions = {}) {
       }));
 
       try {
-        const requestBody = {
+        const requestBody: any = {
           transcript,
-          context: options.context,
-          conversation_id: state.conversationId,
           settings: {
             use_browser_stt: true,
           },
         };
+
+        // Only include optional fields if they have values (not null)
+        if (options.context) {
+          requestBody.context = options.context;
+        }
+
+        if (state.conversationId) {
+          requestBody.conversation_id = state.conversationId;
+        }
 
         console.log('Sending voice command:', requestBody);
 
@@ -178,15 +185,21 @@ export function useVoiceCommand(options: UseVoiceCommandOptions = {}) {
 
         // If user confirmed via voice, process through confirmation API
         if (voiceTranscript) {
+          const confirmBody: any = {
+            transcript: voiceTranscript,
+            previous_intent: state.currentIntent,
+            confirmation_question: `Confirm ${state.currentIntent.intent}?`,
+          };
+
+          // Only include conversation_id if it exists
+          if (state.conversationId) {
+            confirmBody.conversation_id = state.conversationId;
+          }
+
           const response = await fetch('/api/voice/confirm', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              transcript: voiceTranscript,
-              previous_intent: state.currentIntent,
-              confirmation_question: `Confirm ${state.currentIntent.intent}?`,
-              conversation_id: state.conversationId,
-            }),
+            body: JSON.stringify(confirmBody),
           });
 
           if (!response.ok) {
