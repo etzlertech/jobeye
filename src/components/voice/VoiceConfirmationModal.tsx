@@ -275,13 +275,13 @@ export function VoiceConfirmationModal({
 
             {isListening && (
               <p className="text-center text-sm text-red-600 font-medium">
-                🎤 Listening... Say "yes" or "no"
+                🎤 Listening... Say &quot;yes&quot; or &quot;no&quot;
               </p>
             )}
 
             {transcript && !isExecuting && (
               <p className="text-center text-sm text-gray-600">
-                You said: "{transcript}"
+                You said: &quot;{transcript}&quot;
               </p>
             )}
           </div>
