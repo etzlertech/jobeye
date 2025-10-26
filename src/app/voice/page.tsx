@@ -13,6 +13,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mic,
@@ -47,9 +48,15 @@ export default function VoiceCommandCenterPage() {
   const [transcript, setTranscript] = useState('');
   const [textInput, setTextInput] = useState('');
   const [micPermissionDenied, setMicPermissionDenied] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const transcriptRef = useRef<string>(''); // Ref to avoid re-creating effect on transcript change
+
+  // Portal mounting
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Initialize voice command hook
   const voiceCommand = useVoiceCommand({
@@ -443,24 +450,26 @@ export default function VoiceCommandCenterPage() {
         </form>
       </div>
 
-      {/* Clarification Modal */}
-      {voiceCommand.showClarification && voiceCommand.currentIntent && (
+      {/* Clarification Modal - Rendered via Portal */}
+      {mounted && voiceCommand.showClarification && voiceCommand.currentIntent && createPortal(
         <VoiceClarificationFlow
           isOpen={voiceCommand.showClarification}
           intentResult={voiceCommand.currentIntent}
           onClarify={voiceCommand.handleClarify}
           onCancel={voiceCommand.handleCancel}
-        />
+        />,
+        document.body
       )}
 
-      {/* Confirmation Modal */}
-      {voiceCommand.showConfirmation && voiceCommand.currentIntent && (
+      {/* Confirmation Modal - Rendered via Portal */}
+      {mounted && voiceCommand.showConfirmation && voiceCommand.currentIntent && createPortal(
         <VoiceConfirmationModal
           isOpen={voiceCommand.showConfirmation}
           intent={voiceCommand.currentIntent}
           onConfirm={voiceCommand.handleConfirm}
           onCancel={voiceCommand.handleCancel}
-        />
+        />,
+        document.body
       )}
 
       <style jsx>{`

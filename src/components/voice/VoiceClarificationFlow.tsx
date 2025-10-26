@@ -40,16 +40,39 @@ export function VoiceClarificationFlow({
 
   // Announce follow-up question via TTS
   useEffect(() => {
-    if (!isOpen || hasAnnounced || !intentResult.follow_up) return;
+    if (!isOpen || hasAnnounced || !intentResult.follow_up) {
+      console.log('[VoiceClarificationFlow] Skipping TTS:', { isOpen, hasAnnounced, hasFollowUp: !!intentResult.follow_up });
+      return;
+    }
+
+    console.log('[VoiceClarificationFlow] Starting TTS:', intentResult.follow_up);
 
     if ('speechSynthesis' in window) {
+      // Cancel any ongoing speech first
+      window.speechSynthesis.cancel();
+
       const utterance = new SpeechSynthesisUtterance(intentResult.follow_up);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      utterance.onstart = () => {
+        console.log('[VoiceClarificationFlow] TTS started');
+      };
+
       utterance.onend = () => {
+        console.log('[VoiceClarificationFlow] TTS ended, starting mic');
         setTimeout(() => startListening(), 500);
       };
+
+      utterance.onerror = (event) => {
+        console.error('[VoiceClarificationFlow] TTS error:', event);
+      };
+
       window.speechSynthesis.speak(utterance);
       setHasAnnounced(true);
     } else {
+      console.warn('[VoiceClarificationFlow] Speech synthesis not available');
       setTimeout(() => startListening(), 500);
       setHasAnnounced(true);
     }

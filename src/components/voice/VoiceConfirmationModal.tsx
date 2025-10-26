@@ -43,19 +43,37 @@ export function VoiceConfirmationModal({
 
   // Announce via TTS and auto-start mic
   useEffect(() => {
-    if (!isOpen || hasAnnounced) return;
+    if (!isOpen || hasAnnounced) {
+      console.log('[VoiceConfirmationModal] Skipping TTS:', { isOpen, hasAnnounced });
+      return;
+    }
+
+    console.log('[VoiceConfirmationModal] Starting TTS:', confirmationQuestion);
 
     if (autoAnnounce && 'speechSynthesis' in window) {
+      // Cancel any ongoing speech first
+      window.speechSynthesis.cancel();
+
       const utterance = new SpeechSynthesisUtterance(confirmationQuestion);
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
 
+      utterance.onstart = () => {
+        console.log('[VoiceConfirmationModal] TTS started');
+      };
+
       // Start mic after announcement
       utterance.onend = () => {
+        console.log('[VoiceConfirmationModal] TTS ended');
         if (autoStartMic) {
+          console.log('[VoiceConfirmationModal] Starting mic');
           setTimeout(() => startListening(), 500);
         }
+      };
+
+      utterance.onerror = (event) => {
+        console.error('[VoiceConfirmationModal] TTS error:', event);
       };
 
       utteranceRef.current = utterance;
@@ -63,6 +81,7 @@ export function VoiceConfirmationModal({
       setHasAnnounced(true);
     } else if (autoStartMic) {
       // No TTS, just start mic
+      console.log('[VoiceConfirmationModal] No TTS, starting mic directly');
       setTimeout(() => startListening(), 500);
       setHasAnnounced(true);
     }
