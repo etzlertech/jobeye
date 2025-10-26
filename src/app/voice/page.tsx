@@ -167,6 +167,7 @@ export default function VoiceCommandCenterPage() {
         }
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transcript]);
 
   // Cleanup on unmount

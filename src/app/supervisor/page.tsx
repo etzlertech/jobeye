@@ -353,7 +353,7 @@ export default function SupervisorDashboard() {
           {/* Today's Jobs */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold">Today's Jobs</h2>
+              <h2 className="text-lg font-semibold">Today&apos;s Jobs</h2>
               <span className="count-badge">{todayJobs.length}</span>
             </div>
 
