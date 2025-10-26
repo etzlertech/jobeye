@@ -65,21 +65,31 @@ export function useVoiceCommand(options: UseVoiceCommandOptions = {}) {
       }));
 
       try {
+        const requestBody = {
+          transcript,
+          context: options.context,
+          conversation_id: state.conversationId,
+          settings: {
+            use_browser_stt: true,
+          },
+        };
+
+        console.log('Sending voice command:', requestBody);
+
         const response = await fetch('/api/voice/command', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            transcript,
-            context: options.context,
-            conversation_id: state.conversationId,
-            settings: {
-              use_browser_stt: true,
-            },
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
-          throw new Error('Voice command failed');
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Voice command API error:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData,
+          });
+          throw new Error(errorData.error || errorData.message || 'Voice command failed');
         }
 
         const result = await response.json();
