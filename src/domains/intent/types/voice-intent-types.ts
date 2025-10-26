@@ -91,7 +91,7 @@ export interface VoiceIntentEntities {
 export interface VoiceIntentResult {
   // Core classification
   intent: VoiceIntentType;
-  entities: VoiceIntentEntities;
+  entities?: VoiceIntentEntities; // Optional - may be undefined during early stages
   confidence: number; // 0.0-1.0
 
   // Clarification handling

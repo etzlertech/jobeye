@@ -338,6 +338,15 @@ function renderAccumulatedEntities(intent: VoiceIntentResult): React.ReactNode {
   const { entities } = intent;
   const rows: React.ReactNode[] = [];
 
+  // Guard against undefined entities
+  if (!entities) {
+    return (
+      <div className="text-sm text-gray-500 italic">
+        No details collected yet
+      </div>
+    );
+  }
+
   if (entities.itemNames && entities.itemNames.length > 0) {
     rows.push(
       <div key="items" className="flex justify-between items-center">

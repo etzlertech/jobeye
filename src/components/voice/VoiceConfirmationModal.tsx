@@ -328,6 +328,11 @@ export function VoiceConfirmationModal({
 function buildConfirmationQuestion(intent: VoiceIntentResult): string {
   const { intent: action, entities } = intent;
 
+  // Guard against undefined entities
+  if (!entities) {
+    return `Are you sure you want to ${action.replace(/_/g, ' ')}?`;
+  }
+
   switch (action) {
     case 'check_in':
       return `Are you sure you want to check in ${formatItems(entities.itemNames, entities.quantities)} from job ${entities.jobId || entities.jobNumber}?`;
@@ -352,8 +357,13 @@ function buildConfirmationQuestion(intent: VoiceIntentResult): string {
 /**
  * Render entity summary in the modal
  */
-function renderEntitySummary(entities: VoiceIntentEntities): React.ReactNode {
+function renderEntitySummary(entities: VoiceIntentEntities | undefined): React.ReactNode {
   const rows: React.ReactNode[] = [];
+
+  // Guard against undefined entities
+  if (!entities) {
+    return null;
+  }
 
   if (entities.itemNames && entities.itemNames.length > 0) {
     rows.push(
