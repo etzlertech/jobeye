@@ -116,18 +116,13 @@ export class InventoryVoiceOrchestrator {
       }
 
       // Log voice command
-      await this.voiceLogger.logVoiceCommand({
-        userId,
-        tenantId,
-        command: intent.intent,
-        transcript: '', // Would be passed from caller
-        confidence: intent.confidence,
-        intent: intent.intent,
-        entities: intent.entities,
-        success: result.success,
-        responseTimeMs: Date.now() - startTime,
-        sessionId: voiceSessionId,
-      });
+      this.voiceLogger.logVoiceCommand(
+        intent.intent,
+        intent.confidence,
+        {
+          sessionId: voiceSessionId || 'no-session',
+        }
+      );
 
       return result;
     } catch (error) {
@@ -146,13 +141,13 @@ export class InventoryVoiceOrchestrator {
    * Handle check-in intent
    */
   private async handleCheckIn(
-    entities: VoiceIntentEntities,
+    entities: VoiceIntentEntities | undefined,
     userId: string,
     tenantId: string,
     voiceSessionId?: string
   ): Promise<VoiceActionResult> {
     // Validate required entities
-    if (!entities.itemNames || entities.itemNames.length === 0) {
+    if (!entities || !entities.itemNames || entities.itemNames.length === 0) {
       return {
         success: false,
         intent: 'check_in',
@@ -235,13 +230,13 @@ export class InventoryVoiceOrchestrator {
    * Handle check-out intent
    */
   private async handleCheckOut(
-    entities: VoiceIntentEntities,
+    entities: VoiceIntentEntities | undefined,
     userId: string,
     tenantId: string,
     voiceSessionId?: string
   ): Promise<VoiceActionResult> {
     // Validate required entities
-    if (!entities.itemNames || entities.itemNames.length === 0) {
+    if (!entities || !entities.itemNames || entities.itemNames.length === 0) {
       return {
         success: false,
         intent: 'check_out',
@@ -321,13 +316,13 @@ export class InventoryVoiceOrchestrator {
    * Handle transfer intent
    */
   private async handleTransfer(
-    entities: VoiceIntentEntities,
+    entities: VoiceIntentEntities | undefined,
     userId: string,
     tenantId: string,
     voiceSessionId?: string
   ): Promise<VoiceActionResult> {
     // Validate required entities
-    if (!entities.itemNames || entities.itemNames.length === 0) {
+    if (!entities || !entities.itemNames || entities.itemNames.length === 0) {
       return {
         success: false,
         intent: 'transfer',
@@ -429,13 +424,13 @@ export class InventoryVoiceOrchestrator {
    * Handle inventory add intent
    */
   private async handleInventoryAdd(
-    entities: VoiceIntentEntities,
+    entities: VoiceIntentEntities | undefined,
     userId: string,
     tenantId: string,
     voiceSessionId?: string
   ): Promise<VoiceActionResult> {
     // Validate required entities
-    if (!entities.itemNames || entities.itemNames.length === 0) {
+    if (!entities || !entities.itemNames || entities.itemNames.length === 0) {
       return {
         success: false,
         intent: 'inventory_add',
@@ -514,11 +509,11 @@ export class InventoryVoiceOrchestrator {
    * Handle inventory check intent
    */
   private async handleInventoryCheck(
-    entities: VoiceIntentEntities,
+    entities: VoiceIntentEntities | undefined,
     userId: string,
     tenantId: string
   ): Promise<VoiceActionResult> {
-    if (!entities.itemNames || entities.itemNames.length === 0) {
+    if (!entities || !entities.itemNames || entities.itemNames.length === 0) {
       return {
         success: false,
         intent: 'inventory_check',
