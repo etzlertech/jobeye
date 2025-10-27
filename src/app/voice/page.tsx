@@ -24,12 +24,14 @@ import {
   CheckCircle,
   Loader2,
   ArrowLeft,
+  Zap,
 } from 'lucide-react';
 import { MobileNavigation } from '@/components/navigation/MobileNavigation';
 import { TenantBadge } from '@/components/tenant';
 import { useVoiceCommand } from '@/hooks/use-voice-command';
 import { VoiceConfirmationModal } from '@/components/voice/VoiceConfirmationModal';
 import { VoiceClarificationFlow } from '@/components/voice/VoiceClarificationFlow';
+import { GeminiLiveVoiceUI } from '@/components/voice/GeminiLiveVoiceUI';
 import toast from 'react-hot-toast';
 
 interface ChatMessage {
@@ -49,6 +51,7 @@ export default function VoiceCommandCenterPage() {
   const [textInput, setTextInput] = useState('');
   const [micPermissionDenied, setMicPermissionDenied] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [useGeminiLive, setUseGeminiLive] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const transcriptRef = useRef<string>(''); // Ref to avoid re-creating effect on transcript change
@@ -58,7 +61,10 @@ export default function VoiceCommandCenterPage() {
     setMounted(true);
   }, []);
 
-  // Initialize voice command hook
+  // Get API key from environment (client-side)
+  const geminiApiKey = process.env.NEXT_PUBLIC_GOOGLE_GEMINI_API_KEY || '';
+
+  // Initialize voice command hook (MUST be called before any early returns)
   const voiceCommand = useVoiceCommand({
     context: {
       role: 'supervisor',
@@ -297,6 +303,33 @@ export default function VoiceCommandCenterPage() {
     }
   };
 
+  // Conditional rendering: Gemini Live mode
+  if (useGeminiLive && geminiApiKey) {
+    return (
+      <div className="mobile-container">
+        {/* Header */}
+        <header className="header">
+          <button
+            onClick={() => setUseGeminiLive(false)}
+            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          <TenantBadge />
+        </header>
+
+        {/* Gemini Live UI */}
+        <div className="flex-1 overflow-hidden">
+          <GeminiLiveVoiceUI apiKey={geminiApiKey} />
+        </div>
+
+        {/* Navigation */}
+        <MobileNavigation />
+      </div>
+    );
+  }
+
+  // Browser-based voice mode (default)
   return (
     <div className="mobile-container">
       {/* Mobile Navigation */}
@@ -323,6 +356,17 @@ export default function VoiceCommandCenterPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Gemini Live Toggle (if API key available) */}
+          {geminiApiKey && (
+            <button
+              onClick={() => setUseGeminiLive(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-sm"
+              title="Switch to Gemini Live (Real-time AI)"
+            >
+              <Zap className="w-4 h-4" />
+              <span className="hidden sm:inline">Live</span>
+            </button>
+          )}
           <TenantBadge />
         </div>
       </div>
