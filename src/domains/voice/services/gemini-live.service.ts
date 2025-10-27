@@ -157,6 +157,56 @@ export class GeminiLiveService {
   }
 
   /**
+   * Send video frame (base64-encoded image)
+   */
+  sendVideo(videoData: string, mimeType: string = 'image/jpeg'): void {
+    if (!this.ws || !this.isSetupComplete) {
+      console.warn('[GeminiLive] Cannot send video: setup not complete');
+      return;
+    }
+
+    const message = {
+      realtimeInput: {
+        mediaChunks: [
+          {
+            mimeType,
+            data: videoData, // base64-encoded image
+          },
+        ],
+      },
+    };
+
+    this.ws.send(JSON.stringify(message));
+  }
+
+  /**
+   * Send both audio and video together
+   */
+  sendMultimodal(audioData: string, videoData: string): void {
+    if (!this.ws || !this.isSetupComplete) {
+      console.warn('[GeminiLive] Cannot send multimodal: setup not complete');
+      return;
+    }
+
+    const message = {
+      realtimeInput: {
+        mediaChunks: [
+          {
+            mimeType: 'audio/pcm;rate=16000',
+            data: audioData,
+          },
+          {
+            mimeType: 'image/jpeg',
+            data: videoData,
+          },
+        ],
+      },
+    };
+
+    this.ws.send(JSON.stringify(message));
+  }
+
+  /**
    * Send tool response
    */
   sendToolResponse(response: ToolResponse): void {
