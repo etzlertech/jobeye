@@ -29,12 +29,15 @@ export interface UseGeminiLiveOptions {
  * Hook for Gemini Live API voice conversations
  */
 export function useGeminiLive(options: UseGeminiLiveOptions) {
+  // Defensive validation at hook initialization
+  const safeApiKey = typeof options.apiKey === 'string' ? options.apiKey : '';
+
   const [state, setState] = useState<GeminiLiveState>({
     isConnected: false,
     isListening: false,
     isThinking: false,
     isSpeaking: false,
-    error: null,
+    error: !safeApiKey ? 'API key is required' : null,
   });
 
   const serviceRef = useRef<GeminiLiveService | null>(null);
@@ -48,13 +51,13 @@ export function useGeminiLive(options: UseGeminiLiveOptions) {
   const connect = useCallback(async () => {
     try {
       // Validate API key
-      if (!options.apiKey || options.apiKey.trim() === '') {
+      if (!safeApiKey || safeApiKey.trim() === '') {
         throw new Error('Gemini API key is required');
       }
 
       // Create service
       const service = new GeminiLiveService(
-        options.apiKey,
+        safeApiKey,
         {
           model: 'models/gemini-2.0-flash-live-001',
           systemInstruction: VOICE_ASSISTANT_SYSTEM_INSTRUCTION,
@@ -136,7 +139,7 @@ export function useGeminiLive(options: UseGeminiLiveOptions) {
         error: error instanceof Error ? error.message : 'Connection failed',
       }));
     }
-  }, [options]);
+  }, [safeApiKey]);
 
   /**
    * Start listening (capture mic audio)

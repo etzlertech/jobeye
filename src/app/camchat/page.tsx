@@ -20,6 +20,16 @@ export default function CamChatPage() {
   // Get API key from environment
   const geminiApiKey = (process.env.NEXT_PUBLIC_GOOGLE_GEMINI_API_KEY || '').trim();
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log('[CamChat] Gemini API Key status:', {
+      exists: !!geminiApiKey,
+      length: geminiApiKey.length,
+      firstChars: geminiApiKey ? geminiApiKey.substring(0, 10) + '...' : 'N/A',
+      envVarDefined: typeof process.env.NEXT_PUBLIC_GOOGLE_GEMINI_API_KEY !== 'undefined'
+    });
+  }, [geminiApiKey]);
+
   if (!geminiApiKey) {
     return (
       <div className="mobile-container">
