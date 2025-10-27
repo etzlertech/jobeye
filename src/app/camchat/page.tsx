@@ -18,7 +18,7 @@ export default function CamChatPage() {
   const router = useRouter();
 
   // Get API key from environment
-  const geminiApiKey = process.env.NEXT_PUBLIC_GOOGLE_GEMINI_API_KEY || '';
+  const geminiApiKey = (process.env.NEXT_PUBLIC_GOOGLE_GEMINI_API_KEY || '').trim();
 
   if (!geminiApiKey) {
     return (

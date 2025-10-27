@@ -63,6 +63,11 @@ export function CamChatUI({ apiKey }: CamChatUIProps) {
    */
   const handleConnect = async () => {
     try {
+      // Validate API key
+      if (!apiKey || apiKey.trim() === '') {
+        throw new Error('Gemini API key is required');
+      }
+
       const service = new GeminiLiveService(
         apiKey,
         {

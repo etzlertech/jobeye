@@ -47,6 +47,11 @@ export function useGeminiLive(options: UseGeminiLiveOptions) {
    */
   const connect = useCallback(async () => {
     try {
+      // Validate API key
+      if (!options.apiKey || options.apiKey.trim() === '') {
+        throw new Error('Gemini API key is required');
+      }
+
       // Create service
       const service = new GeminiLiveService(
         options.apiKey,

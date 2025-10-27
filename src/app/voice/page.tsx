@@ -62,7 +62,7 @@ export default function VoiceCommandCenterPage() {
   }, []);
 
   // Get API key from environment (client-side)
-  const geminiApiKey = process.env.NEXT_PUBLIC_GOOGLE_GEMINI_API_KEY || '';
+  const geminiApiKey = (process.env.NEXT_PUBLIC_GOOGLE_GEMINI_API_KEY || '').trim();
 
   // Initialize voice command hook (MUST be called before any early returns)
   const voiceCommand = useVoiceCommand({

@@ -80,6 +80,11 @@ export class GeminiLiveService {
    * Connect to Gemini Live API
    */
   async connect(): Promise<void> {
+    // Validate API key
+    if (!this.apiKey || this.apiKey.trim() === '') {
+      throw new Error('Gemini API key is required for connection');
+    }
+
     const endpoint = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${this.apiKey}`;
 
     console.log('[GeminiLive] Connecting to', endpoint);
