@@ -71,7 +71,7 @@ export default function DebugEnvPage() {
           <h3 className="font-semibold mb-2">⚠️ Important Notes</h3>
           <ul className="list-disc list-inside space-y-1 text-sm">
             <li>NEXT_PUBLIC_* vars are baked into bundle at BUILD time</li>
-            <li>Setting them in Railway AFTER build won't help</li>
+            <li>Setting them in Railway AFTER build won&apos;t help</li>
             <li>Must trigger a new deploy for changes to take effect</li>
             <li>Check Railway build logs to see if var was available during build</li>
           </ul>

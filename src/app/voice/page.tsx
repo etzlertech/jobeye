@@ -72,6 +72,7 @@ export default function VoiceCommandCenterPage() {
       firstChars: geminiApiKey.substring(0, 10) + '...',
       envVarDefined: typeof process.env.NEXT_PUBLIC_GOOGLE_GEMINI_API_KEY !== 'undefined'
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Initialize voice command hook (MUST be called before any early returns)
