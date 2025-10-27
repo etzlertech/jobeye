@@ -304,7 +304,7 @@ export default function VoiceCommandCenterPage() {
   };
 
   // Conditional rendering: Gemini Live mode
-  if (useGeminiLive && geminiApiKey) {
+  if (useGeminiLive && geminiApiKey && geminiApiKey.length > 0) {
     return (
       <div className="mobile-container">
         {/* Header */}
@@ -357,7 +357,7 @@ export default function VoiceCommandCenterPage() {
         </div>
         <div className="flex items-center gap-2">
           {/* Gemini Live Toggle (if API key available) */}
-          {geminiApiKey && (
+          {geminiApiKey && geminiApiKey.length > 0 && (
             <button
               onClick={() => setUseGeminiLive(true)}
               className="flex items-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-sm"

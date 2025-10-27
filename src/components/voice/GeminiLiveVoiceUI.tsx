@@ -25,6 +25,24 @@ interface ConversationMessage {
 }
 
 export function GeminiLiveVoiceUI({ apiKey }: GeminiLiveVoiceUIProps) {
+  // Validate API key before rendering
+  if (!apiKey || apiKey.trim() === '') {
+    return (
+      <div className="flex items-center justify-center h-full p-8">
+        <div className="text-center">
+          <p className="text-red-400 mb-2">API Key Required</p>
+          <p className="text-sm text-gray-500">
+            Gemini API key is not configured
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return <GeminiLiveVoiceUIInner apiKey={apiKey} />;
+}
+
+function GeminiLiveVoiceUIInner({ apiKey }: GeminiLiveVoiceUIProps) {
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
 
   const geminiLive = useGeminiLive({
