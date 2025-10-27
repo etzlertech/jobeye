@@ -43,7 +43,6 @@ import { z } from 'zod';
 import { getRequestContext } from '@/lib/auth/context';
 import { GeminiConfirmationService } from '@/domains/intent/services/gemini-confirmation.service';
 import { InventoryVoiceOrchestrator } from '@/domains/inventory/services/inventory-voice-orchestrator.service';
-import { TextToSpeechService } from '@/domains/voice/services/text-to-speech-service';
 import { VoiceIntentResult } from '@/domains/intent/types/voice-intent-types';
 import { handleApiError } from '@/core/errors/error-handler';
 
@@ -56,7 +55,7 @@ const confirmationRequestSchema = z.object({
   transcript: z.string().min(1).max(100),
   previous_intent: z.object({
     intent: z.string(),
-    entities: z.record(z.any()),
+    entities: z.record(z.any()).optional(), // Optional - may be undefined
     confidence: z.number(),
     conversation_id: z.string().optional(),
   }),
@@ -93,16 +92,13 @@ export async function POST(req: NextRequest) {
 
     // Step 2: If unclear, ask again
     if (confirmationResult.interpretation === 'unclear') {
-      const ttsService = new TextToSpeechService();
-      const audioUrl = await ttsService.speak('Sorry, I didn\'t catch that. Please say yes or no.');
-
       return NextResponse.json({
         success: false,
         confirmed: false,
         interpretation: 'unclear',
         response: {
           text: 'Sorry, I didn\'t catch that. Please say yes or no.',
-          audioUrl,
+          // audioUrl is optional - client handles TTS
         },
         metadata: {
           processingTimeMs: Date.now() - startTime,
@@ -112,16 +108,13 @@ export async function POST(req: NextRequest) {
 
     // Step 3: If not confirmed, return cancellation message
     if (!confirmationResult.confirmed) {
-      const ttsService = new TextToSpeechService();
-      const audioUrl = await ttsService.speak('Okay, action cancelled.');
-
       return NextResponse.json({
         success: true,
         confirmed: false,
         interpretation: 'no',
         response: {
           text: 'Okay, action cancelled.',
-          audioUrl,
+          // audioUrl is optional - client handles TTS
         },
         metadata: {
           processingTimeMs: Date.now() - startTime,
@@ -138,11 +131,7 @@ export async function POST(req: NextRequest) {
       validatedData.conversation_id
     );
 
-    // Step 5: Generate TTS response
-    const ttsService = new TextToSpeechService();
-    const audioUrl = await ttsService.speak(actionResult.response_text);
-
-    // Step 6: Return result
+    // Step 5: Return result (client handles TTS)
     return NextResponse.json({
       success: actionResult.success,
       confirmed: true,
@@ -153,7 +142,7 @@ export async function POST(req: NextRequest) {
       },
       response: {
         text: actionResult.response_text,
-        audioUrl,
+        // audioUrl is optional - client handles TTS
       },
       metadata: {
         processingTimeMs: Date.now() - startTime,
