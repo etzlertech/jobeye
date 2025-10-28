@@ -19,9 +19,13 @@ const nextConfig = {
   },
   
   // Environment variable validation
+  // NOTE: Adding vars here makes them available at build time
+  // All NEXT_PUBLIC_* vars are automatically included, but we can set defaults here
   env: {
     NEXT_PUBLIC_APP_NAME: 'JobEye Control Tower',
     NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version || '3.2.1',
+    // Explicitly include Gemini API key to ensure it's available
+    NEXT_PUBLIC_GOOGLE_GEMINI_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_GEMINI_API_KEY || '',
   },
   
   // Webpack configuration

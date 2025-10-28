@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/check-env-build.js",
     "build": "next build",
     "build:production": "next build",
     "start": "next start",
