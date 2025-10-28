@@ -249,3 +249,4 @@ For detailed architecture documentation, see `.claude/spec/` directory.
 2. Complete all Phase 1 skeletons before moving to Phase 2
 3. Begin implementation only after all skeletons are reviewed
 4. Run status reports regularly to track progress
+# Trigger rebuild with NEXT_PUBLIC env var
